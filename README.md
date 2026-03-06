@@ -274,7 +274,7 @@ Feel free to check [issues page](https://github.com/ONMARTECH/quanta-sdk/issues)
 
 ## License
 
-[Apache License 2.0](LICENSE) — same license used by [Google Cirq](https://github.com/quantumlib/Cirq) and [IBM Qiskit](https://github.com/Qiskit/qiskit).
+[Apache License 2.0](LICENSE)
 
 ---
 
