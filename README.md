@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">⚛️ Quanta SDK</h1>
+  <h1 align="center">Quanta SDK</h1>
   <p align="center">
     <strong>Multi-paradigm quantum computing SDK for Python</strong>
   </p>
@@ -8,7 +8,7 @@
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-150%2B%20passed-success.svg" alt="Tests"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-8%2F8%20%F0%9F%8F%86-gold.svg" alt="Benchmark"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-8%2F8-gold.svg" alt="Benchmark"></a>
     <a href="#qasmbench"><img src="https://img.shields.io/badge/QASMBench-10%2F10-success.svg" alt="QASMBench"></a>
     <a href="https://github.com/ONMARTECH/quanta-sdk"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg" alt="Platform"></a>
   </p>
@@ -18,12 +18,12 @@
 
 Quanta is a clean, modular quantum computing SDK designed for researchers, engineers and developers. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — so you can work at the level that fits your problem.
 
-**Key highlights:**  
-🔬 Shor, VQE, QAOA, QSVM, Grover — production-grade quantum algorithms  
-🏗️ DAG-based IR with 3-pass compiler and topology-aware qubit routing  
-📊 Statevector simulator up to 27 qubits with optional JAX/CuPy GPU acceleration  
-🔒 Surface code QEC, BB84 QKD, and error correction primitives  
-🏨 Real-world demo: [quantum entity resolution](#example-quantum-entity-resolution) for customer deduplication  
+**Key highlights:**
+- Shor, VQE, QAOA, QSVM, Grover — production-grade quantum algorithms
+- DAG-based IR with 3-pass compiler and topology-aware qubit routing
+- Statevector simulator up to 27 qubits with optional JAX/CuPy GPU acceleration
+- Surface code QEC, BB84 QKD, and error correction primitives
+- Real-world demo: [quantum entity resolution](#11-entity-resolution) for customer deduplication
 
 ## Table of Contents
 
@@ -265,7 +265,7 @@ QASM:        2.0 + 3.0   Max Qubits:  27
 
 **Abdullah Enes SARI** — [ONMARTECH](https://onmartech.com)
 
-📧 **info@onmartech.com**
+**info@onmartech.com**
 
 ## Contributing
 
@@ -279,5 +279,5 @@ Feel free to check [issues page](https://github.com/ONMARTECH/quanta-sdk/issues)
 ---
 
 <p align="center">
-  <sub>Built with ❤️ for the quantum computing community</sub>
+  <sub>Built for the quantum computing community</sub>
 </p>
