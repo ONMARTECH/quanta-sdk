@@ -4,9 +4,6 @@ on:
   release:
     types: [published]
 
-permissions:
-  id-token: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,6 +33,7 @@ jobs:
     environment: pypi
     permissions:
       id-token: write
+      contents: read
 
     steps:
       - name: Download artifact
@@ -45,4 +43,6 @@ jobs:
           path: dist/
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@v1.12.4
+        with:
+          attestations: false
