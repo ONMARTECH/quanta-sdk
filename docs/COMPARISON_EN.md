@@ -1,23 +1,27 @@
-# Quanta SDK — Comparison
+# Quanta SDK -- Comparison
 
 ## Quanta vs Existing SDKs
 
 ### Feature Comparison
 
-| Feature | Quanta | Qiskit | Cirq | PennyLane | Q# |
-|---------|--------|--------|------|-----------|-----|
-| **Language** | Python | Python | Python | Python | Q# (DSL) |
-| **Learning Curve** | ⭐ Easy | ⭐⭐⭐ Hard | ⭐⭐ Medium | ⭐⭐ Medium | ⭐⭐⭐ Hard |
-| **Declarative API** | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No |
-| **No-Gate Usage** | ✅ Layer 3 | ❌ Required | ❌ Required | ❌ Required | ❌ Required |
-| **Broadcast** | ✅ `H(q)` | ❌ Manual | ❌ Manual | ∼ Partial | ❌ Manual |
-| **@circuit Decorator** | ✅ `@circuit(qubits=N)` | ❌ No | ❌ No | ✅ `@qml.qnode` | ❌ No |
-| **DAG Representation** | ✅ Built-in | ✅ Built-in | ❌ Moments | ❌ No | ❌ No |
-| **Compiler Pipeline** | ✅ Protocol | ✅ PassManager | ✅ Optimizer | ❌ Limited | ✅ Yes |
-| **Noise Model** | ✅ 4 channels | ✅ Extensive | ✅ Extensive | ❌ Plugin | ❌ No |
-| **QEC Codes** | ✅ 3 codes | ❌ External | ❌ External | ❌ No | ✅ Built-in |
-| **QASM Export** | ✅ 3.0 | ✅ 2.0/3.0 | ✅ 2.0 | ❌ No | ❌ No |
-| **Multi-Agent** | ✅ Decision model | ❌ No | ❌ No | ❌ No | ❌ No |
+| Feature | Quanta | Qiskit | Cirq | PennyLane |
+|---------|--------|--------|------|-----------|
+| **Language** | Python | Python | Python | Python |
+| **Learning Curve** | Easy | Hard | Medium | Medium |
+| **Declarative API** | Yes (Layer 3) | No | No | No |
+| **No-Gate Usage** | Yes | No | No | No |
+| **Broadcast** | `H(q)` | Manual | Manual | Partial |
+| **@circuit Decorator** | Yes | No | No | `@qml.qnode` |
+| **DAG Representation** | Built-in | Built-in | Moments | No |
+| **Compiler Pipeline** | 3-pass + routing | PassManager | Optimizer | Limited |
+| **Noise Model** | 4 channels | Extensive | Extensive | Plugin |
+| **QEC Codes** | 4 codes (incl. surface) | External | External | No |
+| **QASM Import/Export** | 2.0 + 3.0 | 2.0/3.0 | 2.0 | No |
+| **Multi-Agent** | Yes | No | No | No |
+| **VQE** | Built-in | qiskit-nature | Via cirq-core | Built-in |
+| **Shor** | Built-in | External | No | No |
+| **Entity Resolution** | Built-in (QAOA) | No | No | No |
+| **Dependencies** | 1 (numpy) | 20+ | 10+ | 10+ |
 
 ### Code Comparison: Bell State
 
@@ -70,31 +74,43 @@ from qiskit import QuantumCircuit
 from qiskit.circuit.library import GroverOperator
 from qiskit.algorithms import AmplificationProblem, Grover
 # Define oracle, define problem, set up Grover, run...
-# (much longer and more complex)
 ```
 
-## Quanta's Unique Features
+### VQE Comparison
+
+**Quanta (3 lines)**
+```python
+from quanta.layer3.vqe import vqe
+result = vqe(2, hamiltonian=[("ZZ", 1.0), ("XI", 0.5)], layers=3)
+print(result.energy)
+```
+
+**Qiskit (20+ lines)**
+```python
+from qiskit_nature.second_q.mappers import JordanWignerMapper
+from qiskit.algorithms.minimum_eigensolvers import VQE
+from qiskit.circuit.library import EfficientSU2
+# Set up mapper, ansatz, optimizer, VQE, run...
+```
+
+## Quanta's Differentiators
 
 ### 1. 3-Layer Abstraction
-No other SDK offers these 3 layers:
 - **Layer 3**: Use quantum without knowing gates
 - **Layer 2**: Standard circuit programming
 - **Layer 1**: Hardware optimization
 
-### 2. Multi-Agent Decision Modeling
-The only SDK combining quantum mechanics with **decision theory**.
-Superposition → choices, Entanglement → interaction, Measurement → decision.
+### 2. Real-World Use Cases
+- Entity resolution (customer deduplication)
+- Portfolio optimization (financial)
+- Molecular simulation (H2, LiH, HeH+)
 
-### 3. 300-Line Rule
-No file exceeds 330 lines. This:
-- Guarantees readability
-- Enforces single responsibility
-- Produces AI-friendly code (LLMs understand shorter files better)
+### 3. Multi-Agent Decision Modeling
+Quantum mechanics applied to decision theory.
+Superposition = choices, Entanglement = interaction, Measurement = decision.
 
-### 4. Broadcast Syntax
-```python
-H(q)  # In Qiskit, each qubit requires a separate line
-```
+### 4. Minimal Dependencies
+NumPy only. No 200MB install, no Java, no Rust toolchain.
 
 ## Numerical Comparison
 
@@ -102,7 +118,7 @@ H(q)  # In Qiskit, each qubit requires a separate line
 |--------|--------|--------|
 | Bell State code | 5 lines | 10 lines |
 | Grover search | 1 line (L3) | 30+ lines |
-| `pip install` size | ~1 MB (numpy) | ~200 MB |
-| Learning time | Minutes | Days |
-| Test speed (98 tests) | 0.33 sec | — |
+| `pip install` size | ~1 MB | ~200 MB |
 | Dependencies | 1 (numpy) | 20+ |
+| Tests | 150+ | 5000+ |
+| Max qubits (sim) | 27 | 32 |

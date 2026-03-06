@@ -1,27 +1,31 @@
-# Quanta SDK — Karşılaştırma
+# Quanta SDK -- Karsilastirma
 
 ## Quanta vs Mevcut SDK'lar
 
-### Genel Özellik Karşılaştırması
+### Ozellik Karsilastirmasi
 
-| Özellik | Quanta | Qiskit | Cirq | PennyLane | Q# |
-|---------|--------|--------|------|-----------|-----|
-| **Dil** | Python | Python | Python | Python | Q# (DSL) |
-| **Öğrenme Eğrisi** | ⭐ Kolay | ⭐⭐⭐ Zor | ⭐⭐ Orta | ⭐⭐ Orta | ⭐⭐⭐ Zor |
-| **Deklaratif API** | ✅ Var | ❌ Yok | ❌ Yok | ❌ Yok | ❌ Yok |
-| **Gate Bilmeden Kullanım** | ✅ Layer 3 | ❌ Gerekli | ❌ Gerekli | ❌ Gerekli | ❌ Gerekli |
-| **Broadcast** | ✅ `H(q)` | ❌ Manual | ❌ Manual | ∼ Kısmen | ❌ Manual |
-| **@circuit Dekoratör** | ✅ `@circuit(qubits=N)` | ❌ Yok | ❌ Yok | ✅ `@qml.qnode` | ❌ Yok |
-| **DAG Temsili** | ✅ Dahili | ✅ Dahili | ❌ Moment | ❌ Yok | ❌ Yok |
-| **Compiler Pipeline** | ✅ Protocol | ✅ PassManager | ✅ Optimizer | ❌ Sınırlı | ✅ Var |
-| **Gürültü Modeli** | ✅ 4 kanal | ✅ Kapsamlı | ✅ Kapsamlı | ❌ Plugin | ❌ Yok |
-| **QEC Kodları** | ✅ 3 kod | ❌ Harici | ❌ Harici | ❌ Yok | ✅ Dahili |
-| **QASM Export** | ✅ 3.0 | ✅ 2.0/3.0 | ✅ 2.0 | ❌ Yok | ❌ Yok |
-| **Multi-Agent** | ✅ Karar modeli | ❌ Yok | ❌ Yok | ❌ Yok | ❌ Yok |
+| Ozellik | Quanta | Qiskit | Cirq | PennyLane |
+|---------|--------|--------|------|-----------|
+| **Dil** | Python | Python | Python | Python |
+| **Ogrenme Egrisi** | Kolay | Zor | Orta | Orta |
+| **Deklaratif API** | Evet (Katman 3) | Hayir | Hayir | Hayir |
+| **Kapisiz Kullanim** | Evet | Hayir | Hayir | Hayir |
+| **Broadcast** | `H(q)` | Manuel | Manuel | Kismi |
+| **@circuit Dekoratoru** | Evet | Hayir | Hayir | `@qml.qnode` |
+| **DAG Temsili** | Dahili | Dahili | Moments | Yok |
+| **Derleyici** | 3-gecis + yonlendirme | PassManager | Optimizer | Sinirli |
+| **Gurultu Modeli** | 4 kanal | Kapsamli | Kapsamli | Plugin |
+| **QEC Kodlari** | 4 kod (surface dahil) | Dis | Dis | Yok |
+| **QASM I/O** | 2.0 + 3.0 | 2.0/3.0 | 2.0 | Yok |
+| **Coklu-Ajan** | Evet | Hayir | Hayir | Hayir |
+| **VQE** | Dahili | qiskit-nature | cirq-core | Dahili |
+| **Shor** | Dahili | Dis | Yok | Yok |
+| **Tekillestime** | Dahili (QAOA) | Yok | Yok | Yok |
+| **Bagimlilik** | 1 (numpy) | 20+ | 10+ | 10+ |
 
-### Kod Karşılaştırması: Bell State
+### Kod Karsilastirmasi: Bell Durumu
 
-**Quanta (5 satır)**
+**Quanta (5 satir)**
 ```python
 @circuit(qubits=2)
 def bell(q):
@@ -30,7 +34,7 @@ def bell(q):
     return measure(q)
 ```
 
-**Qiskit (10 satır)**
+**Qiskit (10 satir)**
 ```python
 from qiskit import QuantumCircuit
 qc = QuantumCircuit(2, 2)
@@ -43,66 +47,44 @@ result = simulator.run(qc, shots=1024).result()
 counts = result.get_counts()
 ```
 
-**Cirq (12 satır)**
+### VQE Karsilastirmasi
+
+**Quanta (3 satir)**
 ```python
-import cirq
-q = cirq.LineQubit.range(2)
-circuit = cirq.Circuit([
-    cirq.H(q[0]),
-    cirq.CNOT(q[0], q[1]),
-    cirq.measure(*q, key='result')
-])
-simulator = cirq.Simulator()
-result = simulator.run(circuit, repetitions=1024)
-counts = result.histogram(key='result')
+from quanta.layer3.vqe import vqe
+result = vqe(2, hamiltonian=[("ZZ", 1.0), ("XI", 0.5)], layers=3)
+print(result.energy)
 ```
 
-### Arama Karşılaştırması
-
-**Quanta Layer 3 (1 satır)**
+**Qiskit (20+ satir)**
 ```python
-result = search(num_bits=4, target=13, shots=1024)
+from qiskit_nature.second_q.mappers import JordanWignerMapper
+from qiskit.algorithms.minimum_eigensolvers import VQE
+# Mapper, ansatz, optimizer, VQE kurulumu, calistirma...
 ```
 
-**Qiskit (30+ satır)**
-```python
-from qiskit import QuantumCircuit
-from qiskit.circuit.library import GroverOperator
-from qiskit.algorithms import AmplificationProblem, Grover
-# Oracle tanımla, problem tanımla, Grover kur, çalıştır...
-# (çok daha uzun ve karmaşık)
-```
+## Quanta'nin Farkliliklari
 
-## Quanta'nın Benzersiz Özellikleri
-
-### 1. 3-Katmanlı Soyutlama
-Hiçbir SDK bu 3 katmanı sunmuyor:
-- **Katman 3**: Gate bilmeden kuantum kullanımı
+### 1. 3 Katmanli Soyutlama
+- **Katman 3**: Kapi bilmeden kuantum kullanimi
 - **Katman 2**: Standart devre programlama
-- **Katman 1**: Donanım optimizasyonu
+- **Katman 1**: Donanim optimizasyonu
 
-### 2. Multi-Agent Karar Modelleme
-Kuantum mekaniğini **karar teorisi** ile birleştiren tek SDK.
-Süperpozisyon → seçenekler, Dolanıklık → etkileşim, Ölçüm → karar.
+### 2. Gercek Dunya Kullanim Alanlari
+- Musteri tekillestime (entity resolution)
+- Portfoy optimizasyonu (finans)
+- Molekuler simulasyon (H2, LiH, HeH+)
 
-### 3. 300 Satır Kuralı
-Hiçbir dosya 330 satırı geçemez. Bu:
-- Okunabilirliği garanti eder
-- Tek sorumluluğu zorlar
-- AI-friendly kod üretir (LLM'ler kısa dosyaları daha iyi anlar)
+### 3. Tek Bagimlilik
+Sadece NumPy. 200MB kurulum yok, Java yok, Rust toolchain yok.
 
-### 4. Broadcast Sözdizimi
-```python
-H(q)  # Qiskit'te her qubit için ayrı satır gerekir
-```
-
-## Sayısal Karşılaştırma
+## Sayisal Karsilastirma
 
 | Metrik | Quanta | Qiskit |
 |--------|--------|--------|
-| Bell State kodu | 5 satır | 10 satır |
-| Grover arama | 1 satır (L3) | 30+ satır |
-| `pip install` boyutu | ~1 MB (numpy) | ~200 MB |
-| Öğrenme süresi | Dakikalar | Günler |
-| Test hızı (98 test) | 0.33 sn | — |
-| Bağımlılık | 1 (numpy) | 20+ |
+| Bell State kodu | 5 satir | 10 satir |
+| Grover aramasi | 1 satir (L3) | 30+ satir |
+| `pip install` boyutu | ~1 MB | ~200 MB |
+| Bagimliliklar | 1 (numpy) | 20+ |
+| Testler | 150+ | 5000+ |
+| Maks qubit (sim) | 27 | 32 |

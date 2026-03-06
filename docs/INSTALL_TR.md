@@ -6,8 +6,8 @@
 
 ```bash
 # Projeyi klonla / Clone the project
-git clone <repo-url>
-cd quanta
+git clone https://github.com/ONMARTECH/quanta-sdk.git
+cd quanta-sdk
 
 # Geliştirici modunda kur / Install in development mode
 pip install -e ".[dev]"

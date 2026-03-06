@@ -1,113 +1,63 @@
 # Quanta SDK
 
-Temiz, modüler ve kuantum-doğal bir kuantum hesaplama SDK'sı.
+Python icin temiz ve moduler kuantum hesaplama SDK'si.
 
-## Vizyon
+## Genel Bakis
 
-Quanta, mevcut kuantum SDK'larının (Qiskit, Cirq, PennyLane) karmaşıklığını
-ortadan kaldırmak için tasarlanmıştır. Klasik bilgisayar mantığını kuantuma
-uyarlamak yerine, kuantum ilkelerini doğal olarak kucaklar.
+Quanta, kuantum hesaplama icin 3 katmanli mimari sunar:
 
-## 3 Katmanlı Mimari
+- **Katman 3** (Deklaratif): `search()`, `optimize()`, `vqe()`, `factor()`, `resolve()` -- kapi bilmeden kuantum
+- **Katman 2** (Devre): `@circuit`, H, CX, RZ, `measure()`, `run()` -- standart devre programlama
+- **Katman 1** (Fiziksel): DAG, derleyici, yonlendirme, simulator, QEC, QASM -- donanim optimizasyonu
 
-```
-Katman 3 — Deklaratif     "Ne istiyorsun?"
-├── search()               Kuantum arama (Grover otomatik)
-├── optimize()             Kombinasyonel optimizasyon (QAOA)
-└── MultiAgentSystem       Çok ajanlı karar modelleme
-
-Katman 2 — Algoritmik     "Devreyi nasıl kuracağız?"
-├── @circuit + kapılar     H, CX, RZ, CCX...
-├── measure()              Esnek ölçüm
-└── run()                  Tek komutla çalıştırma
-
-Katman 1 — Fiziksel       "Donanımda nasıl çalışacak?"
-├── DAG motoru             Topolojik sıralama, paralellik
-├── Compiler               Optimizasyon + transpilasyon
-├── Simülatör              Durum vektörü + gürültü modeli
-├── QEC                    Hata düzeltme kodları
-└── Export                 OpenQASM 3.0 çıktı
-```
-
-## Hızlı Başlangıç
-
-### Katman 2: Gate tabanlı programlama
+## Hizli Baslangic
 
 ```python
 from quanta import circuit, H, CX, measure, run
 
 @circuit(qubits=2)
 def bell(q):
-    H(q[0])           # Süperpozisyon
-    CX(q[0], q[1])    # Dolanıklık
+    H(q[0])
+    CX(q[0], q[1])
     return measure(q)
 
 result = run(bell, shots=1024)
 print(result.summary())
 ```
 
-### Katman 3: Gate bilgisi gerekmez!
+## Ornekler
 
-```python
-from quanta.layer3.search import search
+11 demo: Bell, GHZ, isinlanma, Deutsch-Jozsa, Grover, VQE, portfoy optimizasyonu, QKD, Shor, QSVM ve tekillestime.
 
-# 16 elemanlık uzayda 13'ü bul — kuantum otomatik
-result = search(num_bits=4, target=13, shots=1024)
-print(f"Bulunan: {result.most_frequent}")  # → 1101
-```
-
-### Multi-Agent Karar Modelleme
-
-```python
-from quanta.layer3.agent import Agent, MultiAgentSystem
-
-system = MultiAgentSystem([
-    Agent("müşteri", ["al", "vazgeç"]),
-    Agent("rakip", ["indirim", "koru"]),
-])
-system.interact("müşteri", "rakip", strength=0.7)
-result = system.simulate(shots=1024)
-print(result.summary())
+```bash
+python -m quanta.examples.01_bell_state
+python -m quanta.examples.11_entity_resolution
 ```
 
 ## Kurulum
 
 ```bash
+git clone https://github.com/ONMARTECH/quanta-sdk.git
+cd quanta-sdk
 pip install -e ".[dev]"
+pytest
 ```
 
-## Test
+## Dokumantasyon
 
-```bash
-pytest                    # 98 test, 0.33 saniye
-pytest --tb=short -v      # Detaylı çıktı
-```
+Detayli dokumantasyon icin `docs/` dizinine bakin:
 
-## Proje Yapısı
+- [Mimari](ARCHITECTURE_TR.md)
+- [Ozellikler](FEATURES_TR.md)
+- [Karsilastirma](COMPARISON_TR.md)
+- [Kurulum](INSTALL_TR.md)
 
-```
-quanta/
-├── core/           Temel tipler, kapılar, devre dekoratörü
-├── dag/            DAG motoru (topolojik sort, katmanlar)
-├── compiler/       Optimizasyon + transpilasyon pipeline'ı
-├── simulator/      Durum vektörü simülatörü + gürültü
-├── backends/       Backend soyutlama (lokal, bulut)
-├── layer3/         Deklaratif API (search, optimize, agent)
-├── export/         OpenQASM 3.0 çıktı
-├── qec/            Kuantum hata düzeltme kodları
-├── examples/       Örnek algoritmalar
-└── docs/           Dökümantasyon (TR + EN)
-```
+## Gelistirici
 
-## Kod Standartları
+Abdullah Enes SARI -- ONMARTECH
 
-- **Max 330 satır/dosya** (300 + %10 tolerans)
-- **~%30 yorum/dökümantasyon oranı**
-- **Modüler**: Her dosya tek sorumluluk
-- **Tip güvenli**: Tam type hint desteği
-- **İmmutable**: Frozen dataclass'lar
-- **Test edilmiş**: 98 test
+info@onmartech.com
 
 ## Lisans
 
-MIT
+Apache License 2.0
