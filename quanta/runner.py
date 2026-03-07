@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from quanta.backends.base import Backend
 from quanta.core.circuit import CircuitDefinition
 from quanta.core.types import QuantaError
 from quanta.dag.dag_circuit import DAGCircuit
@@ -41,22 +42,30 @@ def run(
     circuit: CircuitDefinition,
     shots: int = 1024,
     seed: int | None = None,
+    backend: Backend | None = None,
+    **kwargs: float,
 ) -> Result:
     """Executes a quantum circuit and returns results.
 
-    This function is the SDK's main orchestrator. It runs all stages
-    sequentially and returns a clean Result.
+    This function is the SDK's main orchestrator. When no backend is
+    specified, it runs on the built-in statevector simulator. When a
+    backend is provided, the circuit is compiled to a DAG and delegated.
 
     Args:
         circuit: Circuit defined with @circuit.
         shots: Number of measurement repetitions. Default 1024.
         seed: Random seed for reproducibility.
+        backend: Optional execution backend (IBM, IonQ, Google, etc.).
 
     Returns:
         Result: Measurement results, probabilities, and circuit metadata.
 
     Raises:
         QuantaError: If circuit is invalid or simulation fails.
+
+    Examples:
+        >>> result = run(bell, shots=1024)
+        >>> result = run(bell, shots=1024, backend=IBMBackend("ibm_brisbane"))
     """
     if not isinstance(circuit, CircuitDefinition):
         raise QuantaError(
@@ -68,26 +77,27 @@ def run(
         raise QuantaError(f"Shot count must be positive, given: {shots}")
 
     # Stage 1: Build circuit (lazy instructions)
-    builder = circuit.build()
+    builder = circuit.build(**kwargs) if kwargs else circuit.build()
 
     # Stage 2: Build DAG
     dag = DAGCircuit.from_builder(builder)
 
-    # Stage 3: Compile (to be added in v0.2)
-    # compiled = CompilerPipeline().run(dag)
+    # Delegate to backend if provided
+    if backend is not None:
+        result = backend.execute(dag, shots=shots, seed=seed)
+        result.circuit_name = circuit.name
+        result.gate_count = dag.gate_count()
+        result.depth = dag.depth()
+        return result
 
-    # Stage 4: Simulate
+    # Stage 3: Built-in statevector simulation
     simulator = StateVectorSimulator(dag.num_qubits, seed=seed)
 
-    # Apply gates in topological order
     for op in dag.op_nodes():
         simulator.apply(op.gate_name, op.qubits, op.params)
 
-    # Stage 5: Sample
     counts = simulator.sample(shots)
 
-    # Stage 6: Build result
-    # Filter by measured qubits (partial measurement support)
     if dag.measurement and dag.measurement.qubits:
         measured = dag.measurement.qubits
         counts = _filter_measured_qubits(counts, measured, dag.num_qubits)
