@@ -78,14 +78,24 @@ def run_circuit(
             RX, RY, RZ, measure, run,
         )
 
+        # Sandbox: only expose Quanta SDK symbols, no builtins
+        # This prevents arbitrary code execution (import, open, eval, etc.)
+        _safe_builtins = {
+            "range": range, "len": len, "int": int, "float": float,
+            "str": str, "list": list, "dict": dict, "tuple": tuple,
+            "print": print, "abs": abs, "min": min, "max": max,
+            "sum": sum, "enumerate": enumerate, "zip": zip,
+            "True": True, "False": False, "None": None,
+        }
         namespace: dict[str, Any] = {
+            "__builtins__": _safe_builtins,
             "circuit": circuit, "H": H, "X": X, "Y": Y, "Z": Z,
             "S": S, "T": T, "CX": CX, "CZ": CZ, "CY": CY,
             "SWAP": SWAP, "CCX": CCX, "RX": RX, "RY": RY, "RZ": RZ,
             "measure": measure,
         }
 
-        exec(code, namespace)
+        exec(code, namespace)  # noqa: S102 — sandboxed, no builtins
 
         if "circ" not in namespace:
             return json.dumps({

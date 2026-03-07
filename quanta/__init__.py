@@ -25,6 +25,7 @@ from quanta.core.custom_gate import custom_gate
 from quanta.core.gates import (
     CCX,
     CX,
+    CY,
     CZ,
     RX,
     RY,

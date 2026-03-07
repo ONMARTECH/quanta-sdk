@@ -198,7 +198,10 @@ class ColorCode:
         return syndrome
 
     def restriction_decode(
-        self, syndrome: np.ndarray, error_mask: np.ndarray
+        self,
+        syndrome: np.ndarray,
+        error_mask: np.ndarray,
+        rng: np.random.Generator | None = None,
     ) -> bool:
         """Restriction decoder (chromobius-inspired).
 
@@ -220,6 +223,9 @@ class ColorCode:
             return True
         if n_errors <= t:
             return True
+
+        if rng is None:
+            rng = np.random.default_rng()
 
         # Restriction: project onto each pair of colors
         # If excited syndromes in any color pair form a non-trivial cycle,
@@ -271,7 +277,7 @@ class ColorCode:
                 continue
 
             syndrome = self.get_syndrome(error_mask)
-            if self.restriction_decode(syndrome, error_mask):
+            if self.restriction_decode(syndrome, error_mask, rng=rng):
                 errors_corrected += n_errors
             else:
                 logical_errors += 1
