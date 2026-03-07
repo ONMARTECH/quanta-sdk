@@ -521,3 +521,37 @@ def sdk_examples() -> str:
             "    return measure(q)"
         ),
     })
+
+
+# ═══════════════════════════════════════════
+#  Entry Point
+# ═══════════════════════════════════════════
+
+if __name__ == "__main__":
+    import argparse
+    import os
+
+    parser = argparse.ArgumentParser(description="Quanta MCP Server")
+    parser.add_argument(
+        "--transport", choices=["stdio", "sse"], default="stdio",
+        help="Transport mode: stdio (local) or sse (remote/Cloud Run)",
+    )
+    parser.add_argument(
+        "--host", default="0.0.0.0",
+        help="Host to bind (SSE mode only)",
+    )
+    parser.add_argument(
+        "--port", type=int, default=None,
+        help="Port to bind (SSE mode only, default: $PORT or 8080)",
+    )
+    args = parser.parse_args()
+
+    if args.transport == "sse":
+        port = args.port or int(os.environ.get("PORT", "8080"))
+        print(f"🚀 Quanta MCP Server starting on {args.host}:{port}")
+        print(f"📋 SSE endpoint: http://{args.host}:{port}/sse")
+        print(f"🔧 Tools: run_circuit, create_bell_state, grover_search,")
+        print(f"          shor_factor, simulate_noise, list_gates, explain_result")
+        mcp.run(transport="sse", host=args.host, port=port)
+    else:
+        mcp.run(transport="stdio")

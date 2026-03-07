@@ -1,0 +1,72 @@
+name: Deploy MCP Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "quanta/mcp_server.py"
+      - "Dockerfile.mcp"
+      - ".github/workflows/mcp-deploy.yml"
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: europe-west1
+  SERVICE_NAME: quanta-mcp
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${REGION}-docker.pkg.dev
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/docker-repo/${SERVICE_NAME}:${GITHUB_SHA::8}"
+          docker build -f Dockerfile.mcp -t ${IMAGE} .
+          docker push ${IMAGE}
+
+      - name: Deploy to Cloud Run
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/docker-repo/${SERVICE_NAME}:${GITHUB_SHA::8}"
+          gcloud run deploy ${SERVICE_NAME} \
+            --image ${IMAGE} \
+            --region ${REGION} \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 1Gi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 3 \
+            --timeout 300 \
+            --port 8080 \
+            --set-env-vars "PYTHONUNBUFFERED=1"
+
+      - name: Show service URL
+        run: |
+          URL=$(gcloud run services describe ${SERVICE_NAME} --region ${REGION} --format 'value(status.url)')
+          echo "🚀 MCP Server deployed: ${URL}"
+          echo "📋 Claude Desktop config:"
+          echo '{'
+          echo '  "mcpServers": {'
+          echo '    "quanta": {'
+          echo '      "url": "'${URL}'/sse"'
+          echo '    }'
+          echo '  }'
+          echo '}'
