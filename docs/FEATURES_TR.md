@@ -76,12 +76,15 @@ Topoloji bazli SWAP ekleme:
 
 ## Gurultu Modelleri
 
-| Kanal | Aciklama | Parametre |
-|-------|----------|-----------|
-| Depolarizing | Rastgele Pauli hatasi | p ∈ [0,1] |
-| BitFlip | \|0⟩↔\|1⟩ cevirme | p ∈ [0,1] |
-| PhaseFlip | Faz hatasi (Z) | p ∈ [0,1] |
-| AmplitudeDamping | Enerji kaybi (T1) | γ ∈ [0,1] |
+| Kanal | Aciklama | Parametre | Donanim Ref |
+|-------|----------|-----------|-------------|
+| Depolarizing | Rastgele Pauli hatasi | p ∈ [0,1] | — |
+| BitFlip | |0⟩↔|1⟩ cevirme | p ∈ [0,1] | — |
+| PhaseFlip | Faz hatasi (Z) | p ∈ [0,1] | — |
+| AmplitudeDamping | Enerji kaybi (T1) | γ ∈ [0,1] | IBM: 100-300μs |
+| T2Relaxation | Saf defazlama (T2) | γ ∈ [0,1] | IBM: 100-200μs |
+| Crosstalk | Komsu qubit ZZ etkilesimi | p ∈ [0,1] | ~%0.1-1 / kapi |
+| ReadoutError | Olcum bit-cevirme | p01, p10 | IBM: %0.5-2 |
 
 ## Hata Duzeltme Kodlari
 
@@ -136,3 +139,40 @@ for r in results:
 - Olasilik histogrami: `print(result)`
 - Dirac notasyonu: `result.dirac_notation()`
 - Durum vektoru gosterimi: `show_statevector(sv, n)`
+
+## MCP Server (AI Entegrasyonu)
+
+Quanta SDK, MCP (Model Context Protocol) sunucusu olarak calisabilir.
+Claude gibi AI asistanlar dogrudan kuantum simulasyonu yapabilir.
+
+| Arac | Aciklama |
+|------|----------|
+| `run_circuit` | Serbest kuantum devresi calistirma |
+| `create_bell_state` | Hizli dolanıklık gosterimi |
+| `grover_search` | Grover arama algoritmasi |
+| `shor_factor` | Shor tam sayi carpanlarina ayirma |
+| `simulate_noise` | Gurultulu simulasyon (7 kanal) |
+| `list_gates` | Kapi referansi |
+| `explain_result` | Olcum sonuclarini yorumlama |
+
+```bash
+# Yerel (Claude Desktop)
+fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
+
+# Uzak (Cloud Run)
+python -m quanta.mcp_server --transport sse --port 8080
+```
+
+## Dagitim
+
+| Hedef | Yontem | Kullanim |
+|-------|--------|----------|
+| Yerel | `pip install quanta-sdk` | Gelistirme, arastirma |
+| Claude Desktop | `fastmcp install` | AI destekli simulasyon |
+| Cloud Run | Dockerfile.mcp + CI/CD | Surekli aktif MCP sunucu |
+| Lambda/Functions | Hafif paket | Sunucusuz hesaplama |
+| CI/CD Pipeline | `pip install quanta-sdk` | Otomatik KH testi |
+
+**Hafiflik avantaji**: Saf Python + NumPy. Agir bagimliliksiz.
+Sunucusuz (Lambda, Cloud Functions), edge computing ve
+CI/CD pipeline icine gomulme icin ideal.

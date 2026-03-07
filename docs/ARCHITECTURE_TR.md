@@ -79,7 +79,7 @@ qec/ -------> core/
 |-------|------------|
 | `statevector.py` | Tensor contraction, 27 qubite kadar |
 | `density_matrix.py` | Karisik durumlar + Kraus gurultu, 13 qubite kadar |
-| `noise.py` | Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping |
+| `noise.py` | 7 gurultu kanali: Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError |
 | `accelerated.py` | JAX-GPU / CuPy otomatik algilama, NumPy fallback |
 
 ### layer3/ -- Deklaratif API
@@ -125,6 +125,7 @@ qec/ -------> core/
 | `result.py` | Olcum sonuclari, olasiliklar, Dirac notasyonu |
 | `visualize.py` | ASCII devre diyagrami |
 | `visualize_state.py` | Olasilik histogrami, faz diyagrami |
+| `mcp_server.py` | MCP sunucusu — AI destekli kuantum simulasyonu icin 7 arac (SSE + stdio) |
 
 ## Veri Akisi
 
@@ -152,3 +153,5 @@ run(circuit)        ---> +- DAGCircuit.from_builder()
 4. **Degismez**: QubitRef, Instruction, dugumler frozen dataclass
 5. **Thread-local Builder**: Birden fazla devre esanlamli kurulabilir
 6. **Hibrit yaklasim**: Gercek dunya problemleri icin klasik bloklama + kuantum optimizasyon
+7. **Hafiflik**: Saf Python + NumPy — sunucusuz (Lambda, Cloud Functions), edge computing ve CI/CD entegrasyonu icin ideal
+8. **AI-yerlesik**: MCP sunucusu AI asistanlarin dogrudan kuantum hesaplama yapmasini saglar

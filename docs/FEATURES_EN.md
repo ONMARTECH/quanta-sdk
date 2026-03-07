@@ -77,12 +77,15 @@ Topology-aware SWAP insertion for hardware constraints:
 
 ## Noise Models
 
-| Channel | Description | Parameter |
-|---------|-------------|-----------|
-| Depolarizing | Random Pauli error | p ∈ [0,1] |
-| BitFlip | \|0⟩↔\|1⟩ flip | p ∈ [0,1] |
-| PhaseFlip | Phase error (Z) | p ∈ [0,1] |
-| AmplitudeDamping | Energy loss (T1) | γ ∈ [0,1] |
+| Channel | Description | Parameter | Hardware Ref |
+|---------|-------------|-----------|-------------|
+| Depolarizing | Random Pauli error | p ∈ [0,1] | — |
+| BitFlip | |0⟩↔|1⟩ flip | p ∈ [0,1] | — |
+| PhaseFlip | Phase error (Z) | p ∈ [0,1] | — |
+| AmplitudeDamping | Energy loss (T1 decay) | γ ∈ [0,1] | IBM: 100-300μs |
+| T2Relaxation | Pure dephasing (T2 decay) | γ ∈ [0,1] | IBM: 100-200μs |
+| Crosstalk | ZZ coupling between neighbors | p ∈ [0,1] | ~0.1-1% / gate |
+| ReadoutError | Measurement bit-flip | p01, p10 | IBM: 0.5-2% |
 
 ## Error Correction Codes
 
@@ -137,3 +140,40 @@ for r in results:
 - Probability histogram: `print(result)`
 - Dirac notation: `result.dirac_notation()`
 - Statevector display: `show_statevector(sv, n)`
+
+## MCP Server (AI Integration)
+
+Quanta SDK can be used as an MCP (Model Context Protocol) server,
+allowing AI assistants like Claude to perform quantum simulations.
+
+| Tool | Description |
+|------|-------------|
+| `run_circuit` | Execute arbitrary quantum circuits |
+| `create_bell_state` | Quick entanglement demonstration |
+| `grover_search` | Grover's search algorithm |
+| `shor_factor` | Shor's integer factoring |
+| `simulate_noise` | Noisy circuit simulation (7 channels) |
+| `list_gates` | Available gate reference |
+| `explain_result` | Interpret measurement results |
+
+```bash
+# Local (Claude Desktop)
+fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
+
+# Remote (Cloud Run)
+python -m quanta.mcp_server --transport sse --port 8080
+```
+
+## Deployment
+
+| Target | Method | Use Case |
+|--------|--------|----------|
+| Local | `pip install quanta-sdk` | Development, research |
+| Claude Desktop | `fastmcp install` | AI-assisted simulation |
+| Cloud Run | Dockerfile.mcp + CI/CD | Always-on MCP server |
+| Lambda/Functions | Lightweight package | Serverless computation |
+| CI/CD Pipeline | `pip install quanta-sdk` | Automated QC testing |
+
+**Lightweight advantage**: Pure Python + NumPy only. No heavy
+framework dependencies. Ideal for serverless, edge computing,
+and embedding in CI/CD pipelines.

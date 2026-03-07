@@ -79,7 +79,7 @@ qec/ -------> core/
 |------|----------------|
 | `statevector.py` | Tensor contraction, up to 27 qubits |
 | `density_matrix.py` | Mixed states + Kraus noise channels, up to 13 qubits |
-| `noise.py` | Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping |
+| `noise.py` | 7 noise channels: Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError |
 | `accelerated.py` | JAX-GPU / CuPy auto-detection, NumPy fallback |
 
 ### layer3/ -- Declarative API
@@ -125,6 +125,7 @@ qec/ -------> core/
 | `result.py` | Measurement results, probabilities, Dirac notation |
 | `visualize.py` | ASCII circuit diagram |
 | `visualize_state.py` | Probability histogram, phase diagram |
+| `mcp_server.py` | MCP server — 7 tools for AI-assisted quantum simulation (SSE + stdio) |
 
 ## Data Flow
 
@@ -152,3 +153,5 @@ run(circuit)        ---> +- DAGCircuit.from_builder()
 4. **Immutable**: QubitRef, Instruction, nodes are frozen dataclasses
 5. **Thread-local Builder**: Multiple circuits can be built concurrently
 6. **Hybrid approach**: Classical blocking + quantum optimization for real-world problems
+7. **Lightweight**: Pure Python + NumPy only — ideal for serverless (Lambda, Cloud Functions), edge computing, and CI/CD integration
+8. **AI-native**: MCP server enables AI assistants to perform quantum computations directly
