@@ -17,7 +17,7 @@ Quick Start:
     >>> print(result)
 """
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 # -- Core API --
 from quanta.core.gates import (
