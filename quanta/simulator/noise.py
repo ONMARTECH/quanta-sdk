@@ -19,6 +19,7 @@ import numpy as np
 __all__ = [
     "NoiseChannel", "NoiseModel",
     "Depolarizing", "BitFlip", "PhaseFlip", "AmplitudeDamping",
+    "T2Relaxation", "Crosstalk", "ReadoutError",
 ]
 
 class NoiseChannel(ABC):
@@ -198,3 +199,157 @@ def _apply_single_qubit_error(
             new_state[i] = -state[i]
 
     return new_state
+
+
+@dataclass
+class T2Relaxation(NoiseChannel):
+    """T2 relaxation (pure dephasing) channel.
+
+    Models decoherence where the qubit loses phase information
+    without energy loss. T2 is always <= 2*T1.
+
+    In real hardware:
+      - IBM Eagle: T2 ~ 100-200 μs
+      - Google Sycamore: T2 ~ 10-20 μs
+
+    Attributes:
+        gamma: Dephasing rate (probability of phase randomization).
+    """
+
+    gamma: float = 0.01
+
+    @property
+    def name(self) -> str:
+        return f"T2Relaxation(γ={self.gamma})"
+
+    def apply(
+        self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
+    ) -> np.ndarray:
+        if rng.random() > self.gamma:
+            return state  # No dephasing
+
+        # Pure dephasing: apply random phase to |1⟩ component
+        n = num_qubits
+        new_state = state.copy()
+        phase = np.exp(1j * rng.uniform(0, 2 * np.pi))
+
+        for i in range(len(state)):
+            if (i >> (n - 1 - qubit)) & 1:  # qubit in |1⟩
+                new_state[i] *= phase
+
+        return new_state
+
+
+@dataclass
+class Crosstalk(NoiseChannel):
+    """Crosstalk noise: correlated errors between neighboring qubits.
+
+    When a gate operates on a qubit, crosstalk causes unintended
+    rotations on physically adjacent qubits. This is a major error
+    source in superconducting processors.
+
+    In real hardware:
+      - ZZ crosstalk: ~0.1-1% per gate
+      - Frequency collision: ~0.01-0.1%
+
+    Attributes:
+        probability: Probability of crosstalk per gate.
+        neighbor_offset: Which neighbor is affected (+1 = next qubit).
+    """
+
+    probability: float = 0.005
+    neighbor_offset: int = 1
+
+    @property
+    def name(self) -> str:
+        return f"Crosstalk(p={self.probability}, offset={self.neighbor_offset})"
+
+    def apply(
+        self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
+    ) -> np.ndarray:
+        if rng.random() > self.probability:
+            return state  # No crosstalk
+
+        neighbor = qubit + self.neighbor_offset
+        if neighbor < 0 or neighbor >= num_qubits:
+            return state  # No neighbor to affect
+
+        # ZZ-type crosstalk: small Z rotation on neighbor
+        # conditioned on the state of the target qubit
+        n = num_qubits
+        new_state = state.copy()
+        angle = rng.uniform(0.01, 0.1) * np.pi  # Small unwanted rotation
+
+        for i in range(len(state)):
+            target_bit = (i >> (n - 1 - qubit)) & 1
+            neighbor_bit = (i >> (n - 1 - neighbor)) & 1
+            # ZZ interaction: phase depends on both qubits
+            if target_bit and neighbor_bit:
+                new_state[i] *= np.exp(1j * angle)
+            elif target_bit or neighbor_bit:
+                new_state[i] *= np.exp(-1j * angle / 2)
+
+        return new_state
+
+
+@dataclass
+class ReadoutError(NoiseChannel):
+    """Readout error: measurement bit-flip during readout.
+
+    Models the classical error that occurs when reading out a qubit.
+    The qubit state is correct, but the measurement result may flip.
+
+    In real hardware:
+      - IBM Eagle: ~0.5-2% readout error
+      - Google Sycamore: ~0.5-1%
+
+    Attributes:
+        p0_to_1: Probability of reading |0⟩ as |1⟩.
+        p1_to_0: Probability of reading |1⟩ as |0⟩.
+    """
+
+    p0_to_1: float = 0.01
+    p1_to_0: float = 0.02
+
+    @property
+    def name(self) -> str:
+        return f"ReadoutError(p01={self.p0_to_1}, p10={self.p1_to_0})"
+
+    def apply(
+        self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
+    ) -> np.ndarray:
+        # ReadoutError doesn't modify the quantum state.
+        # It modifies measurement results (applied post-measurement).
+        return state
+
+    def apply_to_counts(
+        self,
+        counts: dict[str, int],
+        rng: np.random.Generator,
+    ) -> dict[str, int]:
+        """Applies readout error to measurement counts.
+
+        Flips individual bits in measurement results based on
+        per-bit error probabilities.
+
+        Args:
+            counts: Measurement result counts.
+            rng: Random number generator.
+
+        Returns:
+            Modified counts with readout errors applied.
+        """
+        noisy_counts: dict[str, int] = {}
+
+        for bitstring, count in counts.items():
+            for _ in range(count):
+                noisy_bits = list(bitstring)
+                for idx, bit in enumerate(noisy_bits):
+                    if bit == "0" and rng.random() < self.p0_to_1:
+                        noisy_bits[idx] = "1"
+                    elif bit == "1" and rng.random() < self.p1_to_0:
+                        noisy_bits[idx] = "0"
+                result = "".join(noisy_bits)
+                noisy_counts[result] = noisy_counts.get(result, 0) + 1
+
+        return noisy_counts
