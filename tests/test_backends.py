@@ -306,3 +306,118 @@ class TestIonQBackendInternal:
         backend = IonQBackend()
         with pytest.raises(IonQBackendError, match="not supported"):
             backend._dag_to_ionq_circuit(dag)
+
+
+# ═══════════════════════════════════════════
+#  Google Backend internal logic
+# ═══════════════════════════════════════════
+
+class TestGoogleBackendInternal:
+    """Tests Google backend QASM and gate conversion without Cirq."""
+
+    def test_dag_to_qasm_basic(self):
+        from quanta.backends.google import GoogleBackend
+
+        @circuit(qubits=2)
+        def bell(q):
+            H(q[0])
+            CX(q[0], q[1])
+            return measure(q)
+
+        dag = DAGCircuit.from_builder(bell.build())
+        backend = GoogleBackend(simulate_locally=True)
+        qasm = backend._dag_to_qasm(dag)
+
+        assert "OPENQASM 2.0;" in qasm
+        assert "qelib1.inc" in qasm
+        assert "h q[0];" in qasm
+        assert "cx q[0], q[1];" in qasm
+        assert "measure q[0]" in qasm
+
+    def test_dag_to_qasm_parametric(self):
+        from quanta.backends.google import GoogleBackend
+        from quanta import RZ
+
+        @circuit(qubits=1)
+        def rot(q):
+            RZ(1.5707963)(q[0])
+            return measure(q)
+
+        dag = DAGCircuit.from_builder(rot.build())
+        backend = GoogleBackend(simulate_locally=True)
+        qasm = backend._dag_to_qasm(dag)
+
+        assert "rz(" in qasm
+        assert "q[0];" in qasm
+
+    def test_dag_to_qasm_multi_gate(self):
+        from quanta.backends.google import GoogleBackend
+        from quanta import X, Z, SWAP
+
+        @circuit(qubits=2)
+        def multi(q):
+            X(q[0])
+            Z(q[1])
+            SWAP(q[0], q[1])
+            return measure(q)
+
+        dag = DAGCircuit.from_builder(multi.build())
+        backend = GoogleBackend(simulate_locally=True)
+        qasm = backend._dag_to_qasm(dag)
+
+        assert "x q[0];" in qasm
+        assert "z q[1];" in qasm
+        assert "swap q[0], q[1];" in qasm
+
+    def test_dag_to_qasm_unsupported_gate_raises(self):
+        from quanta.backends.google import GoogleBackend, GoogleBackendError
+        from quanta.core.circuit import CircuitBuilder
+        from quanta.core.types import Instruction
+
+        builder = CircuitBuilder(1)
+        builder.record(Instruction("UNSUPPORTED_XYZ", (0,), ()))
+        dag = DAGCircuit.from_builder(builder)
+
+        backend = GoogleBackend(simulate_locally=True)
+        with pytest.raises(GoogleBackendError, match="not supported"):
+            backend._dag_to_qasm(dag)
+
+    def test_name_property_local(self):
+        from quanta.backends.google import GoogleBackend
+        backend = GoogleBackend(simulate_locally=True)
+        assert backend.name == "google_local"
+
+    def test_name_property_hardware(self):
+        from quanta.backends.google import GoogleBackend
+        backend = GoogleBackend(processor_id="rainbow")
+        assert backend.name == "google_rainbow"
+
+    def test_repr(self):
+        from quanta.backends.google import GoogleBackend
+        backend = GoogleBackend(project_id="my-proj", processor_id="weber", simulate_locally=True)
+        r = repr(backend)
+        assert "my-proj" in r
+        assert "weber" in r
+        assert "local" in r
+
+    def test_execute_without_cirq_raises(self):
+        from quanta.backends.google import GoogleBackend, GoogleBackendError
+
+        @circuit(qubits=1)
+        def simple(q):
+            H(q[0])
+            return measure(q)
+
+        dag = DAGCircuit.from_builder(simple.build())
+        backend = GoogleBackend(simulate_locally=True)
+
+        # This will raise GoogleBackendError because cirq is not installed
+        # OR succeed if cirq happens to be installed — both are valid
+        try:
+            result = backend.execute(dag, shots=100)
+            # If cirq IS installed, verify result
+            assert result.shots == 100
+            assert result.num_qubits == 1
+        except GoogleBackendError as e:
+            assert "cirq" in str(e).lower()
+
