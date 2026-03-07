@@ -13,8 +13,9 @@ Circuit:
 
 import numpy as np
 
-from quanta import circuit, H, CX, RY, measure, run
+from quanta import CX, RY, H, circuit, measure, run
 from quanta.visualize import draw
+
 
 @circuit(qubits=3)
 def teleportation(q):

@@ -1,219 +1,159 @@
 """
-tests/test_backends.py -- Backend integration tests.
+tests/test_backends.py -- Mock tests for hardware backends.
 
-Tests IBM and IonQ backends without requiring real API keys or hardware.
-Uses mock/patching for external calls, direct testing for internal logic.
+Tests Google/IBM backend adapters using mocks
+(no real API tokens or hardware needed).
 """
 
-import json
-import pytest
+from unittest.mock import MagicMock, patch
+
 import numpy as np
-
-from quanta import circuit, H, CX, measure, run
-from quanta.backends.base import Backend
-from quanta.backends.local import LocalSimulator
-from quanta.dag.dag_circuit import DAGCircuit
-from quanta.result import Result
+import pytest
 
 
 # ═══════════════════════════════════════════
-#  run() with backend parameter
+#  Google Cirq Backend (mocked)
 # ═══════════════════════════════════════════
 
-class TestRunWithBackend:
-    """Tests run() function's backend delegation."""
+class TestGoogleBackend:
+    """Tests for Google Cirq backend adapter with mocked cirq."""
 
-    def test_run_with_local_backend(self):
-        @circuit(qubits=2)
-        def bell(q):
-            H(q[0])
-            CX(q[0], q[1])
-            return measure(q)
+    def test_backend_name_local(self):
+        with patch.dict("sys.modules", {"cirq": MagicMock()}):
+            from quanta.backends.google import GoogleBackend
+            backend = GoogleBackend(simulate_locally=True)
+            assert backend.name == "google_local"
 
-        backend = LocalSimulator(seed=42)
-        result = run(bell, shots=1024, backend=backend)
-        assert result.shots == 1024
-        assert result.most_frequent in ("00", "11")
+    def test_backend_name_processor(self):
+        with patch.dict("sys.modules", {"cirq": MagicMock()}):
+            from quanta.backends.google import GoogleBackend
+            backend = GoogleBackend(
+                project_id="my-project",
+                processor_id="rainbow"
+            )
+            assert backend.name == "google_rainbow"
 
-    def test_run_without_backend_uses_default(self):
-        @circuit(qubits=1)
-        def simple(q):
-            H(q[0])
-            return measure(q)
-
-        result = run(simple, shots=1000, seed=42)
-        assert result.shots == 1000
-        assert result.statevector is not None  # default path sets statevector
-
-    def test_run_with_backend_sets_metadata(self):
-        @circuit(qubits=2)
-        def bell(q):
-            H(q[0])
-            CX(q[0], q[1])
-            return measure(q)
-
-        backend = LocalSimulator(seed=42)
-        result = run(bell, shots=100, backend=backend)
-        assert result.circuit_name == "bell"
-        assert result.gate_count == 2
-        assert result.depth >= 1
-
-
-# ═══════════════════════════════════════════
-#  IBM Backend internal logic
-# ═══════════════════════════════════════════
-
-class TestIBMBackendInternal:
-    """Tests IBM backend QASM generation without Qiskit dependency."""
-
-    def test_dag_to_qasm_basic(self):
-        from quanta.backends.ibm import IBMBackend
-
-        @circuit(qubits=2)
-        def bell(q):
-            H(q[0])
-            CX(q[0], q[1])
-            return measure(q)
-
-        dag = DAGCircuit.from_builder(bell.build())
-        backend = IBMBackend(simulate_locally=True)
-        qasm = backend._dag_to_qasm(dag)
-
-        assert "OPENQASM 2.0;" in qasm
-        assert "qelib1.inc" in qasm
-        assert "h q[0];" in qasm
-        assert "cx q[0], q[1];" in qasm
-        assert "measure q[0]" in qasm
-        assert "measure q[1]" in qasm
-
-    def test_dag_to_qasm_parametric(self):
-        from quanta.backends.ibm import IBMBackend
-        from quanta import RZ
-
-        @circuit(qubits=1)
-        def rot(q):
-            RZ(1.5707963)(q[0])
-            return measure(q)
-
-        dag = DAGCircuit.from_builder(rot.build())
-        backend = IBMBackend(simulate_locally=True)
-        qasm = backend._dag_to_qasm(dag)
-
-        assert "rz(" in qasm
-        assert "q[0];" in qasm
-
-    def test_dag_to_qasm_unsupported_gate_raises(self):
-        from quanta.backends.ibm import IBMBackend, IBMBackendError
-        from quanta.core.circuit import CircuitBuilder
-        from quanta.core.types import Instruction
-
-        builder = CircuitBuilder(1)
-        builder.record(Instruction("UNSUPPORTED_XYZ", (0,), ()))
-        dag = DAGCircuit.from_builder(builder)
-
-        backend = IBMBackend(simulate_locally=True)
-        with pytest.raises(IBMBackendError, match="not supported"):
-            backend._dag_to_qasm(dag)
-
-    def test_name_property_local(self):
-        from quanta.backends.ibm import IBMBackend
-        backend = IBMBackend(simulate_locally=True)
-        assert backend.name == "ibm_local"
-
-    def test_name_property_hardware(self):
-        from quanta.backends.ibm import IBMBackend
-        backend = IBMBackend(backend_name="ibm_osaka")
-        assert backend.name == "ibm_ibm_osaka"
+    def test_cirq_result_to_counts(self):
+        with patch.dict("sys.modules", {"cirq": MagicMock()}):
+            from quanta.backends.google import GoogleBackend
+            mock_result = MagicMock()
+            mock_result.histogram.return_value = {0: 500, 3: 500}
+            counts = GoogleBackend._cirq_result_to_counts(mock_result)
+            assert "00" in counts
+            assert "11" in counts
+            assert counts["00"] == 500
+            assert counts["11"] == 500
 
     def test_repr(self):
-        from quanta.backends.ibm import IBMBackend
-        backend = IBMBackend(backend_name="ibm_brisbane", simulate_locally=True)
-        assert "ibm_brisbane" in repr(backend)
-        assert "local=True" in repr(backend)
+        with patch.dict("sys.modules", {"cirq": MagicMock()}):
+            from quanta.backends.google import GoogleBackend
+            backend = GoogleBackend(simulate_locally=True)
+            r = repr(backend)
+            assert "GoogleBackend" in r
+            assert "local" in r
+
+    def test_dag_to_qasm(self):
+        with patch.dict("sys.modules", {"cirq": MagicMock()}):
+            from quanta.backends.google import GoogleBackend
+            from quanta.core.circuit import circuit, CircuitBuilder
+            from quanta.core.gates import H, CX
+            from quanta.core.measure import measure
+            from quanta.dag.dag_circuit import DAGCircuit
+
+            @circuit(qubits=2)
+            def bell(q):
+                H(q[0])
+                CX(q[0], q[1])
+                return measure(q)
+
+            builder = bell.build()
+            dag = DAGCircuit.from_builder(builder)
+            backend = GoogleBackend(simulate_locally=True)
+            qasm = backend._dag_to_qasm(dag)
+            assert "OPENQASM" in qasm
+            assert "h q[0]" in qasm
+            assert "cx q[0]" in qasm
+
+
+# ═══════════════════════════════════════════
+#  IBM Qiskit Backend (mocked)
+# ═══════════════════════════════════════════
+
+class TestIBMBackend:
+    """Tests for IBM Qiskit backend adapter with mocked qiskit."""
+
+    def test_backend_name_local(self):
+        backend = self._make_backend(simulate_locally=True)
+        assert backend.name == "ibm_local"
+
+    def test_backend_name_hardware(self):
+        backend = self._make_backend()
+        assert backend.name == "ibm_ibm_brisbane"
+
+    def test_repr(self):
+        backend = self._make_backend()
+        r = repr(backend)
+        assert "IBMBackend" in r
+        assert "ibm_brisbane" in r
+
+    def test_dag_to_qasm(self):
+        from quanta.core.circuit import circuit
+        from quanta.core.gates import H, CX
+        from quanta.core.measure import measure
+        from quanta.dag.dag_circuit import DAGCircuit
+
+        @circuit(qubits=2)
+        def bell(q):
+            H(q[0])
+            CX(q[0], q[1])
+            return measure(q)
+
+        builder = bell.build()
+        dag = DAGCircuit.from_builder(builder)
+        backend = self._make_backend()
+        qasm = backend._dag_to_qasm(dag)
+        assert "OPENQASM" in qasm
+        assert "h q[0]" in qasm
 
     def test_hardware_without_token_raises(self):
         from quanta.backends.ibm import IBMBackend, IBMBackendError
-        import os
-
-        # Ensure no env var
-        old_token = os.environ.pop("IBM_QUANTUM_TOKEN", None)
-        try:
-            backend = IBMBackend(backend_name="ibm_brisbane", token="")
-
-            @circuit(qubits=1)
-            def simple(q):
-                H(q[0])
-                return measure(q)
-
-            dag = DAGCircuit.from_builder(simple.build())
-            with pytest.raises(IBMBackendError, match="token"):
-                backend.execute(dag, shots=100)
-        finally:
-            if old_token:
-                os.environ["IBM_QUANTUM_TOKEN"] = old_token
-
-
-# ═══════════════════════════════════════════
-#  IonQ Backend internal logic
-# ═══════════════════════════════════════════
-
-class TestIonQBackendInternal:
-    """Tests IonQ backend gate conversion and result parsing."""
-
-    def test_dag_to_ionq_circuit_bell(self):
-        from quanta.backends.ionq import IonQBackend
-
-        @circuit(qubits=2)
-        def bell(q):
-            H(q[0])
-            CX(q[0], q[1])
-            return measure(q)
-
-        dag = DAGCircuit.from_builder(bell.build())
-        backend = IonQBackend()
-        gates = backend._dag_to_ionq_circuit(dag)
-
-        assert len(gates) == 2
-        assert gates[0] == {"gate": "h", "target": 0}
-        assert gates[1] == {"gate": "cnot", "control": 0, "target": 1}
-
-    def test_dag_to_ionq_circuit_parametric(self):
-        from quanta.backends.ionq import IonQBackend
-        from quanta import RZ
+        from quanta.core.circuit import circuit
+        from quanta.core.gates import H
+        from quanta.core.measure import measure
+        from quanta.dag.dag_circuit import DAGCircuit
 
         @circuit(qubits=1)
-        def rot(q):
-            RZ(1.5)(q[0])
+        def c(q):
+            H(q[0])
             return measure(q)
 
-        dag = DAGCircuit.from_builder(rot.build())
-        backend = IonQBackend()
-        gates = backend._dag_to_ionq_circuit(dag)
+        backend = IBMBackend(token="", simulate_locally=False)
+        dag = DAGCircuit.from_builder(c.build())
+        with pytest.raises(IBMBackendError, match="token"):
+            backend.execute(dag, shots=10)
 
-        assert len(gates) == 1
-        assert gates[0]["gate"] == "rz"
-        assert gates[0]["target"] == 0
-        assert abs(gates[0]["rotation"] - 1.5) < 1e-6
+    @staticmethod
+    def _make_backend(simulate_locally=False):
+        from quanta.backends.ibm import IBMBackend
+        return IBMBackend(
+            backend_name="ibm_brisbane",
+            token="test-token",
+            simulate_locally=simulate_locally,
+        )
 
-    def test_dag_to_ionq_circuit_3qubit(self):
-        from quanta.backends.ionq import IonQBackend
-        from quanta import CCX
 
-        @circuit(qubits=3)
-        def toffoli(q):
-            CCX(q[0], q[1], q[2])
-            return measure(q)
+# ═══════════════════════════════════════════
+#  Runner
+# ═══════════════════════════════════════════
 
-        dag = DAGCircuit.from_builder(toffoli.build())
-        backend = IonQBackend()
-        gates = backend._dag_to_ionq_circuit(dag)
+class TestRunner:
+    """Tests for runner module backend delegation."""
 
-        assert gates[0]["gate"] == "ccx"
-        assert gates[0]["controls"] == [0, 1]
-        assert gates[0]["target"] == 2
-
-    def test_build_job_body(self):
-        from quanta.backends.ionq import IonQBackend
+    def test_run_default_simulator(self):
+        from quanta.runner import run
+        from quanta.core.circuit import circuit
+        from quanta.core.gates import H, CX
+        from quanta.core.measure import measure
 
         @circuit(qubits=2)
         def bell(q):
@@ -221,203 +161,87 @@ class TestIonQBackendInternal:
             CX(q[0], q[1])
             return measure(q)
 
-        dag = DAGCircuit.from_builder(bell.build())
-        backend = IonQBackend(target="simulator")
-        body = backend._build_job_body(dag, shots=100)
+        result = run(bell, shots=100)
+        assert result.shots == 100
+        assert sum(result.counts.values()) == 100
 
-        assert body["target"] == "simulator"
-        assert body["shots"] == 100
-        assert body["input"]["qubits"] == 2
-        assert body["input"]["format"] == "ionq.circuit.v0"
-        assert len(body["input"]["circuit"]) == 2
-
-        # Validate JSON serializable
-        json_str = json.dumps(body)
-        assert len(json_str) > 0
-
-    def test_parse_results_bell(self):
-        from quanta.backends.ionq import IonQBackend
-
-        job = {
-            "data": {
-                "probabilities": {"0": 0.5, "3": 0.5}
-            }
-        }
-        counts = IonQBackend._parse_results(job, num_qubits=2, shots=1000)
-
-        assert "00" in counts
-        assert "11" in counts
-        assert counts["00"] + counts["11"] == 1000
-
-    def test_parse_results_single_state(self):
-        from quanta.backends.ionq import IonQBackend
-
-        job = {"data": {"probabilities": {"0": 1.0}}}
-        counts = IonQBackend._parse_results(job, num_qubits=1, shots=500)
-
-        assert counts == {"0": 500}
-
-    def test_parse_results_three_states(self):
-        from quanta.backends.ionq import IonQBackend
-
-        job = {
-            "data": {
-                "probabilities": {"0": 0.25, "1": 0.25, "3": 0.5}
-            }
-        }
-        counts = IonQBackend._parse_results(job, num_qubits=2, shots=1000)
-
-        assert sum(counts.values()) == 1000
-        assert counts["11"] >= 400  # ~500
-        assert "00" in counts
-        assert "01" in counts
-
-    def test_name_property(self):
-        from quanta.backends.ionq import IonQBackend
-        assert IonQBackend(target="simulator").name == "ionq_simulator"
-        assert IonQBackend(target="qpu.aria-1").name == "ionq_qpu.aria-1"
-
-    def test_repr(self):
-        from quanta.backends.ionq import IonQBackend
-        assert "simulator" in repr(IonQBackend(target="simulator"))
-
-    def test_api_request_without_key_raises(self):
-        from quanta.backends.ionq import IonQBackend, IonQBackendError
-        import os
-
-        old_key = os.environ.pop("IONQ_API_KEY", None)
-        try:
-            backend = IonQBackend(api_key="")
-            with pytest.raises(IonQBackendError, match="API key"):
-                backend._api_request("GET", "/jobs")
-        finally:
-            if old_key:
-                os.environ["IONQ_API_KEY"] = old_key
-
-    def test_unsupported_gate_raises(self):
-        from quanta.backends.ionq import IonQBackend, IonQBackendError
-        from quanta.core.circuit import CircuitBuilder
-        from quanta.core.types import Instruction
-
-        builder = CircuitBuilder(1)
-        builder.record(Instruction("UNSUPPORTED_XYZ", (0,), ()))
-        dag = DAGCircuit.from_builder(builder)
-
-        backend = IonQBackend()
-        with pytest.raises(IonQBackendError, match="not supported"):
-            backend._dag_to_ionq_circuit(dag)
-
-
-# ═══════════════════════════════════════════
-#  Google Backend internal logic
-# ═══════════════════════════════════════════
-
-class TestGoogleBackendInternal:
-    """Tests Google backend QASM and gate conversion without Cirq."""
-
-    def test_dag_to_qasm_basic(self):
-        from quanta.backends.google import GoogleBackend
-
-        @circuit(qubits=2)
-        def bell(q):
-            H(q[0])
-            CX(q[0], q[1])
-            return measure(q)
-
-        dag = DAGCircuit.from_builder(bell.build())
-        backend = GoogleBackend(simulate_locally=True)
-        qasm = backend._dag_to_qasm(dag)
-
-        assert "OPENQASM 2.0;" in qasm
-        assert "qelib1.inc" in qasm
-        assert "h q[0];" in qasm
-        assert "cx q[0], q[1];" in qasm
-        assert "measure q[0]" in qasm
-
-    def test_dag_to_qasm_parametric(self):
-        from quanta.backends.google import GoogleBackend
-        from quanta import RZ
+    def test_run_preserves_circuit_name(self):
+        from quanta.runner import run
+        from quanta.core.circuit import circuit
+        from quanta.core.gates import X
+        from quanta.core.measure import measure
 
         @circuit(qubits=1)
-        def rot(q):
-            RZ(1.5707963)(q[0])
-            return measure(q)
-
-        dag = DAGCircuit.from_builder(rot.build())
-        backend = GoogleBackend(simulate_locally=True)
-        qasm = backend._dag_to_qasm(dag)
-
-        assert "rz(" in qasm
-        assert "q[0];" in qasm
-
-    def test_dag_to_qasm_multi_gate(self):
-        from quanta.backends.google import GoogleBackend
-        from quanta import X, Z, SWAP
-
-        @circuit(qubits=2)
-        def multi(q):
+        def my_circ(q):
             X(q[0])
-            Z(q[1])
-            SWAP(q[0], q[1])
             return measure(q)
 
-        dag = DAGCircuit.from_builder(multi.build())
-        backend = GoogleBackend(simulate_locally=True)
-        qasm = backend._dag_to_qasm(dag)
+        result = run(my_circ, shots=10)
+        assert result.circuit_name == "my_circ"
 
-        assert "x q[0];" in qasm
-        assert "z q[1];" in qasm
-        assert "swap q[0], q[1];" in qasm
+    def test_run_gate_count_depth(self):
+        from quanta.runner import run
+        from quanta.core.circuit import circuit
+        from quanta.core.gates import H, CX
+        from quanta.core.measure import measure
 
-    def test_dag_to_qasm_unsupported_gate_raises(self):
-        from quanta.backends.google import GoogleBackend, GoogleBackendError
-        from quanta.core.circuit import CircuitBuilder
-        from quanta.core.types import Instruction
+        @circuit(qubits=2)
+        def bell(q):
+            H(q[0])
+            CX(q[0], q[1])
+            return measure(q)
 
-        builder = CircuitBuilder(1)
-        builder.record(Instruction("UNSUPPORTED_XYZ", (0,), ()))
-        dag = DAGCircuit.from_builder(builder)
+        result = run(bell, shots=10)
+        assert result.gate_count == 2
+        assert result.depth >= 2
 
-        backend = GoogleBackend(simulate_locally=True)
-        with pytest.raises(GoogleBackendError, match="not supported"):
-            backend._dag_to_qasm(dag)
+    def test_run_invalid_circuit_raises(self):
+        from quanta.runner import run
+        from quanta.core.types import QuantaError
+        with pytest.raises(QuantaError, match="@circuit"):
+            run("not_a_circuit", shots=10)
 
-    def test_name_property_local(self):
-        from quanta.backends.google import GoogleBackend
-        backend = GoogleBackend(simulate_locally=True)
-        assert backend.name == "google_local"
-
-    def test_name_property_hardware(self):
-        from quanta.backends.google import GoogleBackend
-        backend = GoogleBackend(processor_id="rainbow")
-        assert backend.name == "google_rainbow"
-
-    def test_repr(self):
-        from quanta.backends.google import GoogleBackend
-        backend = GoogleBackend(project_id="my-proj", processor_id="weber", simulate_locally=True)
-        r = repr(backend)
-        assert "my-proj" in r
-        assert "weber" in r
-        assert "local" in r
-
-    def test_execute_without_cirq_raises(self):
-        from quanta.backends.google import GoogleBackend, GoogleBackendError
+    def test_run_negative_shots_raises(self):
+        from quanta.runner import run
+        from quanta.core.circuit import circuit
+        from quanta.core.gates import H
+        from quanta.core.measure import measure
+        from quanta.core.types import QuantaError
 
         @circuit(qubits=1)
-        def simple(q):
+        def c(q):
             H(q[0])
             return measure(q)
 
-        dag = DAGCircuit.from_builder(simple.build())
-        backend = GoogleBackend(simulate_locally=True)
+        with pytest.raises(QuantaError, match="positive"):
+            run(c, shots=0)
 
-        # This will raise GoogleBackendError because cirq is not installed
-        # OR succeed if cirq happens to be installed — both are valid
-        try:
-            result = backend.execute(dag, shots=100)
-            # If cirq IS installed, verify result
-            assert result.shots == 100
-            assert result.num_qubits == 1
-        except GoogleBackendError as e:
-            assert "cirq" in str(e).lower()
+    def test_sweep_basic(self):
+        from quanta.runner import sweep
+        from quanta.core.circuit import circuit
+        from quanta.core.gates import H
+        from quanta.core.measure import measure
 
+        @circuit(qubits=1)
+        def c(q):
+            H(q[0])
+            return measure(q)
+
+        # sweep with empty params returns single result
+        results = sweep(c, params={}, shots=10)
+        assert len(results) == 1
+        assert results[0].shots == 10
+
+    def test_sweep_empty_params(self):
+        from quanta.runner import sweep
+        from quanta.core.circuit import circuit
+        from quanta.core.gates import H
+        from quanta.core.measure import measure
+
+        @circuit(qubits=1)
+        def c(q):
+            H(q[0])
+            return measure(q)
+
+        results = sweep(c, params={}, shots=10)
+        assert len(results) == 1

@@ -16,8 +16,8 @@ Example:
 
 from __future__ import annotations
 
-import functools
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from quanta.core.types import (
     CircuitError,
@@ -87,7 +87,7 @@ class CircuitDefinition:
 
 
     Attributes:
-        name: Circuit fonksiyonunun ismi.
+        name: Circuit function name.
     """
 
     def __init__(self, fn: Callable, num_qubits: int) -> None:
@@ -103,7 +103,7 @@ class CircuitDefinition:
         Returns:
 
         Raises:
-            CircuitError: Circuit fonksiyonu hata verirse.
+            CircuitError: If the circuit function raises.
         """
         builder = CircuitBuilder(self.num_qubits)
         register = QubitRegister(self.num_qubits)

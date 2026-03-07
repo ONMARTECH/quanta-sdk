@@ -18,7 +18,8 @@ Running:
 """
 
 import numpy as np
-from quanta import circuit, H, X, measure, run
+
+from quanta import H, X, circuit, measure, run
 
 
 def bb84_protocol(

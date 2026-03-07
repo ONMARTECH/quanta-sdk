@@ -18,10 +18,9 @@ Example:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
 
 from quanta.core.circuit import CircuitDefinition, circuit
-from quanta.core.gates import H, X, CX, CCX
+from quanta.core.gates import CX, H
 from quanta.core.measure import measure
 
 # ── Public API ──
@@ -99,10 +98,10 @@ class BitFlipCode(QECCode):
         q[0-2]: Kod qubit'leri
         q[3-4]: Sendrom qubit'leri
 
-          00 → hata yok
-          01 → q[2]'de hata
-          10 → q[1]'de hata
-          11 → q[0]'da hata
+          00 → no error
+          01 → error on q[2]
+          10 → error on q[1]
+          11 → error on q[0]
         """
         @circuit(qubits=5)
         def syndrome_bitflip(q):

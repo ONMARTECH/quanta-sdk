@@ -25,14 +25,12 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 
-import numpy as np
-
-from quanta.core.circuit import CircuitBuilder
-from quanta.core.types import Instruction, MeasureSpec
-from quanta.dag.dag_circuit import DAGCircuit
 from quanta.compiler.pipeline import CompilerPipeline
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.core.circuit import CircuitBuilder
+from quanta.core.types import Instruction
+from quanta.dag.dag_circuit import DAGCircuit
 from quanta.export.qasm_import import from_qasm
+from quanta.simulator.statevector import StateVectorSimulator
 
 __all__ = ["QuantaBenchpressBackend"]
 

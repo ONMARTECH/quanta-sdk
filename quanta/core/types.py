@@ -18,11 +18,12 @@ Example:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Iterator
+from collections.abc import Iterator
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from quanta.core.gates import Gate
+    pass
 
 # -- Public API --
 __all__ = [

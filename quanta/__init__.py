@@ -20,14 +20,24 @@ Quick Start:
 __version__ = "0.6.0"
 
 # -- Core API --
-from quanta.core.gates import (
-    H, X, Y, Z, S, T,
-    CX, CZ, SWAP, CCX,
-    RX, RY, RZ,
-)
 from quanta.core.circuit import circuit
-from quanta.core.measure import measure
 from quanta.core.custom_gate import custom_gate
+from quanta.core.gates import (
+    CCX,
+    CX,
+    CZ,
+    RX,
+    RY,
+    RZ,
+    SWAP,
+    H,
+    S,
+    T,
+    X,
+    Y,
+    Z,
+)
+from quanta.core.measure import measure
 from quanta.runner import run, sweep
 
 __all__ = [

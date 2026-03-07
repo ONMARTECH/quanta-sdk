@@ -1,6 +1,6 @@
 """
 
-  - Bir ismi (name)
+  - A name (name)
   - Unitär matris temsili (matrix)
 
 

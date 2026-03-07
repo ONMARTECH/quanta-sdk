@@ -173,7 +173,9 @@ class ColorCode:
             f"Color Code {self.code_params}\n"
             f"  Data qubits:     {self.n_data}\n"
             f"  Plaquettes:      {len(self.plaquettes)}\n"
-            f"  Stabilizers:     {self.n_stabilizers} ({len(self.plaquettes)} X + {len(self.plaquettes)} Z)\n"
+            f"  Stabilizers:     {self.n_stabilizers} "
+            f"({len(self.plaquettes)} X "
+            f"+ {len(self.plaquettes)} Z)\n"
             f"  Correctable:     {self.correctable_errors} error(s)\n"
             f"  Transversal:     H, S, CX (advantage over surface code)"
         )

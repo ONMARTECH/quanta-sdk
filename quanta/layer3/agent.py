@@ -19,7 +19,6 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from quanta.result import Result
 from quanta.simulator.statevector import StateVectorSimulator
 
 # ── Public API ──
@@ -31,7 +30,7 @@ class Agent:
 
 
     Attributes:
-        name: Ajan ismi (benzersiz).
+        name: Agent name (unique).
     """
 
     name: str
@@ -159,7 +158,7 @@ class AgentResult:
         """Marginal probabilities for a single agent.
 
         Args:
-            agent_name: Ajan ismi.
+            agent_name: Agent name.
 
         Returns:
         """

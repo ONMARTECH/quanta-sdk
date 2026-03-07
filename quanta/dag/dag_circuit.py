@@ -18,14 +18,14 @@ from __future__ import annotations
 from collections import defaultdict
 
 from quanta.core.circuit import CircuitBuilder
-from quanta.core.types import Instruction, MeasureSpec
+from quanta.core.types import MeasureSpec
 from quanta.dag.node import DAGNode, InputNode, OpNode, OutputNode
 
 # ── Public API ──
 __all__ = ["DAGCircuit"]
 
 class DAGCircuit:
-    """Kuantum devresinin DAG temsili.
+    """DAG representation of a quantum circuit.
 
 
     Attributes:

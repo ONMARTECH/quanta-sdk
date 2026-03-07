@@ -133,8 +133,8 @@ class RouteToTopology(CompilerPass):
         l2p = list(range(n))  # logical qubit i -> physical qubit l2p[i]
         p2l = list(range(n))  # physical qubit i -> logical qubit p2l[i]
 
-        from quanta.core.types import Instruction, MeasureSpec
         from quanta.core.circuit import CircuitBuilder
+        from quanta.core.types import Instruction
 
         builder = CircuitBuilder(n)
 

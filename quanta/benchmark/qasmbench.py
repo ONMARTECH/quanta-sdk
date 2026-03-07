@@ -22,11 +22,8 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 
-import numpy as np
-
-from quanta.export.qasm_import import from_qasm
-from quanta.export.qasm import to_qasm
 from quanta.compiler.pipeline import CompilerPipeline
+from quanta.export.qasm_import import from_qasm
 from quanta.simulator.statevector import StateVectorSimulator
 
 __all__ = ["run_qasmbench", "QASMBenchResult"]
@@ -457,7 +454,7 @@ def run_qasmbench(circuits: dict | None = None) -> QASMBenchResult:
         t0 = time.perf_counter()
         try:
             dag = from_qasm(qasm)
-        except Exception as e:
+        except Exception:
             result.circuits.append(CircuitBenchmark(
                 name=name, category=category, num_qubits=spec["qubits"],
                 original_gates=0, original_depth=0,

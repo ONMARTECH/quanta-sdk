@@ -9,7 +9,8 @@ Running:
 """
 
 import numpy as np
-from quanta import circuit, H, X, CX, CZ, RZ, measure, run, custom_gate
+
+from quanta import CX, H, circuit, custom_gate, measure, run
 from quanta.visualize import draw
 
 
@@ -44,8 +45,8 @@ def main():
 
     # ── 3. Molecular Energy (VQE) ──
     print("\n▸ 3. Molecular Simulation (H2 Ground State)")
-    from quanta.layer3.vqe import vqe, build_hamiltonian_matrix
     from quanta.layer3.hamiltonian import molecular_hamiltonian
+    from quanta.layer3.vqe import build_hamiltonian_matrix, vqe
 
     h2 = molecular_hamiltonian("H2")
     vqe_result = vqe(
@@ -78,7 +79,7 @@ def main():
     print("\n▸ 5. Quantum Search (Grover)")
     from quanta.layer3.search import search
     grover = search(num_bits=4, target=11, shots=1024, seed=42)
-    print(f"  Target: 11 (|1011>)")
+    print("  Target: 11 (|1011>)")
     print(f"  Found:  {grover.most_frequent} "
           f"(prob: {grover.probabilities.get(grover.most_frequent, 0):.0%})")
 
@@ -113,9 +114,9 @@ def main():
 
     # ── Stats ──
     print("\n" + "═" * 55)
-    print(f"  Quanta SDK v0.4.0 — All features verified ✅")
-    print(f"  Layers: Core + DAG + Compiler + Simulator + Layer3")
-    print(f"  Backends: NumPy (JAX/CuPy auto-detect for GPU)")
+    print("  Quanta SDK v0.4.0 — All features verified ✅")
+    print("  Layers: Core + DAG + Compiler + Simulator + Layer3")
+    print("  Backends: NumPy (JAX/CuPy auto-detect for GPU)")
     print("═" * 55)
 
 

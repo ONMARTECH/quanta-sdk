@@ -11,7 +11,7 @@ Example:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -33,7 +33,7 @@ class NoiseChannel(ABC):
         """Applies noise to the statevector.
 
         Args:
-            qubit: Hedef qubit indeksi.
+            qubit: Target qubit index.
             num_qubits: Total qubit count.
 
         Returns:
@@ -43,7 +43,7 @@ class NoiseChannel(ABC):
     @property
     @abstractmethod
     def name(self) -> str:
-        """Kanal ismi."""
+        """Channel name."""
         ...
 
 @dataclass
@@ -64,7 +64,7 @@ class Depolarizing(NoiseChannel):
         self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
     ) -> np.ndarray:
         if rng.random() > self.probability:
-            return state  # Hata yok
+            return state  # No error
 
         pauli = rng.integers(0, 3)
         return _apply_single_qubit_error(state, qubit, num_qubits, pauli)
@@ -137,7 +137,7 @@ class AmplitudeDamping(NoiseChannel):
                     new_state[j] += new_state[i]
                     new_state[i] = 0
 
-        # Normalize et / Normalize
+        # Normalize
         norm = np.linalg.norm(new_state)
         if norm > 1e-15:
             new_state /= norm
@@ -158,7 +158,7 @@ class NoiseModel:
         self._channels: list[NoiseChannel] = []
 
     def add(self, channel: NoiseChannel) -> NoiseModel:
-        """Kanal ekler. Zincirleme API."""
+        """Adds a channel. Chainable API."""
         self._channels.append(channel)
         return self
 
@@ -188,14 +188,13 @@ def _apply_single_qubit_error(
 
     for i in range(dim):
         bit = (i >> (n - 1 - qubit)) & 1
-        j = i ^ (1 << (n - 1 - qubit))  # bit-flip indeksi
+        j = i ^ (1 << (n - 1 - qubit))  # bit-flip index
 
         if pauli == 0:    # X: bit flip
             new_state[i], new_state[j] = state[j], state[i]
         elif pauli == 1:  # Y: bit flip + phase
             new_state[i] = 1j * state[j] if bit == 0 else -1j * state[j]
-        elif pauli == 2:  # Z: phase flip
-            if bit == 1:
-                new_state[i] = -state[i]
+        elif pauli == 2 and bit == 1:  # Z: phase flip
+            new_state[i] = -state[i]
 
     return new_state

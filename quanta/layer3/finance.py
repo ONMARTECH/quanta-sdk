@@ -203,8 +203,8 @@ def portfolio_optimize(
         sim.apply("RZ", (q + 1,), (angle,))
         sim.apply("CX", (q, q + 1))
 
-    # Sample
-    counts = sim.sample(shots)
+    # Sample (quantum measurement for QAOA-style hints)
+    sim.sample(shots)
 
     # Find best portfolio (combining quantum hints with exact evaluation)
     # Sort by objective

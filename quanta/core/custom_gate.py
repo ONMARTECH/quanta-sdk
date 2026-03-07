@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from quanta.core.gates import Gate, GATE_REGISTRY
+from quanta.core.gates import GATE_REGISTRY, Gate
 from quanta.core.types import QuantaError
 
 __all__ = ["custom_gate"]

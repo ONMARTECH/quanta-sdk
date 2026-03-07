@@ -12,8 +12,9 @@ Running:
 """
 
 import numpy as np
+
+from quanta.layer3.hamiltonian import evolve, molecular_hamiltonian
 from quanta.layer3.vqe import vqe
-from quanta.layer3.hamiltonian import molecular_hamiltonian, evolve
 
 
 def demo_h2_vqe():

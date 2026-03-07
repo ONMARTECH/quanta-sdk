@@ -8,10 +8,10 @@
     q[1]: ──H──[Oracle]──[Diffusion]──M──
 """
 
-import numpy as np
 
-from quanta import circuit, H, X, Z, CX, CZ, measure, run
+from quanta import CZ, H, X, circuit, measure, run
 from quanta.visualize import draw
+
 
 @circuit(qubits=2)
 def grover_2qubit(q):

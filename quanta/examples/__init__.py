@@ -9,8 +9,7 @@ Lists available examples for discoverability:
 
 from __future__ import annotations
 
-import importlib
-from pathlib import Path
+
 
 __all__ = ["list_examples", "EXAMPLES"]
 

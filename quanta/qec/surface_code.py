@@ -132,7 +132,6 @@ class SurfaceCode:
             SurfaceCodeResult with error rates and statistics.
         """
         rng = np.random.default_rng(seed)
-        d = self.distance
         n = self.n_physical
         t = self.correctable_errors
 

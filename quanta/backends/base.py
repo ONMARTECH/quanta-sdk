@@ -27,13 +27,13 @@ class Backend(ABC):
     """Abstract interface for quantum execution backends.
 
 
-        - name: Backend ismi (property)
+        - name: Backend name (property)
     """
 
     @property
     @abstractmethod
     def name(self) -> str:
-        """Backend'in insan-okunabilir ismi."""
+        """Human-readable backend name."""
         ...
 
     @abstractmethod

@@ -32,7 +32,7 @@ GATE_SETS: dict[str, frozenset[str]] = {
     "universal":  frozenset({"CX", "RZ", "RY", "H", "X", "I"}),
 }
 
-# Her kural: (gate_name, qubit_offset, params)
+# Each rule: (gate_name, qubit_offset, params)
 _DECOMPOSITION_RULES: dict[str, list[tuple[str, list[int], tuple[float, ...]]]] = {
     # H = RZ(π) · RY(π/2) = RZ(π) RY(π/2)
     "H": [
@@ -51,11 +51,11 @@ _DECOMPOSITION_RULES: dict[str, list[tuple[str, list[int], tuple[float, ...]]]] 
     "Z": [
         ("RZ", [0], (np.pi,)),
     ],
-    # Y = RY(π) (global faza kadar)
+    # Y = RY(π) (up to global phase)
     "Y": [
         ("RY", [0], (np.pi,)),
     ],
-    # X = RX(π) (global faza kadar)
+    # X = RX(π) (up to global phase)
     "X": [
         ("RX", [0], (np.pi,)),
     ],
@@ -65,13 +65,13 @@ _DECOMPOSITION_RULES: dict[str, list[tuple[str, list[int], tuple[float, ...]]]] 
         ("CX", [1, 0], ()),
         ("CX", [0, 1], ()),
     ],
-    # CZ = H·CX·H (hedef qubit'e)
+    # CZ = H·CX·H (on target qubit)
     "CZ": [
         ("H", [1], ()),
         ("CX", [0, 1], ()),
         ("H", [1], ()),
     ],
-    # CY = S†·CX·S (hedef qubit'e)
+    # CY = S†·CX·S (on target qubit)
     "CY": [
         ("RZ", [1], (-np.pi / 2,)),
         ("CX", [0, 1], ()),
@@ -97,11 +97,10 @@ _DECOMPOSITION_RULES: dict[str, list[tuple[str, list[int], tuple[float, ...]]]] 
 }
 
 class TranslateToTarget:
-    """Circuityi hedef gate set'e transpile eder.
-
+    """Transpiles a circuit to a target gate set.
 
     Args:
-        target_gates: Hedef gate set ismi ("ibm", "google") veya set.
+        target_gates: Target gate set name ("ibm", "google") or set.
     """
 
     name = "TranslateToTarget"
@@ -110,8 +109,8 @@ class TranslateToTarget:
         if isinstance(target_gates, str):
             if target_gates not in GATE_SETS:
                 raise ValueError(
-                    f"Bilinmeyen gate set: {target_gates}. "
-                    f"Bilinen: {list(GATE_SETS.keys())}"
+                    f"Unknown gate set: {target_gates}. "
+                    f"Known: {list(GATE_SETS.keys())}"
                 )
             self._target = GATE_SETS[target_gates]
         else:
@@ -128,15 +127,13 @@ class TranslateToTarget:
         needs_translation = any(op.gate_name not in self._target for op in ops)
 
         if not needs_translation:
-            return dag  # Zaten hedef sette
+            return dag  # Already in target set
 
         builder = CircuitBuilder(dag.num_qubits)
         builder.measurement = dag.measurement
 
         for op in ops:
             if op.gate_name in self._target:
-                builder.record(Instruction(op.gate_name, op.qubits, op.params))
-            elif op.gate_name in ("RX", "RY", "RZ") and op.gate_name in self._target:
                 builder.record(Instruction(op.gate_name, op.qubits, op.params))
             elif op.gate_name in _DECOMPOSITION_RULES:
                 # Decompose

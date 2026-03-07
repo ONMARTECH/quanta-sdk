@@ -22,8 +22,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from quanta.simulator.statevector import StateVectorSimulator
-
 __all__ = [
     "evolve", "molecular_hamiltonian", "EvolutionResult",
     "HamiltonianSpec",
@@ -210,7 +208,7 @@ def evolve(
 
     energy_history = []
 
-    for step in range(steps):
+    for _step in range(steps):
         energy = float(np.real(state.conj() @ H_mat @ state))
         energy_history.append(energy)
         state = U_step @ state

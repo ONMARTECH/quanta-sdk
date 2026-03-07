@@ -8,8 +8,9 @@ Bir fonksiyonun "sabit" mi (hep 0 veya hep 1) yoksa
 
 """
 
-from quanta import circuit, H, X, CX, measure, run
+from quanta import CX, H, X, circuit, measure, run
 from quanta.visualize import draw
+
 
 @circuit(qubits=3)
 def deutsch_jozsa_balanced(q):

@@ -64,7 +64,11 @@ def to_qasm(circuit: CircuitDefinition) -> str:
 
     has_measure = builder.measurement is not None
     if has_measure:
-        measured = builder.measurement.qubits if builder.measurement.qubits else tuple(range(dag.num_qubits))
+        measured = (
+            builder.measurement.qubits
+            if builder.measurement.qubits
+            else tuple(range(dag.num_qubits))
+        )
         lines.append(f"bit[{len(measured)}] c;")
 
     lines.append("")
@@ -75,7 +79,11 @@ def to_qasm(circuit: CircuitDefinition) -> str:
 
     if has_measure:
         lines.append("")
-        measured = builder.measurement.qubits if builder.measurement.qubits else tuple(range(dag.num_qubits))
+        measured = (
+            builder.measurement.qubits
+            if builder.measurement.qubits
+            else tuple(range(dag.num_qubits))
+        )
         for i, q in enumerate(measured):
             lines.append(f"c[{i}] = measure q[{q}];")
 

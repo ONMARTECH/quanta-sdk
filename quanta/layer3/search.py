@@ -1,14 +1,13 @@
 """
 quanta.layer3.search — Declarative quantum search.
 
-
-Gate bilgisi GEREKMEZ. Kuantuma tam soyutlama.
+No gate knowledge needed. Full quantum abstraction.
 
 Example:
     >>> from quanta.layer3.search import search
     >>> result = search(
     ...     num_bits=3,
-    ...     target=lambda x: x == 5,   # |101⟩'i bul
+    ...     target=lambda x: x == 5,   # find |101⟩
     ...     shots=1024,
     ... )
     >>> print(result.most_frequent)
@@ -19,13 +18,10 @@ Example:
 from __future__ import annotations
 
 import math
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 
-from quanta.core.circuit import CircuitBuilder, CircuitDefinition
-from quanta.core.types import Instruction, MeasureSpec, QubitRegister
-from quanta.dag.dag_circuit import DAGCircuit
 from quanta.result import Result
 from quanta.simulator.statevector import StateVectorSimulator
 
@@ -47,7 +43,7 @@ def search(
     Returns:
 
     Raises:
-        ValueError: num_bits < 1 veya hedef bulunamazsa.
+        ValueError: If num_bits < 1 or no target found.
 
     Example:
         >>> result.most_frequent
@@ -99,7 +95,7 @@ def _find_targets(num_bits: int, check: Callable[[int], bool]) -> list[int]:
     return [i for i in range(2 ** num_bits) if check(i)]
 
 def _apply_oracle(sim: StateVectorSimulator, n: int, targets: list[int]) -> None:
-    """Oracle: Hedef durumlara -1 faz uygular.
+    """Oracle: Applies -1 phase to target states.
 
     """
     for t in targets:

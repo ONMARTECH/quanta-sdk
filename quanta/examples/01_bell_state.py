@@ -10,8 +10,9 @@ Circuit:
     q[1]: ─────X──M──
 """
 
-from quanta import circuit, H, CX, measure, run
+from quanta import CX, H, circuit, measure, run
 from quanta.visualize import draw
+
 
 @circuit(qubits=2)
 def bell_state(q):

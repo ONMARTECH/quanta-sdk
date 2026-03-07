@@ -26,8 +26,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from quanta.simulator.statevector import StateVectorSimulator
-
 __all__ = ["factor", "ShorResult"]
 
 
@@ -57,8 +55,10 @@ class ShorResult:
     def summary(self) -> str:
         lines = [
             "╔══════════════════════════════════════╗",
-            f"║  Shor's Algorithm: {self.N} = {self.factors[0]} × {self.factors[1]}"
-            + " " * max(0, 15 - len(str(self.N)) - len(str(self.factors[0])) - len(str(self.factors[1]))) + "║",
+            f"║  Shor: {self.N} = {self.factors[0]} × {self.factors[1]}"
+            + " " * max(0, 22 - len(str(self.N))
+                       - len(str(self.factors[0]))
+                       - len(str(self.factors[1]))) + "║",
             "╠══════════════════════════════════════╣",
             f"║  Period found: {self.period:<22}║",
             f"║  Attempts:     {self.attempts:<22}║",
@@ -138,7 +138,6 @@ def _continued_fraction_period(phase: float, N: int) -> int:
         return 1
 
     # Continued fraction expansion
-    max_denom = N
     best_r = 1
 
     # Simple convergents

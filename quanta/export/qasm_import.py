@@ -132,7 +132,7 @@ def from_qasm(qasm_str: str) -> DAGCircuit:
 
 def from_qasm_file(filepath: str) -> DAGCircuit:
     """Loads a QASM file and returns a DAGCircuit."""
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         return from_qasm(f.read())
 
 

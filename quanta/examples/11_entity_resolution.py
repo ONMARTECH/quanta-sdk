@@ -18,8 +18,7 @@ Running:
     python -m quanta.examples.11_entity_resolution
 """
 
-from quanta.layer3.entity_resolution import resolve, compute_similarity
-
+from quanta.layer3.entity_resolution import resolve
 
 # ── 25 OTA customer records (8 columns each) ──
 # Intentional duplicates, typos, missing data, Turkish chars

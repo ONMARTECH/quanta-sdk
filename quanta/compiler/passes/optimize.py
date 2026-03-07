@@ -9,8 +9,6 @@ Example:
 
 from __future__ import annotations
 
-from collections import defaultdict
-
 from quanta.core.types import Instruction
 from quanta.dag.dag_circuit import DAGCircuit
 from quanta.dag.node import OpNode

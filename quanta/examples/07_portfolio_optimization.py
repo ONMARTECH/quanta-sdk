@@ -12,7 +12,6 @@ Running:
     python -m quanta.examples.07_portfolio_optimization
 """
 
-import numpy as np
 from quanta.layer3.finance import portfolio_optimize
 
 

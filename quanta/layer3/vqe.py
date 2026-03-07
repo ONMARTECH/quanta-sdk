@@ -22,9 +22,6 @@ from __future__ import annotations
 
 import numpy as np
 
-from quanta.core.circuit import CircuitDefinition, circuit, CircuitBuilder
-from quanta.core.gates import H, RX, RY, RZ, CX, GATE_REGISTRY
-from quanta.core.measure import measure
 from quanta.simulator.statevector import StateVectorSimulator
 
 __all__ = ["vqe", "VQEResult"]
@@ -131,7 +128,7 @@ def _build_ansatz_state(
     sim = StateVectorSimulator(num_qubits)
     idx = 0
 
-    for layer in range(layers):
+    for _layer in range(layers):
         # Rotation layer
         for q in range(num_qubits):
             sim.apply("RY", (q,), (params[idx],))
@@ -180,9 +177,8 @@ def vqe(
     # Build Hamiltonian matrix
     H_mat = build_hamiltonian_matrix(hamiltonian, num_qubits)
 
-    # Exact ground state (for validation)
-    eigenvalues = np.linalg.eigvalsh(H_mat)
-    exact_ground = float(eigenvalues[0])
+    # Exact ground state energy = min(eigenvalues) — used for validation
+    _ = np.linalg.eigvalsh(H_mat)  # noqa: F841 — kept for doc reference
 
     # Number of parameters: 2 * num_qubits * layers (RY + RZ per qubit per layer)
     num_params = 2 * num_qubits * layers

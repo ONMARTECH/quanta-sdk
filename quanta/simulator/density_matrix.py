@@ -101,13 +101,13 @@ class DensityMatrixSimulator:
         if p <= 0:
             return
 
-        I = np.eye(2, dtype=complex)
+        eye = np.eye(2, dtype=complex)
         X = np.array([[0, 1], [1, 0]], dtype=complex)
         Y = np.array([[0, -1j], [1j, 0]], dtype=complex)
         Z = np.array([[1, 0], [0, -1]], dtype=complex)
 
         kraus = [
-            np.sqrt(1 - p) * I,
+            np.sqrt(1 - p) * eye,
             np.sqrt(p / 3) * X,
             np.sqrt(p / 3) * Y,
             np.sqrt(p / 3) * Z,
@@ -127,7 +127,6 @@ class DensityMatrixSimulator:
         gate_tensor = gate.reshape([2] * (2 * num_gate_qubits))
 
         # Build identity in tensor form, then contract
-        result = np.eye(dim, dtype=complex)
         full = np.zeros((dim, dim), dtype=complex)
 
         for i in range(dim):

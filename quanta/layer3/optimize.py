@@ -1,25 +1,26 @@
 """
 quanta.layer3.optimize — Declarative quantum optimization.
 
-Kombinasyonel optimization problemlerini QAOA (Quantum Approximate
+Solves combinatorial optimization problems using QAOA (Quantum Approximate
+Optimization Algorithm).
 
 Example:
     >>> from quanta.layer3.optimize import optimize
     >>> result = optimize(
     ...     num_bits=3,
-    ...     cost=lambda x: bin(x ^ (x >> 1)).count('1'),  # kesim maliyeti
-    ...     minimize=False,  # maximize et
+    ...     cost=lambda x: bin(x ^ (x >> 1)).count('1'),  # cut cost
+    ...     minimize=False,  # maximize
     ... )
-    >>> print(f"En iyi: {result.best_bitstring} (maliyet: {result.best_cost})")
+    >>> print(f"Best: {result.best_bitstring} (cost: {result.best_cost})")
 
-Arka planda:
-  1. Maliyet fonksiyonunu analiz et
+Behind the scenes:
+  1. Analyze cost function
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 import numpy as np
 
@@ -31,10 +32,10 @@ __all__ = ["optimize", "OptimizationResult"]
 
 @dataclass
 class OptimizationResult:
-    """Optimizasyon sonucu.
+    """Optimization result.
 
     Attributes:
-        quantum_result: Ham kuantum measurement results.
+        quantum_result: Raw quantum measurement results.
     """
 
     best_bitstring: str
@@ -44,12 +45,12 @@ class OptimizationResult:
 
     def summary(self) -> str:
         lines = [
-            "╔═══ Optimizasyon Sonucu ═══",
-            f"║ Maliyet: {self.best_cost}",
+            "╔═══ Optimization Result ═══",
+            f"║ Cost: {self.best_cost}",
         ]
         for bits, cost, prob in self.all_solutions[:5]:
             bar = "█" * int(prob * 30)
-            lines.append(f"║ |{bits}⟩  maliyet={cost:.2f}  P={prob:.3f}  {bar}")
+            lines.append(f"║ |{bits}⟩  cost={cost:.2f}  P={prob:.3f}  {bar}")
         lines.append("╚" + "═" * 40)
         return "\n".join(lines)
 
@@ -63,11 +64,11 @@ def optimize(
 ) -> OptimizationResult:
     """Quantum optimization — QAOA based.
 
-    Maliyet fonksiyonunu minimize veya maximize eden bit dizisini bulur.
+    Finds the bitstring that minimizes or maximizes the cost function.
 
     Args:
-        cost: Maliyet fonksiyonu. int → float.
-        minimize: True ise minimize, False ise maximize.
+        cost: Cost function. int → float.
+        minimize: True to minimize, False to maximize.
         seed: Random seed.
 
     Returns:

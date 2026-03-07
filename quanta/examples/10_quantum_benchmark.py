@@ -21,6 +21,7 @@ Running:
 """
 
 import time
+
 import numpy as np
 
 PASS = "✅ PASS"
@@ -29,7 +30,7 @@ FAIL = "❌ FAIL"
 
 def test_bell_fidelity() -> tuple[bool, str]:
     """Test 1: Bell state has perfect entanglement (F = 1.0)."""
-    from quanta import circuit, H, CX, measure, run
+    from quanta import CX, H, circuit, measure, run
 
     @circuit(qubits=2)
     def bell(q):
@@ -133,8 +134,8 @@ def test_grover_amplification() -> tuple[bool, str]:
 
 def test_vqe_convergence() -> tuple[bool, str]:
     """Test 5: VQE converges to H2 ground state energy."""
-    from quanta.layer3.vqe import vqe, build_hamiltonian_matrix
     from quanta.layer3.hamiltonian import molecular_hamiltonian
+    from quanta.layer3.vqe import build_hamiltonian_matrix, vqe
 
     h2 = molecular_hamiltonian("H2")
     result = vqe(

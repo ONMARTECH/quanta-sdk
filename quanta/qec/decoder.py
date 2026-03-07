@@ -142,7 +142,7 @@ class MWPMDecoder:
                 edges.append((dist[i, j], i, j))
         edges.sort()
 
-        for w, i, j in edges:
+        for _w, i, j in edges:
             if i not in matched and j not in matched:
                 pairs.append((i, j))
                 matched.add(i)

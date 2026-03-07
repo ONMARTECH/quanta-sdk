@@ -218,7 +218,7 @@ class GoogleBackend(Backend):
         """Converts Cirq Result to measurement counts dict."""
         try:
             hist = result.histogram(key="result")
-            n_qubits = max(1, max(v.bit_length() for v in hist.keys()) if hist else 1)
+            n_qubits = max(1, max(v.bit_length() for v in hist) if hist else 1)
             return {format(k, f"0{n_qubits}b"): v for k, v in hist.items()}
         except Exception:
             data = result.data
