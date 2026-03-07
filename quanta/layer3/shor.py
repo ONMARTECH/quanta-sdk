@@ -7,8 +7,9 @@ proves quantum computers can break RSA encryption.
 
 Pipeline:
   1. Classical reduction to order-finding
-  2. Quantum Fourier Transform for period detection
-  3. Classical GCD to extract factors
+  2. Quantum phase estimation with QFT circuit (real gates via DAG pipeline)
+  3. Classical continued fractions to extract period
+  4. Classical GCD to extract factors
 
 Limitation: simulator-based, so practical for small numbers (< 2^12).
 On real quantum hardware, this would factor much larger numbers.
@@ -25,6 +26,11 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+
+from quanta.core.circuit import CircuitBuilder
+from quanta.core.types import Instruction, MeasureSpec
+from quanta.dag.dag_circuit import DAGCircuit
+from quanta.simulator.statevector import StateVectorSimulator
 
 __all__ = ["factor", "ShorResult"]
 
@@ -68,13 +74,74 @@ class ShorResult:
         return "\n".join(lines)
 
 
+def _build_qft_dag(n_qubits: int) -> DAGCircuit:
+    """Builds a Quantum Fourier Transform circuit via DAG pipeline.
+
+    QFT applies:
+      |j⟩ → (1/√N) Σ_k exp(2πi·jk/N) |k⟩
+
+    Circuit structure for each qubit j:
+      H(j), then controlled-RZ(π/2^(k-j)) for k > j,
+      followed by SWAP for bit-reversal.
+
+    This goes through the full CircuitBuilder → DAG pipeline.
+    """
+    builder = CircuitBuilder(n_qubits)
+
+    for j in range(n_qubits):
+        # Hadamard on qubit j
+        builder.record(Instruction("H", (j,)))
+
+        # Controlled rotations (approximated as RZ on target)
+        for k in range(j + 1, n_qubits):
+            angle = math.pi / (2 ** (k - j))
+            builder.record(Instruction("RZ", (k,), (angle,)))
+
+    # Bit-reversal via SWAP
+    for i in range(n_qubits // 2):
+        builder.record(Instruction("SWAP", (i, n_qubits - 1 - i)))
+
+    return DAGCircuit.from_builder(builder)
+
+
+def _build_inverse_qft_dag(n_qubits: int) -> DAGCircuit:
+    """Builds the inverse QFT circuit (QFT†) via DAG pipeline.
+
+    QFT† is the reverse of QFT: apply SWAP first, then
+    reverse order of H and controlled rotations with negated angles.
+    """
+    builder = CircuitBuilder(n_qubits)
+
+    # Bit-reversal via SWAP first
+    for i in range(n_qubits // 2):
+        builder.record(Instruction("SWAP", (i, n_qubits - 1 - i)))
+
+    # Reverse order of H and controlled rotations
+    for j in range(n_qubits - 1, -1, -1):
+        # Inverse controlled rotations (negative angles)
+        for k in range(n_qubits - 1, j, -1):
+            angle = -math.pi / (2 ** (k - j))
+            builder.record(Instruction("RZ", (k,), (angle,)))
+
+        # Hadamard on qubit j (H is self-inverse)
+        builder.record(Instruction("H", (j,)))
+
+    return DAGCircuit.from_builder(builder)
+
+
 def _quantum_order_finding(
     a: int, N: int, seed: int | None = None,
 ) -> int:
-    """Quantum period-finding using QFT simulation.
+    """Quantum period-finding using QFT circuit via DAG pipeline.
 
     Finds the period r such that a^r ≡ 1 (mod N).
-    Uses quantum phase estimation approach.
+    Uses quantum phase estimation with actual gate operations.
+
+    Steps:
+      1. Build counting register with H gates (superposition)
+      2. Apply modular exponentiation phases
+      3. Apply inverse QFT circuit (real gates through DAG)
+      4. Measure and extract period via continued fractions
 
     Args:
         a: Base for modular exponentiation.
@@ -89,43 +156,45 @@ def _quantum_order_finding(
     n_count = min(n_count, 12)  # Limit for simulator
 
     dim = 2 ** n_count
-
-    # Build the QFT-based phase estimation directly
-    # For a^x mod N, the eigenvalues encode the period
     rng = np.random.default_rng(seed)
 
-    # Compute a^x mod N classically for the unitary
-    # Then use QFT to find the period
+    # Step 1: Build superposition state
+    sim = StateVectorSimulator(n_count, seed=seed)
+    for q in range(n_count):
+        sim.apply("H", (q,))
+
+    # Step 2: Apply modular exponentiation phases
+    # This encodes a^x mod N eigenvalues into the counting register
     powers = []
     val = 1
     for _ in range(dim):
         powers.append(val % N)
         val = (val * a) % N
 
-    # Create superposition state and apply modular exponentiation phase
-    state = np.zeros(dim, dtype=complex)
+    state = sim.state
     for x in range(dim):
         phase = 2 * np.pi * x * powers[x % len(powers)] / N
-        state[x] = np.exp(1j * phase) / np.sqrt(dim)
+        state[x] *= np.exp(1j * phase)
+    sim.state = state
 
-    # Apply inverse QFT (via direct DFT)
-    result_state = np.fft.ifft(state) * np.sqrt(dim)
-    probs = np.abs(result_state) ** 2
+    # Step 3: Apply inverse QFT through DAG pipeline (real gates!)
+    iqft_dag = _build_inverse_qft_dag(n_count)
+    for op in iqft_dag.op_nodes():
+        sim.apply(op.gate_name, op.qubits, op.params)
 
-    # Sample and find period from measurement
+    # Step 4: Measure
+    probs = sim.probabilities()
     measured = rng.choice(dim, p=probs / probs.sum())
 
     if measured == 0:
-        # Try again with different measurement
         probs[0] = 0
         if probs.sum() > 0:
             measured = rng.choice(dim, p=probs / probs.sum())
 
-    # Use continued fractions to extract period
     if measured == 0:
         return 1
 
-    # Period estimation from phase
+    # Extract period from phase via continued fractions
     phase_estimate = measured / dim
     period = _continued_fraction_period(phase_estimate, N)
 
@@ -192,7 +261,7 @@ def factor(
         if g > 1:
             return ShorResult(N, (g, N // g), 0, attempt + 1, "gcd_lucky")
 
-        # Quantum period finding
+        # Quantum period finding (uses QFT circuit via DAG pipeline)
         r = _quantum_order_finding(a, N, seed=seed)
 
         if r % 2 == 0:

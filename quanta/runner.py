@@ -25,6 +25,8 @@ Example:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from quanta.backends.base import Backend
@@ -33,6 +35,9 @@ from quanta.core.types import QuantaError
 from quanta.dag.dag_circuit import DAGCircuit
 from quanta.result import Result
 from quanta.simulator.statevector import StateVectorSimulator
+
+if TYPE_CHECKING:
+    from quanta.simulator.noise import NoiseModel
 
 # -- Public API --
 __all__ = ["run", "sweep"]
@@ -43,6 +48,7 @@ def run(
     shots: int = 1024,
     seed: int | None = None,
     backend: Backend | None = None,
+    noise: NoiseModel | None = None,
     **kwargs: float,
 ) -> Result:
     """Executes a quantum circuit and returns results.
@@ -56,6 +62,8 @@ def run(
         shots: Number of measurement repetitions. Default 1024.
         seed: Random seed for reproducibility.
         backend: Optional execution backend (IBM, IonQ, Google, etc.).
+        noise: Optional noise model for realistic simulation.
+            When provided, noise channels are applied after each gate.
 
     Returns:
         Result: Measurement results, probabilities, and circuit metadata.
@@ -66,6 +74,9 @@ def run(
     Examples:
         >>> result = run(bell, shots=1024)
         >>> result = run(bell, shots=1024, backend=IBMBackend("ibm_brisbane"))
+        >>> from quanta.simulator.noise import NoiseModel, Depolarizing
+        >>> nm = NoiseModel().add(Depolarizing(0.01))
+        >>> result = run(bell, shots=1024, noise=nm)
     """
     if not isinstance(circuit, CircuitDefinition):
         raise QuantaError(
@@ -92,9 +103,15 @@ def run(
 
     # Stage 3: Built-in statevector simulation
     simulator = StateVectorSimulator(dag.num_qubits, seed=seed)
+    rng = np.random.default_rng(seed)
 
     for op in dag.op_nodes():
         simulator.apply(op.gate_name, op.qubits, op.params)
+        # Apply noise after each gate if noise model is provided
+        if noise is not None:
+            simulator._state = noise.apply_noise(
+                simulator._state, op.qubits, dag.num_qubits, rng,
+            )
 
     counts = simulator.sample(shots)
 

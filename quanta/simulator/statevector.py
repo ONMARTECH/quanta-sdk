@@ -160,3 +160,24 @@ class StateVectorSimulator:
     def state(self) -> np.ndarray:
         """Copy of the current statevector."""
         return self._state.copy()
+
+    @state.setter
+    def state(self, new_state: np.ndarray) -> None:
+        """Sets the statevector. Used by Layer 3 algorithms (Grover, etc.)."""
+        if len(new_state) != 2 ** self.num_qubits:
+            raise SimulatorError(
+                f"State dimension mismatch: expected {2 ** self.num_qubits}, "
+                f"got {len(new_state)}"
+            )
+        self._state = np.asarray(new_state, dtype=complex)
+
+    def apply_phase(self, index: int, phase: complex) -> None:
+        """Applies a phase factor to a specific basis state.
+
+        Used by Grover oracle and other state-manipulation algorithms.
+
+        Args:
+            index: Basis state index (0 to 2^n - 1).
+            phase: Phase factor to multiply (e.g., -1 for phase flip).
+        """
+        self._state[index] *= phase

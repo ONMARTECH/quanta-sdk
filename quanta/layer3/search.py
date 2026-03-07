@@ -97,17 +97,19 @@ def _find_targets(num_bits: int, check: Callable[[int], bool]) -> list[int]:
 def _apply_oracle(sim: StateVectorSimulator, n: int, targets: list[int]) -> None:
     """Oracle: Applies -1 phase to target states.
 
+    Uses simulator's public apply_phase() API instead of direct state access.
     """
     for t in targets:
-        sim._state[t] *= -1
+        sim.apply_phase(t, -1)
 
 def _apply_diffusion(sim: StateVectorSimulator, n: int) -> None:
     """Diffusion operator: 2|ψ⟩⟨ψ| - I.
 
+    Uses simulator's public state property instead of direct _state access.
     """
-    state = sim._state
+    state = sim.state  # public copy
     dim = len(state)
 
     mean = np.sum(state) / dim
 
-    sim._state = 2 * mean - state
+    sim.state = 2 * mean - state  # public setter
