@@ -46,6 +46,7 @@ dependencies = ["numpy>=1.24"]
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-cov", "hypothesis", "ruff", "mypy"]
 gpu = ["jax[cuda12]", "cupy-cuda12x"]
+mcp = ["fastmcp>=3.0"]
 
 [project.urls]
 Homepage = "https://github.com/ONMARTECH/quanta-sdk"
