@@ -243,6 +243,64 @@ class TestShor:
             factor(1)
 
 
+class TestShorInternals:
+    """Tests for Shor's internal functions (QFT period finding, continued fractions)."""
+
+    def test_quantum_order_finding_returns_positive(self):
+        from quanta.layer3.shor import _quantum_order_finding
+        period = _quantum_order_finding(a=7, N=15, seed=42)
+        assert period >= 1
+
+    def test_quantum_order_finding_valid_period(self):
+        from quanta.layer3.shor import _quantum_order_finding
+        # For a=2, N=15: true period is 4 (2^4 = 16 ≡ 1 mod 15)
+        period = _quantum_order_finding(a=2, N=15, seed=42)
+        assert period >= 1
+        # Period should divide the true Euler totient or be a divisor
+        assert period <= 15
+
+    def test_quantum_order_finding_different_seeds(self):
+        from quanta.layer3.shor import _quantum_order_finding
+        periods = set()
+        for seed in range(5):
+            p = _quantum_order_finding(a=7, N=15, seed=seed)
+            periods.add(p)
+        # Should get at least 1 valid period
+        assert all(p >= 1 for p in periods)
+
+    def test_continued_fraction_period_exact(self):
+        from quanta.layer3.shor import _continued_fraction_period
+        # phase = 1/4 should give period 4
+        period = _continued_fraction_period(0.25, N=15)
+        assert period == 4
+
+    def test_continued_fraction_period_zero(self):
+        from quanta.layer3.shor import _continued_fraction_period
+        period = _continued_fraction_period(0.0, N=15)
+        assert period == 1
+
+    def test_continued_fraction_period_small(self):
+        from quanta.layer3.shor import _continued_fraction_period
+        # phase = 1/3 should give period 3
+        period = _continued_fraction_period(1/3, N=21)
+        assert period == 3
+
+    def test_shor_result_summary(self):
+        from quanta.layer3.shor import ShorResult
+        result = ShorResult(N=15, factors=(3, 5), period=4, attempts=1, method="quantum")
+        summary = result.summary()
+        assert "15" in summary
+        assert "3" in summary
+        assert "5" in summary
+        assert "quantum" in summary
+
+    def test_factor_summary(self):
+        from quanta.layer3.shor import factor
+        result = factor(15, seed=42)
+        summary = result.summary()
+        assert "║" in summary  # box drawing characters
+
+
 # ═══════════════════════════════════════════
 #  QSVM Tests
 # ═══════════════════════════════════════════

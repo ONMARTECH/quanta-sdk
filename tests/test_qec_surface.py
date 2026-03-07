@@ -76,3 +76,137 @@ class TestSurfaceCode:
         result = code.simulate_error_correction(error_rate=0.0, rounds=100, seed=42)
         assert result.logical_error_rate == 0
         assert result.errors_injected == 0
+
+
+# ═══════════════════════════════════════════
+#  QEC Codes -- Syndrome & Correction Tests
+# ═══════════════════════════════════════════
+
+class TestBitFlipCodeSyndrome:
+    """Tests BitFlipCode syndrome measurement and encoding."""
+
+    def test_encode_circuit_structure(self):
+        from quanta.qec.codes import BitFlipCode
+        code = BitFlipCode()
+        enc = code.encode()
+        dag = enc.build()
+        ops = list(dag.instructions)
+        # Should have 2 CX gates
+        cx_ops = [op for op in ops if op.gate_name == "CX"]
+        assert len(cx_ops) == 2
+
+    def test_syndrome_circuit_structure(self):
+        from quanta.qec.codes import BitFlipCode
+        code = BitFlipCode()
+        syn = code.syndrome_measure()
+        dag = syn.build()
+        ops = list(dag.instructions)
+        # Should have 4 CX gates (2 per syndrome qubit)
+        cx_ops = [op for op in ops if op.gate_name == "CX"]
+        assert len(cx_ops) == 4
+
+    def test_syndrome_returns_circuit(self):
+        from quanta.qec.codes import BitFlipCode, QECCode
+        from quanta.core.circuit import CircuitDefinition
+        code = BitFlipCode()
+        syn = code.syndrome_measure()
+        assert isinstance(syn, CircuitDefinition)
+
+    def test_syndrome_qubit_count(self):
+        from quanta.qec.codes import BitFlipCode
+        code = BitFlipCode()
+        syn = code.syndrome_measure()
+        dag = syn.build()
+        assert dag.num_qubits == 5  # 3 code + 2 ancilla
+
+    def test_info(self):
+        from quanta.qec.codes import BitFlipCode
+        code = BitFlipCode()
+        info = code.info
+        assert info.n == 3
+        assert info.k == 1
+        assert info.d == 1
+        assert "BitFlip" in info.name
+        assert info.correctable_errors == 0  # d=1 -> (1-1)/2 = 0
+
+    def test_info_repr(self):
+        from quanta.qec.codes import BitFlipCode
+        info = BitFlipCode().info
+        r = repr(info)
+        assert "[[3,1,1]]" in r
+        assert "BitFlip" in r
+
+
+class TestPhaseFlipCodeCoverage:
+    """Tests PhaseFlipCode encoding and info."""
+
+    def test_encode_has_hadamards(self):
+        from quanta.qec.codes import PhaseFlipCode
+        code = PhaseFlipCode()
+        enc = code.encode()
+        dag = enc.build()
+        ops = list(dag.instructions)
+        h_ops = [op for op in ops if op.gate_name == "H"]
+        assert len(h_ops) == 3  # H on all 3 qubits
+
+    def test_encode_has_cx(self):
+        from quanta.qec.codes import PhaseFlipCode
+        code = PhaseFlipCode()
+        enc = code.encode()
+        dag = enc.build()
+        ops = list(dag.instructions)
+        cx_ops = [op for op in ops if op.gate_name == "CX"]
+        assert len(cx_ops) == 2
+
+    def test_info(self):
+        from quanta.qec.codes import PhaseFlipCode
+        info = PhaseFlipCode().info
+        assert info.n == 3 and info.k == 1 and info.d == 1
+        assert "PhaseFlip" in info.name
+
+
+class TestSteaneCodeCoverage:
+    """Tests Steane code syndrome measurement and structure."""
+
+    def test_encode_qubit_count(self):
+        from quanta.qec.codes import SteaneCode
+        code = SteaneCode()
+        enc = code.encode()
+        dag = enc.build()
+        assert dag.num_qubits == 7
+
+    def test_syndrome_qubit_count(self):
+        from quanta.qec.codes import SteaneCode
+        code = SteaneCode()
+        syn = code.syndrome_measure()
+        dag = syn.build()
+        assert dag.num_qubits == 13  # 7 code + 6 syndrome
+
+    def test_syndrome_has_cx_gates(self):
+        from quanta.qec.codes import SteaneCode
+        code = SteaneCode()
+        syn = code.syndrome_measure()
+        dag = syn.build()
+        ops = list(dag.instructions)
+        cx_ops = [op for op in ops if op.gate_name == "CX"]
+        # X stabilizers: 3 * 4 = 12 CX, Z stabilizers: 3 * 4 = 12 CX
+        assert len(cx_ops) == 24
+
+    def test_syndrome_has_hadamards(self):
+        from quanta.qec.codes import SteaneCode
+        code = SteaneCode()
+        syn = code.syndrome_measure()
+        dag = syn.build()
+        ops = list(dag.instructions)
+        h_ops = [op for op in ops if op.gate_name == "H"]
+        # Z stabilizers need H before and after: 3 * 2 = 6
+        assert len(h_ops) == 6
+
+    def test_info(self):
+        from quanta.qec.codes import SteaneCode
+        info = SteaneCode().info
+        assert info.n == 7, info.k == 1
+        assert info.d == 3
+        assert info.correctable_errors == 1
+        assert "Steane" in repr(info)
+

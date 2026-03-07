@@ -97,9 +97,11 @@ def _ensure_init() -> None:
         _initialized = True
 
 
-@property
 def xp() -> Any:
-    """Returns the active array library (numpy, jax.numpy, or cupy)."""
+    """Returns the active array library (numpy, jax.numpy, or cupy).
+
+    Usage: ``xp()`` (function call, not property).
+    """
     _ensure_init()
     return _xp
 
@@ -145,21 +147,12 @@ def tensor_contract(
     gate_axes = list(range(num_gate_qubits, 2 * num_gate_qubits))
     state_axes = list(qubits)
 
-    if _backend_name.startswith("jax"):
-        # JAX tensordot
-        result = xp_mod.tensordot(gate_tensor, state_tensor,
-                                   axes=(gate_axes, state_axes))
-    else:
-        result = xp_mod.tensordot(gate_tensor, state_tensor,
-                                   axes=(gate_axes, state_axes))
+    result = xp_mod.tensordot(gate_tensor, state_tensor,
+                               axes=(gate_axes, state_axes))
 
     source = list(range(num_gate_qubits))
     dest = list(qubits)
-
-    if _backend_name.startswith("jax"):
-        result = xp_mod.moveaxis(result, source, dest)
-    else:
-        result = xp_mod.moveaxis(result, source, dest)
+    result = xp_mod.moveaxis(result, source, dest)
 
     flat = result.reshape(-1)
 

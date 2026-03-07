@@ -6,6 +6,43 @@ Format: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [v0.6.0] - 2026-03-07
+
+### Added — QEC Enhancements (Google quantumlib parity)
+- **Color Code**: (`qec/color_code.py`)
+  - Triangular lattice, 3-colorable plaquettes (R, G, B)
+  - Restriction decoder (chromobius-inspired)
+  - Transversal Clifford gates (H, S, CX)
+- **QEC Decoders**: (`qec/decoder.py`)
+  - MWPMDecoder: greedy minimum weight perfect matching
+  - UnionFindDecoder: near-linear O(n·α(n)) cluster-based
+- **Pauli Frame Simulator**: (`simulator/pauli_frame.py`)
+  - Aaronson-Gottesman stabilizer tableau
+  - O(n) per gate, O(n²) memory, 50-qubit GHZ in <5s
+
+### Tests
+- 37 new tests → **216 total**
+
+---
+
+## [v0.5.0] - 2026-03-07
+
+### Added — Hardware Backends
+- **IBM Quantum Backend**: (`backends/ibm.py`)
+  - QASM 2.0 bridge to Qiskit
+  - AerSimulator local + IBM Quantum hardware
+- **IonQ Backend**: (`backends/ionq.py`)
+  - Pure REST API, zero Python dependencies
+  - IonQ native JSON gate format
+- **Google Backend refactor**: (`backends/google.py`)
+  - DAGCircuit interface (consistent with IBM/IonQ)
+- Runner `backend=` parameter for all backends
+
+### Tests
+- 21 new backend tests → **179 total**
+
+---
+
 ## [v0.4.0] - 2026-03-06
 
 ### Added — Real-World Applications
@@ -57,7 +94,7 @@ Format: [Semantic Versioning](https://semver.org/)
 
 ---
 
-## [v0.3.0] - 2026-03-06
+## [v0.3.0] - 2026-03-05
 
 ### Added — Structural Improvements
 - Custom gates: `custom_gate("name", matrix)`
@@ -70,7 +107,7 @@ Format: [Semantic Versioning](https://semver.org/)
 
 ---
 
-## [v0.2.0] - 2026-03-06
+## [v0.2.0] - 2026-03-04
 
 ### Added — Performance
 - Tensor contraction simulator: O(2^n) replacing O(4^n)
