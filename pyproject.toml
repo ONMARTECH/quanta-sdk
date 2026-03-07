@@ -69,4 +69,8 @@ convention = "google"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --tb=short --cov=quanta --cov-fail-under=70"
+addopts = "-v --tb=short --cov=quanta --cov-fail-under=80"
+
+[tool.coverage.run]
+omit = ["quanta/examples/*"]
+
