@@ -44,7 +44,7 @@ def measure(*args: QubitRef) -> MeasureSpec:
 
     spec = MeasureSpec(qubits=tuple(qubit_indices))
 
-    # Aktif builder varsa kaydet
+    # Record to active builder if present
     try:
         builder = _get_active_builder()
         builder.set_measurement(spec)

@@ -29,7 +29,7 @@ class DAGCircuit:
 
 
     Attributes:
-        measurement: Measurement belirtimi.
+        measurement: Measurement specification.
     """
 
     __slots__ = (
@@ -80,7 +80,7 @@ class DAGCircuit:
 
     @classmethod
     def from_builder(cls, builder: CircuitBuilder) -> DAGCircuit:
-        """CircuitBuilder'dan Build DAGur.
+        """Builds DAGCircuit from a CircuitBuilder.
 
         Args:
 
@@ -139,17 +139,23 @@ class DAGCircuit:
         return max(longest.values(), default=0)
 
     def topological_sort(self) -> list[DAGNode]:
+        """Topological sort of the DAG using Kahn's algorithm.
+
+        Uses deque for O(1) popleft instead of list.pop(0) O(n).
+        """
+        from collections import deque as _deque
+
         in_degree: dict[int, int] = {nid: 0 for nid in self._nodes}
 
         for nid in self._nodes:
             for succ in self._edges.get(nid, []):
                 in_degree[succ] += 1
 
-        queue = [nid for nid, deg in in_degree.items() if deg == 0]
+        queue = _deque(nid for nid, deg in in_degree.items() if deg == 0)
         result: list[DAGNode] = []
 
         while queue:
-            nid = queue.pop(0)
+            nid = queue.popleft()
             result.append(self._nodes[nid])
 
             for succ in self._edges.get(nid, []):
@@ -164,7 +170,7 @@ class DAGCircuit:
 
 
         Returns:
-            Katman listesi. Her katman bir OpNode listesidir.
+            List of layers. Each layer is a list of OpNode.
         """
         if not self._nodes:
             return []
@@ -184,7 +190,7 @@ class DAGCircuit:
                     (depth_map.get(p, -1) for p in preds), default=-1
                 )
 
-        # Katmanlara grupla
+        # Group into layers
         layer_map: dict[int, list[OpNode]] = defaultdict(list)
         for node in self._nodes.values():
             if isinstance(node, OpNode):

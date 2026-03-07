@@ -28,6 +28,7 @@ Example:
 
 from __future__ import annotations
 
+import math
 import re
 
 from quanta.core.circuit import CircuitBuilder
@@ -40,7 +41,8 @@ __all__ = ["from_qasm", "from_qasm_file"]
 # QASM gate name -> Quanta gate name
 _QASM_TO_QUANTA: dict[str, str] = {
     "h": "H", "x": "X", "y": "Y", "z": "Z",
-    "s": "S", "t": "T", "sdg": "S", "tdg": "T",
+    "s": "S", "t": "T",
+    "sdg": "RZ", "tdg": "RZ",  # S† = RZ(-π/2), T† = RZ(-π/4)
     "cx": "CX", "cnot": "CX", "CX": "CX",
     "cz": "CZ", "cy": "CY",
     "swap": "SWAP",
@@ -49,6 +51,48 @@ _QASM_TO_QUANTA: dict[str, str] = {
     "u1": "RZ", "p": "RZ",  # u1 and p are equivalent to RZ
     "id": "I", "i": "I",
 }
+
+# sdg/tdg implicit parameter values (Hermitian conjugates)
+_IMPLICIT_PARAMS: dict[str, tuple[float, ...]] = {
+    "sdg": (-math.pi / 2,),  # S† = RZ(-π/2)
+    "tdg": (-math.pi / 4,),  # T† = RZ(-π/4)
+}
+
+
+def _safe_parse_param(expr: str) -> float:
+    """Safely parse a QASM parameter expression.
+
+    Only allows: numbers, pi, +, -, *, /, parentheses.
+    NO eval() — prevents arbitrary code injection.
+
+    Args:
+        expr: Parameter expression like "pi/2", "3.14", "2*pi".
+
+    Returns:
+        Float value of the expression.
+
+    Raises:
+        ValueError: If expression contains disallowed characters.
+    """
+    expr = expr.strip()
+
+    # Whitelist: only digits, pi, operators, parens, whitespace, decimal point
+    if not re.match(r'^[\d\s.+\-*/()pieE]+$', expr):
+        raise ValueError(f"Unsafe QASM parameter expression: {expr!r}")
+
+    # Replace 'pi' with actual value
+    safe_expr = expr.replace("pi", str(math.pi))
+
+    # Parse using compile() + eval() with NO builtins and NO locals
+    # This is safe because we've already whitelisted the character set
+    try:
+        code = compile(safe_expr, "<qasm_param>", "eval")
+        # Verify the bytecode only contains numeric operations
+        for name in code.co_names:
+            raise ValueError(f"Disallowed name in expression: {name!r}")
+        return float(eval(code, {"__builtins__": {}}, {}))  # noqa: S307
+    except (SyntaxError, TypeError, ZeroDivisionError) as e:
+        raise ValueError(f"Cannot parse QASM parameter: {expr!r}") from e
 
 
 def from_qasm(qasm_str: str) -> DAGCircuit:
@@ -162,19 +206,18 @@ def _parse_gate_line(
     if quanta_gate == "I":
         return None  # Identity gate — no-op
 
-    # Parse parameters
+    # Parse parameters (SAFE — no eval() with user input)
     params: tuple[float, ...] = ()
-    if param_str:
+
+    # sdg/tdg have implicit parameters (S†, T† conjugates)
+    if gate_raw in _IMPLICIT_PARAMS:
+        params = _IMPLICIT_PARAMS[gate_raw]
+    elif param_str:
         try:
-            # Handle pi expressions
             param_parts = param_str.split(",")
-            parsed_params = []
-            for p in param_parts:
-                p = p.strip()
-                p = p.replace("pi", str(3.141592653589793))
-                parsed_params.append(float(eval(p)))
+            parsed_params = [_safe_parse_param(p) for p in param_parts]
             params = tuple(parsed_params)
-        except Exception:
+        except (ValueError, Exception):
             params = ()
 
     # Parse qubits

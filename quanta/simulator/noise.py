@@ -127,16 +127,42 @@ class AmplitudeDamping(NoiseChannel):
     def apply(
         self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
     ) -> np.ndarray:
+        """Applies amplitude damping using Kraus operators.
+
+        K0 = [[1, 0], [0, √(1-γ)]]  (no-decay branch)
+        K1 = [[0, √γ], [0, 0]]      (decay branch)
+
+        Statevector application: randomly apply K0 or K1 based
+        on the probability of decay, then renormalize.
+        """
         n = num_qubits
         dim = len(state)
+        sqrt_1mg = np.sqrt(1 - self.gamma)
+        sqrt_g = np.sqrt(self.gamma)
+
+        # Compute probability of decay (K1 branch)
+        p_decay = 0.0
+        for i in range(dim):
+            if (i >> (n - 1 - qubit)) & 1:  # qubit in |1⟩
+                p_decay += self.gamma * abs(state[i]) ** 2
+
         new_state = state.copy()
 
-        for i in range(dim):
-            if (i >> (n - 1 - qubit)) & 1:  # qubit in |1> state
-                j = i ^ (1 << (n - 1 - qubit))  # paired |0> index
-                if rng.random() < self.gamma:
-                    new_state[j] += new_state[i]
+        if rng.random() < p_decay and p_decay > 1e-15:
+            # Apply K1: |1⟩ → |0⟩ transition
+            for i in range(dim):
+                if (i >> (n - 1 - qubit)) & 1:  # qubit in |1⟩
+                    j = i ^ (1 << (n - 1 - qubit))  # paired |0⟩ index
+                    new_state[j] = sqrt_g * state[i]
                     new_state[i] = 0
+                # |0⟩ states already zeroed by K1
+                else:
+                    new_state[i] = 0
+        else:
+            # Apply K0: dampen |1⟩ amplitude
+            for i in range(dim):
+                if (i >> (n - 1 - qubit)) & 1:  # qubit in |1⟩
+                    new_state[i] = sqrt_1mg * state[i]
 
         # Normalize
         norm = np.linalg.norm(new_state)

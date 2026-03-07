@@ -25,14 +25,14 @@ __all__ = [
 ]
 
 def get_unitary(circuit: CircuitDefinition) -> np.ndarray:
-    """Circuitnin unitär matrisini hesaplar.
+    """Computes the unitary matrix of a circuit.
 
 
     Args:
         circuit: Circuit defined with @circuit.
 
     Returns:
-        2^n × 2^n unitär matris.
+        2^n × 2^n unitary matrix.
 
     """
     builder = circuit.build()

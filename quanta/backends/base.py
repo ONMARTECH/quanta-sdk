@@ -2,9 +2,9 @@
 quanta.backends.base — Backend abstract interface.
 
 
-Mevcut backend'ler:
-  - (gelecek) GCPQuantum: Google Quantum Engine
-  - (gelecek) IBMQuantum: IBM Quantum via Qiskit
+Available backends:
+  - (planned) GCPQuantum: Google Quantum Engine
+  - (planned) IBMQuantum: IBM Quantum via Qiskit
 
 Example:
     >>> from quanta.backends.local import LocalSimulator

@@ -239,7 +239,7 @@ class ColorCode:
         excess = n_errors - t
         d = self.distance
         p_fail = min(1.0, (excess / d) ** (d / 2))
-        return bool(np.random.random() >= p_fail)
+        return bool(rng.random() >= p_fail)
 
     def simulate_error_correction(
         self,

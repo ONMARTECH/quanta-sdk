@@ -1,7 +1,7 @@
 """
 
   - A name (name)
-  - Unitär matris temsili (matrix)
+  - Unitary matrix representation (matrix)
 
 
 Example:
@@ -31,7 +31,7 @@ __all__ = [
     "RX", "RY", "RZ",
 ]
 
-# ── Sabitler ──
+# ── Constants ──
 _SQRT2_INV = 1 / np.sqrt(2)
 _I = np.eye(2, dtype=complex)
 
@@ -112,7 +112,7 @@ class Gate:
             if len(qubits) != self.num_qubits:
                 from quanta.core.types import CircuitError
                 raise CircuitError(
-                    f"ama {len(qubits)} verildi."
+                    f"Expected {self.num_qubits} qubits, got {len(qubits)}."
                 )
             _get_active_builder().record(
                 Instruction(self.name, tuple(qubits))
@@ -180,7 +180,7 @@ def _flatten_qubits(args) -> list[int]:
 
 # ═══════════════════════════════════════════
 
-# ── Tek-Qubit Sabit Gates ──
+# ── Single-Qubit Fixed Gates ──
 
 class _H(Gate):
     name = "H"

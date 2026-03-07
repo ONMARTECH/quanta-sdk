@@ -2,7 +2,7 @@
 quanta.compiler.pipeline — Compiler pass pipeline management.
 
 
-  3. Schedule: Paralel katmanlara grupla
+  3. Schedule: Group into parallel layers
 
 Example:
     >>> from quanta.compiler.pipeline import CompilerPipeline
@@ -60,7 +60,7 @@ class CompilerPipeline:
         """Adds a new pass to the pipeline. Returns self for chaining.
 
         Args:
-            compiler_pass: Eklenecek pass.
+            compiler_pass: The pass to add.
 
         Returns:
             self (for chaining).

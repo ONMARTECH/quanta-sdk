@@ -125,15 +125,15 @@ class TestBitFlipCodeSyndrome:
         info = code.info
         assert info.n == 3
         assert info.k == 1
-        assert info.d == 1
+        assert info.d == 3
         assert "BitFlip" in info.name
-        assert info.correctable_errors == 0  # d=1 -> (1-1)/2 = 0
+        assert info.correctable_errors == 1  # d=3 -> (3-1)/2 = 1
 
     def test_info_repr(self):
         from quanta.qec.codes import BitFlipCode
         info = BitFlipCode().info
         r = repr(info)
-        assert "[[3,1,1]]" in r
+        assert "[[3,1,3]]" in r
         assert "BitFlip" in r
 
 
@@ -161,7 +161,7 @@ class TestPhaseFlipCodeCoverage:
     def test_info(self):
         from quanta.qec.codes import PhaseFlipCode
         info = PhaseFlipCode().info
-        assert info.n == 3 and info.k == 1 and info.d == 1
+        assert info.n == 3 and info.k == 1 and info.d == 3
         assert "PhaseFlip" in info.name
 
 

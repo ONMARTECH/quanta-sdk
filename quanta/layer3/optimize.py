@@ -140,7 +140,7 @@ def _run_qaoa(
 ) -> StateVectorSimulator:
     """Runs the QAOA circuit.
 
-    Her katman: exp(-i·γ·C)·exp(-i·β·B)
+    Each layer: exp(-i·γ·C)·exp(-i·β·B)
     """
     sim = StateVectorSimulator(n, seed=seed)
     layers = len(params) // 2

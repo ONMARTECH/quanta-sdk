@@ -154,10 +154,3 @@ class QubitRegister:
         return f"QubitRegister(size={self._size})"
 
 
-# ===============================================
-#  CircuitSpec (type alias)
-# ===============================================
-
-# Type of the callable returned by the @circuit decorator.
-# Actual definition in circuit.py, here only for reference.
-CircuitSpec = object  # Placeholder -- materialized in circuit.py

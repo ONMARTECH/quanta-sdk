@@ -9,6 +9,8 @@ Example:
 
 from __future__ import annotations
 
+import math
+
 from quanta.core.types import Instruction
 from quanta.dag.dag_circuit import DAGCircuit
 from quanta.dag.node import OpNode
@@ -54,7 +56,7 @@ class CancelInverses:
                 to_remove.add(i)
                 to_remove.add(i + 1)
 
-        # Kalan talimatlardan yeni Build DAG
+        # Build new DAG from remaining instructions
         if not to_remove:
             return dag
 
@@ -75,12 +77,17 @@ class CancelInverses:
     def _are_adjacent_on_qubits(
         self, a: OpNode, b: OpNode, ops: list[OpNode], idx: int
     ) -> bool:
+        """Checks if gates a and b are adjacent on their shared qubits.
+
+        Returns True if no other gate touches shared qubits between a and b.
+        """
         shared_qubits = set(a.qubits)
         for k in range(idx + 1, len(ops)):
             if ops[k].node_id == b.node_id:
                 return True
             if set(ops[k].qubits) & shared_qubits:
                 return False
+        return False  # b not found after a
 
     def _rebuild_dag(
         self,
@@ -155,7 +162,7 @@ class MergeRotations:
                 new_angle = current.params[0] + next_op.params[0]
                 changed = True
 
-                if abs(new_angle % (2 * 3.141592653589793)) < self.EPSILON:
+                if abs(new_angle % (2 * math.pi)) < self.EPSILON:
                     merged_ops[i] = None
                     merged_ops[j] = None
                 else:
@@ -174,13 +181,13 @@ class MergeRotations:
         if not changed:
             return dag
 
-        # Yeni Build DAG
+        # Build new DAG
         return self._rebuild_from_ops(dag, merged_ops)
 
     def _rebuild_from_ops(
         self, original: DAGCircuit, ops: list[OpNode | None]
     ) -> DAGCircuit:
-        """Op listesinden yeni Build DAGur."""
+        """Rebuilds a new DAG from the merged op list."""
         from quanta.core.circuit import CircuitBuilder
 
         builder = CircuitBuilder(original.num_qubits)

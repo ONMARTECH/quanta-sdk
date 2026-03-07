@@ -30,7 +30,7 @@ from quanta.core.types import (
 __all__ = ["circuit", "CircuitBuilder", "CircuitDefinition"]
 
 # ═══════════════════════════════════════════
-#  CircuitBuilder — Talimat Kaydedici
+#  CircuitBuilder — Instruction Recorder
 # ═══════════════════════════════════════════
 
 class CircuitBuilder:
@@ -38,7 +38,7 @@ class CircuitBuilder:
 
 
     Attributes:
-        measurement: Measurement belirtimi (varsa).
+        measurement: Measurement specification (if any).
     """
 
     __slots__ = ("instructions", "measurement", "num_qubits")
@@ -66,7 +66,7 @@ class CircuitBuilder:
         self.instructions.append(instruction)
 
     def set_measurement(self, spec: MeasureSpec) -> None:
-        """Measurement belirtimini ayarlar."""
+        """Sets the measurement specification."""
         self.measurement = spec
 
     def __enter__(self) -> CircuitBuilder:
@@ -115,6 +115,7 @@ class CircuitDefinition:
                 if isinstance(exc, CircuitError):
                     raise
                 raise CircuitError(
+                    f"Circuit '{self.name}' raised an error during build: {exc}"
                 ) from exc
 
         return builder

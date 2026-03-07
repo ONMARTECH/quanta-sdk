@@ -2,16 +2,16 @@
 quanta.qec.codes — Quantum error correction codes.
 
 
-Desteklenen kodlar:
-  - RepetitionCode [[n,1,n]]: N-tekrar kodu
+Supported codes:
+  - RepetitionCode [[n,1,n]]: N-repetition code
 
-Notasyon: [[n, k, d]]
-  n = fiziksel qubit
+Notation: [[n, k, d]]
+  n = physical qubits
 
 Example:
     >>> from quanta.qec.codes import BitFlipCode
     >>> code = BitFlipCode()
-    >>> encoded = code.encode()     # Kodlama devresi
+    >>> encoded = code.encode()     # Encoding circuit
     >>> print(code.info)
 """
 
@@ -32,7 +32,7 @@ class CodeInfo:
 
     Attributes:
         name: Code name.
-        d: Kod mesafesi.
+        d: Code distance.
     """
 
     name: str
@@ -65,20 +65,22 @@ class QECCode:
         raise NotImplementedError
 
 class BitFlipCode(QECCode):
-    """[[3,1,1]] Bit-flip kodu.
+    """[[3,1,3]] Bit-flip repetition code.
 
+    Encodes 1 logical qubit into 3 physical qubits.
+    Distance d=3 → can correct ⌊(3-1)/2⌋ = 1 bit-flip error.
 
-    Kodlama: |ψ⟩ = α|0⟩ + β|1⟩  →  α|000⟩ + β|111⟩
+    Encoding: |ψ⟩ = α|0⟩ + β|1⟩  →  α|000⟩ + β|111⟩
     """
 
     @property
     def info(self) -> CodeInfo:
-        return CodeInfo("BitFlip", n=3, k=1, d=1)
+        return CodeInfo("BitFlip", n=3, k=1, d=3)
 
     def encode(self) -> CircuitDefinition:
-        """Bit-flip kodlama devresi.
+        """Bit-flip encoding circuit.
 
-        q[1], q[2]: Yedek qubit'ler
+        q[1], q[2]: Ancilla (redundancy) qubits
 
         Circuit: q[0]──●──●──
                      │  │
@@ -95,8 +97,8 @@ class BitFlipCode(QECCode):
     def syndrome_measure(self) -> CircuitDefinition:
         """Syndrome measurement: error detection with 2 ancilla qubits.
 
-        q[0-2]: Kod qubit'leri
-        q[3-4]: Sendrom qubit'leri
+        q[0-2]: Code qubits
+        q[3-4]: Syndrome qubits
 
           00 → no error
           01 → error on q[2]
@@ -105,25 +107,27 @@ class BitFlipCode(QECCode):
         """
         @circuit(qubits=5)
         def syndrome_bitflip(q):
-            # Sendrom 1: q[0] XOR q[1]
+            # Syndrome 1: q[0] XOR q[1]
             CX(q[0], q[3])
             CX(q[1], q[3])
-            # Sendrom 2: q[0] XOR q[2]
+            # Syndrome 2: q[0] XOR q[2]
             CX(q[0], q[4])
             CX(q[2], q[4])
             return measure(q[3], q[4])
         return syndrome_bitflip
 
 class PhaseFlipCode(QECCode):
-    """[[3,1,1]] Faz-flip kodu.
+    """[[3,1,3]] Phase-flip repetition code.
 
+    Encodes 1 logical qubit into 3 physical qubits in the Hadamard basis.
+    Distance d=3 → can correct 1 phase-flip error.
 
-    Kodlama: |ψ⟩ → α|+++⟩ + β|---⟩
+    Encoding: |ψ⟩ → α|+++⟩ + β|---⟩
     """
 
     @property
     def info(self) -> CodeInfo:
-        return CodeInfo("PhaseFlip", n=3, k=1, d=1)
+        return CodeInfo("PhaseFlip", n=3, k=1, d=3)
 
     def encode(self) -> CircuitDefinition:
         @circuit(qubits=3)
@@ -148,9 +152,9 @@ class SteaneCode(QECCode):
         return CodeInfo("Steane", n=7, k=1, d=3)
 
     def encode(self) -> CircuitDefinition:
-        """Steane code kodlama devresi.
+        """Steane code encoding circuit.
 
-        q[1-6]: Yedek qubit'ler
+        q[1-6]: Ancilla (redundancy) qubits
 
         """
         @circuit(qubits=7)
@@ -174,7 +178,7 @@ class SteaneCode(QECCode):
     def syndrome_measure(self) -> CircuitDefinition:
         """Steane syndrome measurement: 6 syndrome qubits (3 X + 3 Z).
 
-        13 qubit devre: 7 kod + 6 sendrom.
+        13 qubit circuit: 7 code + 6 syndrome.
         """
         @circuit(qubits=13)
         def syndrome_steane(q):
