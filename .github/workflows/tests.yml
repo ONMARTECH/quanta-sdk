@@ -25,6 +25,10 @@ jobs:
       - name: Lint with Ruff
         run: ruff check quanta/ --exclude "quanta/examples/*"
 
+      - name: Type check with mypy
+        run: mypy quanta/ --ignore-missing-imports --exclude "quanta/examples" --exclude "quanta/benchmark"
+        continue-on-error: true
+
   test:
     runs-on: ubuntu-latest
     needs: lint

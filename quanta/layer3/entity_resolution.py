@@ -170,8 +170,8 @@ def compute_similarity(
             "birth_date": 2.0, "city": 0.5, "address": 1.0,
         }
 
-    total_weight = 0
-    total_score = 0
+    total_weight: float = 0
+    total_score: float = 0
 
     for f in fields:
         w = weights.get(f, 1.0)
@@ -416,15 +416,15 @@ def _block_records(
 
 def _merge_overlapping_sets(sets: list[set[int]]) -> list[list[int]]:
     """Merges sets that share any element (union-find)."""
-    parent = {}
+    parent: dict[int, int] = {}
 
-    def find(x):
+    def find(x: int) -> int:
         while parent.get(x, x) != x:
             parent[x] = parent.get(parent[x], parent[x])
             x = parent[x]
         return x
 
-    def union(a, b):
+    def union(a: int, b: int) -> None:
         ra, rb = find(a), find(b)
         if ra != rb:
             parent[ra] = rb
@@ -485,18 +485,18 @@ def _qaoa_optimize_block(
         return _greedy_merge_block(records, indices, threshold, fields), 0
 
     # QAOA circuit: encode similarities as rotation angles
-    sim = StateVectorSimulator(num_qubits, seed=seed)
+    simulator = StateVectorSimulator(num_qubits, seed=seed)
 
     # Initial superposition
     for q in range(num_qubits):
-        sim.apply("H", (q,))
+        simulator.apply("H", (q,))
 
     # Cost layer: rotate based on similarity
     for q in range(num_qubits):
         # High similarity → bias toward |1⟩ (merge)
         # Low similarity → bias toward |0⟩ (separate)
         angle = (sims[q] - threshold) * np.pi
-        sim.apply("RZ", (q,), (angle,))
+        simulator.apply("RZ", (q,), (angle,))
 
     # Mixer layer: entangle related pairs (transitivity)
     for q1 in range(num_qubits):
@@ -506,16 +506,16 @@ def _qaoa_optimize_block(
             i2, j2 = pairs[q2]
             # If pairs share a record, they're related
             if len({i1, j1} & {i2, j2}) > 0:
-                sim.apply("CX", (q1, q2))
-                sim.apply("RZ", (q2,), (0.3,))
-                sim.apply("CX", (q1, q2))
+                simulator.apply("CX", (q1, q2))
+                simulator.apply("RZ", (q2,), (0.3,))
+                simulator.apply("CX", (q1, q2))
 
     # Second cost layer
     for q in range(num_qubits):
-        sim.apply("RY", (q,), ((sims[q] - 0.5) * np.pi,))
+        simulator.apply("RY", (q,), ((sims[q] - 0.5) * np.pi,))
 
     # Sample and find best configuration
-    counts = sim.sample(2048)
+    counts = simulator.sample(2048)
     best_bitstring = max(counts, key=counts.get)
 
     # Decode: build adjacency from merge decisions
@@ -558,7 +558,7 @@ def _greedy_merge_block(
     n = len(indices)
     parent = list(range(n))
 
-    def find(x):
+    def find(x: int) -> int:
         while parent[x] != x:
             parent[x] = parent[parent[x]]
             x = parent[x]

@@ -44,7 +44,7 @@ classifiers = [
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "pytest-cov", "hypothesis", "ruff"]
+dev = ["pytest>=7.0", "pytest-cov", "hypothesis", "ruff", "mypy"]
 gpu = ["jax[cuda12]", "cupy-cuda12x"]
 
 [project.urls]
@@ -74,3 +74,13 @@ addopts = "-v --tb=short --cov=quanta --cov-fail-under=80"
 [tool.coverage.run]
 omit = ["quanta/examples/*"]
 
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["quanta.examples.*", "quanta.benchmark.*"]
+disallow_untyped_defs = false
