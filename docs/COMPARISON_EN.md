@@ -14,7 +14,7 @@
 | **@circuit Decorator** | Yes | No | No | `@qml.qnode` |
 | **DAG Representation** | Built-in | Built-in | Moments | No |
 | **Compiler Pipeline** | 3-pass + routing | PassManager | Optimizer | Limited |
-| **Noise Model** | 4 channels | Extensive | Extensive | Plugin |
+| **Noise Model** | 7 channels | Extensive | Extensive | Plugin |
 | **QEC Codes** | 4 codes (incl. surface) | External | External | No |
 | **QASM Import/Export** | 2.0 + 3.0 | 2.0/3.0 | 2.0 | No |
 | **Multi-Agent** | Yes | No | No | No |
@@ -22,6 +22,8 @@
 | **Shor** | Built-in | External | No | No |
 | **Entity Resolution** | Built-in (QAOA) | No | No | No |
 | **Dependencies** | 1 (numpy) | 20+ | 10+ | 10+ |
+| **MCP Server** | Built-in (7 tools) | No | No | No |
+| **Gradients** | Parameter-shift + Natural | Manual | Manual | **Built-in (autograd)** |
 
 ### Code Comparison: Bell State
 
@@ -120,5 +122,62 @@ NumPy only. No 200MB install, no Java, no Rust toolchain.
 | Grover search | 1 line (L3) | 30+ lines |
 | `pip install` size | ~1 MB | ~200 MB |
 | Dependencies | 1 (numpy) | 20+ |
-| Tests | 150+ | 5000+ |
+| Tests | 380+ | 5000+ |
 | Max qubits (sim) | 27 | 32 |
+
+## Differentiable Quantum Computing
+
+PennyLane's key advantage is differentiable programming with autograd.
+Quanta now provides comparable gradient support:
+
+| Feature | Quanta | PennyLane |
+|---------|--------|-----------|
+| **Parameter-shift rule** | `parameter_shift()` | `qml.gradients.param_shift` |
+| **Finite differences** | `finite_diff()` | `qml.gradients.finite_diff` |
+| **Natural gradient** | `natural_gradient()` (QFIM) | `qml.QNGOptimizer` |
+| **Expectation values** | `expectation()` | `qml.expval()` |
+| **Backprop (autograd)** | Not yet | **Yes (JAX/Torch/TF)** |
+| **Framework integration** | NumPy-native | JAX, PyTorch, TensorFlow |
+
+### Gradient Example Comparison
+
+**Quanta (4 lines)**
+```python
+from quanta.gradients import parameter_shift, expectation
+from quanta.simulator.statevector import StateVectorSimulator
+
+def cost(params):
+    sim = StateVectorSimulator(1)
+    sim.apply("RY", (0,), (params[0],))
+    return expectation(sim.state, "Z", 1)
+
+result = parameter_shift(cost, [0.5])
+print(result.gradients)  # exact: [-sin(0.5)]
+```
+
+**PennyLane (6 lines)**
+```python
+import pennylane as qml
+
+dev = qml.device("default.qubit", wires=1)
+
+@qml.qnode(dev, diff_method="parameter-shift")
+def cost(theta):
+    qml.RY(theta, wires=0)
+    return qml.expval(qml.PauliZ(0))
+
+grad_fn = qml.grad(cost)
+print(grad_fn(0.5))  # exact: [-sin(0.5)]
+```
+
+### Quanta's Advantage
+- **Zero dependencies**: Gradients work with just NumPy
+- **Explicit control**: Choose method per-call, not per-device
+- **QFIM built-in**: Natural gradient with Fubini-Study metric
+- **MCP integration**: AI assistants can compute gradients remotely
+
+### PennyLane's Advantage
+- **Autograd backprop**: True reverse-mode AD through circuits
+- **Framework bridges**: Native JAX/PyTorch/TensorFlow support
+- **Larger ecosystem**: More optimizers, more devices
+

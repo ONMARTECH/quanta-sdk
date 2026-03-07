@@ -14,7 +14,7 @@
 | **@circuit Dekoratoru** | Evet | Hayir | Hayir | `@qml.qnode` |
 | **DAG Temsili** | Dahili | Dahili | Moments | Yok |
 | **Derleyici** | 3-gecis + yonlendirme | PassManager | Optimizer | Sinirli |
-| **Gurultu Modeli** | 4 kanal | Kapsamli | Kapsamli | Plugin |
+| **Gurultu Modeli** | 7 kanal | Kapsamli | Kapsamli | Plugin |
 | **QEC Kodlari** | 4 kod (surface dahil) | Dis | Dis | Yok |
 | **QASM I/O** | 2.0 + 3.0 | 2.0/3.0 | 2.0 | Yok |
 | **Coklu-Ajan** | Evet | Hayir | Hayir | Hayir |
@@ -22,6 +22,8 @@
 | **Shor** | Dahili | Dis | Yok | Yok |
 | **Tekillestime** | Dahili (QAOA) | Yok | Yok | Yok |
 | **Bagimlilik** | 1 (numpy) | 20+ | 10+ | 10+ |
+| **MCP Sunucusu** | Dahili (7 arac) | Yok | Yok | Yok |
+| **Gradyanlar** | Parameter-shift + Natural | Manuel | Manuel | **Dahili (autograd)** |
 
 ### Kod Karsilastirmasi: Bell Durumu
 
@@ -86,5 +88,30 @@ Sadece NumPy. 200MB kurulum yok, Java yok, Rust toolchain yok.
 | Grover aramasi | 1 satir (L3) | 30+ satir |
 | `pip install` boyutu | ~1 MB | ~200 MB |
 | Bagimliliklar | 1 (numpy) | 20+ |
-| Testler | 150+ | 5000+ |
+| Testler | 380+ | 5000+ |
 | Maks qubit (sim) | 27 | 32 |
+
+## Diferansiyel Kuantum Hesaplama
+
+PennyLane'in temel avantaji autograd ile diferansiyel programlamadir.
+Quanta artik karsilastirmali gradyan destegi sunar:
+
+| Ozellik | Quanta | PennyLane |
+|---------|--------|-----------|
+| **Parameter-shift kurali** | `parameter_shift()` | `qml.gradients.param_shift` |
+| **Sonlu farklar** | `finite_diff()` | `qml.gradients.finite_diff` |
+| **Dogal gradyan** | `natural_gradient()` (QFIM) | `qml.QNGOptimizer` |
+| **Beklenen deger** | `expectation()` | `qml.expval()` |
+| **Geri yayilim** | Henuz yok | **Evet (JAX/Torch/TF)** |
+| **Cerceve entegrasyonu** | NumPy-yerel | JAX, PyTorch, TensorFlow |
+
+### Quanta'nin Avantaji
+- **Sifir bagimlilik**: Gradyanlar sadece NumPy ile calisir
+- **Acik kontrol**: Yontem bazinda secim, cihaz bazinda degil
+- **QFIM dahili**: Fubini-Study metrigi ile dogal gradyan
+- **MCP entegrasyonu**: AI asistanlar uzaktan gradyan hesaplayabilir
+
+### PennyLane'in Avantaji
+- **Autograd geri yayilim**: Devreler uzerinden gercek ters-mod AD
+- **Cerceve koprusu**: Yerlesik JAX/PyTorch/TensorFlow destegi
+- **Buyuk ekosistem**: Daha fazla optimizer, daha fazla cihaz
