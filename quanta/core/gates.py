@@ -37,15 +37,43 @@ _I = np.eye(2, dtype=complex)
 
 # ═══════════════════════════════════════════
 
-_active_builders: list = []
+import threading
+
+_thread_local = threading.local()
+
+
+def _get_builders_stack() -> list:
+    """Returns the per-thread builder stack, creating it if needed."""
+    if not hasattr(_thread_local, "builders"):
+        _thread_local.builders = []
+    return _thread_local.builders
+
+
+# Public alias for backward compatibility (used by circuit.py)
+# Now returns the thread-local stack instead of a global list.
+_active_builders = type("_BuilderProxy", (), {
+    "append": staticmethod(lambda b: _get_builders_stack().append(b)),
+    "pop": staticmethod(lambda: _get_builders_stack().pop()),
+    "__bool__": staticmethod(lambda: bool(_get_builders_stack())),
+})()
+
 
 def _get_active_builder():
-    """Returns the active CircuitBuilder. Raises error if none."""
-    if not _active_builders:
+    """Returns the active CircuitBuilder for the current thread.
+
+    Each thread has its own isolated builder stack, so concurrent
+    circuit builds never interfere with each other.
+
+    Raises:
+        CircuitError: If no builder is active in the current thread.
+    """
+    stack = _get_builders_stack()
+    if not stack:
         from quanta.core.types import CircuitError
         raise CircuitError(
+            "No active circuit builder. Use gates inside a @circuit function."
         )
-    return _active_builders[-1]
+    return stack[-1]
 
 # ═══════════════════════════════════════════
 
