@@ -32,7 +32,7 @@ from quanta.core.types import Instruction
 from quanta.dag.dag_circuit import DAGCircuit
 from quanta.simulator.statevector import StateVectorSimulator
 
-__all__ = ["factor", "ShorResult"]
+__all__ = ["factor", "factor_recursive", "ShorResult"]
 
 
 @dataclass
@@ -172,9 +172,11 @@ def _quantum_order_finding(
     # of Shor's algorithm — the QFT step (Step 3) uses real gates.
     powers = []
     val = 1
+    a_int = int(a)  # Ensure Python int to avoid numpy.int64 overflow
+    N_int = int(N)
     for _ in range(dim):
-        powers.append(val % N)
-        val = (val * a) % N
+        powers.append(val % N_int)
+        val = (val * a_int) % N_int
 
     state = sim.state
     for x in range(dim):
@@ -257,9 +259,10 @@ def factor(
 
     # Quantum approach
     rng = np.random.default_rng(seed)
+    N_int = int(N)  # Ensure Python int throughout
 
     for attempt in range(max_attempts):
-        a = rng.integers(2, N)
+        a = int(rng.integers(2, N_int))
 
         # Check GCD
         g = math.gcd(a, N)
@@ -271,9 +274,9 @@ def factor(
 
         if r % 2 == 0:
             # Try to find factors
-            x = pow(a, r // 2, N)
-            f1 = math.gcd(x + 1, N)
-            f2 = math.gcd(x - 1, N)
+            x = int(pow(int(a), r // 2, N_int))
+            f1 = math.gcd(x + 1, N_int)
+            f2 = math.gcd(x - 1, N_int)
 
             if 1 < f1 < N:
                 return ShorResult(N, (f1, N // f1), r, attempt + 1, "quantum")
@@ -286,3 +289,61 @@ def factor(
             return ShorResult(N, (i, N // i), 0, max_attempts, "classical_fallback")
 
     raise ValueError(f"Could not factor {N} — it may be prime")
+
+
+def _is_prime(n: int) -> bool:
+    """Simple primality test."""
+    if n < 2:
+        return False
+    if n < 4:
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
+
+
+def factor_recursive(
+    N: int,
+    max_attempts: int = 20,
+    seed: int | None = None,
+) -> list[int]:
+    """Recursively factor N into all prime factors.
+
+    Unlike `factor()` which returns a single factor pair,
+    this decomposes composite cofactors until all factors are prime.
+
+    Args:
+        N: Integer to factor.
+        max_attempts: Max quantum attempts per factoring step.
+        seed: Random seed.
+
+    Returns:
+        Sorted list of prime factors (with multiplicity).
+
+    Example:
+        >>> factor_recursive(9999)  # 3 × 3 × 11 × 101
+        [3, 3, 11, 101]
+    """
+    if N < 2:
+        return []
+    if _is_prime(N):
+        return [N]
+
+    result = factor(N, max_attempts=max_attempts, seed=seed)
+    p, q = result.factors
+
+    # Recursively factor each part
+    factors: list[int] = []
+    for part in (p, q):
+        if _is_prime(part):
+            factors.append(part)
+        else:
+            factors.extend(factor_recursive(part, max_attempts, seed))
+
+    factors.sort()
+    return factors

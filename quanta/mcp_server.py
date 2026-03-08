@@ -209,7 +209,7 @@ def grover_search(
         from quanta.layer3.search import search
 
         result = search(
-            num_qubits=num_qubits,
+            num_bits=num_qubits,
             target=target,
             shots=shots,
         )
@@ -250,18 +250,20 @@ def shor_factor(number: int = 15) -> str:
         JSON with the prime factors found.
     """
     try:
-        from quanta.layer3.shor import factor
+        from quanta.layer3.shor import factor, factor_recursive
 
         result = factor(number)
+        prime_factors = factor_recursive(number)
 
         return json.dumps({
             "algorithm": "Shor's Factoring",
             "input": number,
             "factors": result.factors,
+            "prime_factors": prime_factors,
             "is_correct": result.factors[0] * result.factors[1] == number
             if len(result.factors) == 2 else False,
             "explanation": (
-                f"{number} = {' × '.join(map(str, result.factors))}. "
+                f"{number} = {' × '.join(map(str, prime_factors))}. "
                 "Shor's algorithm uses quantum period-finding (QFT) "
                 "to factor integers in polynomial time."
             ),
