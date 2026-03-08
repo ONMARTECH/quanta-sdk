@@ -340,11 +340,11 @@ def simulate_noise(
 
         sim.apply("H", (0,))
         state = model.apply_noise(sim.state, (0,), 2, rng)
-        sim._state = state
+        sim.state = state
 
         sim.apply("CX", (0, 1))
         state = model.apply_noise(sim.state, (0, 1), 2, rng)
-        sim._state = state
+        sim.state = state
 
         counts = sim.sample(shots)
 
