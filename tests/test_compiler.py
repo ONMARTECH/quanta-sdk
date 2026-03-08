@@ -5,13 +5,11 @@ Gate iptal, rotasyon birleştirme ve pipeline istatistiklerini test eder.
 """
 
 import numpy as np
-import pytest
 
-from quanta import circuit, H, X, Z, CX, RZ, measure, run
-from quanta.compiler.pipeline import CompilerPipeline
+from quanta import CX, RZ, H, X, circuit, measure, run
 from quanta.compiler.passes.optimize import CancelInverses, MergeRotations
+from quanta.compiler.pipeline import CompilerPipeline
 from quanta.dag.dag_circuit import DAGCircuit
-
 
 # ═══════════════════════════════════════════
 #  CancelInverses Testleri

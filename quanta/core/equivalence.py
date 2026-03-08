@@ -43,10 +43,11 @@ def get_unitary(circuit: CircuitDefinition) -> np.ndarray:
     unitary = np.zeros((dim, dim), dtype=complex)
 
     for col in range(dim):
-        # Temel durum |col⟩'i girdiye koy
+        # Inject basis state |col⟩
         sim = StateVectorSimulator(n)
-        sim._state = np.zeros(dim, dtype=complex)
-        sim._state[col] = 1.0
+        basis = np.zeros(dim, dtype=complex)
+        basis[col] = 1.0
+        sim.state = basis
 
         for op in dag.op_nodes():
             sim.apply(op.gate_name, op.qubits, op.params)

@@ -181,3 +181,23 @@ class StateVectorSimulator:
             phase: Phase factor to multiply (e.g., -1 for phase flip).
         """
         self._state[index] *= phase
+
+    def apply_noise(
+        self,
+        noise_model: object,
+        qubits: tuple[int, ...],
+        rng: np.random.Generator,
+    ) -> None:
+        """Applies a noise model to the statevector after a gate.
+
+        Public interface for noise integration — avoids external
+        access to _state.
+
+        Args:
+            noise_model: NoiseModel with apply_noise(state, qubits, n, rng).
+            qubits: Qubits the gate acted on.
+            rng: Random number generator for stochastic noise.
+        """
+        self._state = noise_model.apply_noise(
+            self._state, qubits, self.num_qubits, rng,
+        )

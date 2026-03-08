@@ -12,13 +12,12 @@ Covers:
   - Hamiltonian simulation
 """
 
-import pytest
 import numpy as np
+import pytest
 
-from quanta.layer3.search import search
-from quanta.layer3.optimize import optimize
 from quanta.layer3.agent import Agent, MultiAgentSystem
-
+from quanta.layer3.optimize import optimize
+from quanta.layer3.search import search
 
 # ═══════════════════════════════════════════
 #  search() Tests
@@ -165,8 +164,8 @@ class TestVQE:
     """Variational Quantum Eigensolver tests."""
 
     def test_h2_ground_state_accuracy(self):
-        from quanta.layer3.vqe import vqe, build_hamiltonian_matrix
         from quanta.layer3.hamiltonian import molecular_hamiltonian
+        from quanta.layer3.vqe import build_hamiltonian_matrix, vqe
         h2 = molecular_hamiltonian("H2")
         result = vqe(
             num_qubits=2, hamiltonian=h2.terms,
@@ -425,14 +424,14 @@ class TestHamiltonian:
             molecular_hamiltonian("XeF6")
 
     def test_evolution_preserves_norm(self):
-        from quanta.layer3.hamiltonian import molecular_hamiltonian, evolve
+        from quanta.layer3.hamiltonian import evolve, molecular_hamiltonian
         h2 = molecular_hamiltonian("H2")
         result = evolve(h2, time=1.0, steps=10)
         norm = np.linalg.norm(result.final_state)
         assert abs(norm - 1.0) < 1e-6
 
     def test_evolution_energy_conservation(self):
-        from quanta.layer3.hamiltonian import molecular_hamiltonian, evolve
+        from quanta.layer3.hamiltonian import evolve, molecular_hamiltonian
         h2 = molecular_hamiltonian("H2")
         result = evolve(h2, time=1.0, steps=20)
         e_start = result.energy_history[0]

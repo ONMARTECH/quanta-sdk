@@ -152,9 +152,11 @@ def _run_qaoa(
         gamma = params[2 * p]
         beta = params[2 * p + 1]
 
-        state = sim._state
+        # Cost layer: apply diagonal phase exp(-i*gamma*C)
+        state = sim.state  # public copy
         for i in range(len(state)):
             state[i] *= np.exp(-1j * gamma * costs[i])
+        sim.state = state  # public setter
 
         for q in range(n):
             sim.apply("RX", (q,), (2 * beta,))

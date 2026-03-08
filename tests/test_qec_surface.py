@@ -8,7 +8,6 @@ Validates:
 """
 
 import pytest
-import numpy as np
 
 from quanta.qec.surface_code import SurfaceCode
 
@@ -106,8 +105,8 @@ class TestBitFlipCodeSyndrome:
         assert len(cx_ops) == 4
 
     def test_syndrome_returns_circuit(self):
-        from quanta.qec.codes import BitFlipCode, QECCode
         from quanta.core.circuit import CircuitDefinition
+        from quanta.qec.codes import BitFlipCode
         code = BitFlipCode()
         syn = code.syndrome_measure()
         assert isinstance(syn, CircuitDefinition)

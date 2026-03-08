@@ -9,8 +9,6 @@ Validates:
   - Round-trip: QASM → DAG → verify
 """
 
-import pytest
-import numpy as np
 
 from quanta.export.qasm_import import from_qasm
 

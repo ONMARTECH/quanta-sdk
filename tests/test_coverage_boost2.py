@@ -13,8 +13,9 @@ Targets modules with <90% coverage:
   - gradients.py (88% → natural gradient QFIM coverage)
 """
 
-from unittest.mock import MagicMock, patch
 import json
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pytest
 
@@ -202,11 +203,11 @@ class TestRunnerExtended:
     """Extended runner tests for backend delegation and sweep edge cases."""
 
     def test_run_with_mock_backend(self):
-        from quanta.runner import run
         from quanta.core.circuit import circuit
-        from quanta.core.gates import H, CX
+        from quanta.core.gates import CX, H
         from quanta.core.measure import measure
         from quanta.result import Result
+        from quanta.runner import run
 
         @circuit(qubits=2)
         def bell(q):
@@ -227,10 +228,10 @@ class TestRunnerExtended:
         assert result.gate_count == 2
 
     def test_run_with_builtin_sim(self):
-        from quanta.runner import run
         from quanta.core.circuit import circuit
         from quanta.core.gates import H, X
         from quanta.core.measure import measure
+        from quanta.runner import run
 
         @circuit(qubits=2)
         def c(q):
@@ -244,10 +245,10 @@ class TestRunnerExtended:
         assert result.depth >= 1
 
     def test_sweep_single_run(self):
-        from quanta.runner import sweep
         from quanta.core.circuit import circuit
         from quanta.core.gates import H
         from quanta.core.measure import measure
+        from quanta.runner import sweep
 
         @circuit(qubits=1)
         def c(q):
@@ -260,11 +261,11 @@ class TestRunnerExtended:
         assert results[0].shots == 50
 
     def test_sweep_mismatched_lengths_raises(self):
-        from quanta.runner import sweep
         from quanta.core.circuit import circuit
         from quanta.core.gates import RZ
         from quanta.core.measure import measure
         from quanta.core.types import QuantaError
+        from quanta.runner import sweep
 
         @circuit(qubits=1)
         def rot(q, theta=0.0):
@@ -275,10 +276,10 @@ class TestRunnerExtended:
             sweep(rot, params={"theta": [1.0, 2.0], "phi": [1.0]}, shots=10)
 
     def test_run_returns_statevector(self):
-        from quanta.runner import run
         from quanta.core.circuit import circuit
         from quanta.core.gates import H
         from quanta.core.measure import measure
+        from quanta.runner import run
 
         @circuit(qubits=1)
         def c(q):
@@ -290,10 +291,10 @@ class TestRunnerExtended:
         assert len(result.statevector) == 2
 
     def test_run_seed_reproducibility(self):
-        from quanta.runner import run
         from quanta.core.circuit import circuit
         from quanta.core.gates import H
         from quanta.core.measure import measure
+        from quanta.runner import run
 
         @circuit(qubits=1)
         def c(q):
@@ -533,7 +534,7 @@ class TestGoogleBackendExtended:
     def test_dag_to_qasm_measurement(self):
         from quanta.backends.google import GoogleBackend
         from quanta.core.circuit import circuit
-        from quanta.core.gates import H, CX
+        from quanta.core.gates import CX, H
         from quanta.core.measure import measure
         from quanta.dag.dag_circuit import DAGCircuit
 
@@ -736,7 +737,7 @@ class TestGradientsExtended:
     """Extended gradient tests for better QFIM coverage."""
 
     def test_natural_gradient_two_params(self):
-        from quanta.gradients import natural_gradient, expectation
+        from quanta.gradients import expectation, natural_gradient
         from quanta.simulator.statevector import StateVectorSimulator
 
         def cost(params):
@@ -758,7 +759,7 @@ class TestGradientsExtended:
         assert result.method == "natural-gradient"
 
     def test_finite_diff_custom_epsilon(self):
-        from quanta.gradients import finite_diff, expectation
+        from quanta.gradients import expectation, finite_diff
         from quanta.simulator.statevector import StateVectorSimulator
 
         def cost(params):
@@ -784,4 +785,4 @@ class TestGradientsExtended:
         state = np.array([1, 0], dtype=complex)
         E = multi_expectation(state, [("Z", 0.5), ("X", 0.3), ("I", 1.0)], 1)
         # 0.5*1 + 0.3*0 + 1.0*1 = 1.5
-        assert E == pytest.approx(1.5)
+        assert pytest.approx(1.5) == E

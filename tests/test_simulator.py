@@ -6,11 +6,9 @@ These tests determine the SDK's "quality score".
 """
 
 import numpy as np
-import pytest
 
-from quanta import circuit, H, X, Y, Z, CX, RY, measure, run
+from quanta import CX, H, circuit, measure, run
 from quanta.simulator.statevector import StateVectorSimulator
-
 
 # ═══════════════════════════════════════════
 #  Basic State Tests
@@ -401,7 +399,7 @@ class TestNoiseChannels:
         assert total == 1000
 
     def test_noise_model_chains(self):
-        from quanta.simulator.noise import NoiseModel, Depolarizing, T2Relaxation
+        from quanta.simulator.noise import Depolarizing, NoiseModel, T2Relaxation
         model = NoiseModel()
         model.add(Depolarizing(0.01)).add(T2Relaxation(0.01))
         assert len(model._channels) == 2
@@ -410,8 +408,13 @@ class TestNoiseChannels:
 
     def test_noise_channel_names(self):
         from quanta.simulator.noise import (
-            Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping,
-            T2Relaxation, Crosstalk, ReadoutError,
+            AmplitudeDamping,
+            BitFlip,
+            Crosstalk,
+            Depolarizing,
+            PhaseFlip,
+            ReadoutError,
+            T2Relaxation,
         )
         assert "Depolarizing" in Depolarizing().name
         assert "BitFlip" in BitFlip().name

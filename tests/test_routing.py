@@ -5,18 +5,18 @@ Tests all topology types and SWAP insertion logic.
 """
 
 import pytest
+
 from quanta.compiler.passes.routing import (
     RouteToTopology,
+    grid_topology,
     linear_topology,
     ring_topology,
-    grid_topology,
 )
-from quanta.dag.dag_circuit import DAGCircuit
-from quanta.core.circuit import circuit, CircuitBuilder
-from quanta.core.gates import H, CX, X
+from quanta.core.circuit import CircuitBuilder, circuit
+from quanta.core.gates import CX, H, X
 from quanta.core.measure import measure
 from quanta.core.types import Instruction
-
+from quanta.dag.dag_circuit import DAGCircuit
 
 # ═══════════════════════════════════════════
 #  Topology generation

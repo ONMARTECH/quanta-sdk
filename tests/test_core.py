@@ -7,16 +7,14 @@ QubitRef, QubitRegister, Gate sınıfları ve @circuit dekoratörünü test eder
 import numpy as np
 import pytest
 
+from quanta.core.circuit import CircuitDefinition, circuit
+from quanta.core.gates import CCX, CX, CZ, RY, RZ, SWAP, H, S, T, X, Y, Z
 from quanta.core.types import (
-    QubitRef,
-    QubitRegister,
-    Instruction,
     CircuitError,
     QubitIndexError,
+    QubitRef,
+    QubitRegister,
 )
-from quanta.core.gates import H, X, Y, Z, S, T, CX, CZ, SWAP, CCX, RX, RY, RZ
-from quanta.core.circuit import circuit, CircuitDefinition
-
 
 # ═══════════════════════════════════════════
 #  QubitRef Testleri

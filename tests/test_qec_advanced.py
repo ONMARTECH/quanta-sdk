@@ -5,7 +5,6 @@ tests/test_qec_advanced.py -- Tests for color code, decoders, Pauli frame sim.
 import numpy as np
 import pytest
 
-
 # ═══════════════════════════════════════════
 #  Color Code
 # ═══════════════════════════════════════════
@@ -40,7 +39,7 @@ class TestColorCode:
             ColorCode(distance=4)
 
     def test_plaquettes_d3(self):
-        from quanta.qec.color_code import ColorCode, Color
+        from quanta.qec.color_code import Color, ColorCode
         code = ColorCode(distance=3)
         assert len(code.plaquettes) == 3
         colors = {p.color for p in code.plaquettes}

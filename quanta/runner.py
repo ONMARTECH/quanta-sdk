@@ -109,9 +109,7 @@ def run(
         simulator.apply(op.gate_name, op.qubits, op.params)
         # Apply noise after each gate if noise model is provided
         if noise is not None:
-            simulator._state = noise.apply_noise(
-                simulator._state, op.qubits, dag.num_qubits, rng,
-            )
+            simulator.apply_noise(noise, op.qubits, rng)
 
     counts = simulator.sample(shots)
 

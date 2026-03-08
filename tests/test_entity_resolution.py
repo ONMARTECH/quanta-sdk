@@ -5,26 +5,23 @@ Tests the complete pipeline: similarity, blocking, QAOA/greedy merge,
 Turkish name handling, and edge cases.
 """
 
-import pytest
-import numpy as np
 
 from quanta.layer3.entity_resolution import (
-    resolve,
-    ResolutionResult,
     Cluster,
-    compute_similarity,
-    _normalize,
-    _levenshtein_sim,
-    _soundex_tr,
-    _field_similarity,
+    ResolutionResult,
     _block_records,
+    _field_similarity,
     _greedy_merge_block,
-    _qaoa_optimize_block,
-    _pick_canonical,
+    _levenshtein_sim,
     _merge_overlapping_sets,
+    _normalize,
+    _pick_canonical,
+    _qaoa_optimize_block,
+    _soundex_tr,
     _split_block_by_similarity,
+    compute_similarity,
+    resolve,
 )
-
 
 # ═══════════════════════════════════════════
 #  Turkish normalization

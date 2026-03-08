@@ -7,9 +7,7 @@ Tests Google/IBM backend adapters using mocks
 
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
-
 
 # ═══════════════════════════════════════════
 #  Google Cirq Backend (mocked)
@@ -55,8 +53,8 @@ class TestGoogleBackend:
     def test_dag_to_qasm(self):
         with patch.dict("sys.modules", {"cirq": MagicMock()}):
             from quanta.backends.google import GoogleBackend
-            from quanta.core.circuit import circuit, CircuitBuilder
-            from quanta.core.gates import H, CX
+            from quanta.core.circuit import circuit
+            from quanta.core.gates import CX, H
             from quanta.core.measure import measure
             from quanta.dag.dag_circuit import DAGCircuit
 
@@ -98,7 +96,7 @@ class TestIBMBackend:
 
     def test_dag_to_qasm(self):
         from quanta.core.circuit import circuit
-        from quanta.core.gates import H, CX
+        from quanta.core.gates import CX, H
         from quanta.core.measure import measure
         from quanta.dag.dag_circuit import DAGCircuit
 
@@ -150,10 +148,10 @@ class TestRunner:
     """Tests for runner module backend delegation."""
 
     def test_run_default_simulator(self):
-        from quanta.runner import run
         from quanta.core.circuit import circuit
-        from quanta.core.gates import H, CX
+        from quanta.core.gates import CX, H
         from quanta.core.measure import measure
+        from quanta.runner import run
 
         @circuit(qubits=2)
         def bell(q):
@@ -166,10 +164,10 @@ class TestRunner:
         assert sum(result.counts.values()) == 100
 
     def test_run_preserves_circuit_name(self):
-        from quanta.runner import run
         from quanta.core.circuit import circuit
         from quanta.core.gates import X
         from quanta.core.measure import measure
+        from quanta.runner import run
 
         @circuit(qubits=1)
         def my_circ(q):
@@ -180,10 +178,10 @@ class TestRunner:
         assert result.circuit_name == "my_circ"
 
     def test_run_gate_count_depth(self):
-        from quanta.runner import run
         from quanta.core.circuit import circuit
-        from quanta.core.gates import H, CX
+        from quanta.core.gates import CX, H
         from quanta.core.measure import measure
+        from quanta.runner import run
 
         @circuit(qubits=2)
         def bell(q):
@@ -196,17 +194,17 @@ class TestRunner:
         assert result.depth >= 2
 
     def test_run_invalid_circuit_raises(self):
-        from quanta.runner import run
         from quanta.core.types import QuantaError
+        from quanta.runner import run
         with pytest.raises(QuantaError, match="@circuit"):
             run("not_a_circuit", shots=10)
 
     def test_run_negative_shots_raises(self):
-        from quanta.runner import run
         from quanta.core.circuit import circuit
         from quanta.core.gates import H
         from quanta.core.measure import measure
         from quanta.core.types import QuantaError
+        from quanta.runner import run
 
         @circuit(qubits=1)
         def c(q):
@@ -217,10 +215,10 @@ class TestRunner:
             run(c, shots=0)
 
     def test_sweep_basic(self):
-        from quanta.runner import sweep
         from quanta.core.circuit import circuit
         from quanta.core.gates import H
         from quanta.core.measure import measure
+        from quanta.runner import sweep
 
         @circuit(qubits=1)
         def c(q):
@@ -233,10 +231,10 @@ class TestRunner:
         assert results[0].shots == 10
 
     def test_sweep_empty_params(self):
-        from quanta.runner import sweep
         from quanta.core.circuit import circuit
         from quanta.core.gates import H
         from quanta.core.measure import measure
+        from quanta.runner import sweep
 
         @circuit(qubits=1)
         def c(q):

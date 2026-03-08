@@ -9,15 +9,14 @@ import numpy as np
 import pytest
 
 from quanta.gradients import (
-    parameter_shift,
-    finite_diff,
-    natural_gradient,
-    expectation,
-    multi_expectation,
     GradientResult,
+    expectation,
+    finite_diff,
+    multi_expectation,
+    natural_gradient,
+    parameter_shift,
 )
 from quanta.simulator.statevector import StateVectorSimulator
-
 
 # ═══════════════════════════════════════════
 #  Expectation Value Tests

@@ -7,8 +7,7 @@ QASM export, gürültü, eşdeğerlik, QEC, transpiler testleri.
 import numpy as np
 import pytest
 
-from quanta import circuit, H, X, Z, S, T, CX, CZ, SWAP, RZ, measure, run
-
+from quanta import CX, RZ, SWAP, H, X, circuit, measure, run
 
 # ═══════════════════════════════════════════
 #  OpenQASM Export Testleri
@@ -56,7 +55,7 @@ class TestQASMExport:
 
     def test_qasm_roundtrip_gate_names(self):
         """QASM export → parse → kapı isimleri korunmalı."""
-        from quanta.export.qasm import to_qasm, from_qasm_gates
+        from quanta.export.qasm import from_qasm_gates, to_qasm
 
         @circuit(qubits=2)
         def test_circ(q):
@@ -95,7 +94,7 @@ class TestNoise:
         np.testing.assert_allclose(result, [0, 1])
 
     def test_noise_model_chains_channels(self):
-        from quanta.simulator.noise import NoiseModel, Depolarizing
+        from quanta.simulator.noise import Depolarizing, NoiseModel
         model = NoiseModel()
         model.add(Depolarizing(0.0))
         model.add(Depolarizing(0.0))
@@ -282,8 +281,8 @@ class TestVisualizeState:
     """Durum vektörü görselleştirme testleri."""
 
     def test_show_probabilities_returns_string(self):
-        from quanta.visualize_state import show_probabilities
         from quanta.result import Result
+        from quanta.visualize_state import show_probabilities
         r = Result(counts={"00": 500, "11": 500}, shots=1000, num_qubits=2)
         s = show_probabilities(r)
         assert isinstance(s, str)

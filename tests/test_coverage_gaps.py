@@ -7,7 +7,6 @@ Covers: DensityMatrixSimulator, visualize.draw, Result display, CustomGate.
 import numpy as np
 import pytest
 
-
 # ═══════════════════════════════════════════
 #  DensityMatrixSimulator
 # ═══════════════════════════════════════════
@@ -23,7 +22,7 @@ class TestDensityMatrixSimulator:
         assert rho.shape == (2, 2)
 
     def test_init_max_qubits(self):
-        from quanta.simulator.density_matrix import DensityMatrixSimulator, DensityMatrixError
+        from quanta.simulator.density_matrix import DensityMatrixError, DensityMatrixSimulator
         with pytest.raises(DensityMatrixError):
             DensityMatrixSimulator(14)
 
@@ -61,7 +60,7 @@ class TestDensityMatrixSimulator:
         assert abs(probs[1] - 1.0) < 0.01
 
     def test_unknown_gate_raises(self):
-        from quanta.simulator.density_matrix import DensityMatrixSimulator, DensityMatrixError
+        from quanta.simulator.density_matrix import DensityMatrixError, DensityMatrixSimulator
         sim = DensityMatrixSimulator(1)
         with pytest.raises(DensityMatrixError, match="Unknown"):
             sim.apply("FOOBAR", (0,))
@@ -70,9 +69,9 @@ class TestDensityMatrixSimulator:
         from quanta.simulator.density_matrix import DensityMatrixSimulator
         sim = DensityMatrixSimulator(1)
         # Bit flip channel: 50% chance of X
-        I = np.eye(2, dtype=complex)
+        eye2 = np.eye(2, dtype=complex)
         X = np.array([[0, 1], [1, 0]], dtype=complex)
-        kraus = [np.sqrt(0.5) * I, np.sqrt(0.5) * X]
+        kraus = [np.sqrt(0.5) * eye2, np.sqrt(0.5) * X]
         sim.apply_kraus(kraus, (0,))
         probs = sim.probabilities()
         assert abs(probs[0] - 0.5) < 0.1
@@ -126,10 +125,10 @@ class TestVisualize:
     """Tests for ASCII circuit drawing (81 lines, was 0%)."""
 
     def test_draw_bell(self):
-        from quanta.visualize import draw
         from quanta.core.circuit import circuit
-        from quanta.core.gates import H, CX
+        from quanta.core.gates import CX, H
         from quanta.core.measure import measure
+        from quanta.visualize import draw
 
         @circuit(qubits=2)
         def bell(q):
@@ -144,10 +143,10 @@ class TestVisualize:
         assert "M" in output
 
     def test_draw_single_qubit(self):
-        from quanta.visualize import draw
         from quanta.core.circuit import circuit
         from quanta.core.gates import X
         from quanta.core.measure import measure
+        from quanta.visualize import draw
 
         @circuit(qubits=1)
         def c(q):
@@ -158,10 +157,10 @@ class TestVisualize:
         assert "X" in output
 
     def test_draw_three_qubit(self):
-        from quanta.visualize import draw
         from quanta.core.circuit import circuit
-        from quanta.core.gates import H, CX, X
+        from quanta.core.gates import CX, H, X
         from quanta.core.measure import measure
+        from quanta.visualize import draw
 
         @circuit(qubits=3)
         def c(q):
@@ -175,10 +174,10 @@ class TestVisualize:
         assert "q[2]" in output
 
     def test_draw_swap(self):
-        from quanta.visualize import draw
         from quanta.core.circuit import circuit
         from quanta.core.gates import SWAP
         from quanta.core.measure import measure
+        from quanta.visualize import draw
 
         @circuit(qubits=2)
         def c(q):
@@ -189,10 +188,10 @@ class TestVisualize:
         assert "x" in output
 
     def test_draw_parametric(self):
-        from quanta.visualize import draw
         from quanta.core.circuit import circuit
         from quanta.core.gates import RX
         from quanta.core.measure import measure
+        from quanta.visualize import draw
 
         @circuit(qubits=1)
         def c(q):
@@ -203,10 +202,10 @@ class TestVisualize:
         assert "Rx" in output
 
     def test_draw_vertical_connections(self):
-        from quanta.visualize import draw
         from quanta.core.circuit import circuit
         from quanta.core.gates import CX
         from quanta.core.measure import measure
+        from quanta.visualize import draw
 
         @circuit(qubits=3)
         def c(q):
@@ -343,22 +342,22 @@ class TestCustomGate:
         del GATE_REGISTRY["SqrtX_test"]
 
     def test_not_square_raises(self):
-        from quanta.core.custom_gate import custom_gate, CustomGateError
+        from quanta.core.custom_gate import CustomGateError, custom_gate
         with pytest.raises(CustomGateError, match="square"):
             custom_gate("bad", [[1, 0, 0], [0, 1, 0]])
 
     def test_not_power_of_2_raises(self):
-        from quanta.core.custom_gate import custom_gate, CustomGateError
+        from quanta.core.custom_gate import CustomGateError, custom_gate
         with pytest.raises(CustomGateError, match="power"):
             custom_gate("bad3", [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 
     def test_not_unitary_raises(self):
-        from quanta.core.custom_gate import custom_gate, CustomGateError
+        from quanta.core.custom_gate import CustomGateError, custom_gate
         with pytest.raises(CustomGateError, match="unitary"):
             custom_gate("bad_u", [[2, 0], [0, 1]])
 
     def test_duplicate_name_raises(self):
-        from quanta.core.custom_gate import custom_gate, CustomGateError
+        from quanta.core.custom_gate import CustomGateError, custom_gate
         with pytest.raises(CustomGateError, match="already registered"):
             custom_gate("H", [[1, 0], [0, 1]])  # H already exists
 
@@ -379,9 +378,9 @@ class TestCustomGate:
         del GATE_REGISTRY["MySwap_test"]
 
     def test_gate_in_circuit(self):
+        from quanta.core.circuit import circuit
         from quanta.core.custom_gate import custom_gate
         from quanta.core.gates import GATE_REGISTRY
-        from quanta.core.circuit import circuit
         from quanta.core.measure import measure
         from quanta.runner import run
 

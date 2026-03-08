@@ -7,7 +7,7 @@ ve yardımcı fonksiyonlar burada tanımlanır.
 
 import pytest
 
-from quanta import circuit, H, X, CX, measure
+from quanta import CX, H, X, circuit, measure
 
 
 @pytest.fixture
