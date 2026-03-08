@@ -44,7 +44,7 @@ from quanta.runner import run, sweep
 __all__ = [
     # Gates
     "H", "X", "Y", "Z", "S", "T",
-    "CX", "CZ", "SWAP", "CCX",
+    "CX", "CY", "CZ", "SWAP", "CCX",
     "RX", "RY", "RZ",
     # Custom gates
     "custom_gate",

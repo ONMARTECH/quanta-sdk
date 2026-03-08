@@ -14,6 +14,7 @@ Example:
 
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -35,9 +36,6 @@ __all__ = [
 _SQRT2_INV = 1 / np.sqrt(2)
 _I = np.eye(2, dtype=complex)
 
-# ═══════════════════════════════════════════
-
-import threading
 
 _thread_local = threading.local()
 

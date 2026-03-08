@@ -31,7 +31,6 @@ __all__ = [
     "Instruction",
     "QubitRegister",
     "MeasureSpec",
-    "CircuitSpec",
     "QuantaError",
     "CircuitError",
     "QubitIndexError",

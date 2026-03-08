@@ -1,6 +1,8 @@
 """
+Example 04: Deutsch-Jozsa Algorithm
 
-Bir fonksiyonun "sabit" mi (hep 0 veya hep 1) yoksa
+Determines whether a function is "constant" (always 0 or always 1)
+or "balanced" (outputs 0 for half the inputs, 1 for the other half).
 
     q[0]: ──H──[Oracle]──H──M──
     q[1]: ──H──[Oracle]──H──M──
@@ -14,7 +16,7 @@ from quanta.visualize import draw
 
 @circuit(qubits=3)
 def deutsch_jozsa_balanced(q):
-    """Deutsch-Jozsa: Dengeli oracle ile (f(x) = x₁ XOR x₂).
+    """Deutsch-Jozsa: Balanced oracle (f(x) = x₁ XOR x₂).
 
     """
     X(q[2])
@@ -22,11 +24,11 @@ def deutsch_jozsa_balanced(q):
     H(q[1])
     H(q[2])
 
-    # Dengeli oracle: f(x) = x₁ XOR x₂
+    # Balanced oracle: f(x) = x₁ XOR x₂
     CX(q[0], q[2])
     CX(q[1], q[2])
 
-    # Geri Hadamard
+    # Final Hadamard
     H(q[0])
     H(q[1])
 
@@ -34,7 +36,7 @@ def deutsch_jozsa_balanced(q):
 
 @circuit(qubits=3)
 def deutsch_jozsa_constant(q):
-    """Deutsch-Jozsa: Sabit oracle ile (f(x) = 0 her zaman).
+    """Deutsch-Jozsa: Constant oracle (f(x) = 0 always).
 
     """
     X(q[2])
@@ -49,14 +51,16 @@ def deutsch_jozsa_constant(q):
     return measure(q[0], q[1])
 
 if __name__ == "__main__":
-    print("═══ Deutsch-Jozsa: Dengeli Oracle ═══\n")
+    print("═══ Deutsch-Jozsa: Balanced Oracle ═══\n")
     print(draw(deutsch_jozsa_balanced))
     result = run(deutsch_jozsa_balanced, shots=1024, seed=42)
     print(result.summary())
-    print(f"\n→ Fonksiyon: {answer}\n")
+    answer = "BALANCED" if result.most_frequent != "00" else "CONSTANT"
+    print(f"\n→ Function: {answer}\n")
 
-    print("═══ Deutsch-Jozsa: Sabit Oracle ═══\n")
+    print("═══ Deutsch-Jozsa: Constant Oracle ═══\n")
     print(draw(deutsch_jozsa_constant))
     result = run(deutsch_jozsa_constant, shots=1024, seed=42)
     print(result.summary())
-    print(f"\n→ Fonksiyon: {answer}")
+    answer = "BALANCED" if result.most_frequent != "00" else "CONSTANT"
+    print(f"\n→ Function: {answer}")

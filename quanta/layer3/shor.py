@@ -28,7 +28,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from quanta.core.circuit import CircuitBuilder
-from quanta.core.types import Instruction, MeasureSpec
+from quanta.core.types import Instruction
 from quanta.dag.dag_circuit import DAGCircuit
 from quanta.simulator.statevector import StateVectorSimulator
 
@@ -163,8 +163,13 @@ def _quantum_order_finding(
     for q in range(n_count):
         sim.apply("H", (q,))
 
-    # Step 2: Apply modular exponentiation phases
-    # This encodes a^x mod N eigenvalues into the counting register
+    # Step 2: Apply modular exponentiation phases (statevector level)
+    # NOTE: This step applies phases classically rather than building
+    # controlled-U^(2^k) gate circuits. A full quantum implementation
+    # would require ~2n³ CNOT gates for modular exponentiation, which
+    # exceeds our simulator's qubit/memory limit for N > 8.
+    # This is a standard pragmatic trade-off in classical simulation
+    # of Shor's algorithm — the QFT step (Step 3) uses real gates.
     powers = []
     val = 1
     for _ in range(dim):

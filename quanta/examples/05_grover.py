@@ -78,4 +78,5 @@ if __name__ == "__main__":
     print(draw(grover_3qubit))
     result = run(grover_3qubit, shots=1024, seed=42)
     print(result.summary())
-    print(f"\n→ Found: |{result.most_frequent}⟩ (success: %{result.probabilities[result.most_frequent]*100:.0f})")
+    prob = result.probabilities[result.most_frequent] * 100
+    print(f"\n→ Found: |{result.most_frequent}⟩ (success: %{prob:.0f})")

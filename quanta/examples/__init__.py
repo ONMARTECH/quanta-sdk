@@ -9,8 +9,6 @@ Lists available examples for discoverability:
 
 from __future__ import annotations
 
-
-
 __all__ = ["list_examples", "EXAMPLES"]
 
 EXAMPLES: dict[str, str] = {

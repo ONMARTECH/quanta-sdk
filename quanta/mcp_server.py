@@ -74,8 +74,23 @@ def run_circuit(
     """
     try:
         from quanta import (
-            circuit, H, X, Y, Z, S, T, CX, CZ, CY, SWAP, CCX,
-            RX, RY, RZ, measure, run,
+            CCX,
+            CX,
+            CY,
+            CZ,
+            RX,
+            RY,
+            RZ,
+            SWAP,
+            H,
+            S,
+            T,
+            X,
+            Y,
+            Z,
+            circuit,
+            measure,
+            run,
         )
 
         # Sandbox: only expose Quanta SDK symbols, no builtins
@@ -139,7 +154,7 @@ def create_bell_state(shots: int = 1024, seed: int | None = None) -> str:
         JSON with measurement results showing entanglement.
     """
     try:
-        from quanta import circuit, H, CX, measure, run
+        from quanta import CX, H, circuit, measure, run
 
         @circuit(qubits=2)
         def bell(q):
@@ -191,7 +206,7 @@ def grover_search(
         JSON with search results and success probability.
     """
     try:
-        from quanta.layer3.search import search, SearchResult
+        from quanta.layer3.search import search
 
         result = search(
             num_qubits=num_qubits,
@@ -285,12 +300,18 @@ def simulate_noise(
     """
     try:
         import numpy as np
-        from quanta import circuit, H, CX, measure
-        from quanta.simulator.statevector import StateVectorSimulator
+
         from quanta.simulator.noise import (
-            NoiseModel, Depolarizing, BitFlip, PhaseFlip,
-            AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError,
+            AmplitudeDamping,
+            BitFlip,
+            Crosstalk,
+            Depolarizing,
+            NoiseModel,
+            PhaseFlip,
+            ReadoutError,
+            T2Relaxation,
         )
+        from quanta.simulator.statevector import StateVectorSimulator
 
         channel_map = {
             "depolarizing": Depolarizing(probability=probability),
@@ -560,8 +581,8 @@ if __name__ == "__main__":
         port = args.port or int(os.environ.get("PORT", "8080"))
         print(f"🚀 Quanta MCP Server starting on {args.host}:{port}")
         print(f"📋 SSE endpoint: http://{args.host}:{port}/sse")
-        print(f"🔧 Tools: run_circuit, create_bell_state, grover_search,")
-        print(f"          shor_factor, simulate_noise, list_gates, explain_result")
+        print("🔧 Tools: run_circuit, create_bell_state, grover_search,")
+        print("          shor_factor, simulate_noise, list_gates, explain_result")
         mcp.run(transport="sse", host=args.host, port=port)
     else:
         mcp.run(transport="stdio")

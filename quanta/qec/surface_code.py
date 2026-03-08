@@ -265,6 +265,8 @@ class SurfaceCode:
         d = self.distance
         n_errors = int(error_mask.sum())
 
+        from collections import deque as _deque
+
         # Errors exceeding distance always cause logical error
         if n_errors >= d:
             return True
@@ -284,9 +286,9 @@ class SurfaceCode:
             return excess > 0 and n_errors > d // 2
 
         visited = set()
-        queue = list(left_boundary)
+        queue = _deque(left_boundary)
         while queue:
-            r, c = queue.pop(0)
+            r, c = queue.popleft()
             if (r, c) in visited:
                 continue
             visited.add((r, c))
@@ -304,9 +306,9 @@ class SurfaceCode:
         top_boundary = {(r, c) for r, c in error_positions if r == 0}
         if top_boundary:
             visited = set()
-            queue = list(top_boundary)
+            queue = _deque(top_boundary)
             while queue:
-                r, c = queue.pop(0)
+                r, c = queue.popleft()
                 if (r, c) in visited:
                     continue
                 visited.add((r, c))

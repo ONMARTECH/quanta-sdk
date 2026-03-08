@@ -51,12 +51,17 @@ def bb84_protocol(
     bob_results = []
 
     for i in range(raw_bits):
+        # Capture loop variable via default argument binding (B023)
+        _alice_bit = int(alice_bits[i])
+        _alice_base = int(alice_bases[i])
+        _bob_base = int(bob_bases[i])
+
         @circuit(qubits=1)
-        def qkd_bit(q):
+        def qkd_bit(q, ab=_alice_bit, abase=_alice_base, bbase=_bob_base):
             # Alice prepares qubit
-            if alice_bits[i] == 1:
+            if ab == 1:
                 X(q[0])  # Set to |1>
-            if alice_bases[i] == 1:
+            if abase == 1:
                 H(q[0])  # Switch to X basis
 
             # Eve intercepts (if present)
@@ -70,7 +75,7 @@ def bb84_protocol(
                     H(q[0])  # Eve re-prepares
 
             # Bob measures in his basis
-            if bob_bases[i] == 1:
+            if bbase == 1:
                 H(q[0])  # Switch to X basis for measurement
 
             return measure(q)
@@ -92,7 +97,7 @@ def bb84_protocol(
     bob_key = bob_key[:key_length]
 
     # Step 5: Check error rate
-    errors = sum(a != b for a, b in zip(alice_key, bob_key))
+    errors = sum(a != b for a, b in zip(alice_key, bob_key, strict=False))
     error_rate = errors / len(alice_key) if alice_key else 0
 
     # BB84 threshold: >11% error rate indicates eavesdropping

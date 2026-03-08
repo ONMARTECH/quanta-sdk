@@ -19,6 +19,15 @@ import numpy as np
 import pytest
 
 
+def _has_fastmcp() -> bool:
+    """Check if fastmcp is installed (optional dependency)."""
+    try:
+        import fastmcp  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
 # ═══════════════════════════════════════════
 #  backends/compat.py
 # ═══════════════════════════════════════════
@@ -620,6 +629,10 @@ class TestIBMBackendExtended:
 #  mcp_server.py — Tool functions tested directly
 # ═══════════════════════════════════════════
 
+@pytest.mark.skipif(
+    not _has_fastmcp(),
+    reason="fastmcp not installed (optional dependency)",
+)
 class TestMCPServerTools:
     """Tests for MCP server tool functions (called directly, not via MCP)."""
 

@@ -28,8 +28,8 @@ Example:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 import numpy as np
 
@@ -341,6 +341,10 @@ def natural_gradient(
     return GradientResult(
         gradients=nat_grad,
         function_value=ps_result.function_value,
-        num_evaluations=ps_result.num_evaluations + 4 * num_params + 2 * num_params * (num_params - 1),
+        num_evaluations=(
+            ps_result.num_evaluations
+            + 4 * num_params
+            + 2 * num_params * (num_params - 1)
+        ),
         method="natural-gradient",
     )

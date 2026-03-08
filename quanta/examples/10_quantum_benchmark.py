@@ -67,7 +67,7 @@ def test_chsh_violation() -> tuple[bool, str]:
     # A0=Z, A1=X, B0=(Z+X)/√2, B1=(Z-X)/√2
     Z = np.array([[1, 0], [0, -1]], dtype=complex)
     X = np.array([[0, 1], [1, 0]], dtype=complex)
-    I = np.eye(2, dtype=complex)
+    eye2 = np.eye(2, dtype=complex)  # noqa: F841 — needed for documentation
 
     B0 = (Z + X) / np.sqrt(2)
     B1 = (Z - X) / np.sqrt(2)
@@ -95,7 +95,7 @@ def test_teleportation() -> tuple[bool, str]:
     sim = StateVectorSimulator(3, seed=42)
     sim.apply("RY", (0,), (np.pi / 4,))  # Arbitrary state
 
-    original_prob = abs(sim.state[0]) ** 2  # P(|000>)
+    _original_prob = abs(sim.state[0]) ** 2  # P(|000>)  # noqa: F841
 
     # Create Bell pair between qubits 1 and 2
     sim.apply("H", (1,))
