@@ -1,6 +1,6 @@
 # Quanta SDK
 
-Python icin temiz ve moduler kuantum hesaplama SDK'si.
+Python icin temiz ve moduler kuantum hesaplama SDK'si. **v0.6.1** — [PyPI](https://pypi.org/project/quanta-sdk/)
 
 ## Genel Bakis
 
@@ -37,6 +37,10 @@ python -m quanta.examples.11_entity_resolution
 ## Kurulum
 
 ```bash
+# PyPI'dan (tavsiye edilen)
+pip install quanta-sdk
+
+# Kaynaktan (gelistirme)
 git clone https://github.com/ONMARTECH/quanta-sdk.git
 cd quanta-sdk
 pip install -e ".[dev]"

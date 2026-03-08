@@ -15,7 +15,7 @@
 | **DAG Representation** | Built-in | Built-in | Moments | No |
 | **Compiler Pipeline** | 3-pass + routing | PassManager | Optimizer | Limited |
 | **Noise Model** | 7 channels | Extensive | Extensive | Plugin |
-| **QEC Codes** | 4 codes (incl. surface) | External | External | No |
+| **QEC Codes** | 6 codes (surface + color) | External | External | No |
 | **QASM Import/Export** | 2.0 + 3.0 | 2.0/3.0 | 2.0 | No |
 | **Multi-Agent** | Yes | No | No | No |
 | **VQE** | Built-in | qiskit-nature | Via cirq-core | Built-in |
@@ -122,7 +122,7 @@ NumPy only. No 200MB install, no Java, no Rust toolchain.
 | Grover search | 1 line (L3) | 30+ lines |
 | `pip install` size | ~1 MB | ~200 MB |
 | Dependencies | 1 (numpy) | 20+ |
-| Tests | 380+ | 5000+ |
+| Tests | 457 | 5000+ |
 | Max qubits (sim) | 27 | 32 |
 
 ## Differentiable Quantum Computing

@@ -72,8 +72,20 @@ Topology-aware SWAP insertion for hardware constraints:
 | Simulator | Max Qubits | Features |
 |-----------|-----------|----------|
 | Statevector | 27 | Tensor contraction, O(2^n) |
+| Pauli Frame | 50 | Stabilizer tableau (Aaronson-Gottesman), O(n) per gate |
 | Density Matrix | 13 | Mixed states, Kraus channels |
 | Accelerated | 27 | Auto-detects JAX-GPU / CuPy |
+
+### Noise Integration
+
+Noise is a first-class citizen in the execution pipeline:
+
+```python
+from quanta import run
+from quanta.simulator.noise import NoiseModel, Depolarizing
+
+result = run(bell, shots=1024, noise=NoiseModel().add(Depolarizing(0.01)))
+```
 
 ## Noise Models
 
@@ -91,10 +103,18 @@ Topology-aware SWAP insertion for hardware constraints:
 
 | Code | Notation | Correctable Errors |
 |------|----------|-------------------|
-| BitFlip | [[3,1,1]] | 1 bit-flip |
-| PhaseFlip | [[3,1,1]] | 1 phase-flip |
+| BitFlip | [[3,1,3]] | 1 bit-flip |
+| PhaseFlip | [[3,1,3]] | 1 phase-flip |
 | Steane | [[7,1,3]] | 1 arbitrary single-qubit error |
-| Surface Code | [[d²,1,d]] | ⌊(d-1)/2⌋ errors, threshold ~1% |
+| Surface Code | [[d²,1,d]] | ⌊(d-1)/2⌋ errors, stabilizer syndrome extraction |
+| Color Code | [[n,1,d]] | Transversal Clifford gates, restriction decoder |
+
+### QEC Decoders
+
+| Decoder | Complexity | Description |
+|---------|-----------|-------------|
+| MWPM | O(n³) | Greedy minimum weight perfect matching |
+| Union-Find | O(n·α(n)) | Near-linear cluster-based decoding |
 
 ## Algorithms (Layer 3)
 

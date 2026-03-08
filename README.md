@@ -4,10 +4,11 @@
     <strong>Multi-paradigm quantum computing SDK for Python</strong>
   </p>
   <p align="center">
-    <a href="https://github.com/ONMARTECH/quanta-sdk/releases"><img src="https://img.shields.io/badge/version-0.4.0-blue.svg" alt="Version"></a>
+    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.6.1-blue.svg" alt="Version"></a>
+    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-150%2B%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-457%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-8%2F8-gold.svg" alt="Benchmark"></a>
     <a href="#qasmbench"><img src="https://img.shields.io/badge/QASMBench-10%2F10-success.svg" alt="QASMBench"></a>
     <a href="https://github.com/ONMARTECH/quanta-sdk"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg" alt="Platform"></a>
@@ -20,9 +21,10 @@ Quanta is a clean, modular quantum computing SDK designed for researchers, engin
 
 **Key highlights:**
 - Shor, VQE, QAOA, QSVM, Grover — production-grade quantum algorithms
-- DAG-based IR with 3-pass compiler and topology-aware qubit routing
-- Statevector simulator up to 27 qubits with optional JAX/CuPy GPU acceleration
-- Surface code QEC, BB84 QKD, and error correction primitives
+- DAG-based IR with 6-pass compiler and topology-aware qubit routing
+- Statevector + Pauli Frame simulators (up to 27/50 qubits) with JAX/CuPy GPU acceleration
+- 7 noise channels integrated into `run()` — `run(circ, noise=NoiseModel())`
+- 6 QEC codes: BitFlip, PhaseFlip, Steane, Surface Code, Color Code + MWPM/Union-Find decoders
 - Real-world demo: [quantum entity resolution](#11-entity-resolution) for customer deduplication
 
 ## Table of Contents
@@ -77,8 +79,8 @@ print(result)
 │  custom_gate() · 17 built-in gates                       │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 1 — Physical Layer                                │
-│  DAG IR · 3-pass compiler · qubit routing · QASM I/O     │
-│  statevector · density matrix · JAX/CuPy acceleration    │
+│  DAG IR · 6-pass compiler · qubit routing · QASM I/O     │
+│  statevector · density matrix · Pauli frame · JAX/CuPy   │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -98,12 +100,16 @@ print(result)
 
 ### Simulators
 - **Statevector** — tensor contraction engine, up to **27 qubits** (100s, 2GB)
+- **Pauli Frame** — Aaronson-Gottesman stabilizer tableau, **50-qubit** GHZ in <5s
 - **Density matrix** — mixed states + Kraus noise channels, up to 13 qubits
 - **Accelerated backend** — auto-detects JAX-GPU / CuPy; falls back to NumPy on CPU
+- **Noise integration** — `run(circ, noise=NoiseModel().add(Depolarizing(0.01)))` — 7 channels
 
 ### Error Correction
-- Bit-flip, Phase-flip, **Steane [[7,1,3]]** codes
-- **Surface code [[d²,1,d]]** — logical qubits with configurable distance, threshold ~1%
+- Bit-flip [[3,1,3]], Phase-flip [[3,1,3]], **Steane [[7,1,3]]** codes
+- **Surface code [[d²,1,d]]** — stabilizer-based syndrome extraction, threshold ~1%
+- **Color code** — triangular lattice, restriction decoder, transversal Clifford gates
+- **Decoders** — MWPM (greedy) + Union-Find (near-linear O(n·α(n)))
 
 ### Security
 - **BB84 QKD** — quantum key distribution with eavesdropper detection ([Example →](#08-qkd-bb84))
@@ -223,7 +229,10 @@ Includes `QuantaBenchpressBackend` adapter for cross-SDK benchmarking alongside 
 ## Installation
 
 ```bash
-# Clone and install
+# From PyPI (recommended)
+pip install quanta-sdk
+
+# From source (development)
 git clone https://github.com/ONMARTECH/quanta-sdk.git
 cd quanta-sdk
 pip install -e ".[dev]"
@@ -254,11 +263,12 @@ pip install cupy          # NVIDIA CUDA backend
 ## Project Stats
 
 ```
-Files:       86          Languages:   Python
-Lines:       11,770      Tests:       150+
+Files:       69          Languages:   Python
+Lines:       11,670+     Tests:       457
 Algorithms:  9           Examples:    11
-Simulators:  3           QEC Codes:   4
-QASM:        2.0 + 3.0   Max Qubits:  27
+Simulators:  4           QEC Codes:   6
+QASM:        2.0 + 3.0   Max Qubits:  50 (Pauli Frame)
+Noise:       7 channels  Decoders:    2 (MWPM + UF)
 ```
 
 ## Author

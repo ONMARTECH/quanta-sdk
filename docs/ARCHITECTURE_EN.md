@@ -77,8 +77,9 @@ qec/ -------> core/
 
 | File | Responsibility |
 |------|----------------|
-| `statevector.py` | Tensor contraction, up to 27 qubits |
+| `statevector.py` | Tensor contraction, up to 27 qubits, `apply_phase()` + `apply_noise()` public API |
 | `density_matrix.py` | Mixed states + Kraus noise channels, up to 13 qubits |
+| `pauli_frame.py` | Aaronson-Gottesman stabilizer tableau, 50-qubit GHZ in <5s |
 | `noise.py` | 7 noise channels: Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError |
 | `accelerated.py` | JAX-GPU / CuPy auto-detection, NumPy fallback |
 
@@ -107,8 +108,10 @@ qec/ -------> core/
 
 | File | Responsibility |
 |------|----------------|
-| `codes.py` | BitFlip [[3,1,1]], Steane [[7,1,3]] |
-| `surface_code.py` | Surface code [[d^2,1,d]], threshold simulation |
+| `codes.py` | BitFlip [[3,1,3]], PhaseFlip [[3,1,3]], Steane [[7,1,3]] |
+| `surface_code.py` | Surface code [[d^2,1,d]], stabilizer-based syndrome extraction |
+| `color_code.py` | Color code, triangular lattice, restriction decoder |
+| `decoder.py` | MWPM + Union-Find decoders |
 
 ### benchmark/ -- Quality Benchmarking
 
@@ -121,7 +124,7 @@ qec/ -------> core/
 
 | File | Responsibility |
 |------|----------------|
-| `runner.py` | 6-stage orchestrator: build > DAG > compile > sim > sample > result |
+| `runner.py` | 6-stage orchestrator: build > DAG > compile > sim > noise > sample > result |
 | `result.py` | Measurement results, probabilities, Dirac notation |
 | `visualize.py` | ASCII circuit diagram |
 | `visualize_state.py` | Probability histogram, phase diagram |
@@ -155,3 +158,5 @@ run(circuit)        ---> +- DAGCircuit.from_builder()
 6. **Hybrid approach**: Classical blocking + quantum optimization for real-world problems
 7. **Lightweight**: Pure Python + NumPy only — ideal for serverless (Lambda, Cloud Functions), edge computing, and CI/CD integration
 8. **AI-native**: MCP server enables AI assistants to perform quantum computations directly
+9. **Encapsulation**: All simulator state access through public API (`state`, `apply_phase`, `apply_noise`) — no `_state` external access
+10. **Noise-first**: Noise channels integrated into `run()` pipeline, not bolted on

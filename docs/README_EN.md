@@ -1,6 +1,6 @@
 # Quanta SDK
 
-A clean, modular quantum computing SDK for Python.
+A clean, modular quantum computing SDK for Python. **v0.6.1** — [PyPI](https://pypi.org/project/quanta-sdk/)
 
 ## Overview
 
@@ -37,6 +37,10 @@ python -m quanta.examples.11_entity_resolution
 ## Installation
 
 ```bash
+# From PyPI (recommended)
+pip install quanta-sdk
+
+# From source (development)
 git clone https://github.com/ONMARTECH/quanta-sdk.git
 cd quanta-sdk
 pip install -e ".[dev]"

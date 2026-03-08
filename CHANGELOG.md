@@ -6,6 +6,44 @@ Format: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [v0.6.1] - 2026-03-08
+
+### Fixed — Structural Architecture Improvements
+
+- **NoiseModel integration**: `run(circ, noise=NoiseModel())` — noise is now a first-class citizen in the execution pipeline
+- **Shor QFT via DAG**: Real H/RZ/SWAP gates through DAG pipeline; modular exponentiation stays classical (documented trade-off)
+- **Grover encapsulation**: `sim._state` → public `apply_phase()` + `state` setter
+- **Surface code**: Stabilizer-based syndrome extraction + deterministic BFS logical error check (replaces probabilistic model)
+- **Color code RNG**: Reproducible randomness via `rng` parameter propagation
+
+### Fixed — Security
+
+- **MCP server**: `exec()` sandboxed with restricted `__builtins__` whitelist
+- **QASM import**: `eval()` replaced with safe arithmetic parser (`_safe_parse_param`)
+
+### Fixed — Encapsulation
+
+- All `sim._state` external access eliminated — public API only (`state`, `apply_phase`, `apply_noise`)
+- `StateVectorSimulator.apply_noise()` public method added
+- Files fixed: `runner.py`, `equivalence.py`, `optimize.py`, `search.py`, `mcp_server.py`
+
+### Fixed — Code Quality
+
+- **0 ruff lint errors** across quanta/ + tests/ (was 107+78)
+- BitFlip/PhaseFlip distance corrected: `d=1` → `d=3` ([[3,1,3]])
+- `sdg`/`tdg` gate mappings corrected to proper Hermitian conjugates
+- `list.pop(0)` → `deque.popleft()` in DAG topological sort + surface code BFS
+- `CircuitSpec` removed from `__all__` (dead code)
+- `CY` gate added to public exports
+- Turkish comments → English across 12+ files
+- Thread-safe circuit builder: `_active_builders` → `threading.local()`
+
+### Tests
+- **457 tests** (445 passed, 12 MCP skipped when fastmcp not installed)
+- MCP tests gracefully skip with `pytest.importorskip`
+
+---
+
 ## [v0.6.0] - 2026-03-07
 
 ### Added — QEC Enhancements (Google quantumlib parity)

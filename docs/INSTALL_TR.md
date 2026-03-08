@@ -2,7 +2,13 @@
 
 ## Temel Kurulum / Basic Installation
 
-### 1. Quanta SDK
+### 1. PyPI (Tavsiye edilen / Recommended)
+
+```bash
+pip install quanta-sdk
+```
+
+### 2. Kaynaktan Kurulum / From Source
 
 ```bash
 # Projeyi klonla / Clone the project
@@ -134,12 +140,22 @@ result = backend.execute(bell, shots=1024)
 
 ---
 
-## IBM Quantum Kurulumu (gelecek) / IBM Quantum Setup (future)
+## IBM Quantum Kurulumu / IBM Quantum Setup
 
 ```bash
-# Henüz implemente edilmedi, ama yol haritasında
-# Not yet implemented, but on the roadmap
+# IBM Quantum backend destegi / IBM Quantum backend support
 pip install qiskit-ibm-runtime
+```
+
+```python
+from quanta.backends.ibm import IBMBackend
+
+# Lokal test (AerSimulator)
+backend = IBMBackend(simulate_locally=True)
+result = backend.execute(bell, shots=1024)
+
+# IBM Quantum donaniminda calistirma
+# backend = IBMBackend(token="YOUR_TOKEN", backend_name="ibm_kyoto")
 ```
 
 ---

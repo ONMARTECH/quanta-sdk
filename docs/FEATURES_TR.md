@@ -71,8 +71,20 @@ Topoloji bazli SWAP ekleme:
 | Simulator | Maks Qubit | Ozellikler |
 |-----------|-----------|------------|
 | Statevector | 27 | Tensor contraction, O(2^n) |
+| Pauli Frame | 50 | Stabilizer tablosu (Aaronson-Gottesman), O(n) |
 | Density Matrix | 13 | Karisik durumlar, Kraus kanallari |
 | Accelerated | 27 | JAX-GPU / CuPy otomatik algilama |
+
+### Gurultu Entegrasyonu
+
+Gurultu, calistirma hattinin birinci sinif vatandasidir:
+
+```python
+from quanta import run
+from quanta.simulator.noise import NoiseModel, Depolarizing
+
+result = run(bell, shots=1024, noise=NoiseModel().add(Depolarizing(0.01)))
+```
 
 ## Gurultu Modelleri
 
@@ -90,10 +102,18 @@ Topoloji bazli SWAP ekleme:
 
 | Kod | Notasyon | Duzeltilen Hatalar |
 |-----|----------|-------------------|
-| BitFlip | [[3,1,1]] | 1 bit-flip |
-| PhaseFlip | [[3,1,1]] | 1 faz-flip |
+| BitFlip | [[3,1,3]] | 1 bit-flip |
+| PhaseFlip | [[3,1,3]] | 1 faz-flip |
 | Steane | [[7,1,3]] | 1 keyfi tek-qubit hatasi |
-| Surface Code | [[d²,1,d]] | ⌊(d-1)/2⌋ hata, esik ~%1 |
+| Surface Code | [[d²,1,d]] | ⌊(d-1)/2⌋ hata, stabilizer sendromu |
+| Color Code | [[n,1,d]] | Transversal Clifford kapilari, restriction decoder |
+
+### QEC Kod Cozuculer
+
+| Cozucu | Karmasiklik | Aciklama |
+|--------|-----------|----------|
+| MWPM | O(n³) | Gozucu minimum agirlik mukemmel esleme |
+| Union-Find | O(n·α(n)) | Yaklasik dogrusal kume tabanli kod cozme |
 
 ## Algoritmalar (Katman 3)
 

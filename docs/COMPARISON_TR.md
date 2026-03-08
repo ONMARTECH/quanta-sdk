@@ -15,7 +15,7 @@
 | **DAG Temsili** | Dahili | Dahili | Moments | Yok |
 | **Derleyici** | 3-gecis + yonlendirme | PassManager | Optimizer | Sinirli |
 | **Gurultu Modeli** | 7 kanal | Kapsamli | Kapsamli | Plugin |
-| **QEC Kodlari** | 4 kod (surface dahil) | Dis | Dis | Yok |
+| **QEC Kodlari** | 6 kod (surface + color) | Dis | Dis | Yok |
 | **QASM I/O** | 2.0 + 3.0 | 2.0/3.0 | 2.0 | Yok |
 | **Coklu-Ajan** | Evet | Hayir | Hayir | Hayir |
 | **VQE** | Dahili | qiskit-nature | cirq-core | Dahili |
@@ -88,7 +88,7 @@ Sadece NumPy. 200MB kurulum yok, Java yok, Rust toolchain yok.
 | Grover aramasi | 1 satir (L3) | 30+ satir |
 | `pip install` boyutu | ~1 MB | ~200 MB |
 | Bagimliliklar | 1 (numpy) | 20+ |
-| Testler | 380+ | 5000+ |
+| Testler | 457 | 5000+ |
 | Maks qubit (sim) | 27 | 32 |
 
 ## Diferansiyel Kuantum Hesaplama

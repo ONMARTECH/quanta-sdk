@@ -77,8 +77,9 @@ qec/ -------> core/
 
 | Dosya | Sorumluluk |
 |-------|------------|
-| `statevector.py` | Tensor contraction, 27 qubite kadar |
+| `statevector.py` | Tensor contraction, 27 qubite kadar, `apply_phase()` + `apply_noise()` public API |
 | `density_matrix.py` | Karisik durumlar + Kraus gurultu, 13 qubite kadar |
+| `pauli_frame.py` | Aaronson-Gottesman stabilizer tablosu, 50-qubit GHZ <5s |
 | `noise.py` | 7 gurultu kanali: Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError |
 | `accelerated.py` | JAX-GPU / CuPy otomatik algilama, NumPy fallback |
 
@@ -107,8 +108,10 @@ qec/ -------> core/
 
 | Dosya | Sorumluluk |
 |-------|------------|
-| `codes.py` | BitFlip [[3,1,1]], Steane [[7,1,3]] |
-| `surface_code.py` | Surface code [[d^2,1,d]], esik simulasyonu |
+| `codes.py` | BitFlip [[3,1,3]], PhaseFlip [[3,1,3]], Steane [[7,1,3]] |
+| `surface_code.py` | Surface code [[d^2,1,d]], stabilizer-tabanli sendrom cikarimi |
+| `color_code.py` | Color code, ucgensel kafes, restriction decoder |
+| `decoder.py` | MWPM + Union-Find kod cozuculer |
 
 ### benchmark/ -- Kalite Olcumu
 
@@ -121,7 +124,7 @@ qec/ -------> core/
 
 | Dosya | Sorumluluk |
 |-------|------------|
-| `runner.py` | 6 asamali orkestrator: build > DAG > compile > sim > sample > result |
+| `runner.py` | 6 asamali orkestrator: build > DAG > compile > sim > noise > sample > result |
 | `result.py` | Olcum sonuclari, olasiliklar, Dirac notasyonu |
 | `visualize.py` | ASCII devre diyagrami |
 | `visualize_state.py` | Olasilik histogrami, faz diyagrami |
@@ -155,3 +158,5 @@ run(circuit)        ---> +- DAGCircuit.from_builder()
 6. **Hibrit yaklasim**: Gercek dunya problemleri icin klasik bloklama + kuantum optimizasyon
 7. **Hafiflik**: Saf Python + NumPy — sunucusuz (Lambda, Cloud Functions), edge computing ve CI/CD entegrasyonu icin ideal
 8. **AI-yerlesik**: MCP sunucusu AI asistanlarin dogrudan kuantum hesaplama yapmasini saglar
+9. **Kapsulleme**: Tum simulator durum erisimi public API uzerinden (`state`, `apply_phase`, `apply_noise`) — dis `_state` erisimi yok
+10. **Gurultu-oncelikli**: Gurultu kanallari `run()` hattinda entegre, sonradan eklenmemis
