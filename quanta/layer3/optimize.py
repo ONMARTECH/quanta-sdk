@@ -113,27 +113,66 @@ def optimize(
 def _optimize_qaoa_params(
     n: int, costs: np.ndarray, layers: int, rng: np.random.Generator
 ) -> np.ndarray:
-    """QAOA parametrelerini basit grid search ile optimize eder.
+    """Optimizes QAOA parameters using iterative classical optimizer.
+
+    Uses scipy.optimize.minimize (COBYLA) for variational parameter
+    training. Falls back to random search if scipy is not available.
+
+    The variational loop:
+      1. Initialize random (γ, β) parameters
+      2. Run QAOA circuit → get ⟨C⟩ = Σ p(x)·C(x)
+      3. Optimizer proposes new parameters
+      4. Repeat until convergence
 
     Args:
+        n: Number of qubits.
+        costs: Cost values for each basis state.
+        layers: Number of QAOA layers (p).
+        rng: Random number generator.
 
     Returns:
-        Optimal (gamma, beta) parametreleri.
+        Optimal (gamma_1, beta_1, ..., gamma_p, beta_p) parameters.
     """
-    best_params = None
-    best_expectation = float("inf")
-
-    for _ in range(50):  # 50 rastgele deneme
-        params = rng.uniform(0, 2 * np.pi, size=2 * layers)
+    def objective(params: np.ndarray) -> float:
+        """QAOA expectation value ⟨ψ(γ,β)|C|ψ(γ,β)⟩."""
         sim = _run_qaoa(n, costs, params, seed=None)
         probs = sim.probabilities()
-        expectation = np.sum(probs * costs)
+        return float(np.sum(probs * costs))
 
-        if expectation < best_expectation:
-            best_expectation = expectation
-            best_params = params
+    try:
+        from scipy.optimize import minimize
 
-    return best_params if best_params is not None else np.zeros(2 * layers)
+        # Multi-start optimization: try several initial points
+        best_params = None
+        best_value = float("inf")
+
+        for _ in range(5):
+            x0 = rng.uniform(0, 2 * np.pi, size=2 * layers)
+            result = minimize(
+                objective, x0,
+                method="COBYLA",
+                options={"maxiter": 100, "rhobeg": 0.5},
+            )
+            if result.fun < best_value:
+                best_value = result.fun
+                best_params = result.x
+
+        return best_params if best_params is not None else np.zeros(2 * layers)
+
+    except ImportError:
+        # Fallback: random search (no scipy dependency)
+        best_params = None
+        best_expectation = float("inf")
+
+        for _ in range(50):
+            params = rng.uniform(0, 2 * np.pi, size=2 * layers)
+            expectation = objective(params)
+
+            if expectation < best_expectation:
+                best_expectation = expectation
+                best_params = params
+
+        return best_params if best_params is not None else np.zeros(2 * layers)
 
 def _run_qaoa(
     n: int, costs: np.ndarray, params: np.ndarray, seed: int | None
