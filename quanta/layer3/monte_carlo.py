@@ -32,7 +32,6 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-
 __all__ = [
     "quantum_monte_carlo",
     "MonteCarloResult",

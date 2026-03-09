@@ -276,8 +276,10 @@ def quantum_cluster(
     # Step 3: Iterative assignment
     labels = np.zeros(n_points, dtype=int)
     prev_labels = np.full(n_points, -1, dtype=int)
+    n_iterations = 0
 
     for _iteration in range(max_iterations):
+        n_iterations += 1
         # Assign each point to nearest centroid
         for i in range(n_points):
             min_dist = float("inf")
@@ -309,7 +311,7 @@ def quantum_cluster(
         labels=labels.tolist(),
         centroids=centroids.tolist(),
         k=k,
-        iterations=iteration + 1 if 'iteration' in dir() else 1,
+        iterations=n_iterations,
         inertia=inertia,
         distance_matrix=dist_matrix.tolist(),
     )
