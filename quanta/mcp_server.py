@@ -490,6 +490,199 @@ def explain_result(counts_json: str) -> str:
 
 
 # ═══════════════════════════════════════════
+#  Tool: Monte Carlo Pricing
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def monte_carlo_price(
+    S0: float = 100.0,
+    K: float = 105.0,
+    sigma: float = 0.2,
+    T: float = 1.0,
+    r: float = 0.05,
+    option_type: str = "call",
+    n_qubits: int = 6,
+) -> str:
+    """Price a European option using Quantum Monte Carlo.
+
+    Uses quantum amplitude estimation (Brassard-Hoyer-Mosca-Tapp)
+    for quadratic speedup over classical Monte Carlo.
+
+    Args:
+        S0: Current stock price.
+        K: Strike price.
+        sigma: Volatility (annualized).
+        T: Time to expiration (years).
+        r: Risk-free rate.
+        option_type: "call" or "put".
+        n_qubits: Qubits for price distribution (precision).
+
+    Returns:
+        JSON with quantum and classical price estimates.
+    """
+    try:
+        from quanta.layer3.monte_carlo import quantum_monte_carlo
+
+        payoff = f"european_{option_type}"
+        result = quantum_monte_carlo(
+            distribution="lognormal",
+            payoff=payoff,
+            params={"S0": S0, "K": K, "sigma": sigma, "T": T, "r": r},
+            n_qubits=n_qubits,
+            n_estimation=3,
+            seed=42,
+        )
+
+        return json.dumps({
+            "algorithm": "Quantum Monte Carlo (Amplitude Estimation)",
+            "option_type": option_type,
+            "parameters": {"S0": S0, "K": K, "sigma": sigma, "T": T, "r": r},
+            "quantum_price": round(result.estimated_value, 4),
+            "classical_price": round(result.classical_value, 4),
+            "qubits_used": result.num_qubits,
+            "grover_iterations": result.grover_iterations,
+            "explanation": (
+                f"European {option_type} option: S0=${S0}, K=${K}, "
+                f"σ={sigma}, T={T}y, r={r}. "
+                f"Quantum estimate: ${result.estimated_value:.4f}, "
+                f"Classical MC: ${result.classical_value:.4f}. "
+                "Quantum amplitude estimation achieves O(1/N) convergence "
+                "vs classical O(1/√N)."
+            ),
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+# ═══════════════════════════════════════════
+#  Tool: QAOA Optimize
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def qaoa_optimize(
+    num_bits: int = 4,
+    problem: str = "max_cut",
+    minimize: bool = False,
+    layers: int = 2,
+    shots: int = 2048,
+) -> str:
+    """Solve combinatorial optimization problems using QAOA.
+
+    Uses Quantum Approximate Optimization Algorithm with scipy
+    COBYLA variational optimizer for parameter training.
+
+    Args:
+        num_bits: Problem size (number of binary variables).
+        problem: Problem type — "max_cut", "max_ones", "min_ones".
+        minimize: True to minimize, False to maximize.
+        layers: QAOA circuit depth (more = better, slower).
+        shots: Measurement shots.
+
+    Returns:
+        JSON with optimal solution and cost.
+    """
+    try:
+        from quanta.layer3.optimize import optimize
+
+        if problem == "max_cut":
+            def cost_fn(x: int) -> int:
+                return bin(x ^ (x >> 1)).count('1')
+            desc = "Max-Cut: maximize edges between partitions"
+        elif problem == "max_ones":
+            def cost_fn(x: int) -> int:
+                return bin(x).count('1')
+            desc = "Max-Ones: maximize number of 1-bits"
+        elif problem == "min_ones":
+            def cost_fn(x: int) -> int:
+                return bin(x).count('1')
+            minimize = True
+            desc = "Min-Ones: minimize number of 1-bits"
+        else:
+            def cost_fn(x: int) -> int:
+                return bin(x).count('1')
+            desc = f"Custom: {problem}"
+
+        result = optimize(
+            num_bits=num_bits,
+            cost=cost_fn,
+            minimize=minimize,
+            layers=layers,
+            shots=shots,
+            seed=42,
+        )
+
+        return json.dumps({
+            "algorithm": "QAOA (Variational Optimizer)",
+            "problem": desc,
+            "best_solution": result.best_bitstring,
+            "best_cost": result.best_cost,
+            "top_solutions": [
+                {"bits": s[0], "cost": s[1], "probability": round(s[2], 4)}
+                for s in result.all_solutions[:5]
+            ],
+            "explanation": (
+                f"QAOA with {layers} layers found optimal solution "
+                f"|{result.best_bitstring}⟩ with cost {result.best_cost}. "
+                "Uses scipy COBYLA optimizer for variational parameter training."
+            ),
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+# ═══════════════════════════════════════════
+#  Tool: Quantum Clustering
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def cluster_data(
+    data_json: str = '[[1,2],[1.5,1.8],[5,8],[8,8],[1,0.6],[9,11]]',
+    k: int = 2,
+) -> str:
+    """Cluster data points using quantum swap test distances.
+
+    Uses quantum circuits (swap test) to compute distances between
+    data points, then applies k-means clustering.
+
+    Args:
+        data_json: JSON array of data points, e.g. '[[1,2],[3,4],[5,6]]'.
+        k: Number of clusters.
+
+    Returns:
+        JSON with cluster labels, centroids, and metrics.
+    """
+    try:
+        from quanta.layer3.clustering import quantum_cluster
+
+        data = json.loads(data_json)
+        result = quantum_cluster(data, k=k, seed=42)
+
+        return json.dumps({
+            "algorithm": "Quantum Clustering (Swap Test)",
+            "k": k,
+            "num_points": len(data),
+            "labels": result.labels,
+            "centroids": [
+                [round(c, 4) for c in centroid]
+                for centroid in result.centroids
+            ],
+            "iterations": result.iterations,
+            "inertia": round(result.inertia, 4),
+            "cluster_sizes": [
+                result.labels.count(c) for c in range(k)
+            ],
+            "explanation": (
+                f"Quantum swap test computed pairwise distances for "
+                f"{len(data)} points, grouped into {k} clusters. "
+                f"Converged in {result.iterations} iterations with "
+                f"inertia={result.inertia:.4f}."
+            ),
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+# ═══════════════════════════════════════════
 #  Resource: SDK Info
 # ═══════════════════════════════════════════
 
@@ -498,21 +691,31 @@ def sdk_info() -> str:
     """Quanta SDK version and capabilities."""
     return json.dumps({
         "name": "Quanta Quantum SDK",
-        "version": "0.6.0",
+        "version": "0.6.1",
         "description": "Multi-paradigm quantum computing SDK",
         "capabilities": [
             "Statevector simulation (up to 27 qubits)",
+            "Pauli Frame simulator (up to 50 qubits)",
             "7 noise channels (Depolarizing, BitFlip, PhaseFlip, "
             "AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError)",
             "DAG-based 6-pass compiler",
             "Grover search, Shor factoring, VQE, QAOA",
-            "Quantum Error Correction (surface, color, bit/phase-flip)",
+            "Quantum Monte Carlo (amplitude estimation)",
+            "Quantum Clustering (swap test distances)",
+            "Quantum Error Correction (6 codes: surface, color, Steane)",
             "Entity Resolution (hybrid classical-quantum)",
             "QASM 3.0 export",
-            "Google/IBM/IonQ backend support",
+            "Google/IBM backend support",
+        ],
+        "tools": [
+            "run_circuit", "create_bell_state", "grover_search",
+            "shor_factor", "simulate_noise", "list_gates",
+            "explain_result", "monte_carlo_price", "qaoa_optimize",
+            "cluster_data",
         ],
         "simulator_limits": {
-            "max_qubits": 27,
+            "max_qubits_statevector": 27,
+            "max_qubits_pauli_frame": 50,
             "memory": "O(2^n) — doubles per qubit",
         },
     })
