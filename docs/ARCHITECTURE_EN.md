@@ -98,6 +98,7 @@ qec/ -------> core/
 | `entity_resolution.py` | QAOA-based customer deduplication |
 | `monte_carlo.py` | Quantum Monte Carlo, amplitude estimation, option pricing |
 | `clustering.py` | Quantum swap-test distances + k-means clustering |
+| `qml.py` | Quantum ML: variational classifier, quantum kernel, feature maps |
 
 ### export/ -- QASM I/O
 

@@ -26,6 +26,8 @@ Quanta is a clean, modular quantum computing SDK designed for researchers, engin
 - **ISA Transpilation** — Automatic decomposition to Heron native gates (rz/sx/x/cz)
 - **SVG Circuit Visualization** — Publication-quality HTML/SVG diagrams with color-coded gates
 - **MCP Server** — 14 AI tools for Claude, GPT, and other AI assistants
+- **Quantum Machine Learning** — Variational classifier, quantum kernel, 3 feature maps
+- **Multi-Backend** — IBM Quantum + IonQ + Google Quantum + local simulator
 - **Quantum Monte Carlo** — Amplitude estimation for option pricing
 - **Quantum Clustering** — Swap-test based distance computation + k-means
 
@@ -216,6 +218,7 @@ Depolarizing · BitFlip · PhaseFlip · AmplitudeDamping · T2Relaxation · Cros
 | **QSVM** | `layer3.qsvm` | Quantum kernel classification |
 | **Monte Carlo** | `layer3.monte_carlo` | Amplitude estimation + pricing |
 | **Clustering** | `layer3.clustering` | Swap-test quantum distances |
+| **QML Classifier** | `layer3.qml` | Variational quantum classification |
 | **Entity Resolution** | `layer3.entity_resolution` | Customer deduplication |
 | **Portfolio** | `layer3.finance` | Financial optimization |
 
@@ -226,7 +229,9 @@ Depolarizing · BitFlip · PhaseFlip · AmplitudeDamping · T2Relaxation · Cros
 | **Statevector** | 27 | ~2 GB | Full state simulation |
 | **Density Matrix** | 13 | ~1 GB | Mixed states + noise |
 | **Pauli Frame** | 1,000+ | O(n²) | Clifford-only circuits |
-| **IBM Hardware** | 156 | Cloud | Real quantum computer |
+| **IBM Heron** | 156 | Cloud | Real quantum hardware |
+| **IonQ Forte** | 36 | Cloud | Trapped-ion QPU |
+| **Google Sycamore** | 72 | Cloud | Superconducting QPU |
 
 > **Note:** Statevector memory doubles per qubit (2^n). 20 qubits = 8 MB, 25 = 256 MB, 27 = 1 GB.
 
@@ -373,10 +378,10 @@ pip install cupy          # NVIDIA CUDA backend
 ```
 Version:     0.7.1        Gates:       25 (full IBM parity)
 Files:       73+          Tests:       488
-Algorithms:  9            Examples:    11
+Algorithms:  10           Examples:    11
 Simulators:  4            QEC Codes:   6
 MCP Tools:   14           Max Qubits:  156 (IBM Heron r3)
-Noise:       7 channels   Backends:    local + IBM REST
+Noise:       7 channels   Backends:    IBM + IonQ + Google + local
 QASM:        3.0          Decoders:    2 (MWPM + UF)
 ```
 
