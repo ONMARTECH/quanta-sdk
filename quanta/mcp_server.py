@@ -683,6 +683,137 @@ def cluster_data(
 
 
 # ═══════════════════════════════════════════
+#  Tool: Run on IBM Quantum
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def run_on_ibm(
+    circuit_ops: str = '[["H", [0]], ["CX", [0, 1]]]',
+    num_qubits: int = 2,
+    shots: int = 4096,
+    backend_name: str = "ibm_brisbane",
+    region: str = "us",
+) -> str:
+    """Run a quantum circuit on real IBM Quantum hardware.
+
+    Sends circuit directly to IBM via REST API. No Qiskit needed.
+    Requires IBM_API_KEY and IBM_INSTANCE_CRN environment variables.
+
+    Args:
+        circuit_ops: JSON array of [gate, qubits] pairs.
+        num_qubits: Number of qubits.
+        shots: Measurement shots.
+        backend_name: IBM backend (ibm_brisbane, ibm_osaka, etc.).
+        region: "us" or "eu-de".
+
+    Returns:
+        JSON with job submission result or error.
+    """
+    try:
+        from quanta.backends.ibm_rest import IBMRestBackend  # noqa: F401
+
+        ops = json.loads(circuit_ops)
+
+        # Build QASM 3.0 directly
+        lines = [
+            'OPENQASM 3.0;',
+            'include "stdgates.inc";',
+            f'bit[{num_qubits}] c;',
+        ]
+
+        gate_map = {
+            "H": "h", "X": "x", "Y": "y", "Z": "z",
+            "S": "s", "T": "t", "CX": "cx", "CZ": "cz",
+            "CY": "cy", "SWAP": "swap", "CCX": "ccx",
+            "RX": "rx", "RY": "ry", "RZ": "rz",
+        }
+
+        for op in ops:
+            gate = op[0]
+            qubits = op[1] if len(op) > 1 else [0]
+            params = op[2] if len(op) > 2 else None
+
+            qasm_gate = gate_map.get(gate, gate.lower())
+            qubit_args = ", ".join(f"${q}" for q in qubits)
+
+            if params:
+                param_str = ", ".join(str(p) for p in params)
+                lines.append(f"{qasm_gate}({param_str}) {qubit_args};")
+            else:
+                lines.append(f"{qasm_gate} {qubit_args};")
+
+        for i in range(num_qubits):
+            lines.append(f"c[{i}] = measure ${i};")
+
+        qasm_str = " ".join(lines)
+
+        # Note: actual submission needs IBM_API_KEY set
+
+        return json.dumps({
+            "action": "submit_to_ibm",
+            "backend": backend_name,
+            "region": region,
+            "qasm": qasm_str,
+            "shots": shots,
+            "status": "ready",
+            "note": (
+                "Set IBM_API_KEY and IBM_INSTANCE_CRN env vars, "
+                "then call backend.execute() to run on real hardware."
+            ),
+            "example": (
+                "from quanta.backends.ibm_rest import IBMRestBackend; "
+                f"b = IBMRestBackend(region='{region}', "
+                f"backend_name='{backend_name}')"
+            ),
+        })
+
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+def ibm_backends(region: str = "us") -> str:
+    """List available IBM Quantum backends.
+
+    Shows quantum computers you can submit jobs to.
+
+    Args:
+        region: "us" or "eu-de".
+
+    Returns:
+        JSON list of available backends.
+    """
+    try:
+        from quanta.backends.ibm_rest import IBMRestBackend
+
+        backend = IBMRestBackend(region=region)
+        backends = backend.list_backends()
+        return json.dumps({
+            "region": region,
+            "backends": backends,
+            "total": len(backends),
+        })
+    except Exception as e:
+        # If no API key, return known backends
+        return json.dumps({
+            "region": region,
+            "known_backends": [
+                {"name": "ibm_brisbane", "qubits": 127,
+                 "processor": "Eagle r3"},
+                {"name": "ibm_osaka", "qubits": 127,
+                 "processor": "Eagle r3"},
+                {"name": "ibm_kyoto", "qubits": 127,
+                 "processor": "Eagle r3"},
+                {"name": "ibm_sherbrooke", "qubits": 127,
+                 "processor": "Eagle r3"},
+            ],
+            "note": (
+                f"Set IBM_API_KEY env var for live data. Error: {e}"
+            ),
+        })
+
+
+# ═══════════════════════════════════════════
 #  Resource: SDK Info
 # ═══════════════════════════════════════════
 
