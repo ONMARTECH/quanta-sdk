@@ -248,6 +248,13 @@ def factor(
     if N < 2:
         raise ValueError(f"N must be > 1, got {N}")
 
+    # Reject primes early (Shor is for composite numbers)
+    if _is_prime(N):
+        raise ValueError(
+            f"{N} is prime — Shor's algorithm factors "
+            f"composite numbers only"
+        )
+
     # Classical shortcuts
     if N % 2 == 0:
         return ShorResult(N, (2, N // 2), 0, 0, "classical_shortcut")

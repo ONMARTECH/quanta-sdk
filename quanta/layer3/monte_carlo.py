@@ -283,10 +283,14 @@ def amplitude_estimate(
     # Direct measurement → a = P(ancilla=|1⟩)
     a_direct = float(np.sum(np.abs(init_state[dim:]) ** 2))
 
-    # Iterative Maximum Likelihood Amplitude Estimation
-    # Apply Grover operator G^m for increasing m, measure each time
+    # Iterative amplitude estimation with phase-wrapping correction
+    # After m Grover iterations: P(good) = sin²((2m+1)θ)
+    # where sin²(θ) = a. We need to invert this correctly.
     n_grover_total = 0
-    best_a = a_direct
+    theta_direct = math.asin(math.sqrt(max(0, min(1, a_direct))))
+
+    # Collect (m_k, p_measured) pairs for maximum likelihood
+    measurements: list[tuple[int, float]] = [(0, a_direct)]
 
     for k in range(n_estimation):
         m_k = 2 ** k
@@ -301,17 +305,32 @@ def amplitude_estimate(
             overlap = np.vdot(init_state, current)
             current = 2 * overlap * init_state - current
 
-        # Measure P(ancilla=|1⟩)
+        # Measure P(ancilla=|1⟩) = sin²((2m_k+1)θ)
         p_one = float(np.sum(np.abs(current[dim:]) ** 2))
+        measurements.append((m_k, p_one))
 
-        # Inversion: P(ancilla=1) after m iterations = sin²((2m+1)θ)
-        # where sin²(θ) = a. Solve for a.
-        sin_val = math.sqrt(max(0, min(1, p_one)))
-        theta_est = math.asin(sin_val) / (2 * m_k + 1)
-        a_est = math.sin(theta_est) ** 2
+    # Maximum likelihood estimation of θ across all measurements
+    # For each measurement (m, p), P = sin²((2m+1)θ)
+    # Find θ that best explains all observations
+    best_theta = theta_direct
+    best_score = float("inf")
 
-        # Weight higher-precision estimates more
-        best_a = a_est
+    # Search over candidate θ values
+    n_candidates = 200
+    for i in range(n_candidates + 1):
+        theta_cand = (i / n_candidates) * (math.pi / 2)
+
+        # Log-likelihood score (sum of squared errors)
+        score = 0.0
+        for m_k, p_meas in measurements:
+            p_pred = math.sin((2 * m_k + 1) * theta_cand) ** 2
+            score += (p_pred - p_meas) ** 2
+
+        if score < best_score:
+            best_score = score
+            best_theta = theta_cand
+
+    best_a = math.sin(best_theta) ** 2
 
     # Scale back
     estimated = best_a * max_payoff

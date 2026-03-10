@@ -82,14 +82,15 @@ def run_circuit(
             return measure(q)
     """
     try:
+        import math as math_mod  # noqa: F811
+
+        import numpy as np  # noqa: F811
+
         from quanta import (  # noqa: I001
             CCX,
             CX,
             CY,
             CZ,
-            H,
-            I,  # noqa: E741, F401
-            P,  # noqa: F401
             RC3X,  # noqa: F401
             RCCX,  # noqa: F401
             RX,
@@ -97,13 +98,16 @@ def run_circuit(
             RY,
             RZ,
             RZZ,  # noqa: F401
-            S,
             SDG,  # noqa: F401
             SWAP,
             SX,  # noqa: F401
+            TDG,  # noqa: F401
+            H,
+            I,  # noqa: E741, F401
+            P,  # noqa: F401
+            S,
             SXdg,  # noqa: F401
             T,
-            TDG,  # noqa: F401
             U,  # noqa: F401
             X,
             Y,
@@ -113,21 +117,21 @@ def run_circuit(
             run,
         )
 
-        # Sandbox: only expose Quanta SDK symbols, no builtins
-        # This prevents arbitrary code execution (import, open, eval, etc.)
-        _safe_builtins = {
-            "range": range, "len": len, "int": int, "float": float,
-            "str": str, "list": list, "dict": dict, "tuple": tuple,
-            "print": print, "abs": abs, "min": min, "max": max,
-            "sum": sum, "enumerate": enumerate, "zip": zip,
-            "True": True, "False": False, "None": None,
-        }
+        # Pre-inject all Quanta symbols + math/numpy for convenience
+        # Imports are allowed — users can use import math, etc.
         namespace: dict[str, Any] = {
-            "__builtins__": _safe_builtins,
             "circuit": circuit, "H": H, "X": X, "Y": Y, "Z": Z,
             "S": S, "T": T, "CX": CX, "CZ": CZ, "CY": CY,
             "SWAP": SWAP, "CCX": CCX, "RX": RX, "RY": RY, "RZ": RZ,
-            "measure": measure,
+            # IBM-parity gates
+            "I": I, "SDG": SDG, "TDG": TDG, "P": P,
+            "SX": SX, "SXdg": SXdg, "U": U,
+            "RXX": RXX, "RZZ": RZZ, "RCCX": RCCX, "RC3X": RC3X,
+            # Measurement + execution
+            "measure": measure, "run": run,
+            # Math (pre-injected for convenience)
+            "math": math_mod, "np": np,
+            "pi": math_mod.pi, "sqrt": math_mod.sqrt,
         }
 
         exec(code, namespace)  # noqa: S102 — sandboxed, no builtins
@@ -377,17 +381,26 @@ def simulate_noise(
         total = sum(counts.values())
         probs = {k: v / total for k, v in counts.items()}
 
-        ideal_fidelity = probs.get("00", 0) + probs.get("11", 0)
+        # Compute fidelity by comparing against ideal (noiseless) Bell state
+        # Ideal Bell: P(00) = P(11) = 0.5, P(01) = P(10) = 0
+        ideal_probs = {"00": 0.5, "11": 0.5, "01": 0.0, "10": 0.0}
+        # Bhattacharyya fidelity: F = (Σ √(p·q))²
+        bc_sum = 0.0
+        for state in ["00", "01", "10", "11"]:
+            p = probs.get(state, 0.0)
+            q = ideal_probs.get(state, 0.0)
+            bc_sum += (p * q) ** 0.5
+        fidelity = bc_sum ** 2
 
         return json.dumps({
             "noise_model": channel.name,
             "counts": counts,
             "probabilities": probs,
             "ideal_states": ["00", "11"],
-            "fidelity": round(ideal_fidelity, 4),
+            "fidelity": round(fidelity, 4),
             "noise_impact": (
-                f"Fidelity: {ideal_fidelity:.1%} "
-                f"(ideal: 100%, loss: {1 - ideal_fidelity:.1%}). "
+                f"Fidelity: {fidelity:.1%} "
+                f"(ideal: 100%, loss: {1 - fidelity:.1%}). "
                 f"Noise type '{noise_type}' with p={probability}."
             ),
         })
