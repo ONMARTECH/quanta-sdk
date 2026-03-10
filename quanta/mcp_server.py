@@ -635,7 +635,7 @@ def monte_carlo_price(
             payoff=payoff,
             params={"S0": S0, "K": K, "sigma": sigma, "T": T, "r": r},
             n_qubits=n_qubits,
-            n_estimation=max(3, n_qubits - 1),  # each qubit adds precision
+            n_estimation=n_qubits,  # each n_qubits → unique precision
             seed=42,
         )
 
