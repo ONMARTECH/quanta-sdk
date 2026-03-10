@@ -130,7 +130,7 @@ def amplitude_encoding(
         sim: Simulator to apply encoding.
         x: Feature vector (length must be ≤ 2^n_qubits).
     """
-    n_qubits = sim._num_qubits
+    n_qubits = sim.num_qubits
     dim = 2 ** n_qubits
 
     # Pad and normalize
@@ -140,8 +140,8 @@ def amplitude_encoding(
     if norm > 1e-12:
         padded = padded / norm
 
-    # Direct state preparation
-    sim._state = padded.astype(complex)
+    # Direct state preparation via public setter
+    sim.state = padded.astype(complex)
 
 
 # ── Variational Ansatz ────────────────────────────
