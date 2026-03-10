@@ -65,9 +65,10 @@ def run_circuit(
     Args:
         code: Python code defining a quantum circuit. Must define a
               variable called 'circ' as the circuit to run.
-              Available: circuit, H, X, Y, Z, S, T, CX, CZ, CY,
-              SWAP, CCX, RX, RY, RZ, I, SDG, TDG, P, SX,
-              SXdg, U, RXX, RZZ, RCCX, RC3X, measure.
+              All 25 gates pre-loaded: H,X,Y,Z,S,T,I,SDG,TDG,SX,SXdg,
+              RX,RY,RZ,P,U,CX,CY,CZ,SWAP,RXX,RZZ,CCX,RCCX,RC3X.
+              Also: circuit, measure, run, math, np, pi, sqrt.
+              Imports allowed: you can use 'import math', etc.
         shots: Number of measurement repetitions.
         seed: Random seed for reproducibility.
 
@@ -999,6 +1000,99 @@ def ibm_backends(region: str = "us") -> str:
             "note": (
                 f"Set IBM_API_KEY env var for live data. Error: {e}"
             ),
+        })
+
+
+# ═══════════════════════════════════════════
+#  Tool: IBM Job Result (Poll + Fetch)
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def ibm_job_result(
+    job_id: str = "",
+    region: str = "us",
+) -> str:
+    """Get the status and results of an IBM Quantum job.
+
+    Use after run_on_ibm to poll job status and retrieve results.
+    Call repeatedly until status is "Completed" or "Failed".
+
+    Pipeline: run_on_ibm → job_id → ibm_job_result(job_id) → counts
+
+    Args:
+        job_id: IBM job ID (returned by run_on_ibm).
+        region: "us" or "eu-de".
+
+    Returns:
+        JSON with job status, and measurement counts when completed.
+    """
+    if not job_id:
+        return json.dumps({
+            "error": "job_id is required",
+            "hint": "Use run_on_ibm first to get a job_id",
+        })
+
+    try:
+        import os
+
+        from quanta.backends.ibm_rest import IBMRestBackend
+
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+        except ImportError:
+            pass
+
+        api_key = os.environ.get("IBM_API_KEY", "")
+        if not api_key:
+            return json.dumps({
+                "error": "IBM_API_KEY not set",
+                "note": "Set in .env or environment",
+            })
+
+        backend = IBMRestBackend(region=region)
+
+        # Get job status
+        status_data = backend.job_status(job_id)
+
+        # Parse response (handle dict or unexpected formats)
+        if isinstance(status_data, dict):
+            job_status = status_data.get("status", "unknown")
+            backend_info = status_data.get("backend", {})
+            backend_name = (
+                backend_info.get("name", "")
+                if isinstance(backend_info, dict) else str(backend_info)
+            )
+        else:
+            job_status = str(status_data)
+            backend_name = ""
+
+        result: dict[str, Any] = {
+            "job_id": job_id,
+            "status": job_status,
+            "backend": backend_name,
+            "raw_response": status_data,
+        }
+
+        # If completed, fetch results
+        if job_status.lower() in ("completed", "done"):
+            results_data = backend.job_results(job_id)
+            result["results"] = results_data
+            result["note"] = "Job completed. Results contain measurement counts."
+        elif job_status.lower() in ("failed", "cancelled"):
+            result["note"] = f"Job {job_status}. Check IBM dashboard for details."
+        else:
+            result["note"] = (
+                f"Job is {job_status}. "
+                "Call ibm_job_result again to poll for completion."
+            )
+
+        return json.dumps(result)
+
+    except Exception as e:
+        return json.dumps({
+            "error": str(e),
+            "traceback": traceback.format_exc(),
         })
 
 
