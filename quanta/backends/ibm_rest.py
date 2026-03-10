@@ -254,15 +254,164 @@ class IBMRestBackend(Backend):
             })
         return backends
 
-    # ── QASM 3.0 Conversion ──
+    # ── ISA Transpilation (Heron Native Gates) ──
+
+    @staticmethod
+    def _gate_to_isa(
+        gate: str,
+        qubits: tuple[int, ...],
+        params: tuple[float, ...] | None,
+    ) -> list[str]:
+        """Transpiles a gate to IBM Heron ISA instructions.
+
+        Heron native gate set: rz, sx, x, cz, measure.
+        All other gates are decomposed into these.
+
+        Decompositions:
+          H  = rz(π/2) · sx · rz(π/2)
+          Y  = x · rz(π)  (global phase ignored)
+          Z  = rz(π)
+          S  = rz(π/2)
+          T  = rz(π/4)
+          CX = H(target) · CZ · H(target)
+          RX(θ) = rz(-π/2) · sx · rz(π-θ) · sx · rz(-π/2)
+          RY(θ) = rz(θ) · sx · rz(π) · sx  (simplified)
+          RZ(θ) = rz(θ)  (native)
+        """
+        import math
+        pi = math.pi
+        half = pi / 2
+
+        q0 = qubits[0]
+        ops: list[str] = []
+
+        def _h(q: int) -> list[str]:
+            return [
+                f"rz({half}) ${q};",
+                f"sx ${q};",
+                f"rz({half}) ${q};",
+            ]
+
+        if gate == "H":
+            ops.extend(_h(q0))
+
+        elif gate == "X":
+            ops.append(f"x ${q0};")
+
+        elif gate == "Y":
+            ops.append(f"x ${q0};")
+            ops.append(f"rz({pi}) ${q0};")
+
+        elif gate == "Z":
+            ops.append(f"rz({pi}) ${q0};")
+
+        elif gate == "S":
+            ops.append(f"rz({half}) ${q0};")
+
+        elif gate == "T":
+            ops.append(f"rz({pi / 4}) ${q0};")
+
+        elif gate == "RZ":
+            theta = params[0] if params else 0
+            ops.append(f"rz({theta}) ${q0};")
+
+        elif gate == "RX":
+            theta = params[0] if params else 0
+            ops.append(f"rz({-half}) ${q0};")
+            ops.append(f"sx ${q0};")
+            ops.append(f"rz({pi - theta}) ${q0};")
+            ops.append(f"sx ${q0};")
+            ops.append(f"rz({-half}) ${q0};")
+
+        elif gate == "RY":
+            theta = params[0] if params else 0
+            ops.extend(_h(q0))
+            ops.append(f"rz({theta}) ${q0};")
+            ops.extend(_h(q0))
+
+        elif gate == "CX":
+            q1 = qubits[1]
+            # CX = H(target) · CZ · H(target)
+            ops.extend(_h(q1))
+            ops.append(f"cz ${q0}, ${q1};")
+            ops.extend(_h(q1))
+
+        elif gate == "CZ":
+            q1 = qubits[1]
+            ops.append(f"cz ${q0}, ${q1};")
+
+        elif gate == "CY":
+            q1 = qubits[1]
+            # CY = S†(target) · CX · S(target)
+            ops.append(f"rz({-half}) ${q1};")
+            ops.extend(_h(q1))
+            ops.append(f"cz ${q0}, ${q1};")
+            ops.extend(_h(q1))
+            ops.append(f"rz({half}) ${q1};")
+
+        elif gate == "CCX":
+            # Toffoli — simplified decomposition
+            q1, q2 = qubits[1], qubits[2]
+            # H target
+            ops.extend(_h(q2))
+            # CX(q1, q2)
+            ops.extend(_h(q2))
+            ops.append(f"cz ${q1}, ${q2};")
+            ops.extend(_h(q2))
+            # T† target
+            ops.append(f"rz({-pi / 4}) ${q2};")
+            # CX(q0, q2)
+            ops.extend(_h(q2))
+            ops.append(f"cz ${q0}, ${q2};")
+            ops.extend(_h(q2))
+            # T target
+            ops.append(f"rz({pi / 4}) ${q2};")
+            # CX(q1, q2)
+            ops.extend(_h(q2))
+            ops.append(f"cz ${q1}, ${q2};")
+            ops.extend(_h(q2))
+            # T† target
+            ops.append(f"rz({-pi / 4}) ${q2};")
+            # CX(q0, q2)
+            ops.extend(_h(q2))
+            ops.append(f"cz ${q0}, ${q2};")
+            ops.extend(_h(q2))
+            # T q1, T target, T† q0
+            ops.append(f"rz({pi / 4}) ${q1};")
+            ops.append(f"rz({pi / 4}) ${q2};")
+            ops.append(f"rz({-pi / 4}) ${q0};")
+            # CX(q0, q1)
+            ops.extend(_h(q1))
+            ops.append(f"cz ${q0}, ${q1};")
+            ops.extend(_h(q1))
+            # T q0, T† q1
+            ops.append(f"rz({pi / 4}) ${q0};")
+            ops.append(f"rz({-pi / 4}) ${q1};")
+            # H target
+            ops.extend(_h(q2))
+
+        elif gate == "SWAP":
+            q1 = qubits[1]
+            # SWAP = CX(0,1) · CX(1,0) · CX(0,1)
+            for a, b in [(q0, q1), (q1, q0), (q0, q1)]:
+                ops.extend(_h(b))
+                ops.append(f"cz ${a}, ${b};")
+                ops.extend(_h(b))
+
+        else:
+            raise IBMRestError(
+                f"Gate '{gate}' cannot be transpiled to ISA. "
+                f"Supported: H, X, Y, Z, S, T, CX, CZ, CY, "
+                f"CCX, SWAP, RX, RY, RZ"
+            )
+
+        return ops
 
     def dag_to_qasm3(self, dag: DAGCircuit) -> str:
-        """Converts a DAG circuit to QASM 3.0 for IBM submission.
+        """Converts a DAG circuit to ISA-transpiled QASM 3.0.
 
-        Uses the compact QASM 3.0 format compatible with IBM Runtime:
-          - $N qubit addressing (physical qubits)
-          - bit[N] c for classical registers
-          - c[i] = measure $i for measurements
+        Automatically decomposes all gates into Heron native
+        gate set (rz, sx, x, cz). No manual transpilation needed.
         """
         n = dag.num_qubits
         lines = [
@@ -272,18 +421,10 @@ class IBMRestBackend(Backend):
         ]
 
         for op in dag.op_nodes():
-            qasm_name = _QASM3_GATE_MAP.get(op.gate_name)
-            if qasm_name is None:
-                raise IBMRestError(
-                    f"Gate '{op.gate_name}' not supported. "
-                    f"Supported: {list(_QASM3_GATE_MAP.keys())}"
-                )
-            qubit_args = ", ".join(f"${q}" for q in op.qubits)
-            if op.params:
-                param_str = ", ".join(f"{p:.10f}" for p in op.params)
-                lines.append(f"{qasm_name}({param_str}) {qubit_args};")
-            else:
-                lines.append(f"{qasm_name} {qubit_args};")
+            isa_ops = self._gate_to_isa(
+                op.gate_name, op.qubits, op.params
+            )
+            lines.extend(isa_ops)
 
         # Measurements
         measured = range(n)
