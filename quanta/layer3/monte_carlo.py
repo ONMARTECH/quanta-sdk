@@ -316,22 +316,42 @@ def amplitude_estimate(
     best_score = float("inf")
 
     # Grid resolution scales with Grover power for quantum-correct precision
-    # The theoretical precision of AE is O(1/M) where M = max Grover power
     max_m = max(m for m, _ in measurements)
     n_candidates = max(200, 50 * (2 * max_m + 1))
+
+    def _mle_score(theta: float) -> float:
+        """Sum of squared errors across all measurements."""
+        return sum(
+            (math.sin((2 * mk + 1) * theta) ** 2 - pm) ** 2
+            for mk, pm in measurements
+        )
+
+    # Phase 1: Coarse grid search
     for i in range(n_candidates + 1):
         theta_cand = (i / n_candidates) * (math.pi / 2)
-
-        # Log-likelihood score (sum of squared errors)
-        score = 0.0
-        for m_k, p_meas in measurements:
-            p_pred = math.sin((2 * m_k + 1) * theta_cand) ** 2
-            score += (p_pred - p_meas) ** 2
-
+        score = _mle_score(theta_cand)
         if score < best_score:
             best_score = score
             best_theta = theta_cand
 
+    # Phase 2: Golden-section refinement around best grid point
+    # This gives continuous precision — no grid snapping artifacts
+    grid_step = (math.pi / 2) / n_candidates
+    lo = max(0.0, best_theta - grid_step)
+    hi = min(math.pi / 2, best_theta + grid_step)
+    gr = (math.sqrt(5) + 1) / 2  # golden ratio
+
+    for _ in range(60):  # 60 iterations → ~1e-13 precision
+        if hi - lo < 1e-14:
+            break
+        c = hi - (hi - lo) / gr
+        d = lo + (hi - lo) / gr
+        if _mle_score(c) < _mle_score(d):
+            hi = d
+        else:
+            lo = c
+
+    best_theta = (lo + hi) / 2
     best_a = math.sin(best_theta) ** 2
 
     # Scale back
