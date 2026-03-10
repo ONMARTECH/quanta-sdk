@@ -796,42 +796,64 @@ def run_on_ibm(
     circuit_ops: str = '[["H", [0]], ["CX", [0, 1]]]',
     num_qubits: int = 2,
     shots: int = 4096,
-    backend_name: str = "ibm_brisbane",
+    backend_name: str = "ibm_torino",
     region: str = "us",
 ) -> str:
     """Run a quantum circuit on real IBM Quantum hardware.
 
     Sends circuit directly to IBM via REST API. No Qiskit needed.
-    Requires IBM_API_KEY and IBM_INSTANCE_CRN environment variables.
+    Loads IBM_API_KEY and IBM_INSTANCE_CRN from .env or environment.
 
     Args:
-        circuit_ops: JSON array of [gate, qubits] pairs.
+        circuit_ops: JSON array of [gate, qubits, params?] triples.
+            Fixed gates:  ["H", [0]], ["CX", [0, 1]]
+            Parametric:   ["RX", [0], [3.14159]]
+            Multi-param:  ["U", [0], [1.5708, 0, 3.14159]]
         num_qubits: Number of qubits.
-        shots: Measurement shots.
-        backend_name: IBM backend (ibm_brisbane, ibm_osaka, etc.).
+        shots: Measurement shots (max 100000).
+        backend_name: IBM backend (ibm_torino, ibm_fez, etc.).
         region: "us" or "eu-de".
 
     Returns:
-        JSON with job submission result or error.
+        JSON with QASM, submission status, or job result.
     """
     try:
-        from quanta.backends.ibm_rest import IBMRestBackend  # noqa: F401
+        import os
+
+        from quanta.backends.ibm_rest import IBMRestBackend
 
         ops = json.loads(circuit_ops)
 
-        # Build QASM 3.0 directly
+        # Known IBM backends for validation
+        known_backends = {
+            "ibm_torino", "ibm_fez", "ibm_marrakesh",
+            "ibm_brisbane", "ibm_osaka", "ibm_kyoto",
+            "ibm_sherbrooke", "ibm_nazca", "ibm_cusco",
+        }
+
+        # Full 25-gate QASM map
+        gate_map = {
+            "H": "h", "X": "x", "Y": "y", "Z": "z",
+            "S": "s", "T": "t", "I": "id",
+            "SDG": "sdg", "TDG": "tdg",
+            "SX": "sx", "SXdg": "sxdg",
+            "CX": "cx", "CZ": "cz", "CY": "cy",
+            "SWAP": "swap", "CCX": "ccx",
+            "RX": "rx", "RY": "ry", "RZ": "rz",
+            "P": "p", "U": "u",
+            "RXX": "rxx", "RZZ": "rzz",
+            "RCCX": "rccx", "RC3X": "rc3x",
+        }
+
+        # Parametric gates that require angle parameters
+        param_gates = {"RX", "RY", "RZ", "P", "U", "RXX", "RZZ"}
+
+        # Build QASM 3.0
         lines = [
             'OPENQASM 3.0;',
             'include "stdgates.inc";',
             f'bit[{num_qubits}] c;',
         ]
-
-        gate_map = {
-            "H": "h", "X": "x", "Y": "y", "Z": "z",
-            "S": "s", "T": "t", "CX": "cx", "CZ": "cz",
-            "CY": "cy", "SWAP": "swap", "CCX": "ccx",
-            "RX": "rx", "RY": "ry", "RZ": "rz",
-        }
 
         for op in ops:
             gate = op[0]
@@ -840,6 +862,15 @@ def run_on_ibm(
 
             qasm_gate = gate_map.get(gate, gate.lower())
             qubit_args = ", ".join(f"${q}" for q in qubits)
+
+            if gate in param_gates and not params:
+                return json.dumps({
+                    "error": (
+                        f"Gate '{gate}' requires angle parameter(s). "
+                        f'Format: ["{gate}", {qubits}, [angle]]'
+                    ),
+                    "example": f'["{gate}", {qubits}, [3.14159]]',
+                })
 
             if params:
                 param_str = ", ".join(str(p) for p in params)
@@ -852,29 +883,82 @@ def run_on_ibm(
 
         qasm_str = " ".join(lines)
 
-        # Note: actual submission needs IBM_API_KEY set
+        # Backend validation
+        backend_warning = None
+        if backend_name not in known_backends:
+            backend_warning = (
+                f"'{backend_name}' not in known backends: "
+                f"{', '.join(sorted(known_backends))}"
+            )
+
+        # Load credentials from .env or environment
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+        except ImportError:
+            pass
+
+        api_key = os.environ.get("IBM_API_KEY", "")
+        instance_crn = os.environ.get("IBM_INSTANCE_CRN", "")  # noqa: F841
+
+        if not api_key:
+            return json.dumps({
+                "action": "qasm_ready",
+                "backend": backend_name,
+                "backend_warning": backend_warning,
+                "region": region,
+                "qasm": qasm_str,
+                "shots": shots,
+                "status": "credentials_missing",
+                "note": (
+                    "Set IBM_API_KEY and IBM_INSTANCE_CRN in .env file "
+                    "or environment variables to submit to IBM."
+                ),
+            })
+
+        # Submit to IBM Quantum via REST API
+        backend = IBMRestBackend(
+            region=region,
+            backend_name=backend_name,
+        )
+
+        # Build a DAG from the ops for the backend
+        from quanta.core.circuit import CircuitBuilder
+        from quanta.core.types import Instruction
+        from quanta.dag.dag_circuit import DAGCircuit
+
+        builder = CircuitBuilder(num_qubits)
+        for op in ops:
+            gate = op[0]
+            qubits_list = tuple(op[1]) if len(op) > 1 else (0,)
+            op_params = tuple(op[2]) if len(op) > 2 else None
+            builder.record(Instruction(gate, qubits_list, op_params))
+
+        dag = DAGCircuit.from_builder(builder)
+
+        # Get ISA-transpiled QASM
+        isa_qasm = backend.dag_to_qasm3(dag)
+
+        # Submit sampler job
+        job = backend.submit_sampler(dag, shots=shots)
 
         return json.dumps({
-            "action": "submit_to_ibm",
+            "action": "submitted",
             "backend": backend_name,
+            "backend_warning": backend_warning,
             "region": region,
-            "qasm": qasm_str,
+            "qasm": isa_qasm,
             "shots": shots,
-            "status": "ready",
-            "note": (
-                "Set IBM_API_KEY and IBM_INSTANCE_CRN env vars, "
-                "then call backend.execute() to run on real hardware."
-            ),
-            "example": (
-                "from quanta.backends.ibm_rest import IBMRestBackend; "
-                f"b = IBMRestBackend(region='{region}', "
-                f"backend_name='{backend_name}')"
-            ),
+            "status": "submitted",
+            "job_id": job.job_id,
+            "job_status": job.status,
         })
 
     except Exception as e:
-        return json.dumps({"error": str(e)})
-
+        return json.dumps({
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        })
 
 @mcp.tool()
 def ibm_backends(region: str = "us") -> str:
