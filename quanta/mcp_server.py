@@ -10,14 +10,22 @@ Run:
 Or install in Claude Desktop:
     fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 
-Tools:
+Tools (15):
     - run_circuit:       Execute quantum circuit code
     - create_bell_state: Quick Bell state |Φ+⟩
     - grover_search:     Grover's search algorithm
     - shor_factor:       Shor's factoring algorithm
     - simulate_noise:    Run circuit with noise model
-    - list_gates:        Available quantum gates
+    - list_gates:        Available quantum gates (25)
     - explain_result:    Interpret measurement results
+    - draw_circuit:      SVG circuit diagram
+    - monte_carlo_price: Quantum Monte Carlo pricing
+    - qaoa_optimize:     QAOA combinatorial optimization
+    - cluster_data:      Quantum clustering
+    - run_on_ibm:        Run on IBM Quantum hardware
+    - ibm_backends:      List IBM quantum computers
+    - entity_resolve:    Quantum entity resolution
+    - noise_profile:     View noise model details
 """
 
 from __future__ import annotations
@@ -58,7 +66,8 @@ def run_circuit(
         code: Python code defining a quantum circuit. Must define a
               variable called 'circ' as the circuit to run.
               Available: circuit, H, X, Y, Z, S, T, CX, CZ, CY,
-              SWAP, CCX, RX, RY, RZ, measure.
+              SWAP, CCX, RX, RY, RZ, I, SDG, TDG, P, SX,
+              SXdg, U, RXX, RZZ, RCCX, RC3X, measure.
         shots: Number of measurement repetitions.
         seed: Random seed for reproducibility.
 
@@ -73,18 +82,29 @@ def run_circuit(
             return measure(q)
     """
     try:
-        from quanta import (
+        from quanta import (  # noqa: I001
             CCX,
             CX,
             CY,
             CZ,
+            H,
+            I,  # noqa: E741, F401
+            P,  # noqa: F401
+            RC3X,  # noqa: F401
+            RCCX,  # noqa: F401
             RX,
+            RXX,  # noqa: F401
             RY,
             RZ,
-            SWAP,
-            H,
+            RZZ,  # noqa: F401
             S,
+            SDG,  # noqa: F401
+            SWAP,
+            SX,  # noqa: F401
+            SXdg,  # noqa: F401
             T,
+            TDG,  # noqa: F401
+            U,  # noqa: F401
             X,
             Y,
             Z,
@@ -387,39 +407,65 @@ def list_gates() -> str:
         JSON with gate names, descriptions, and qubit counts.
     """
     gates = [
+        # Single-qubit fixed gates
         {"name": "H", "qubits": 1, "type": "Clifford",
-         "description": "Hadamard gate — creates superposition"},
+         "description": "Hadamard — creates superposition"},
         {"name": "X", "qubits": 1, "type": "Pauli",
-         "description": "Pauli-X (NOT) — bit flip |0⟩↔|1⟩"},
+         "description": "NOT — bit flip |0⟩↔|1⟩"},
         {"name": "Y", "qubits": 1, "type": "Pauli",
-         "description": "Pauli-Y — rotation around Y axis"},
+         "description": "Pauli-Y rotation"},
         {"name": "Z", "qubits": 1, "type": "Pauli",
-         "description": "Pauli-Z — phase flip |1⟩→-|1⟩"},
+         "description": "Phase flip |1⟩→-|1⟩"},
         {"name": "S", "qubits": 1, "type": "Clifford",
-         "description": "S gate — π/2 phase shift"},
+         "description": "π/2 phase shift"},
         {"name": "T", "qubits": 1, "type": "Non-Clifford",
-         "description": "T gate — π/4 phase shift (universal)"},
+         "description": "π/4 phase shift (universal)"},
+        {"name": "I", "qubits": 1, "type": "Identity",
+         "description": "Identity (no-op)"},
+        {"name": "SDG", "qubits": 1, "type": "Clifford",
+         "description": "S† — inverse S gate"},
+        {"name": "TDG", "qubits": 1, "type": "Non-Clifford",
+         "description": "T† — inverse T gate"},
+        {"name": "SX", "qubits": 1, "type": "Heron-native",
+         "description": "√X — square root of X"},
+        {"name": "SXdg", "qubits": 1, "type": "Heron-native",
+         "description": "√X† — inverse √X"},
+        # Single-qubit parametric gates
         {"name": "RX(θ)", "qubits": 1, "type": "Parametric",
-         "description": "Rotation around X axis by angle θ"},
+         "description": "X-axis rotation by θ"},
         {"name": "RY(θ)", "qubits": 1, "type": "Parametric",
-         "description": "Rotation around Y axis by angle θ"},
+         "description": "Y-axis rotation by θ"},
         {"name": "RZ(θ)", "qubits": 1, "type": "Parametric",
-         "description": "Rotation around Z axis by angle θ"},
+         "description": "Z-axis rotation by θ (Heron native)"},
+        {"name": "P(θ)", "qubits": 1, "type": "Parametric",
+         "description": "Phase gate — diag(1, e^(iθ))"},
+        {"name": "U(θ,φ,λ)", "qubits": 1, "type": "Universal",
+         "description": "Universal 1-qubit gate"},
+        # Multi-qubit gates
         {"name": "CX", "qubits": 2, "type": "Clifford",
-         "description": "CNOT — controlled NOT, creates entanglement"},
+         "description": "CNOT — creates entanglement"},
         {"name": "CZ", "qubits": 2, "type": "Clifford",
-         "description": "Controlled-Z — phase flip on |11⟩"},
+         "description": "Controlled-Z (Heron native)"},
         {"name": "CY", "qubits": 2, "type": "Clifford",
          "description": "Controlled-Y"},
         {"name": "SWAP", "qubits": 2, "type": "Clifford",
          "description": "Swaps two qubit states"},
+        {"name": "RXX(θ)", "qubits": 2, "type": "Parametric",
+         "description": "XX rotation — 2-qubit"},
+        {"name": "RZZ(θ)", "qubits": 2, "type": "Parametric",
+         "description": "ZZ rotation — 2-qubit"},
         {"name": "CCX", "qubits": 3, "type": "Toffoli",
-         "description": "Toffoli — double-controlled NOT gate"},
+         "description": "Double-controlled NOT"},
+        {"name": "RCCX", "qubits": 3, "type": "Toffoli",
+         "description": "Relative-phase Toffoli"},
+        {"name": "RC3X", "qubits": 4, "type": "Multi-ctrl",
+         "description": "3-controlled X"},
     ]
     return json.dumps({
         "total_gates": len(gates),
         "gates": gates,
         "parametric_usage": "RX(angle)(qubit) — e.g. RX(3.14)(q[0])",
+        "multi_param": "U(θ, φ, λ)(qubit) — e.g. U(π/2, 0, π)(q[0])",
     })
 
 
@@ -814,6 +860,105 @@ def ibm_backends(region: str = "us") -> str:
 
 
 # ═══════════════════════════════════════════
+#  Tool: Draw Circuit (SVG)
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def draw_circuit(
+    code: str,
+    title: str = "Quantum Circuit",
+    dark_mode: bool = False,
+) -> str:
+    """Generate an SVG/HTML circuit diagram.
+
+    Creates a publication-quality visual circuit diagram with
+    IBM-inspired color-coded gates.
+
+    Args:
+        code: Python code defining a circuit (same as run_circuit).
+              Must define a variable called 'circ'.
+        title: Title for the diagram.
+        dark_mode: Use dark background.
+
+    Returns:
+        HTML string with embedded SVG circuit diagram.
+    """
+    try:
+        import math  # noqa: F401
+
+        import numpy as np  # noqa: F401
+
+        from quanta import (
+            CCX,
+            CX,
+            CY,
+            CZ,
+            RC3X,
+            RCCX,
+            RX,
+            RXX,
+            RY,
+            RZ,
+            RZZ,
+            SDG,
+            SWAP,
+            SX,
+            TDG,
+            H,
+            I,  # noqa: E741
+            P,
+            S,
+            SXdg,
+            T,
+            U,
+            X,
+            Y,
+            Z,
+            circuit,
+            measure,
+        )
+        from quanta.visualize_svg import to_html
+
+        _safe = {
+            "range": range, "len": len, "int": int,
+            "float": float, "abs": abs, "min": min, "max": max,
+        }
+        namespace = {
+            "circuit": circuit, "measure": measure,
+            "H": H, "X": X, "Y": Y, "Z": Z,
+            "S": S, "T": T, "CX": CX, "CZ": CZ,
+            "CY": CY, "SWAP": SWAP, "CCX": CCX,
+            "RX": RX, "RY": RY, "RZ": RZ,
+            "I": I, "SDG": SDG, "TDG": TDG,
+            "P": P, "SX": SX, "SXdg": SXdg,
+            "U": U, "RXX": RXX, "RZZ": RZZ,
+            "RCCX": RCCX, "RC3X": RC3X,
+            "np": np, "math": math,
+            "__builtins__": _safe,
+        }
+
+        exec(code, namespace)  # noqa: S102
+
+        circ = namespace.get("circ")
+        if circ is None:
+            return json.dumps({
+                "error": "Code must define 'circ' variable",
+            })
+
+        html = to_html(circ, title=title, dark_mode=dark_mode)
+        return json.dumps({
+            "html": html,
+            "format": "html+svg",
+            "note": "Save to .html file and open in browser",
+        })
+    except Exception as e:
+        return json.dumps({
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        })
+
+
+# ═══════════════════════════════════════════
 #  Resource: SDK Info
 # ═══════════════════════════════════════════
 
@@ -822,27 +967,33 @@ def sdk_info() -> str:
     """Quanta SDK version and capabilities."""
     return json.dumps({
         "name": "Quanta Quantum SDK",
-        "version": "0.6.1",
+        "version": "0.7.1",
         "description": "Multi-paradigm quantum computing SDK",
+        "total_gates": 25,
         "capabilities": [
+            "25 quantum gates (full IBM Quantum parity)",
             "Statevector simulation (up to 27 qubits)",
             "Pauli Frame simulator (up to 50 qubits)",
-            "7 noise channels (Depolarizing, BitFlip, PhaseFlip, "
-            "AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError)",
+            "7 noise channels",
             "DAG-based 6-pass compiler",
-            "Grover search, Shor factoring, VQE, QAOA",
+            "Grover, Shor, VQE, QAOA algorithms",
             "Quantum Monte Carlo (amplitude estimation)",
-            "Quantum Clustering (swap test distances)",
-            "Quantum Error Correction (6 codes: surface, color, Steane)",
-            "Entity Resolution (hybrid classical-quantum)",
+            "Quantum Clustering (swap test)",
+            "QEC (6 codes: surface, color, Steane)",
+            "Entity Resolution (hybrid quantum)",
+            "SVG circuit visualization",
             "QASM 3.0 export",
-            "Google/IBM backend support",
+            "IBM Quantum REST API (direct, no Qiskit)",
+            "ISA transpilation (Heron rz/sx/x/cz)",
         ],
         "tools": [
-            "run_circuit", "create_bell_state", "grover_search",
-            "shor_factor", "simulate_noise", "list_gates",
-            "explain_result", "monte_carlo_price", "qaoa_optimize",
-            "cluster_data",
+            "run_circuit", "create_bell_state",
+            "grover_search", "shor_factor",
+            "simulate_noise", "list_gates",
+            "explain_result", "draw_circuit",
+            "monte_carlo_price", "qaoa_optimize",
+            "cluster_data", "run_on_ibm",
+            "ibm_backends",
         ],
         "simulator_limits": {
             "max_qubits_statevector": 27,

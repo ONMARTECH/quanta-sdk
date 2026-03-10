@@ -4,14 +4,14 @@
     <strong>Multi-paradigm quantum computing SDK for Python</strong>
   </p>
   <p align="center">
-    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.6.1-blue.svg" alt="Version"></a>
+    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.7.1-blue.svg" alt="Version"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-457%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-476%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-8%2F8-gold.svg" alt="Benchmark"></a>
-    <a href="#qasmbench"><img src="https://img.shields.io/badge/QASMBench-10%2F10-success.svg" alt="QASMBench"></a>
-    <a href="https://github.com/ONMARTECH/quanta-sdk"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg" alt="Platform"></a>
+    <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r2-purple.svg" alt="IBM"></a>
+    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-13%20tools-teal.svg" alt="MCP"></a>
   </p>
 </p>
 
@@ -19,26 +19,30 @@
 
 Quanta is a clean, modular quantum computing SDK designed for researchers, engineers and developers. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — so you can work at the level that fits your problem.
 
-**Key highlights:**
-- Shor, VQE, QAOA, QSVM, Grover — production-grade quantum algorithms
-- DAG-based IR with 6-pass compiler and topology-aware qubit routing
-- Statevector + Pauli Frame simulators (up to 27/50 qubits) with JAX/CuPy GPU acceleration
-- 7 noise channels integrated into `run()` — `run(circ, noise=NoiseModel())`
-- 6 QEC codes: BitFlip, PhaseFlip, Steane, Surface Code, Color Code + MWPM/Union-Find decoders
-- Real-world demo: [quantum entity resolution](#11-entity-resolution) for customer deduplication
+### 🚀 What's New in v0.7.1
+
+- **IBM Quantum Integration** — Run circuits on real quantum hardware (ibm_torino 133q, ibm_fez 156q) via direct REST API. No Qiskit needed.
+- **25 Quantum Gates** — Full IBM parity: I, SDG, TDG, P, SX, SXdg, U(θ,φ,λ), RXX, RZZ, RCCX, RC3X
+- **ISA Transpilation** — Automatic decomposition to Heron native gates (rz/sx/x/cz)
+- **SVG Circuit Visualization** — Publication-quality HTML/SVG diagrams with color-coded gates
+- **MCP Server** — 13 AI tools for Claude, GPT, and other AI assistants
+- **Quantum Monte Carlo** — Amplitude estimation for option pricing
+- **Quantum Clustering** — Swap-test based distance computation + k-means
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [IBM Quantum Integration](#ibm-quantum-integration)
+- [MCP AI Integration](#mcp-ai-integration)
 - [Architecture](#architecture)
 - [Features](#features)
 - [Algorithms](#algorithms)
+- [Qubit Limits](#qubit-limits)
 - [Examples & Use Cases](#examples--use-cases)
 - [Quality Benchmark](#quality-benchmark)
 - [Installation](#installation)
 - [Documentation](#documentation)
 - [Author](#author)
-- [License](#license)
 
 ## Quick Start
 
@@ -66,67 +70,164 @@ print(result)
 ╚══════════════════════════════════════════════════╝
 ```
 
+## IBM Quantum Integration
+
+Run circuits on **real IBM quantum computers** — up to 156 qubits on Heron r2 processors. No Qiskit installation required.
+
+```python
+from quanta.backends.ibm_rest import IBMRestBackend
+
+# Connect to IBM Quantum (set IBM_API_KEY and IBM_INSTANCE_CRN env vars)
+backend = IBMRestBackend(region="us", backend_name="ibm_torino")
+
+# List available backends
+backends = backend.list_backends()
+# ibm_fez: 156 qubits (Heron r2), ibm_torino: 133 qubits (Heron r1)
+
+# Submit a Bell state to real hardware
+result = backend.run(bell, shots=4096)
+# Real quantum noise: |00⟩=47.5%, |11⟩=39.5%, fidelity=87%
+```
+
+### Available IBM Backends
+
+| Backend | Qubits | Processor | 2Q Error | Use Case |
+|---------|--------|-----------|----------|----------|
+| **ibm_fez** | 156 | Heron r2 | 0.28% | Large circuits |
+| **ibm_torino** | 133 | Heron r1 | 0.25% | General purpose |
+| **ibm_marrakesh** | 156 | Heron r2 | 0.23% | Low error |
+
+### ISA Transpilation
+
+All circuits automatically transpile to Heron's native gate set:
+
+| Your Gate | → ISA Decomposition |
+|-----------|-------------------|
+| H | rz(π/2) · sx · rz(π/2) |
+| CX | H(target) · CZ · H(target) |
+| RX, RY | rz + sx combinations |
+| CZ, RZ, SX, X | Native (no change) |
+
+### Free Tier Limits (Open Plan)
+
+| Resource | Limit |
+|----------|-------|
+| QPU time | 10 min/month |
+| Qubits | Up to 156 (Heron r2) |
+| Shots | Up to 100,000 per job |
+| Sessions | Supported |
+
+## MCP AI Integration
+
+Quanta exposes **13 MCP tools** for AI assistants (Claude, GPT, etc.):
+
+```bash
+# Install as MCP server
+fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
+```
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `run_circuit` | Execute quantum circuit code |
+| `create_bell_state` | Quick Bell state |Φ+⟩ |
+| `grover_search` | Grover's search algorithm |
+| `shor_factor` | Shor's factoring algorithm |
+| `simulate_noise` | Run with noise model |
+| `draw_circuit` | **SVG circuit diagram** |
+| `list_gates` | All 25 quantum gates |
+| `explain_result` | Interpret measurements |
+| `monte_carlo_price` | Quantum option pricing |
+| `qaoa_optimize` | QAOA optimization |
+| `cluster_data` | Quantum clustering |
+| `run_on_ibm` | Run on IBM hardware |
+| `ibm_backends` | List IBM quantum computers |
+
 ## Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────┐
 │  Layer 3 — Declarative API                               │
 │  search() · optimize() · vqe() · factor() · qsvm()      │
-│  portfolio_optimize() · resolve() · multi_agent()        │
+│  monte_carlo() · cluster() · resolve()                   │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 2 — Circuit API                                   │
-│  @circuit · H · CX · RZ · measure · run · sweep          │
-│  custom_gate() · 17 built-in gates                       │
+│  @circuit · 25 gates · measure · run · sweep             │
+│  SVG visualization · QASM 3.0 export                     │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 1 — Physical Layer                                │
-│  DAG IR · 6-pass compiler · qubit routing · QASM I/O     │
-│  statevector · density matrix · Pauli frame · JAX/CuPy   │
+│  DAG IR · 6-pass compiler · qubit routing · ISA transpile│
+│  statevector · density matrix · Pauli frame · IBM REST   │
 └──────────────────────────────────────────────────────────┘
 ```
 
 ## Features
 
-### Core
-- **17 built-in gates** — H, X, Y, Z, CX, CCX, SWAP, RX, RY, RZ, S, T, and more
-- **`custom_gate(name, matrix)`** — define your own unitary gates
-- **`@circuit` decorator** — write quantum circuits as Python functions
-- **`sweep(circuit, params)`** — parameter scans for variational algorithms
+### 25 Quantum Gates (Full IBM Parity)
+
+| Category | Gates |
+|----------|-------|
+| **Pauli** | X, Y, Z |
+| **Hadamard** | H |
+| **Phase** | S, T, SDG (S†), TDG (T†), P(θ) |
+| **Root** | SX (√X), SXdg (√X†) — Heron native |
+| **Rotation** | RX(θ), RY(θ), RZ(θ) |
+| **Universal** | U(θ, φ, λ) |
+| **2-Qubit** | CX, CY, CZ, SWAP, RXX(θ), RZZ(θ) |
+| **Multi** | CCX (Toffoli), RCCX, RC3X |
+| **Other** | I (Identity), Measure |
 
 ### Compiler & IR
 - **DAG-based intermediate representation** — directed acyclic graph for circuit analysis
-- **3-pass optimizer** — gate cancellation, gate merging, basis translation
+- **6-pass compiler** — gate cancellation, merging, basis translation, routing
 - **Topology-aware routing** — SWAP insertion for linear, ring, and grid topologies
-- **QASM 2.0/3.0** — import external circuits and export for cross-SDK interop
+- **QASM 3.0** — export for IBM and cross-SDK interop
 
-### Simulators
-- **Statevector** — tensor contraction engine, up to **27 qubits** (100s, 2GB)
-- **Pauli Frame** — Aaronson-Gottesman stabilizer tableau, **50-qubit** GHZ in <5s
-- **Density matrix** — mixed states + Kraus noise channels, up to 13 qubits
-- **Accelerated backend** — auto-detects JAX-GPU / CuPy; falls back to NumPy on CPU
-- **Noise integration** — `run(circ, noise=NoiseModel().add(Depolarizing(0.01)))` — 7 channels
+### Circuit Visualization
+- **ASCII** — `draw(circuit)` → terminal-friendly text diagrams
+- **SVG/HTML** — `to_html(circuit)` → publication-quality visual diagrams
+  - Color-coded gates by category
+  - Control dots, target circles, measurement meters
+  - Responsive layout with legend
+
+### Noise Simulation
+7 channels integrated into `run()`:
+```python
+result = run(circ, noise=NoiseModel().add(Depolarizing(0.01)))
+```
+Depolarizing · BitFlip · PhaseFlip · AmplitudeDamping · T2Relaxation · Crosstalk · ReadoutError
 
 ### Error Correction
 - Bit-flip [[3,1,3]], Phase-flip [[3,1,3]], **Steane [[7,1,3]]** codes
-- **Surface code [[d²,1,d]]** — stabilizer-based syndrome extraction, threshold ~1%
-- **Color code** — triangular lattice, restriction decoder, transversal Clifford gates
+- **Surface code [[d²,1,d]]** — stabilizer-based, threshold ~1%
+- **Color code** — triangular lattice, transversal Clifford gates
 - **Decoders** — MWPM (greedy) + Union-Find (near-linear O(n·α(n)))
-
-### Security
-- **BB84 QKD** — quantum key distribution with eavesdropper detection ([Example →](#08-qkd-bb84))
 
 ## Algorithms
 
-| Algorithm | Module | Use Case | Example |
-|-----------|--------|----------|---------|
-| **Grover** | `layer3.search` | Unstructured search (√N speedup) | [05 →](#05-grover-search) |
-| **QAOA** | `layer3.optimize` | Combinatorial optimization | [07 →](#07-portfolio-optimization) |
-| **VQE** | `layer3.vqe` | Molecular ground-state energy | [06 →](#06-molecular-energy) |
-| **Shor** | `layer3.shor` | Integer factoring (RSA) | [10 →](#10-quantum-benchmark) |
-| **QSVM** | `layer3.qsvm` | Quantum kernel classification | [10 →](#10-quantum-benchmark) |
-| **Multi-Agent** | `layer3.agent` | Quantum agent-based modeling | [09 →](#09-full-demo) |
-| **Portfolio** | `layer3.finance` | Financial portfolio optimization | [07 →](#07-portfolio-optimization) |
-| **Hamiltonian** | `layer3.hamiltonian` | Molecular simulation (H₂, LiH, HeH⁺) | [06 →](#06-molecular-energy) |
-| **Entity Resolution** | `layer3.entity_resolution` | Customer deduplication (QAOA) | [11 →](#11-entity-resolution) |
+| Algorithm | Module | Use Case |
+|-----------|--------|----------|
+| **Grover** | `layer3.search` | Unstructured search (√N speedup) |
+| **QAOA** | `layer3.optimize` | Combinatorial optimization |
+| **VQE** | `layer3.vqe` | Molecular ground-state energy |
+| **Shor** | `layer3.shor` | Integer factoring (RSA) |
+| **QSVM** | `layer3.qsvm` | Quantum kernel classification |
+| **Monte Carlo** | `layer3.monte_carlo` | Amplitude estimation + pricing |
+| **Clustering** | `layer3.clustering` | Swap-test quantum distances |
+| **Entity Resolution** | `layer3.entity_resolution` | Customer deduplication |
+| **Portfolio** | `layer3.finance` | Financial optimization |
+
+## Qubit Limits
+
+| Simulator | Max Qubits | Memory | Speed |
+|-----------|-----------|--------|-------|
+| **Statevector** | 27 | ~2 GB | Full state simulation |
+| **Density Matrix** | 13 | ~1 GB | Mixed states + noise |
+| **Pauli Frame** | 1,000+ | O(n²) | Clifford-only circuits |
+| **IBM Hardware** | 156 | Cloud | Real quantum computer |
+
+> **Note:** Statevector memory doubles per qubit (2^n). 20 qubits = 8 MB, 25 = 256 MB, 27 = 1 GB.
 
 ## Examples & Use Cases
 
@@ -215,16 +316,16 @@ python -m quanta.examples.11_entity_resolution
 | 7 | QSVM Classification | ✅ | 100% accuracy |
 | 8 | Surface Code QEC | ✅ | 0% logical error rate |
 
+### IBM Hardware Validation
+
+Bell state on **ibm_torino** (133 qubits, Heron r1):
+```
+4096 shots: |00⟩=47.5%, |11⟩=39.5%, entanglement fidelity=87%
+```
+
 ### QASMBench — 10/10
 
-All standard QASMBench circuits import, compile, and simulate correctly:  
-`bell` · `ghz` · `qft` · `teleportation` · `deutsch-jozsa` · `grover` · `adder` · `vqe_ansatz` · `swap_test` · `random`
-
-Large circuit support: GHZ-20 (710ms), QFT-20 (3.5s), Random-24 (12s).
-
-### Benchpress Compatible
-
-Includes `QuantaBenchpressBackend` adapter for cross-SDK benchmarking alongside Qiskit, Cirq, and Braket using the [Benchpress](https://arxiv.org/abs/2406.14155) framework.
+All standard QASMBench circuits import, compile, and simulate correctly.
 
 ## Installation
 
@@ -242,6 +343,12 @@ pytest
 
 # Run benchmark
 python -m quanta.examples.10_quantum_benchmark
+```
+
+**Optional IBM Quantum:**
+```bash
+export IBM_API_KEY="your-api-key"
+export IBM_INSTANCE_CRN="your-crn"
 ```
 
 **Optional GPU acceleration:**
@@ -263,12 +370,13 @@ pip install cupy          # NVIDIA CUDA backend
 ## Project Stats
 
 ```
-Files:       69          Languages:   Python
-Lines:       11,670+     Tests:       457
-Algorithms:  9           Examples:    11
-Simulators:  4           QEC Codes:   6
-QASM:        2.0 + 3.0   Max Qubits:  50 (Pauli Frame)
-Noise:       7 channels  Decoders:    2 (MWPM + UF)
+Version:     0.7.1        Gates:       25 (full IBM parity)
+Files:       72+          Tests:       476
+Algorithms:  9            Examples:    11
+Simulators:  4            QEC Codes:   6
+MCP Tools:   13           Max Qubits:  156 (IBM Heron r2)
+Noise:       7 channels   Backends:    local + IBM REST
+QASM:        3.0          Decoders:    2 (MWPM + UF)
 ```
 
 ## Author
@@ -289,5 +397,5 @@ Feel free to check [issues page](https://github.com/ONMARTECH/quanta-sdk/issues)
 ---
 
 <p align="center">
-  <sub>Built for the quantum computing community</sub>
+  <sub>Built for the quantum computing community — now running on real IBM quantum hardware</sub>
 </p>
