@@ -33,6 +33,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import ssl
 import time
 import urllib.error
 import urllib.request
@@ -56,6 +57,17 @@ _API_REGIONS: dict[str, str] = {
 }
 
 _API_VERSION = "2026-02-15"
+
+# SSL context for macOS compatibility
+def _ssl_context() -> ssl.SSLContext:
+    """Creates SSL context with proper CA certificates."""
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+_USER_AGENT = "quanta-sdk/0.7.0 (Python; IBM-Quantum-Client)"
 
 # Gate mapping: Quanta → QASM 3.0
 _QASM3_GATE_MAP: dict[str, str] = {
@@ -148,12 +160,15 @@ class IBMRestBackend(Backend):
         req = urllib.request.Request(
             _IAM_TOKEN_URL,
             data=data,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": _USER_AGENT,
+            },
             method="POST",
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=30, context=_ssl_context()) as resp:
                 body = json.loads(resp.read())
                 self._bearer_token = body["access_token"]
                 self._token_expiry = body.get("expiration", time.time() + 3600)
@@ -169,6 +184,7 @@ class IBMRestBackend(Backend):
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token}",
             "IBM-API-Version": _API_VERSION,
+            "User-Agent": _USER_AGENT,
         }
         if self._instance_crn:
             headers["Service-CRN"] = self._instance_crn
@@ -192,7 +208,7 @@ class IBMRestBackend(Backend):
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=120) as resp:
+            with urllib.request.urlopen(req, timeout=120, context=_ssl_context()) as resp:
                 return json.loads(resp.read())
         except urllib.error.HTTPError as e:
             error_body = e.read().decode() if e.fp else str(e)
@@ -208,16 +224,33 @@ class IBMRestBackend(Backend):
         """Lists available IBM Quantum backends.
 
         Returns:
-            List of backend info dicts with name, qubits, status.
+            List of backend info dicts with name, qubits, status,
+            processor family, queue length, and error rates.
         """
         result = self._api_call("GET", "/backends")
         backends = []
-        for b in result.get("backends", result if isinstance(result, list) else []):
+
+        # IBM returns { "devices": [...] }
+        devices = result.get("devices", result.get("backends", []))
+        if isinstance(result, list):
+            devices = result
+
+        for b in devices:
+            status = b.get("status", {})
+            processor = b.get("processor_type", {})
+            metrics = b.get("performance_metrics", {})
+
             backends.append({
                 "name": b.get("name", "unknown"),
-                "num_qubits": b.get("num_qubits", 0),
-                "status": b.get("status", "unknown"),
-                "version": b.get("version", ""),
+                "num_qubits": b.get("qubits", b.get("num_qubits", 0)),
+                "status": (
+                    status.get("name", "unknown")
+                    if isinstance(status, dict) else str(status)
+                ),
+                "processor": f"{processor.get('family', '')} r{processor.get('revision', '')}",
+                "queue_length": b.get("queue_length", 0),
+                "two_q_error": metrics.get("two_q_error_median", {}).get("value", None),
+                "readout_error": metrics.get("readout_error_median", {}).get("value", None),
             })
         return backends
 
@@ -459,22 +492,34 @@ class IBMRestBackend(Backend):
         """Parses IBM job results into measurement counts."""
         counts: dict[str, int] = {}
 
-        # IBM returns results in various formats depending on version
         results = raw_result.get("results", [])
         if results:
             for pub_result in results:
                 data = pub_result.get("data", {})
-                # SamplerV2 format: data.c.samples or data.meas.samples
                 for key in ("c", "meas", "cr"):
-                    if key in data:
-                        raw_counts = data[key].get("counts", {})
-                        for bitstring, count in raw_counts.items():
+                    if key not in data:
+                        continue
+
+                    reg = data[key]
+
+                    # Format 1: SamplerV2 hex samples ["0x0", "0x3", ...]
+                    if "samples" in reg:
+                        samples = reg["samples"]
+                        n_bits = reg.get("num_bits", 2)
+                        for sample in samples:
+                            val = int(sample, 16) if isinstance(sample, str) else sample
+                            bits = format(val, f"0{n_bits}b")
+                            counts[bits] = counts.get(bits, 0) + 1
+                        break
+
+                    # Format 2: Pre-counted {"00": 500, "11": 500}
+                    if "counts" in reg:
+                        for bitstring, count in reg["counts"].items():
                             clean = bitstring.replace(" ", "").replace("0x", "")
                             counts[clean] = counts.get(clean, 0) + count
                         break
 
         if not counts:
-            # Fallback: try flat counts
             flat = raw_result.get("counts", {})
             for k, v in flat.items():
                 counts[k.replace(" ", "")] = v
