@@ -332,12 +332,10 @@ def simulate_noise(
             BitFlip,
             Crosstalk,
             Depolarizing,
-            NoiseModel,
             PhaseFlip,
             ReadoutError,
             T2Relaxation,
         )
-        from quanta.simulator.statevector import StateVectorSimulator
 
         channel_map = {
             "depolarizing": Depolarizing(probability=probability),
@@ -360,17 +358,58 @@ def simulate_noise(
         channel = channel_map[noise_type]
         rng = np.random.default_rng(seed)
 
-        # Build Bell state manually with noise
-        sim = StateVectorSimulator(2, seed=seed)
-        model = NoiseModel().add(channel)
+        # Use density matrix for ensemble-averaged noise simulation
+        # ρ → Σ K_i ρ K_i† (Kraus representation of quantum channel)
+        from quanta.simulator.density_matrix import DensityMatrixSimulator
 
+        # Build single-qubit Kraus operators from noise parameters
+        p = probability
+        I2 = np.eye(2, dtype=complex)
+        X2 = np.array([[0, 1], [1, 0]], dtype=complex)
+        Y2 = np.array([[0, -1j], [1j, 0]], dtype=complex)
+        Z2 = np.array([[0 + 0j, 0], [0, -1]], dtype=complex)
+
+        kraus_map = {
+            "depolarizing": [
+                np.sqrt(1 - 3 * p / 4) * I2,
+                np.sqrt(p / 4) * X2,
+                np.sqrt(p / 4) * Y2,
+                np.sqrt(p / 4) * Z2,
+            ],
+            "bitflip": [np.sqrt(1 - p) * I2, np.sqrt(p) * X2],
+            "phaseflip": [np.sqrt(1 - p) * I2, np.sqrt(p) * Z2],
+            "amplitude_damping": [
+                np.array([[1, 0], [0, np.sqrt(1 - p)]], dtype=complex),
+                np.array([[0, np.sqrt(p)], [0, 0]], dtype=complex),
+            ],
+            "t2_relaxation": [np.sqrt(1 - p) * I2, np.sqrt(p) * Z2],
+            "crosstalk": [np.sqrt(1 - p) * I2, np.sqrt(p) * Z2],
+        }
+
+        sim = DensityMatrixSimulator(2, seed=seed)
+
+        # Apply H gate
         sim.apply("H", (0,))
-        state = model.apply_noise(sim.state, (0,), 2, rng)
-        sim.state = state
 
+        # Apply noise to qubit 0 (Kraus on density matrix)
+        if noise_type in kraus_map:
+            sim.apply_kraus(kraus_map[noise_type], (0,))
+
+        # Apply CX gate
         sim.apply("CX", (0, 1))
-        state = model.apply_noise(sim.state, (0, 1), 2, rng)
-        sim.state = state
+
+        # Apply noise to both qubits
+        if noise_type in kraus_map:
+            sim.apply_kraus(kraus_map[noise_type], (0,))
+            sim.apply_kraus(kraus_map[noise_type], (1,))
+
+        rho = sim._rho
+
+        # Normalize trace (Kraus numerical precision)
+        tr = np.real(np.trace(rho))
+        if tr > 0 and abs(tr - 1.0) > 1e-12:
+            sim._rho = rho / tr
+            rho = sim._rho
 
         counts = sim.sample(shots)
 
@@ -381,16 +420,13 @@ def simulate_noise(
         total = sum(counts.values())
         probs = {k: v / total for k, v in counts.items()}
 
-        # Compute fidelity by comparing against ideal (noiseless) Bell state
-        # Ideal Bell: P(00) = P(11) = 0.5, P(01) = P(10) = 0
-        ideal_probs = {"00": 0.5, "11": 0.5, "01": 0.0, "10": 0.0}
-        # Bhattacharyya fidelity: F = (Σ √(p·q))²
-        bc_sum = 0.0
-        for state in ["00", "01", "10", "11"]:
-            p = probs.get(state, 0.0)
-            q = ideal_probs.get(state, 0.0)
-            bc_sum += (p * q) ** 0.5
-        fidelity = bc_sum ** 2
+        # Quantum state fidelity: F = ⟨Φ+|ρ|Φ+⟩
+        # |Φ+⟩ = (|00⟩ + |11⟩)/√2
+        ideal_state = np.zeros(4, dtype=complex)
+        ideal_state[0] = 1 / np.sqrt(2)  # |00⟩
+        ideal_state[3] = 1 / np.sqrt(2)  # |11⟩
+        rho_ideal = np.outer(ideal_state, ideal_state.conj())
+        fidelity = float(np.real(np.trace(rho @ rho_ideal)))
 
         return json.dumps({
             "noise_model": channel.name,
