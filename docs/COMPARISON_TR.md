@@ -22,7 +22,7 @@
 | **Shor** | Dahili | Dis | Yok | Yok |
 | **Tekillestime** | Dahili (QAOA) | Yok | Yok | Yok |
 | **Bagimlilik** | 1 (numpy) | 20+ | 10+ | 10+ |
-| **MCP Sunucusu** | Dahili (7 arac) | Yok | Yok | Yok |
+| **MCP Sunucusu** | Dahili (14 arac) | Yok | Yok | Yok |
 | **Gradyanlar** | Parameter-shift + Natural | Manuel | Manuel | **Dahili (autograd)** |
 
 ### Kod Karsilastirmasi: Bell Durumu

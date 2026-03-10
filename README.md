@@ -8,10 +8,10 @@
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-476%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-488%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-8%2F8-gold.svg" alt="Benchmark"></a>
-    <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r2-purple.svg" alt="IBM"></a>
-    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-13%20tools-teal.svg" alt="MCP"></a>
+    <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
+    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-14%20tools-teal.svg" alt="MCP"></a>
   </p>
 </p>
 
@@ -21,11 +21,11 @@ Quanta is a clean, modular quantum computing SDK designed for researchers, engin
 
 ### 🚀 What's New in v0.7.1
 
-- **IBM Quantum Integration** — Run circuits on real quantum hardware (ibm_torino 133q, ibm_fez 156q) via direct REST API. No Qiskit needed.
+- **IBM Quantum Integration** — Run circuits on real quantum hardware (ibm_torino 156q, ibm_fez 156q) via direct REST API. No Qiskit needed.
 - **25 Quantum Gates** — Full IBM parity: I, SDG, TDG, P, SX, SXdg, U(θ,φ,λ), RXX, RZZ, RCCX, RC3X
 - **ISA Transpilation** — Automatic decomposition to Heron native gates (rz/sx/x/cz)
 - **SVG Circuit Visualization** — Publication-quality HTML/SVG diagrams with color-coded gates
-- **MCP Server** — 13 AI tools for Claude, GPT, and other AI assistants
+- **MCP Server** — 14 AI tools for Claude, GPT, and other AI assistants
 - **Quantum Monte Carlo** — Amplitude estimation for option pricing
 - **Quantum Clustering** — Swap-test based distance computation + k-means
 
@@ -72,7 +72,7 @@ print(result)
 
 ## IBM Quantum Integration
 
-Run circuits on **real IBM quantum computers** — up to 156 qubits on Heron r2 processors. No Qiskit installation required.
+Run circuits on **real IBM quantum computers** — up to 156 qubits on Heron r3 processors. No Qiskit installation required.
 
 ```python
 from quanta.backends.ibm_rest import IBMRestBackend
@@ -82,7 +82,7 @@ backend = IBMRestBackend(region="us", backend_name="ibm_torino")
 
 # List available backends
 backends = backend.list_backends()
-# ibm_fez: 156 qubits (Heron r2), ibm_torino: 133 qubits (Heron r1)
+# ibm_fez: 156 qubits (Heron r2), ibm_torino: 156 qubits (Heron r3)
 
 # Submit a Bell state to real hardware
 result = backend.run(bell, shots=4096)
@@ -93,8 +93,8 @@ result = backend.run(bell, shots=4096)
 
 | Backend | Qubits | Processor | 2Q Error | Use Case |
 |---------|--------|-----------|----------|----------|
+| **ibm_torino** | 156 | Heron r3 | 0.25% | General purpose |
 | **ibm_fez** | 156 | Heron r2 | 0.28% | Large circuits |
-| **ibm_torino** | 133 | Heron r1 | 0.25% | General purpose |
 | **ibm_marrakesh** | 156 | Heron r2 | 0.23% | Low error |
 
 ### ISA Transpilation
@@ -113,13 +113,13 @@ All circuits automatically transpile to Heron's native gate set:
 | Resource | Limit |
 |----------|-------|
 | QPU time | 10 min/month |
-| Qubits | Up to 156 (Heron r2) |
+| Qubits | Up to 156 (Heron r3) |
 | Shots | Up to 100,000 per job |
 | Sessions | Supported |
 
 ## MCP AI Integration
 
-Quanta exposes **13 MCP tools** for AI assistants (Claude, GPT, etc.):
+Quanta exposes **14 MCP tools** for AI assistants (Claude, GPT, etc.):
 
 ```bash
 # Install as MCP server
@@ -143,6 +143,7 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `cluster_data` | Quantum clustering |
 | `run_on_ibm` | Run on IBM hardware |
 | `ibm_backends` | List IBM quantum computers |
+| `ibm_job_result` | Poll job status & fetch results |
 
 ## Architecture
 
@@ -318,7 +319,7 @@ python -m quanta.examples.11_entity_resolution
 
 ### IBM Hardware Validation
 
-Bell state on **ibm_torino** (133 qubits, Heron r1):
+Bell state on **ibm_torino** (156 qubits, Heron r3):
 ```
 4096 shots: |00⟩=47.5%, |11⟩=39.5%, entanglement fidelity=87%
 ```
@@ -371,10 +372,10 @@ pip install cupy          # NVIDIA CUDA backend
 
 ```
 Version:     0.7.1        Gates:       25 (full IBM parity)
-Files:       72+          Tests:       476
+Files:       73+          Tests:       488
 Algorithms:  9            Examples:    11
 Simulators:  4            QEC Codes:   6
-MCP Tools:   13           Max Qubits:  156 (IBM Heron r2)
+MCP Tools:   14           Max Qubits:  156 (IBM Heron r3)
 Noise:       7 channels   Backends:    local + IBM REST
 QASM:        3.0          Decoders:    2 (MWPM + UF)
 ```

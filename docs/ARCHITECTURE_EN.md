@@ -15,7 +15,7 @@ Quanta uses a **3-layer independent architecture**. Each layer can be used indep
 +---------------------------------------------------------+
 |              LAYER 2: ALGORITHMIC DSL                   |
 |  @circuit | H/CX/RZ | measure() | run() | sweep()      |
-|  custom_gate() | 17 built-in gates                      |
+|  custom_gate() | 25 built-in gates (IBM parity)          |
 |  "How to build the circuit?"                            |
 +---------------------------------------------------------+
 |              LAYER 1: PHYSICAL ENGINE                   |
@@ -51,7 +51,7 @@ qec/ -------> core/
 | File | Responsibility |
 |------|----------------|
 | `types.py` | QubitRef, Instruction, QubitRegister |
-| `gates.py` | 17 gates + broadcast |
+| `gates.py` | 25 gates + broadcast (IBM Heron parity) |
 | `circuit.py` | @circuit decorator, CircuitBuilder |
 | `measure.py` | Flexible measurement (full, partial) |
 | `equivalence.py` | Unitary comparison, fidelity |
@@ -96,6 +96,8 @@ qec/ -------> core/
 | `finance.py` | Portfolio optimization (Markowitz + QAOA) |
 | `hamiltonian.py` | Trotterized time evolution, molecular Hamiltonians |
 | `entity_resolution.py` | QAOA-based customer deduplication |
+| `monte_carlo.py` | Quantum Monte Carlo, amplitude estimation, option pricing |
+| `clustering.py` | Quantum swap-test distances + k-means clustering |
 
 ### export/ -- QASM I/O
 
@@ -128,7 +130,7 @@ qec/ -------> core/
 | `result.py` | Measurement results, probabilities, Dirac notation |
 | `visualize.py` | ASCII circuit diagram |
 | `visualize_state.py` | Probability histogram, phase diagram |
-| `mcp_server.py` | MCP server — 7 tools for AI-assisted quantum simulation (SSE + stdio) |
+| `mcp_server.py` | MCP server — 14 tools for AI-assisted quantum computation (SSE + stdio) |
 
 ## Data Flow
 

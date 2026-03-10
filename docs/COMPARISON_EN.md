@@ -22,7 +22,7 @@
 | **Shor** | Built-in | External | No | No |
 | **Entity Resolution** | Built-in (QAOA) | No | No | No |
 | **Dependencies** | 1 (numpy) | 20+ | 10+ | 10+ |
-| **MCP Server** | Built-in (7 tools) | No | No | No |
+| **MCP Server** | Built-in (14 tools) | No | No | No |
 | **Gradients** | Parameter-shift + Natural | Manual | Manual | **Built-in (autograd)** |
 
 ### Code Comparison: Bell State

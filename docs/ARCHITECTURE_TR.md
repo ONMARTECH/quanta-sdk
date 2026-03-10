@@ -51,7 +51,7 @@ qec/ -------> core/
 | Dosya | Sorumluluk |
 |-------|------------|
 | `types.py` | QubitRef, Instruction, QubitRegister |
-| `gates.py` | 17 kapi + broadcast |
+| `gates.py` | 25 kapi + broadcast (IBM Heron paritesi) |
 | `circuit.py` | @circuit dekoratoru, CircuitBuilder |
 | `measure.py` | Esnek olcum (tam, kismi) |
 | `equivalence.py` | Uniter karsilastirma, sadakat |
@@ -128,7 +128,7 @@ qec/ -------> core/
 | `result.py` | Olcum sonuclari, olasiliklar, Dirac notasyonu |
 | `visualize.py` | ASCII devre diyagrami |
 | `visualize_state.py` | Olasilik histogrami, faz diyagrami |
-| `mcp_server.py` | MCP sunucusu — AI destekli kuantum simulasyonu icin 7 arac (SSE + stdio) |
+| `mcp_server.py` | MCP sunucusu — AI destekli kuantum hesaplama icin 14 arac (SSE + stdio) |
 
 ## Veri Akisi
 
