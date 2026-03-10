@@ -398,11 +398,111 @@ class IBMRestBackend(Backend):
                 ops.append(f"cz ${a}, ${b};")
                 ops.extend(_h(b))
 
+        # ── New gates ──
+
+        elif gate == "I":
+            # Identity: no operation (skip)
+            pass
+
+        elif gate == "SDG":
+            ops.append(f"rz({-half}) ${q0};")
+
+        elif gate == "TDG":
+            ops.append(f"rz({-pi / 4}) ${q0};")
+
+        elif gate == "P":
+            theta = params[0] if params else 0
+            ops.append(f"rz({theta}) ${q0};")
+
+        elif gate == "SX":
+            ops.append(f"sx ${q0};")
+
+        elif gate == "SXdg":
+            # SXdg = rz(π) · sx · rz(π)
+            ops.append(f"rz({pi}) ${q0};")
+            ops.append(f"sx ${q0};")
+            ops.append(f"rz({pi}) ${q0};")
+
+        elif gate == "U":
+            # U(θ, φ, λ) = rz(φ) · sx · rz(θ+π) · sx · rz(λ)
+            theta = params[0] if params else 0
+            phi = params[1] if params and len(params) > 1 else 0
+            lam = params[2] if params and len(params) > 2 else 0
+            ops.append(f"rz({lam}) ${q0};")
+            ops.append(f"sx ${q0};")
+            ops.append(f"rz({theta + pi}) ${q0};")
+            ops.append(f"sx ${q0};")
+            ops.append(f"rz({phi + pi}) ${q0};")
+
+        elif gate == "RXX":
+            q1 = qubits[1]
+            theta = params[0] if params else 0
+            # RXX(θ) = (H⊗H) · CX · RZ(θ) · CX · (H⊗H)
+            ops.extend(_h(q0))
+            ops.extend(_h(q1))
+            ops.extend(_h(q1))
+            ops.append(f"cz ${q0}, ${q1};")
+            ops.extend(_h(q1))
+            ops.append(f"rz({theta}) ${q1};")
+            ops.extend(_h(q1))
+            ops.append(f"cz ${q0}, ${q1};")
+            ops.extend(_h(q1))
+            ops.extend(_h(q0))
+            ops.extend(_h(q1))
+
+        elif gate == "RZZ":
+            q1 = qubits[1]
+            theta = params[0] if params else 0
+            # RZZ(θ) = CX · RZ(θ) · CX
+            ops.extend(_h(q1))
+            ops.append(f"cz ${q0}, ${q1};")
+            ops.extend(_h(q1))
+            ops.append(f"rz({theta}) ${q1};")
+            ops.extend(_h(q1))
+            ops.append(f"cz ${q0}, ${q1};")
+            ops.extend(_h(q1))
+
+        elif gate == "RCCX":
+            # Relative-phase Toffoli — same as CCX up to phase
+            q1, q2 = qubits[1], qubits[2]
+            ops.extend(_h(q2))
+            ops.extend(_h(q2))
+            ops.append(f"cz ${q1}, ${q2};")
+            ops.extend(_h(q2))
+            ops.append(f"rz({-pi / 4}) ${q2};")
+            ops.extend(_h(q2))
+            ops.append(f"cz ${q0}, ${q2};")
+            ops.extend(_h(q2))
+            ops.append(f"rz({pi / 4}) ${q2};")
+            ops.extend(_h(q2))
+            ops.append(f"cz ${q1}, ${q2};")
+            ops.extend(_h(q2))
+            ops.extend(_h(q2))
+
+        elif gate == "RC3X":
+            # 3-controlled X — decompose via RCCX chain
+            q1, q2, q3 = qubits[1], qubits[2], qubits[3]
+            # Use CCX-like decomposition for 4 qubits
+            ops.extend(_h(q3))
+            ops.extend(_h(q3))
+            ops.append(f"cz ${q2}, ${q3};")
+            ops.extend(_h(q3))
+            ops.append(f"rz({-pi / 4}) ${q3};")
+            ops.extend(_h(q3))
+            ops.append(f"cz ${q1}, ${q3};")
+            ops.extend(_h(q3))
+            ops.append(f"rz({pi / 4}) ${q3};")
+            ops.extend(_h(q3))
+            ops.append(f"cz ${q0}, ${q3};")
+            ops.extend(_h(q3))
+            ops.extend(_h(q3))
+
         else:
             raise IBMRestError(
                 f"Gate '{gate}' cannot be transpiled to ISA. "
-                f"Supported: H, X, Y, Z, S, T, CX, CZ, CY, "
-                f"CCX, SWAP, RX, RY, RZ"
+                f"Supported: H, X, Y, Z, S, T, CX, CZ, CY, CCX, "
+                f"SWAP, RX, RY, RZ, I, SDG, TDG, P, SX, SXdg, "
+                f"U, RXX, RZZ, RCCX, RC3X"
             )
 
         return ops

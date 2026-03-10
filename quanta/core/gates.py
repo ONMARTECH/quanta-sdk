@@ -30,6 +30,9 @@ __all__ = [
     "H", "X", "Y", "Z", "S", "T",
     "CX", "CZ", "CY", "SWAP", "CCX",
     "RX", "RY", "RZ",
+    # New IBM-parity gates
+    "I", "SDG", "TDG", "P", "SX", "SXdg",
+    "U", "RXX", "RZZ", "RCCX", "RC3X",
 ]
 
 # ── Constants ──
@@ -127,13 +130,16 @@ class ParametricGate:
         >>> RY(np.pi/4)(q[0])  # θ=π/4 ile RY uygula
     """
 
-    def __init__(self, name: str, matrix_fn) -> None:
+    def __init__(self, name: str, matrix_fn, num_qubits: int = 1) -> None:
         self.name = name
         self._matrix_fn = matrix_fn
+        self.num_qubits = num_qubits
 
     def __call__(self, theta: float) -> _BoundParametricGate:
         """Returns a gate bound with an angle."""
-        return _BoundParametricGate(self.name, theta, self._matrix_fn)
+        return _BoundParametricGate(
+            self.name, theta, self._matrix_fn, self.num_qubits,
+        )
 
     def __repr__(self) -> str:
         return f"ParametricGate({self.name})"
@@ -141,12 +147,17 @@ class ParametricGate:
 class _BoundParametricGate:
     """Parametric gate bound with an angle value."""
 
-    num_qubits = 1
-
-    def __init__(self, name: str, theta: float, matrix_fn) -> None:
+    def __init__(
+        self,
+        name: str,
+        theta: float,
+        matrix_fn,
+        num_qubits: int = 1,
+    ) -> None:
         self.name = name
         self.theta = theta
         self._matrix_fn = matrix_fn
+        self.num_qubits = num_qubits
 
     @property
     def matrix(self) -> np.ndarray:
@@ -154,10 +165,61 @@ class _BoundParametricGate:
 
     def __call__(self, *args: QubitRef | Iterable[QubitRef]) -> None:
         qubits = _flatten_qubits(args)
+        if self.num_qubits == 1:
+            for qubit in qubits:
+                _get_active_builder().record(
+                    Instruction(self.name, (qubit,), (self.theta,))
+                )
+        else:
+            if len(qubits) != self.num_qubits:
+                from quanta.core.types import CircuitError
+                raise CircuitError(
+                    f"{self.name} requires {self.num_qubits} "
+                    f"qubits, got {len(qubits)}."
+                )
+            _get_active_builder().record(
+                Instruction(self.name, tuple(qubits), (self.theta,))
+            )
+
+
+class MultiParametricGate:
+    """Multi-parameter gate factory. Like U(θ, φ, λ)."""
+
+    def __init__(self, name: str, matrix_fn, num_params: int = 3) -> None:
+        self.name = name
+        self._matrix_fn = matrix_fn
+        self.num_params = num_params
+
+    def __call__(self, *params: float) -> _BoundMultiParametricGate:
+        return _BoundMultiParametricGate(
+            self.name, params, self._matrix_fn,
+        )
+
+    def __repr__(self) -> str:
+        return f"MultiParametricGate({self.name})"
+
+
+class _BoundMultiParametricGate:
+    """Multi-parameter gate bound with values."""
+
+    num_qubits = 1
+
+    def __init__(self, name: str, params: tuple, matrix_fn) -> None:
+        self.name = name
+        self.params = params
+        self._matrix_fn = matrix_fn
+
+    @property
+    def matrix(self) -> np.ndarray:
+        return self._matrix_fn(*self.params)
+
+    def __call__(self, *args: QubitRef | Iterable[QubitRef]) -> None:
+        qubits = _flatten_qubits(args)
         for qubit in qubits:
             _get_active_builder().record(
-                Instruction(self.name, (qubit,), (self.theta,))
+                Instruction(self.name, (qubit,), self.params)
             )
+
 
 # ═══════════════════════════════════════════
 
@@ -210,6 +272,49 @@ class _T(Gate):
     def _build_matrix(self) -> np.ndarray:
         return np.array([[1, 0], [0, np.exp(1j * np.pi / 4)]], dtype=complex)
 
+# ── New: Identity ──
+
+class _Identity(Gate):
+    name = "I"
+    def _build_matrix(self) -> np.ndarray:
+        return np.eye(2, dtype=complex)
+
+# ── New: S†, T† (conjugate transpose) ──
+
+class _SDG(Gate):
+    name = "SDG"
+    def _build_matrix(self) -> np.ndarray:
+        return np.array([[1, 0], [0, -1j]], dtype=complex)
+
+class _TDG(Gate):
+    name = "TDG"
+    def _build_matrix(self) -> np.ndarray:
+        return np.array(
+            [[1, 0], [0, np.exp(-1j * np.pi / 4)]], dtype=complex,
+        )
+
+# ── New: SX (√X), SXdg (√X†) ──
+
+class _SX(Gate):
+    """Square root of X gate. Native Heron gate."""
+    name = "SX"
+    def _build_matrix(self) -> np.ndarray:
+        return 0.5 * np.array([
+            [1 + 1j, 1 - 1j],
+            [1 - 1j, 1 + 1j],
+        ], dtype=complex)
+
+class _SXdg(Gate):
+    """Conjugate transpose of SX."""
+    name = "SXdg"
+    def _build_matrix(self) -> np.ndarray:
+        return 0.5 * np.array([
+            [1 - 1j, 1 + 1j],
+            [1 + 1j, 1 - 1j],
+        ], dtype=complex)
+
+# ── Multi-Qubit Fixed Gates ──
+
 class _CX(Gate):
     name = "CX"
     num_qubits = 2
@@ -255,6 +360,32 @@ class _CCX(Gate):
         m[7, 6], m[7, 7] = 1, 0
         return m
 
+# ── New: RCCX (Relative-phase Toffoli) ──
+
+class _RCCX(Gate):
+    """Relative-phase Toffoli (simplified CCX, up to phase)."""
+    name = "RCCX"
+    num_qubits = 3
+    def _build_matrix(self) -> np.ndarray:
+        m = np.eye(8, dtype=complex)
+        m[6, 6], m[6, 7] = 0, -1j
+        m[7, 6], m[7, 7] = -1j, 0
+        return m
+
+# ── New: RC3X (Relative-phase 3-controlled X) ──
+
+class _RC3X(Gate):
+    """Relative-phase 3-controlled X gate."""
+    name = "RC3X"
+    num_qubits = 4
+    def _build_matrix(self) -> np.ndarray:
+        m = np.eye(16, dtype=complex)
+        m[14, 14], m[14, 15] = 0, -1j
+        m[15, 14], m[15, 15] = -1j, 0
+        return m
+
+# ── Parametric Gates ──
+
 RX = ParametricGate("RX", lambda t: np.array([
     [np.cos(t / 2), -1j * np.sin(t / 2)],
     [-1j * np.sin(t / 2), np.cos(t / 2)],
@@ -270,6 +401,39 @@ RZ = ParametricGate("RZ", lambda t: np.array([
     [0, np.exp(1j * t / 2)],
 ], dtype=complex))
 
+# ── New: P (Phase gate) ──
+
+P = ParametricGate("P", lambda t: np.array([
+    [1, 0],
+    [0, np.exp(1j * t)],
+], dtype=complex))
+
+# ── New: RXX (2-qubit XX rotation) ──
+
+RXX = ParametricGate("RXX", lambda t: np.array([
+    [np.cos(t / 2), 0, 0, -1j * np.sin(t / 2)],
+    [0, np.cos(t / 2), -1j * np.sin(t / 2), 0],
+    [0, -1j * np.sin(t / 2), np.cos(t / 2), 0],
+    [-1j * np.sin(t / 2), 0, 0, np.cos(t / 2)],
+], dtype=complex), num_qubits=2)
+
+# ── New: RZZ (2-qubit ZZ rotation) ──
+
+RZZ = ParametricGate("RZZ", lambda t: np.diag([
+    np.exp(-1j * t / 2),
+    np.exp(1j * t / 2),
+    np.exp(1j * t / 2),
+    np.exp(-1j * t / 2),
+]).astype(complex), num_qubits=2)
+
+# ── New: U (Universal 1-qubit gate) ──
+
+U = MultiParametricGate("U", lambda t, p, lam: np.array([
+    [np.cos(t / 2), -np.exp(1j * lam) * np.sin(t / 2)],
+    [np.exp(1j * p) * np.sin(t / 2),
+     np.exp(1j * (p + lam)) * np.cos(t / 2)],
+], dtype=complex), num_params=3)
+
 # ── Singleton Instances ──
 H = _H()
 X = _X()
@@ -277,14 +441,24 @@ Y = _Y()
 Z = _Z()
 S = _S()
 T = _T()
+I = _Identity()  # noqa: E741
+SDG = _SDG()
+TDG = _TDG()
+SX = _SX()
+SXdg = _SXdg()
 CX = _CX()
 CZ = _CZ()
 CY = _CY()
 SWAP = _SWAP()
 CCX = _CCX()
+RCCX = _RCCX()
+RC3X = _RC3X()
 
 
 GATE_REGISTRY: dict[str, Gate | ParametricGate] = {
     "H": H, "X": X, "Y": Y, "Z": Z, "S": S, "T": T,
-    "CX": CX, "CZ": CZ, "CY": CY, "SWAP": SWAP, "CCX": CCX,
+    "I": I, "SDG": SDG, "TDG": TDG, "SX": SX, "SXdg": SXdg,
+    "CX": CX, "CZ": CZ, "CY": CY, "SWAP": SWAP,
+    "CCX": CCX, "RCCX": RCCX, "RC3X": RC3X,
 }
+

@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from quanta.core.gates import GATE_REGISTRY, ParametricGate
+from quanta.core.gates import GATE_REGISTRY, MultiParametricGate, ParametricGate
 from quanta.core.types import QuantaError
 
 # -- Public API --
@@ -124,6 +124,10 @@ class StateVectorSimulator:
                 if not params:
                     raise SimulatorError(f"{name} gate requires parameters")
                 return parametric(params[0]).matrix
+            if parametric and isinstance(parametric, MultiParametricGate):
+                if not params:
+                    raise SimulatorError(f"{name} gate requires parameters")
+                return parametric(*params).matrix
             raise SimulatorError(f"Unknown gate: {name}")
 
         return gate.matrix

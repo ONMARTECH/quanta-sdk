@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from quanta.core.gates import GATE_REGISTRY, ParametricGate
+from quanta.core.gates import GATE_REGISTRY, MultiParametricGate, ParametricGate
 from quanta.core.types import QuantaError
 
 __all__ = ["DensityMatrixSimulator"]
@@ -154,6 +154,10 @@ class DensityMatrixSimulator:
                 if not params:
                     raise DensityMatrixError(f"{name} requires parameters")
                 return parametric(params[0]).matrix
+            if parametric and isinstance(parametric, MultiParametricGate):
+                if not params:
+                    raise DensityMatrixError(f"{name} requires parameters")
+                return parametric(*params).matrix
             raise DensityMatrixError(f"Unknown gate: {name}")
         return gate.matrix
 

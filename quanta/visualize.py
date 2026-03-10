@@ -28,16 +28,19 @@ __all__ = ["draw"]
 
 _GATE_SYMBOLS: dict[str, str] = {
     "H": "H", "X": "X", "Y": "Y", "Z": "Z",
-    "S": "S", "T": "T",
+    "S": "S", "T": "T", "I": "I",
+    "SDG": "S†", "TDG": "T†",
+    "SX": "√X", "SXdg": "√X†",
     "CX": "@", "CZ": "@", "CY": "@",
-    "SWAP": "x",
-    "CCX": "@",
+    "SWAP": "x", "CCX": "@", "RCCX": "@", "RC3X": "@",
     "RX": "Rx", "RY": "Ry", "RZ": "Rz",
+    "P": "P", "U": "U",
+    "RXX": "Rxx", "RZZ": "Rzz",
 }
 
 _TARGET_SYMBOLS: dict[str, str] = {
     "CX": "X", "CY": "Y", "CZ": "Z",
-    "CCX": "X",
+    "CCX": "X", "RCCX": "X", "RC3X": "X",
 }
 
 

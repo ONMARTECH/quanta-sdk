@@ -19,7 +19,6 @@ Quick Start:
 
 __version__ = "0.7.0"
 
-# -- Core API --
 from quanta.core.circuit import circuit
 from quanta.core.custom_gate import custom_gate
 from quanta.core.gates import (
@@ -27,13 +26,25 @@ from quanta.core.gates import (
     CX,
     CY,
     CZ,
+    RC3X,
+    RCCX,
     RX,
+    RXX,
     RY,
     RZ,
+    RZZ,
+    SDG,
     SWAP,
+    SX,
+    TDG,
     H,
+    # New IBM-parity gates
+    I,
+    P,
     S,
+    SXdg,
     T,
+    U,
     X,
     Y,
     Z,
@@ -42,10 +53,13 @@ from quanta.core.measure import measure
 from quanta.runner import run, sweep
 
 __all__ = [
-    # Gates
+    # Gates (original)
     "H", "X", "Y", "Z", "S", "T",
     "CX", "CY", "CZ", "SWAP", "CCX",
     "RX", "RY", "RZ",
+    # Gates (new)
+    "I", "SDG", "TDG", "P", "SX", "SXdg",
+    "U", "RXX", "RZZ", "RCCX", "RC3X",
     # Custom gates
     "custom_gate",
     # Circuit
