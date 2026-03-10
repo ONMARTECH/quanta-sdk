@@ -17,7 +17,7 @@ Quick Start:
     >>> print(result)
 """
 
-__version__ = "0.7.1"
+__version__ = "0.8.0"
 
 from quanta.core.circuit import circuit
 from quanta.core.custom_gate import custom_gate

@@ -4,7 +4,7 @@
     <strong>Multi-paradigm quantum computing SDK for Python</strong>
   </p>
   <p align="center">
-    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.7.1-blue.svg" alt="Version"></a>
+    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.8.0-blue.svg" alt="Version"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
@@ -19,7 +19,7 @@
 
 Quanta is a clean, modular quantum computing SDK designed for researchers, engineers and developers. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — so you can work at the level that fits your problem.
 
-### 🚀 What's New in v0.7.1
+### 🚀 What's New in v0.8.0
 
 - **IBM Quantum Integration** — Run circuits on real quantum hardware (ibm_torino 156q, ibm_fez 156q) via direct REST API. No Qiskit needed.
 - **25 Quantum Gates** — Full IBM parity: I, SDG, TDG, P, SX, SXdg, U(θ,φ,λ), RXX, RZZ, RCCX, RC3X
@@ -376,7 +376,7 @@ pip install cupy          # NVIDIA CUDA backend
 ## Project Stats
 
 ```
-Version:     0.7.1        Gates:       25 (full IBM parity)
+Version:     0.8.0        Gates:       25 (full IBM parity)
 Files:       73+          Tests:       488
 Algorithms:  10           Examples:    11
 Simulators:  4            QEC Codes:   6
