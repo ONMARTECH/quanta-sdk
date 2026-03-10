@@ -421,12 +421,22 @@ def simulate_noise(
         probs = {k: v / total for k, v in counts.items()}
 
         # Quantum state fidelity: F = ⟨Φ+|ρ|Φ+⟩
-        # |Φ+⟩ = (|00⟩ + |11⟩)/√2
-        ideal_state = np.zeros(4, dtype=complex)
-        ideal_state[0] = 1 / np.sqrt(2)  # |00⟩
-        ideal_state[3] = 1 / np.sqrt(2)  # |11⟩
-        rho_ideal = np.outer(ideal_state, ideal_state.conj())
-        fidelity = float(np.real(np.trace(rho @ rho_ideal)))
+        # For readout error, ρ is still pure → use counts-based fidelity
+        if noise_type == "readout_error":
+            # Bhattacharyya fidelity from counts vs ideal Bell
+            ideal_p = {"00": 0.5, "11": 0.5, "01": 0.0, "10": 0.0}
+            bc = sum(
+                (probs.get(s, 0) * ideal_p.get(s, 0)) ** 0.5
+                for s in ["00", "01", "10", "11"]
+            )
+            fidelity = bc ** 2
+        else:
+            # |Φ+⟩ = (|00⟩ + |11⟩)/√2
+            ideal_state = np.zeros(4, dtype=complex)
+            ideal_state[0] = 1 / np.sqrt(2)  # |00⟩
+            ideal_state[3] = 1 / np.sqrt(2)  # |11⟩
+            rho_ideal = np.outer(ideal_state, ideal_state.conj())
+            fidelity = float(np.real(np.trace(rho @ rho_ideal)))
 
         return json.dumps({
             "noise_model": channel.name,
@@ -624,7 +634,7 @@ def monte_carlo_price(
             payoff=payoff,
             params={"S0": S0, "K": K, "sigma": sigma, "T": T, "r": r},
             n_qubits=n_qubits,
-            n_estimation=3,
+            n_estimation=max(3, n_qubits // 2),  # scale with precision
             seed=42,
         )
 

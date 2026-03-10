@@ -315,8 +315,10 @@ def amplitude_estimate(
     best_theta = theta_direct
     best_score = float("inf")
 
-    # Search over candidate θ values
-    n_candidates = 200
+    # Grid resolution scales with Grover power for quantum-correct precision
+    # The theoretical precision of AE is O(1/M) where M = max Grover power
+    max_m = max(m for m, _ in measurements)
+    n_candidates = max(200, 50 * (2 * max_m + 1))
     for i in range(n_candidates + 1):
         theta_cand = (i / n_candidates) * (math.pi / 2)
 
