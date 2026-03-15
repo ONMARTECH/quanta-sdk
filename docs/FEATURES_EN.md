@@ -1,6 +1,6 @@
 # Quanta SDK — Features
 
-## Gate Set (17 Gates)
+## Gate Set (25 Gates)
 
 | Gate | Qubits | Description |
 |------|--------|-------------|
@@ -18,9 +18,17 @@
 | RX(θ) | 1 | X-axis rotation |
 | RY(θ) | 1 | Y-axis rotation |
 | RZ(θ) | 1 | Z-axis rotation |
-| U3(θ,φ,λ) | 1 | General single-qubit unitary |
-| ISWAP | 2 | Imaginary SWAP |
+| P(θ) | 1 | Phase gate |
+| U(θ,φ,λ) | 1 | General single-qubit unitary |
+| I | 1 | Identity |
+| SDG | 1 | S-dagger (−π/2 phase) |
+| TDG | 1 | T-dagger (−π/4 phase) |
 | SX | 1 | Square root of X |
+| SXdg | 1 | SX-dagger |
+| RXX(θ) | 2 | XX rotation (2-qubit) |
+| RZZ(θ) | 2 | ZZ rotation (2-qubit) |
+| RCCX | 3 | Relative-phase CCX |
+| RC3X | 4 | Relative-phase C3X |
 
 ### Custom Gates
 
@@ -129,6 +137,9 @@ result = run(bell, shots=1024, noise=NoiseModel().add(Depolarizing(0.01)))
 | Hamiltonian | `evolve()` | Trotterized time evolution |
 | Entity Resolution | `resolve()` | QAOA-based customer deduplication |
 | Multi-Agent | `MultiAgentSystem` | Quantum decision modeling |
+| Monte Carlo | `monte_carlo_price()` | Amplitude estimation for option pricing |
+| Clustering | `cluster_data()` | Swap-test quantum distance + k-means |
+| QML Classifier | `QuantumClassifier` | Variational quantum classification |
 
 ## QASM Support
 

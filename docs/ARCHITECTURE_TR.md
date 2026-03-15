@@ -96,6 +96,9 @@ qec/ -------> core/
 | `finance.py` | Portfoy optimizasyonu (Markowitz + QAOA) |
 | `hamiltonian.py` | Trotter zaman evrimi, molekuler Hamiltonianlar |
 | `entity_resolution.py` | QAOA tabanli musteri tekillestime |
+| `monte_carlo.py` | Kuantum Monte Carlo, genlik kestirimi, opsiyon fiyatlama |
+| `clustering.py` | Kuantum swap-test uzakliklari + k-means kumeleme |
+| `qml.py` | Kuantum ML: variasyonel siniflandirici, kuantum cekirdek, ozellik haritalari |
 
 ### export/ -- QASM Giris/Cikis
 

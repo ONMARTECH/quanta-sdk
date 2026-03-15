@@ -1,6 +1,6 @@
 # Quanta SDK — Ozellikler
 
-## Kapi Seti (17 Kapi)
+## Kapi Seti (25 Kapi)
 
 | Kapi | Qubit | Aciklama |
 |------|-------|----------|
@@ -18,9 +18,17 @@
 | RX(θ) | 1 | X-ekseni rotasyonu |
 | RY(θ) | 1 | Y-ekseni rotasyonu |
 | RZ(θ) | 1 | Z-ekseni rotasyonu |
-| U3(θ,φ,λ) | 1 | Genel tek-qubit uniter |
-| ISWAP | 2 | Imajiner SWAP |
+| P(θ) | 1 | Faz kapisi |
+| U(θ,φ,λ) | 1 | Genel tek-qubit uniter |
+| I | 1 | Birim kapi |
+| SDG | 1 | S-dagger (−π/2 faz) |
+| TDG | 1 | T-dagger (−π/4 faz) |
 | SX | 1 | X karekoku |
+| SXdg | 1 | SX-dagger |
+| RXX(θ) | 2 | XX rotasyonu (2-qubit) |
+| RZZ(θ) | 2 | ZZ rotasyonu (2-qubit) |
+| RCCX | 3 | Goreli-fazli CCX |
+| RC3X | 4 | Goreli-fazli C3X |
 
 ### Ozel Kapilar
 
@@ -128,6 +136,9 @@ result = run(bell, shots=1024, noise=NoiseModel().add(Depolarizing(0.01)))
 | Hamiltonian | `evolve()` | Trotter zaman evrimi |
 | Tekillestime | `resolve()` | QAOA tabanli musteri tekillestime |
 | Coklu-Ajan | `MultiAgentSystem` | Kuantum karar modelleme |
+| Monte Carlo | `monte_carlo_price()` | Opsiyon fiyatlama icin genlik kestirimi |
+| Kumeleme | `cluster_data()` | Swap-test kuantum uzaklik + k-means |
+| QML Siniflandirici | `QuantumClassifier` | Variasyonel kuantum siniflandirma |
 
 ## QASM Destegi
 

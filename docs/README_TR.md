@@ -1,6 +1,6 @@
 # Quanta SDK
 
-Python icin temiz ve moduler kuantum hesaplama SDK'si. **v0.6.1** — [PyPI](https://pypi.org/project/quanta-sdk/)
+Python icin temiz ve moduler kuantum hesaplama SDK'si. **v0.8.1** — [PyPI](https://pypi.org/project/quanta-sdk/)
 
 ## Genel Bakis
 
