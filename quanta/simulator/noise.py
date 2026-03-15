@@ -189,6 +189,11 @@ class NoiseModel:
         self._channels.append(channel)
         return self
 
+    @property
+    def channels(self) -> list[NoiseChannel]:
+        """Returns the list of noise channels."""
+        return self._channels
+
     def apply_noise(
         self,
         state: np.ndarray,
