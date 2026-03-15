@@ -148,17 +148,18 @@ class DensityMatrixSimulator:
         """Gets gate matrix from name."""
         gate = GATE_REGISTRY.get(name)
         if gate is None:
-            from quanta.core import gates as g
-            parametric = getattr(g, name, None)
-            if parametric and isinstance(parametric, ParametricGate):
-                if not params:
-                    raise DensityMatrixError(f"{name} requires parameters")
-                return parametric(params[0]).matrix
-            if parametric and isinstance(parametric, MultiParametricGate):
-                if not params:
-                    raise DensityMatrixError(f"{name} requires parameters")
-                return parametric(*params).matrix
             raise DensityMatrixError(f"Unknown gate: {name}")
+
+        # Parametric gates need params to build matrix
+        if isinstance(gate, MultiParametricGate):
+            if not params:
+                raise DensityMatrixError(f"{name} requires parameters")
+            return gate(*params).matrix
+        if isinstance(gate, ParametricGate):
+            if not params:
+                raise DensityMatrixError(f"{name} requires parameters")
+            return gate(params[0]).matrix
+
         return gate.matrix
 
     def probabilities(self) -> np.ndarray:

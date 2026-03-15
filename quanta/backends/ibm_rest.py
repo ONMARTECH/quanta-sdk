@@ -67,7 +67,7 @@ def _ssl_context() -> ssl.SSLContext:
     except ImportError:
         return ssl.create_default_context()
 
-_USER_AGENT = "quanta-sdk/0.8.0 (Python; IBM-Quantum-Client)"
+_USER_AGENT = "quanta-sdk/0.8.1 (Python; IBM-Quantum-Client)"
 
 # Gate mapping: Quanta → QASM 3.0
 _QASM3_GATE_MAP: dict[str, str] = {

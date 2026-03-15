@@ -460,5 +460,8 @@ GATE_REGISTRY: dict[str, Gate | ParametricGate] = {
     "I": I, "SDG": SDG, "TDG": TDG, "SX": SX, "SXdg": SXdg,
     "CX": CX, "CZ": CZ, "CY": CY, "SWAP": SWAP,
     "CCX": CCX, "RCCX": RCCX, "RC3X": RC3X,
+    # Parametric gates
+    "RX": RX, "RY": RY, "RZ": RZ, "P": P, "U": U,
+    "RXX": RXX, "RZZ": RZZ,
 }
 

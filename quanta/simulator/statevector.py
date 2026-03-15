@@ -117,18 +117,17 @@ class StateVectorSimulator:
         gate = GATE_REGISTRY.get(name)
 
         if gate is None:
-            # Might be a parametric gate (RX, RY, RZ)
-            from quanta.core import gates as gates_module
-            parametric = getattr(gates_module, name, None)
-            if parametric and isinstance(parametric, ParametricGate):
-                if not params:
-                    raise SimulatorError(f"{name} gate requires parameters")
-                return parametric(params[0]).matrix
-            if parametric and isinstance(parametric, MultiParametricGate):
-                if not params:
-                    raise SimulatorError(f"{name} gate requires parameters")
-                return parametric(*params).matrix
             raise SimulatorError(f"Unknown gate: {name}")
+
+        # Parametric gates need params to build matrix
+        if isinstance(gate, MultiParametricGate):
+            if not params:
+                raise SimulatorError(f"{name} gate requires parameters")
+            return gate(*params).matrix
+        if isinstance(gate, ParametricGate):
+            if not params:
+                raise SimulatorError(f"{name} gate requires parameters")
+            return gate(params[0]).matrix
 
         return gate.matrix
 

@@ -52,8 +52,10 @@ class CircuitBuilder:
         """Records an instruction to the circuit.
 
         Args:
+            instruction: Gate operation to append (gate name, qubits, params).
 
         Raises:
+            QubitIndexError: If any qubit index is out of range [0, num_qubits).
         """
         from quanta.core.types import QubitIndexError
 
@@ -101,9 +103,10 @@ class CircuitDefinition:
         """Runs the circuit function and collects instructions.
 
         Returns:
+            CircuitBuilder containing all recorded instructions and measurements.
 
         Raises:
-            CircuitError: If the circuit function raises.
+            CircuitError: If the circuit function raises an exception.
         """
         builder = CircuitBuilder(self.num_qubits)
         register = QubitRegister(self.num_qubits)
@@ -129,8 +132,10 @@ def circuit(qubits: int) -> Callable[[Callable], CircuitDefinition]:
     """Marks a function as a quantum circuit.
 
     Args:
+        qubits: Number of qubits in the circuit (must be ≥ 1).
 
     Returns:
+        A decorator that wraps the function in a CircuitDefinition.
 
     Raises:
         CircuitError: qubits < 1 ise.

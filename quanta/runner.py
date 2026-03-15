@@ -113,6 +113,14 @@ def run(
 
     counts = simulator.sample(shots)
 
+    # Apply ReadoutError to measurement counts (post-measurement noise)
+    if noise is not None:
+        from quanta.simulator.noise import ReadoutError
+
+        for channel in noise.channels:
+            if isinstance(channel, ReadoutError):
+                counts = channel.apply_to_counts(counts, rng)
+
     if dag.measurement and dag.measurement.qubits:
         measured = dag.measurement.qubits
         counts = _filter_measured_qubits(counts, measured, dag.num_qubits)
