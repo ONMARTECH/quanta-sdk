@@ -40,8 +40,14 @@ def extract_python_blocks(md_path: Path) -> list[tuple[int, str]]:
         if "# ── Qiskit ──" in code:
             continue
 
-        # Skip blocks that import qiskit modules
+        # Skip blocks that import external SDKs (comparison/migration code)
         if "from qiskit" in code or "import qiskit" in code:
+            continue
+        if "import cirq" in code or "from cirq" in code:
+            continue
+        if "import pennylane" in code or "from pennylane" in code:
+            continue
+        if "# ── Cirq ──" in code or "# ── PennyLane ──" in code:
             continue
 
         # Skip blocks that only import (no actual test)
