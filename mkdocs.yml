@@ -1,0 +1,124 @@
+site_name: Quanta SDK
+site_description: AI-native quantum computing SDK documentation
+site_url: https://onmartech.github.io/quanta-sdk/
+repo_url: https://github.com/ONMARTECH/quanta-sdk
+repo_name: ONMARTECH/quanta-sdk
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+            heading_level: 3
+            docstring_style: google
+            show_signature_annotations: true
+            separate_signature: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/install.md
+    - Quick Start: getting-started/quickstart.md
+  - Tutorials:
+    - "01 — Getting Started": tutorials/01-getting-started.md
+    - "02 — Gates & Circuits": tutorials/02-gates-and-circuits.md
+    - "03 — Simulation": tutorials/03-simulation.md
+    - "04 — Algorithms": tutorials/04-algorithms.md
+    - "05 — IBM Hardware": tutorials/05-ibm-hardware.md
+    - "06 — Quantum ML": tutorials/06-qml.md
+    - "07 — Noise & QEC": tutorials/07-noise-and-qec.md
+    - "08 — MCP & AI": tutorials/08-mcp-ai.md
+  - API Reference:
+    - Core:
+      - Circuit: api/core/circuit.md
+      - Gates: api/core/gates.md
+      - Types: api/core/types.md
+    - Simulator:
+      - Statevector: api/simulator/statevector.md
+      - Noise: api/simulator/noise.md
+    - QEC:
+      - Decoder: api/qec/decoder.md
+      - Surface Code: api/qec/surface_code.md
+    - Export:
+      - QASM Export: api/export/qasm.md
+      - QASM Import: api/export/qasm_import.md
+    - Layer 3:
+      - Monte Carlo: api/layer3/monte_carlo.md
+      - Finance: api/layer3/finance.md
+      - QML: api/layer3/qml.md
+      - Clustering: api/layer3/clustering.md
+    - Result: api/result.md
+    - MCP Server: api/mcp_server.md
+  - Cookbook:
+    - Bell State: cookbook/bell-state.md
+    - Option Pricing: cookbook/option-pricing.md
+    - Classification: cookbook/quantum-classification.md
+  - Migration:
+    - From Qiskit: migration/from-qiskit.md
+    - From PennyLane: migration/from-pennylane.md
+    - From Cirq: migration/from-cirq.md
+  - Domain Packs: domain-packs.md
+  - Architecture: ARCHITECTURE_EN.md
+  - Comparison: COMPARISON_EN.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ONMARTECH/quanta-sdk
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/quanta-sdk/

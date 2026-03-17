@@ -131,7 +131,7 @@ qec/ -------> core/
 | `result.py` | Measurement results, probabilities, Dirac notation |
 | `visualize.py` | ASCII circuit diagram |
 | `visualize_state.py` | Probability histogram, phase diagram |
-| `mcp_server.py` | MCP server — 14 tools for AI-assisted quantum computation (SSE + stdio) |
+| `mcp_server.py` | MCP server — 16 tools + 4 prompts for AI-assisted quantum computation (SSE + stdio) |
 
 ## Data Flow
 

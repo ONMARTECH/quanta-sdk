@@ -1,23 +1,26 @@
 <p align="center">
   <h1 align="center">Quanta SDK</h1>
   <p align="center">
-    <strong>Multi-paradigm quantum computing SDK for Python</strong>
+    <strong>AI-native quantum computing SDK for Python</strong><br>
+    <em>The quantum runtime built for AI agents, researchers, and production workloads</em>
   </p>
   <p align="center">
+    <a href="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml"><img src="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml/badge.svg" alt="CI"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-88%25-brightgreen.svg" alt="Coverage"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.8.1-blue.svg" alt="Version"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-530%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-586%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-8%2F8-gold.svg" alt="Benchmark"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
-    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-14%20tools-teal.svg" alt="MCP"></a>
+    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-16%20tools-teal.svg" alt="MCP"></a>
   </p>
 </p>
 
 ---
 
-Quanta is a clean, modular quantum computing SDK designed for researchers, engineers and developers. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — so you can work at the level that fits your problem.
+Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — with **16 MCP tools** that let Claude, GPT, and other AI assistants run quantum computations directly.
 
 ### 🚀 What's New in v0.8.1
 
@@ -25,7 +28,7 @@ Quanta is a clean, modular quantum computing SDK designed for researchers, engin
 - **25 Quantum Gates** — Full IBM parity: I, SDG, TDG, P, SX, SXdg, U(θ,φ,λ), RXX, RZZ, RCCX, RC3X
 - **ISA Transpilation** — Automatic decomposition to Heron native gates (rz/sx/x/cz)
 - **SVG Circuit Visualization** — Publication-quality HTML/SVG diagrams with color-coded gates
-- **MCP Server** — 14 AI tools for Claude, GPT, and other AI assistants
+- **MCP Server** — 16 AI tools + 4 guided prompts for Claude, GPT, and other AI assistants
 - **Quantum Machine Learning** — Variational classifier, quantum kernel, 3 feature maps
 - **Multi-Backend** — IBM Quantum + IonQ + Google Quantum + local simulator
 - **Quantum Monte Carlo** — Amplitude estimation for option pricing
@@ -121,7 +124,7 @@ All circuits automatically transpile to Heron's native gate set:
 
 ## MCP AI Integration
 
-Quanta exposes **14 MCP tools** for AI assistants (Claude, GPT, etc.):
+Quanta exposes **16 MCP tools** for AI assistants (Claude, GPT, etc.):
 
 ```bash
 # Install as MCP server
@@ -146,6 +149,8 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `run_on_ibm` | Run on IBM hardware |
 | `ibm_backends` | List IBM quantum computers |
 | `ibm_job_result` | Poll job status & fetch results |
+| `surface_code_simulate` | Surface code QEC simulation |
+| `compare_decoders` | Compare MWPM vs Union-Find decoders |
 
 ## Architecture
 

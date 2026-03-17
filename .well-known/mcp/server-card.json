@@ -1,0 +1,48 @@
+{
+  "serverInfo": {
+    "name": "Quanta Quantum SDK",
+    "version": "0.8.1",
+    "description": "AI-native quantum computing SDK — 16 MCP tools, 4 guided prompts, 5 resources. Run quantum circuits, Grover/Shor/QAOA algorithms, QEC surface code simulations, and Monte Carlo option pricing. Zero dependencies beyond NumPy.",
+    "vendor": "ONMARTECH",
+    "homepage": "https://github.com/ONMARTECH/quanta-sdk",
+    "repository": "https://github.com/ONMARTECH/quanta-sdk"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": true
+  },
+  "tools": [
+    {"name": "run_circuit", "description": "Execute quantum circuit code"},
+    {"name": "create_bell_state", "description": "Quick Bell state |Φ+⟩"},
+    {"name": "grover_search", "description": "Grover's search algorithm"},
+    {"name": "shor_factor", "description": "Shor's factoring algorithm"},
+    {"name": "simulate_noise", "description": "Run circuit with noise model"},
+    {"name": "draw_circuit", "description": "SVG circuit diagram"},
+    {"name": "list_gates", "description": "All 25 quantum gates"},
+    {"name": "explain_result", "description": "Interpret measurements"},
+    {"name": "monte_carlo_price", "description": "Quantum Monte Carlo option pricing"},
+    {"name": "qaoa_optimize", "description": "QAOA combinatorial optimization"},
+    {"name": "cluster_data", "description": "Quantum clustering"},
+    {"name": "run_on_ibm", "description": "Run on IBM Quantum hardware"},
+    {"name": "ibm_backends", "description": "List IBM quantum computers"},
+    {"name": "ibm_job_result", "description": "Poll job status & fetch results"},
+    {"name": "surface_code_simulate", "description": "Surface code QEC simulation"},
+    {"name": "compare_decoders", "description": "Compare MWPM vs Union-Find decoders"}
+  ],
+  "resources": [
+    {"uri": "quanta://info", "name": "SDK Info", "description": "SDK capabilities and version"},
+    {"uri": "quanta://examples", "name": "Examples", "description": "Example quantum circuits"},
+    {"uri": "quanta://noise-profiles", "name": "Noise Profiles", "description": "7 noise channel details"},
+    {"uri": "quanta://gate-catalog", "name": "Gate Catalog", "description": "25 gates with categories"},
+    {"uri": "quanta://backend-specs", "name": "Backend Specs", "description": "Hardware specifications"}
+  ],
+  "prompts": [
+    {"name": "grover_tutorial", "description": "Guided Grover's search tutorial"},
+    {"name": "option_pricing", "description": "Quantum Monte Carlo finance workflow"},
+    {"name": "circuit_debug", "description": "Systematic circuit debugging"},
+    {"name": "qec_intro", "description": "Quantum error correction exploration"}
+  ],
+  "tags": ["quantum", "quantum-computing", "simulation", "qec", "finance", "ai-native"],
+  "categories": ["science", "education", "finance"]
+}

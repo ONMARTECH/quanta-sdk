@@ -2,7 +2,10 @@
 quanta.qec.decoder -- Quantum error correction decoders.
 
 Decoders take a syndrome (stabilizer measurement results) and determine
-which correction to apply. Two decoders are provided:
+which correction to apply. All decoders implement the ``DecoderBase``
+abstract interface.
+
+Provided decoders:
 
   - MWPMDecoder: Minimum Weight Perfect Matching
     Optimal but O(n^3). Pairs syndrome defects with minimum total weight.
@@ -11,7 +14,8 @@ which correction to apply. Two decoders are provided:
     Near-linear O(n·α(n)). Clusters defects using union-find, then
     corrects each cluster independently.
 
-Inspired by: Google's tesseract-decoder (A*-based).
+To create a custom decoder (e.g., ML-based), subclass ``DecoderBase``
+and implement the ``decode()`` method.
 
 Example:
     >>> from quanta.qec.decoder import MWPMDecoder, UnionFindDecoder
@@ -22,11 +26,12 @@ Example:
 
 from __future__ import annotations
 
+import abc
 from dataclasses import dataclass
 
 import numpy as np
 
-__all__ = ["MWPMDecoder", "UnionFindDecoder", "DecoderResult"]
+__all__ = ["DecoderBase", "MWPMDecoder", "UnionFindDecoder", "DecoderResult"]
 
 
 @dataclass
@@ -43,7 +48,48 @@ class DecoderResult:
     weight: int
 
 
-class MWPMDecoder:
+class DecoderBase(abc.ABC):
+    """Abstract base class for QEC decoders.
+
+    All decoders must implement the ``decode()`` method. This enables
+    plugin-based decoder architectures — subclass ``DecoderBase`` to
+    create custom decoders (e.g., ML-based, lookup-table, etc.).
+
+    Example:
+        >>> class MyDecoder(DecoderBase):
+        ...     @property
+        ...     def name(self) -> str:
+        ...         return "my-decoder"
+        ...     def decode(self, syndrome, code_distance, lattice_size=None):
+        ...         # custom decoding logic
+        ...         return DecoderResult(correction=(), success=True, weight=0)
+    """
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        """Human-readable decoder name."""
+
+    @abc.abstractmethod
+    def decode(
+        self,
+        syndrome: np.ndarray,
+        code_distance: int,
+        lattice_size: int | None = None,
+    ) -> DecoderResult:
+        """Decodes a syndrome into a correction.
+
+        Args:
+            syndrome: Boolean array of excited stabilizers.
+            code_distance: Code distance d.
+            lattice_size: Lattice dimension (default: d).
+
+        Returns:
+            DecoderResult with correction qubits and success flag.
+        """
+
+
+class MWPMDecoder(DecoderBase):
     """Minimum Weight Perfect Matching decoder.
 
     Pairs syndrome defects (excited stabilizers) such that the total
@@ -58,6 +104,11 @@ class MWPMDecoder:
 
     Complexity: O(n^3) worst case, O(n^2) typical.
     """
+
+    @property
+    def name(self) -> str:
+        """Decoder name."""
+        return "MWPM"
 
     def decode(
         self,
@@ -153,7 +204,7 @@ class MWPMDecoder:
         return pairs
 
 
-class UnionFindDecoder:
+class UnionFindDecoder(DecoderBase):
     """Union-Find based decoder.
 
     Clusters syndrome defects into groups using the union-find data
@@ -172,6 +223,11 @@ class UnionFindDecoder:
     def __init__(self) -> None:
         self._parent: dict[int, int] = {}
         self._rank: dict[int, int] = {}
+
+    @property
+    def name(self) -> str:
+        """Decoder name."""
+        return "Union-Find"
 
     def _find(self, x: int) -> int:
         """Find with path compression."""

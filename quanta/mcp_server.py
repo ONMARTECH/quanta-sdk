@@ -1,8 +1,8 @@
 """
-quanta.mcp_server — MCP Server for Quanta Quantum SDK.
+quanta.mcp_server — AI-native MCP Server for Quanta Quantum SDK.
 
 Exposes quantum simulation as MCP tools, enabling AI assistants
-(Claude, etc.) to perform quantum computations directly.
+(Claude, GPT, etc.) to perform quantum computations directly.
 
 Run:
     fastmcp run quanta/mcp_server.py
@@ -10,22 +10,40 @@ Run:
 Or install in Claude Desktop:
     fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 
-Tools (15):
-    - run_circuit:       Execute quantum circuit code
-    - create_bell_state: Quick Bell state |Φ+⟩
-    - grover_search:     Grover's search algorithm
-    - shor_factor:       Shor's factoring algorithm
-    - simulate_noise:    Run circuit with noise model
-    - list_gates:        Available quantum gates (25)
-    - explain_result:    Interpret measurement results
-    - draw_circuit:      SVG circuit diagram
-    - monte_carlo_price: Quantum Monte Carlo pricing
-    - qaoa_optimize:     QAOA combinatorial optimization
-    - cluster_data:      Quantum clustering
-    - run_on_ibm:        Run on IBM Quantum hardware
-    - ibm_backends:      List IBM quantum computers
-    - entity_resolve:    Quantum entity resolution
-    - noise_profile:     View noise model details
+Tools (16):
+  Education:
+    - create_bell_state:         Quick Bell state |Φ+⟩
+    - draw_circuit:              SVG circuit diagram
+    - list_gates:                Available quantum gates (25)
+    - explain_result:            Interpret measurement results
+  Research:
+    - run_circuit:               Execute quantum circuit code
+    - grover_search:             Grover's search algorithm
+    - shor_factor:               Shor's factoring algorithm
+    - simulate_noise:            Run circuit with noise model
+    - qaoa_optimize:             QAOA combinatorial optimization
+    - surface_code_simulate:     Surface code QEC simulation
+    - compare_decoders:          Compare MWPM vs Union-Find decoders
+  Business:
+    - monte_carlo_price:         Quantum Monte Carlo option pricing
+    - cluster_data:              Quantum clustering
+  Hardware:
+    - run_on_ibm:                Run on IBM Quantum hardware
+    - ibm_backends:              List IBM quantum computers
+    - ibm_job_result:            Poll job status & fetch results
+
+Resources (5):
+    - quanta://info              SDK capabilities
+    - quanta://examples          Example circuits
+    - quanta://noise-profiles    7 noise channels detail
+    - quanta://gate-catalog      25 gates with matrices
+    - quanta://backend-specs     IBM/IonQ/Google specs
+
+Prompts (4):
+    - grover-tutorial            Guided Grover's search
+    - option-pricing             Quantum finance workflow
+    - circuit-debug              Debug quantum circuits
+    - qec-intro                  QEC exploration guide
 """
 
 from __future__ import annotations
@@ -40,9 +58,16 @@ from fastmcp import FastMCP
 mcp = FastMCP(
     "Quanta Quantum SDK",
     instructions=(
-        "Quantum computing simulation SDK. Use these tools to create and run "
-        "quantum circuits, simulate quantum algorithms (Grover, Shor, VQE), "
-        "and analyze results. All simulation runs locally — no hardware needed."
+        "AI-native quantum computing SDK. Quanta provides 16 tools organized "
+        "into 4 categories:\n"
+        "• Education: Bell states, circuit drawing, gate reference, result explanation\n"
+        "• Research: Grover, Shor, QAOA, noise simulation, QEC surface code\n"
+        "• Business: Monte Carlo option pricing, quantum clustering\n"
+        "• Hardware: Run on real IBM Quantum computers (Heron r3, 156 qubits)\n\n"
+        "Start with create_bell_state for a quick demo, or use the prompts "
+        "(grover-tutorial, option-pricing, circuit-debug, qec-intro) for "
+        "guided workflows. All simulation runs locally — no hardware needed "
+        "unless using run_on_ibm."
     ),
 )
 
@@ -1196,6 +1221,162 @@ def draw_circuit(
 
 
 # ═══════════════════════════════════════════
+#  Tool: Surface Code QEC Simulation
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def surface_code_simulate(
+    distance: int = 3,
+    error_rate: float = 0.01,
+    rounds: int = 1000,
+    seed: int | None = 42,
+) -> str:
+    """Simulate surface code quantum error correction.
+
+    Runs stabilizer-based error correction on a [[d², 1, d]] surface code.
+    Injects random errors, extracts syndromes, decodes, and reports
+    logical error rates.
+
+    Args:
+        distance: Code distance (odd, >= 3). Higher = more protection.
+            d=3: 9 qubits, corrects 1 error.
+            d=5: 25 qubits, corrects 2 errors.
+            d=7: 49 qubits, corrects 3 errors.
+        error_rate: Per-qubit error probability per round (0.0 to 1.0).
+        rounds: Number of error correction rounds.
+        seed: Random seed for reproducibility.
+
+    Returns:
+        JSON with logical/physical error rates, suppression factor,
+        and correction statistics.
+    """
+    try:
+        from quanta.qec.surface_code import SurfaceCode
+
+        code = SurfaceCode(distance=distance)
+        result = code.simulate_error_correction(
+            error_rate=error_rate, rounds=rounds, seed=seed,
+        )
+
+        suppression = (
+            result.physical_error_rate / result.logical_error_rate
+            if result.logical_error_rate > 0 else float("inf")
+        )
+
+        return json.dumps({
+            "algorithm": "Surface Code QEC",
+            "code_params": code.code_params,
+            "distance": distance,
+            "physical_qubits": code.n_physical,
+            "correctable_errors": code.correctable_errors,
+            "physical_error_rate": result.physical_error_rate,
+            "logical_error_rate": round(result.logical_error_rate, 6),
+            "suppression_factor": round(suppression, 1),
+            "rounds": result.rounds,
+            "errors_injected": result.errors_injected,
+            "errors_corrected": result.errors_corrected,
+            "threshold_estimate": result.threshold_estimate,
+            "explanation": (
+                f"Surface code [[{code.n_physical},1,{distance}]] with "
+                f"p={error_rate}: logical error rate "
+                f"{result.logical_error_rate:.4%} "
+                f"({suppression:.1f}x suppression). "
+                f"Corrects up to {code.correctable_errors} errors per round."
+            ),
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e), "traceback": traceback.format_exc()})
+
+
+# ═══════════════════════════════════════════
+#  Tool: Compare QEC Decoders
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def compare_decoders(
+    distance: int = 3,
+    error_rate: float = 0.05,
+    rounds: int = 500,
+    seed: int | None = 42,
+) -> str:
+    """Compare MWPM vs Union-Find QEC decoders.
+
+    Runs the same error patterns through both decoders and compares
+    their correction success rates.
+
+    Args:
+        distance: Code distance (odd, >= 3).
+        error_rate: Per-qubit error probability.
+        rounds: Number of error correction rounds.
+        seed: Random seed.
+
+    Returns:
+        JSON with per-decoder success rates and comparison.
+    """
+    try:
+        import numpy as np
+
+        from quanta.qec.decoder import MWPMDecoder, UnionFindDecoder
+        from quanta.qec.surface_code import SurfaceCode
+
+        code = SurfaceCode(distance=distance)
+        mwpm = MWPMDecoder()
+        uf = UnionFindDecoder()
+        rng = np.random.default_rng(seed)
+
+        mwpm_success = 0
+        uf_success = 0
+        n = code.n_physical
+
+        for _ in range(rounds):
+            error_mask = rng.random(n) < error_rate
+            if not error_mask.any():
+                mwpm_success += 1
+                uf_success += 1
+                continue
+
+            syndrome = code.get_syndrome(error_mask)
+
+            mwpm_result = mwpm.decode(syndrome, distance)
+            uf_result = uf.decode(syndrome, distance)
+
+            if mwpm_result.success:
+                mwpm_success += 1
+            if uf_result.success:
+                uf_success += 1
+
+        mwpm_rate = mwpm_success / rounds
+        uf_rate = uf_success / rounds
+
+        return json.dumps({
+            "code_params": code.code_params,
+            "error_rate": error_rate,
+            "rounds": rounds,
+            "mwpm": {
+                "name": "Minimum Weight Perfect Matching",
+                "success_rate": round(mwpm_rate, 4),
+                "complexity": "O(n³)",
+            },
+            "union_find": {
+                "name": "Union-Find",
+                "success_rate": round(uf_rate, 4),
+                "complexity": "O(n·α(n)) ≈ O(n)",
+            },
+            "winner": "MWPM" if mwpm_rate > uf_rate else (
+                "Union-Find" if uf_rate > mwpm_rate else "Tied"
+            ),
+            "explanation": (
+                f"At p={error_rate} on [[{n},1,{distance}]]: "
+                f"MWPM {mwpm_rate:.1%} vs UF {uf_rate:.1%}. "
+                "MWPM is optimal but O(n³); Union-Find is near-linear "
+                "and better for large codes."
+            ),
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e), "traceback": traceback.format_exc()})
+
+
+# ═══════════════════════════════════════════
 #  Resource: SDK Info
 # ═══════════════════════════════════════════
 
@@ -1205,36 +1386,38 @@ def sdk_info() -> str:
     return json.dumps({
         "name": "Quanta Quantum SDK",
         "version": "0.8.1",
-        "description": "Multi-paradigm quantum computing SDK",
+        "description": "AI-native quantum computing SDK",
         "total_gates": 25,
+        "total_tools": 16,
+        "tool_categories": {
+            "education": ["create_bell_state", "draw_circuit",
+                         "list_gates", "explain_result"],
+            "research": ["run_circuit", "grover_search", "shor_factor",
+                        "simulate_noise", "qaoa_optimize",
+                        "surface_code_simulate", "compare_decoders"],
+            "business": ["monte_carlo_price", "cluster_data"],
+            "hardware": ["run_on_ibm", "ibm_backends", "ibm_job_result"],
+        },
         "capabilities": [
             "25 quantum gates (full IBM Quantum parity)",
             "Statevector simulation (up to 27 qubits)",
-            "Pauli Frame simulator (up to 50 qubits)",
-            "7 noise channels",
+            "Density matrix simulation (mixed states + noise)",
+            "Pauli Frame simulator (1000+ Clifford qubits)",
+            "7 noise channels (depolarizing, bitflip, etc.)",
             "DAG-based 6-pass compiler",
-            "Grover, Shor, VQE, QAOA algorithms",
-            "Quantum Monte Carlo (amplitude estimation)",
-            "Quantum Clustering (swap test)",
-            "QEC (6 codes: surface, color, Steane)",
-            "Entity Resolution (hybrid quantum)",
+            "10 algorithms (Grover, Shor, VQE, QAOA, QSVM, QML, etc.)",
+            "QEC (surface code, color code, Steane [[7,1,3]])",
+            "2 decoders (MWPM + Union-Find)",
+            "Entity Resolution (hybrid quantum-classical)",
             "SVG circuit visualization",
-            "QASM 3.0 export",
+            "QASM 3.0 export/import",
             "IBM Quantum REST API (direct, no Qiskit)",
             "ISA transpilation (Heron rz/sx/x/cz)",
         ],
-        "tools": [
-            "run_circuit", "create_bell_state",
-            "grover_search", "shor_factor",
-            "simulate_noise", "list_gates",
-            "explain_result", "draw_circuit",
-            "monte_carlo_price", "qaoa_optimize",
-            "cluster_data", "run_on_ibm",
-            "ibm_backends",
-        ],
         "simulator_limits": {
             "max_qubits_statevector": 27,
-            "max_qubits_pauli_frame": 50,
+            "max_qubits_density_matrix": 13,
+            "max_qubits_pauli_frame": 1000,
             "memory": "O(2^n) — doubles per qubit",
         },
     })
@@ -1276,6 +1459,313 @@ def sdk_examples() -> str:
             "    return measure(q)"
         ),
     })
+
+
+# ═══════════════════════════════════════════
+#  Resource: Noise Profiles
+# ═══════════════════════════════════════════
+
+@mcp.resource("quanta://noise-profiles")
+def noise_profiles() -> str:
+    """Detailed profiles for all 7 noise channels."""
+    return json.dumps({
+        "channels": [
+            {
+                "name": "depolarizing",
+                "type": "Symmetric",
+                "params": {"probability": "p ∈ [0, 0.75]"},
+                "effect": "Random X, Y, or Z error with equal probability p/3 each",
+                "kraus_ops": 4,
+                "use_case": "General hardware noise modeling",
+                "ibm_typical": "p ≈ 0.001–0.01",
+            },
+            {
+                "name": "bitflip",
+                "type": "Asymmetric",
+                "params": {"probability": "p ∈ [0, 1]"},
+                "effect": "|0⟩ ↔ |1⟩ flip with probability p",
+                "kraus_ops": 2,
+                "use_case": "Classical-like errors, memory decoherence",
+            },
+            {
+                "name": "phaseflip",
+                "type": "Asymmetric",
+                "params": {"probability": "p ∈ [0, 1]"},
+                "effect": "|1⟩ → -|1⟩ phase error with probability p",
+                "kraus_ops": 2,
+                "use_case": "Dephasing, Z errors",
+            },
+            {
+                "name": "amplitude_damping",
+                "type": "Non-unital",
+                "params": {"gamma": "γ ∈ [0, 1]"},
+                "effect": "Excited state decays to ground: |1⟩ → |0⟩",
+                "kraus_ops": 2,
+                "use_case": "Energy relaxation (T1 decay)",
+                "ibm_typical": "T1 ≈ 300μs",
+            },
+            {
+                "name": "t2_relaxation",
+                "type": "Dephasing",
+                "params": {"gamma": "γ ∈ [0, 1]"},
+                "effect": "Phase coherence decay (T2 process)",
+                "kraus_ops": 2,
+                "use_case": "Decoherence over time",
+                "ibm_typical": "T2 ≈ 200μs",
+            },
+            {
+                "name": "crosstalk",
+                "type": "Correlated",
+                "params": {"probability": "p ∈ [0, 1]"},
+                "effect": "Unwanted coupling between neighboring qubits",
+                "kraus_ops": 2,
+                "use_case": "Multi-qubit gate errors",
+            },
+            {
+                "name": "readout_error",
+                "type": "Measurement",
+                "params": {"p0_to_1": "p₀₁", "p1_to_0": "p₁₀"},
+                "effect": "Measurement bit flips (classical post-processing)",
+                "kraus_ops": 0,
+                "use_case": "Measurement calibration errors",
+                "ibm_typical": "p ≈ 0.01–0.05",
+            },
+        ],
+        "usage": "run: simulate_noise(noise_type='depolarizing', probability=0.01)",
+    })
+
+
+# ═══════════════════════════════════════════
+#  Resource: Gate Catalog
+# ═══════════════════════════════════════════
+
+@mcp.resource("quanta://gate-catalog")
+def gate_catalog() -> str:
+    """Complete catalog of all 25 quantum gates with categories."""
+    return json.dumps({
+        "total": 25,
+        "heron_native": ["RZ", "SX", "X", "CZ"],
+        "categories": {
+            "pauli": {
+                "gates": ["X", "Y", "Z"],
+                "qubits": 1,
+                "description": "Bit/phase flip operations",
+            },
+            "hadamard": {
+                "gates": ["H"],
+                "qubits": 1,
+                "description": "Creates equal superposition",
+            },
+            "phase": {
+                "gates": ["S", "T", "SDG", "TDG", "P(θ)"],
+                "qubits": 1,
+                "description": "Phase rotations (S=π/2, T=π/4)",
+            },
+            "rotation": {
+                "gates": ["RX(θ)", "RY(θ)", "RZ(θ)"],
+                "qubits": 1,
+                "description": "Continuous rotations around axes",
+            },
+            "root": {
+                "gates": ["SX", "SXdg"],
+                "qubits": 1,
+                "description": "√X gates — Heron native",
+            },
+            "universal": {
+                "gates": ["U(θ,φ,λ)"],
+                "qubits": 1,
+                "description": "Any single-qubit unitary",
+            },
+            "two_qubit": {
+                "gates": ["CX", "CY", "CZ", "SWAP", "RXX(θ)", "RZZ(θ)"],
+                "qubits": 2,
+                "description": "Entangling operations",
+            },
+            "multi_qubit": {
+                "gates": ["CCX", "RCCX", "RC3X"],
+                "qubits": "3-4",
+                "description": "Toffoli and multi-controlled",
+            },
+            "identity": {
+                "gates": ["I"],
+                "qubits": 1,
+                "description": "No-op (useful for timing)",
+            },
+        },
+        "isa_decomposition": {
+            "H": "rz(π/2) · sx · rz(π/2)",
+            "CX": "H(target) · CZ · H(target)",
+            "RX(θ)": "rz(-π/2) · sx · rz(θ+π/2)",
+            "RY(θ)": "rz(θ) · sx · rz(-θ)",
+        },
+    })
+
+
+# ═══════════════════════════════════════════
+#  Resource: Backend Specifications
+# ═══════════════════════════════════════════
+
+@mcp.resource("quanta://backend-specs")
+def backend_specs() -> str:
+    """Hardware specifications for all supported backends."""
+    return json.dumps({
+        "ibm_quantum": {
+            "backends": [
+                {"name": "ibm_torino", "qubits": 156, "processor": "Heron r3",
+                 "2q_error": "0.25%", "native_gates": ["rz", "sx", "x", "cz"]},
+                {"name": "ibm_fez", "qubits": 156, "processor": "Heron r2",
+                 "2q_error": "0.28%", "native_gates": ["rz", "sx", "x", "cz"]},
+                {"name": "ibm_marrakesh", "qubits": 156, "processor": "Heron r2",
+                 "2q_error": "0.23%", "native_gates": ["rz", "sx", "x", "cz"]},
+            ],
+            "free_tier": {"qpu_time": "10 min/month", "max_shots": 100000},
+            "connection": "Direct REST API — no Qiskit needed",
+        },
+        "simulators": [
+            {"name": "Statevector", "max_qubits": 27, "method": "Tensor contraction",
+             "memory": "O(2^n)", "speed": "Fast for < 20 qubits"},
+            {"name": "Density Matrix", "max_qubits": 13, "method": "Full density matrix",
+             "memory": "O(4^n)", "speed": "Required for mixed states + noise"},
+            {"name": "Pauli Frame", "max_qubits": 1000, "method": "Stabilizer tableau",
+             "memory": "O(n²)", "speed": "Ultra-fast, Clifford circuits only"},
+        ],
+    })
+
+
+# ═══════════════════════════════════════════
+#  Prompt: Grover Tutorial
+# ═══════════════════════════════════════════
+
+@mcp.prompt()
+def grover_tutorial() -> str:
+    """Guided tutorial for running Grover's search algorithm.
+
+    Walk through quantum search step-by-step:
+    superposition → oracle → amplification → measurement.
+    """
+    return (
+        "Let's explore Grover's quantum search algorithm step by step.\n\n"
+        "Grover's algorithm finds a target item in an unsorted database of N items "
+        "using only O(√N) queries — a quadratic speedup over classical search.\n\n"
+        "Please follow this workflow:\n\n"
+        "1. **Start simple**: Use grover_search with num_qubits=3 and target=5 "
+        "to search a space of 8 items.\n\n"
+        "2. **Examine the result**: Look at success_probability — it should be "
+        "close to 100%. Use explain_result on the counts to understand the output.\n\n"
+        "3. **Visualize**: Use draw_circuit with this code to see the circuit:\n"
+        "   @circuit(qubits=3)\n"
+        "   def circ(q):\n"
+        "       for i in range(3): H(q[i])  # Superposition\n"
+        "       # Oracle marks target\n"
+        "       X(q[0]); CCX(q[0], q[1], q[2]); X(q[0])\n"
+        "       return measure(q)\n\n"
+        "4. **Scale up**: Try num_qubits=4 (16 items) and num_qubits=5 (32 items). "
+        "Notice how success probability stays high.\n\n"
+        "5. **Add noise**: Use simulate_noise to see how real hardware noise "
+        "affects search quality.\n\n"
+        "Key insight: Classical search needs N/2 queries on average. "
+        "Grover needs only ~√N iterations — for N=1,000,000, that's ~1000 vs 500,000."
+    )
+
+
+# ═══════════════════════════════════════════
+#  Prompt: Option Pricing
+# ═══════════════════════════════════════════
+
+@mcp.prompt()
+def option_pricing() -> str:
+    """Guided workflow for quantum Monte Carlo option pricing.
+
+    Demonstrates quantum amplitude estimation for financial derivatives.
+    """
+    return (
+        "Let's price financial options using Quantum Monte Carlo.\n\n"
+        "Quantum amplitude estimation achieves O(1/N) convergence vs classical "
+        "Monte Carlo's O(1/√N) — a quadratic speedup for pricing derivatives.\n\n"
+        "Workflow:\n\n"
+        "1. **Price a call option**: Use monte_carlo_price with default params "
+        "(S0=100, K=105, σ=0.2, T=1yr, r=5%). Compare quantum vs classical price.\n\n"
+        "2. **Try a put option**: Change option_type to 'put'. The put-call parity "
+        "should hold: C - P = S₀ - K·e^(-rT).\n\n"
+        "3. **Vary volatility**: Try σ=0.1 (low vol) vs σ=0.5 (high vol). "
+        "Higher volatility → higher option prices.\n\n"
+        "4. **Increase precision**: Set n_qubits=8 for more precise pricing "
+        "(more qubits = finer price distribution grid).\n\n"
+        "5. **Deep vs out-of-money**: Compare K=90 (deep ITM) vs K=120 (OTM).\n\n"
+        "Key insight: Quantum advantage grows with the number of scenarios needed. "
+        "For complex path-dependent derivatives (Asian options, barrier options), "
+        "quantum speedup is even more significant."
+    )
+
+
+# ═══════════════════════════════════════════
+#  Prompt: Circuit Debug
+# ═══════════════════════════════════════════
+
+@mcp.prompt()
+def circuit_debug() -> str:
+    """Guided workflow for debugging quantum circuits.
+
+    Systematic approach to identify and fix circuit issues.
+    """
+    return (
+        "Let's debug a quantum circuit step by step.\n\n"
+        "Common quantum circuit bugs:\n"
+        "• Wrong qubit order (CX control/target swapped)\n"
+        "• Missing measurement gates\n"
+        "• Incorrect rotation angles\n"
+        "• Gate applied to wrong qubit\n\n"
+        "Debugging workflow:\n\n"
+        "1. **Run the circuit**: Use run_circuit with your code. Check if the output "
+        "matches expectations.\n\n"
+        "2. **Visualize**: Use draw_circuit to see the circuit structure. "
+        "Verify gate placement and qubit wiring.\n\n"
+        "3. **Check known states**: Test with simple inputs first. A Bell state "
+        "should give ~50/50 for |00⟩ and |11⟩.\n\n"
+        "4. **Analyze results**: Use explain_result on the measurement counts. "
+        "Look for unexpected outcomes or probabilities.\n\n"
+        "5. **Noise test**: Use simulate_noise to rule out noise-related issues. "
+        "If results change dramatically, the circuit may be noise-sensitive.\n\n"
+        "6. **Compare gates**: Use list_gates to verify gate semantics. "
+        "Remember: CX and CZ have different effects!\n\n"
+        "Tip: Start with shots=10000 for more precise probability estimates."
+    )
+
+
+# ═══════════════════════════════════════════
+#  Prompt: QEC Introduction
+# ═══════════════════════════════════════════
+
+@mcp.prompt()
+def qec_intro() -> str:
+    """Guided introduction to quantum error correction.
+
+    Explore surface codes, decoders, and error thresholds interactively.
+    """
+    return (
+        "Let's explore Quantum Error Correction (QEC) interactively.\n\n"
+        "QEC protects quantum information by encoding 1 logical qubit into "
+        "many physical qubits. The surface code is the leading candidate "
+        "for fault-tolerant quantum computing.\n\n"
+        "Exploration workflow:\n\n"
+        "1. **Low noise**: Use surface_code_simulate with distance=3 and "
+        "error_rate=0.001. You should see near-zero logical error rate — "
+        "the code is successfully protecting the qubit.\n\n"
+        "2. **Increase noise**: Try error_rate=0.01, then 0.05, then 0.10. "
+        "Watch the logical error rate increase. The threshold is around 1.1%.\n\n"
+        "3. **Increase distance**: Compare distance=3 vs distance=5 at "
+        "error_rate=0.01. Higher distance = better protection but more qubits.\n\n"
+        "4. **Compare decoders**: Use compare_decoders with distance=3 and "
+        "error_rate=0.05. MWPM is optimal but slow; Union-Find is fast and "
+        "near-optimal.\n\n"
+        "5. **Threshold experiment**: Run surface_code_simulate at error_rate "
+        "values [0.005, 0.008, 0.010, 0.012, 0.015] with distance=3 and "
+        "distance=5. Below threshold, higher distance helps. Above threshold, "
+        "it doesn't.\n\n"
+        "Key insight: The surface code threshold (~1.1%) means if physical "
+        "error rates drop below this, we can make logical error rates "
+        "arbitrarily small by increasing code distance."
+    )
 
 
 # ═══════════════════════════════════════════

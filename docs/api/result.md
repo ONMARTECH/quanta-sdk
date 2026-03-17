@@ -1,0 +1,3 @@
+# Result
+
+::: quanta.result

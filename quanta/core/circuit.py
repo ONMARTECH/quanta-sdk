@@ -126,6 +126,30 @@ class CircuitDefinition:
     def __repr__(self) -> str:
         return f"CircuitDefinition(name='{self.name}', qubits={self.num_qubits})"
 
+    def _repr_html_(self) -> str:
+        """Rich SVG display for Jupyter notebooks.
+
+        Renders the circuit as an inline SVG diagram with color-coded gates.
+        Automatically used by Jupyter when displaying a CircuitDefinition.
+        """
+        try:
+            from quanta.visualize_svg import to_svg
+            svg = to_svg(self)
+            return (
+                f'<div style="font-family:system-ui,-apple-system,sans-serif;'
+                f'border:1px solid #e0e0e0;border-radius:10px;padding:16px;'
+                f'background:#fafafa;display:inline-block">'
+                f'<div style="display:flex;justify-content:space-between;'
+                f'align-items:center;margin-bottom:8px">'
+                f'<span style="font-weight:600;color:#1a1a2e">'
+                f'⚛️ {self.name}</span>'
+                f'<span style="background:#6366f1;color:white;'
+                f'padding:2px 10px;border-radius:12px;font-size:12px">'
+                f'{self.num_qubits}q</span></div>{svg}</div>'
+            )
+        except Exception:
+            return f"<pre>{self!r}</pre>"
+
 # ═══════════════════════════════════════════
 
 def circuit(qubits: int) -> Callable[[Callable], CircuitDefinition]:

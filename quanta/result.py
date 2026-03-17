@@ -180,3 +180,77 @@ class Result:
             f"shots={self.shots}, "
             f"counts={{{counts_str}}})"
         )
+
+    def _repr_html_(self) -> str:
+        """Rich HTML display for Jupyter notebooks.
+
+        Renders a styled card with circuit stats, color-coded histogram,
+        and Dirac notation. Automatically used by Jupyter when displaying
+        a Result object.
+        """
+        name = self.circuit_name or "circuit"
+        sorted_items = sorted(self.counts.items(), key=lambda x: -x[1])
+        max_count = max(self.counts.values()) if self.counts else 1
+
+        # Color palette for histogram bars
+        colors = [
+            "#6366f1", "#8b5cf6", "#a78bfa", "#c4b5fd",
+            "#818cf8", "#93c5fd", "#7dd3fc", "#67e8f9",
+        ]
+
+        rows = []
+        for i, (state, count) in enumerate(sorted_items[:16]):
+            prob = count / self.shots
+            width = int(count / max_count * 100)
+            color = colors[i % len(colors)]
+            rows.append(
+                f'<tr>'
+                f'<td style="font-family:monospace;font-weight:600;padding:4px 8px">'
+                f'|{state}⟩</td>'
+                f'<td style="padding:4px 8px;width:100%">'
+                f'<div style="background:{color};height:20px;border-radius:4px;'
+                f'width:{width}%"></div></td>'
+                f'<td style="padding:4px 8px;white-space:nowrap;'
+                f'font-family:monospace">{prob:.1%}</td>'
+                f'<td style="padding:4px 8px;color:#666;'
+                f'font-family:monospace">{count}</td>'
+                f'</tr>'
+            )
+        table = "".join(rows)
+
+        overflow = ""
+        if len(sorted_items) > 16:
+            overflow = (
+                f'<p style="color:#888;font-size:12px;margin:4px 0 0 0">'
+                f'... +{len(sorted_items) - 16} more states</p>'
+            )
+
+        dirac_html = ""
+        dirac = self.dirac_notation(3)
+        if len(dirac) < 120:
+            dirac_html = (
+                f'<div style="margin-top:8px;padding:8px 12px;'
+                f'background:#f0f0ff;border-radius:6px;'
+                f'font-family:monospace;font-size:13px">'
+                f'{dirac}</div>'
+            )
+
+        return (
+            f'<div style="font-family:system-ui,-apple-system,sans-serif;'
+            f'border:1px solid #e0e0e0;border-radius:10px;padding:16px;'
+            f'max-width:600px;background:#fafafa">'
+            f'<div style="display:flex;justify-content:space-between;'
+            f'align-items:center;margin-bottom:12px">'
+            f'<h3 style="margin:0;color:#1a1a2e">⚛️ {name}</h3>'
+            f'<span style="background:#6366f1;color:white;'
+            f'padding:2px 10px;border-radius:12px;font-size:12px">'
+            f'Quanta</span></div>'
+            f'<div style="display:flex;gap:16px;margin-bottom:12px;'
+            f'font-size:13px;color:#555">'
+            f'<span>🔮 {self.num_qubits} qubits</span>'
+            f'<span>⚡ {self.gate_count} gates</span>'
+            f'<span>📊 {self.shots:,} shots</span></div>'
+            f'<table style="width:100%;border-collapse:collapse">'
+            f'{table}</table>'
+            f'{overflow}{dirac_html}</div>'
+        )

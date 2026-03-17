@@ -11,7 +11,7 @@
 | Dependencies | 20+ packages | 2 (numpy, python-dotenv) |
 | Learning curve | Steep (Primitives, Transpiler, Provider) | Gentle (3 imports to start) |
 | Gate count | 50+ | 25 (IBM Heron parity) |
-| AI Integration | ❌ | ✅ (14 MCP tools for Claude/GPT) |
+| AI Integration | ❌ | ✅ (16 MCP tools for Claude/GPT) |
 
 ## Side-by-Side: 15 Common Patterns
 

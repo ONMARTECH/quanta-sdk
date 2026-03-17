@@ -38,3 +38,4 @@ htmlcov/
 # Secrets
 .env
 .env.*
+site/

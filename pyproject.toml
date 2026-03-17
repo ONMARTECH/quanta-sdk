@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "quanta-sdk"
 version = "0.8.1"
-description = "Multi-paradigm quantum computing SDK — 25 gates, IBM Quantum hardware, MCP AI tools, Grover, QAOA, VQE, Shor"
+description = "AI-native quantum computing SDK — 16 MCP tools for AI agents, 25 gates, IBM Quantum hardware, Grover, QAOA, VQE, Shor, QEC"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
@@ -16,13 +16,17 @@ keywords = [
     "quantum",
     "quantum-computing",
     "qiskit-alternative",
+    "mcp",
+    "mcp-server",
+    "ai-native",
     "qaoa",
     "vqe",
     "grover",
     "shor",
     "qsvm",
-    "entity-resolution",
+    "quantum-error-correction",
     "surface-code",
+    "entity-resolution",
     "qasm",
     "simulator",
 ]
@@ -52,7 +56,7 @@ mcp = ["fastmcp>=3.0"]
 Homepage = "https://github.com/ONMARTECH/quanta-sdk"
 Repository = "https://github.com/ONMARTECH/quanta-sdk"
 Issues = "https://github.com/ONMARTECH/quanta-sdk/issues"
-Documentation = "https://github.com/ONMARTECH/quanta-sdk/tree/main/docs"
+Documentation = "https://onmartech.github.io/quanta-sdk/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["quanta"]

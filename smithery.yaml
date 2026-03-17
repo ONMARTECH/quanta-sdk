@@ -1,0 +1,20 @@
+# Smithery configuration — https://smithery.ai
+# This file tells Smithery how to start the Quanta MCP server.
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      IBM_API_KEY:
+        type: string
+        description: "IBM Quantum API key (optional — only needed for run_on_ibm tool)"
+    required: []
+  commandFunction: |-
+    (config) => ({
+      command: "python3",
+      args: ["-m", "quanta.mcp_server"],
+      env: {
+        IBM_API_KEY: config.IBM_API_KEY || ""
+      }
+    })
