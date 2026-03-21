@@ -85,6 +85,7 @@ nav:
     - "08 — MCP & AI": tutorials/08-mcp-ai.md
     - "09a — Shor: RSA Kırma": tutorials/09a-shor-cryptography.md
     - "09b — QAOA: Lojistik": tutorials/09b-qaoa-logistics.md
+    - "09c — QML: Fraud Detection": tutorials/09c-qml-fraud.md
   - API Reference:
     - Core:
       - Circuit: api/core/circuit.md
