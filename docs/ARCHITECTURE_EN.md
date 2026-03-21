@@ -51,7 +51,7 @@ qec/ -------> core/
 | File | Responsibility |
 |------|----------------|
 | `types.py` | QubitRef, Instruction, QubitRegister |
-| `gates.py` | 25 gates + broadcast (IBM Heron parity) |
+| `gates.py` | 31 gates + broadcast (IBM Heron parity) |
 | `circuit.py` | @circuit decorator, CircuitBuilder |
 | `measure.py` | Flexible measurement (full, partial) |
 | `equivalence.py` | Unitary comparison, fidelity |

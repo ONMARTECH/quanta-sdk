@@ -8,12 +8,10 @@ Tier 1 coverage tests — target uncovered lines in:
 
 from __future__ import annotations
 
-import math
 from unittest import mock
 
 import numpy as np
 import pytest
-
 
 # ════════════════════════════════════════════
 #  StateVectorSimulator
@@ -24,7 +22,7 @@ class TestStateVectorCoverage:
 
     def test_max_qubits_exceeded(self):
         """Line 53: SimulatorError when exceeding MAX_QUBITS."""
-        from quanta.simulator.statevector import StateVectorSimulator, SimulatorError
+        from quanta.simulator.statevector import SimulatorError, StateVectorSimulator
         with pytest.raises(SimulatorError, match="Max 27 qubits"):
             StateVectorSimulator(28)
 
@@ -43,28 +41,28 @@ class TestStateVectorCoverage:
 
     def test_unknown_gate_error(self):
         """Line 120: SimulatorError for unknown gate."""
-        from quanta.simulator.statevector import StateVectorSimulator, SimulatorError
+        from quanta.simulator.statevector import SimulatorError, StateVectorSimulator
         sim = StateVectorSimulator(2)
         with pytest.raises(SimulatorError, match="Unknown gate"):
             sim.apply("NONEXISTENT", (0,))
 
     def test_parametric_gate_without_params(self):
         """Lines 124-129: SimulatorError when parametric gates lack params."""
-        from quanta.simulator.statevector import StateVectorSimulator, SimulatorError
+        from quanta.simulator.statevector import SimulatorError, StateVectorSimulator
         sim = StateVectorSimulator(2)
         with pytest.raises(SimulatorError, match="requires parameters"):
             sim.apply("RX", (0,))
 
     def test_multi_parametric_gate_without_params(self):
         """Lines 124-126: SimulatorError when multi-param gate lacks params."""
-        from quanta.simulator.statevector import StateVectorSimulator, SimulatorError
+        from quanta.simulator.statevector import SimulatorError, StateVectorSimulator
         sim = StateVectorSimulator(2)
         with pytest.raises(SimulatorError, match="requires parameters"):
             sim.apply("U", (0,))
 
     def test_state_setter_dimension_mismatch(self):
         """Line 171: SimulatorError on dimension mismatch."""
-        from quanta.simulator.statevector import StateVectorSimulator, SimulatorError
+        from quanta.simulator.statevector import SimulatorError, StateVectorSimulator
         sim = StateVectorSimulator(2)
         with pytest.raises(SimulatorError, match="State dimension mismatch"):
             sim.state = np.zeros(8, dtype=complex)  # Expected 4, got 8

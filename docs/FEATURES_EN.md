@@ -1,6 +1,6 @@
 # Quanta SDK — Features
 
-## Gate Set (25 Gates)
+## Gate Set (31 Gates)
 
 | Gate | Qubits | Description |
 |------|--------|-------------|
@@ -29,6 +29,12 @@
 | RZZ(θ) | 2 | ZZ rotation (2-qubit) |
 | RCCX | 3 | Relative-phase CCX |
 | RC3X | 4 | Relative-phase C3X |
+| ECR | 2 | Echoed cross-resonance (IBM Heron native) |
+| iSWAP | 2 | Imaginary SWAP (Google Sycamore native) |
+| CSWAP | 3 | Controlled-SWAP (Fredkin) |
+| CH | 2 | Controlled-Hadamard |
+| CP(θ) | 2 | Controlled-Phase |
+| MS(θ) | 2 | Mølmer-Sørensen (IonQ trapped-ion native) |
 
 ### Custom Gates
 

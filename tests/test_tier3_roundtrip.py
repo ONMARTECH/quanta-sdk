@@ -12,8 +12,8 @@ import math
 import numpy as np
 import pytest
 
-from quanta import CX, CZ, H, RX, RY, RZ, S, T, X, Y, Z, circuit, measure
-from quanta.export.qasm import to_qasm, from_qasm_gates
+from quanta import CX, CZ, RX, RY, RZ, H, S, T, X, Y, Z, circuit, measure
+from quanta.export.qasm import from_qasm_gates, to_qasm
 from quanta.export.qasm_import import from_qasm
 
 
@@ -197,7 +197,6 @@ class TestDecoderBase:
     def test_custom_decoder_plugin(self):
         """Custom decoder can be created by subclassing DecoderBase."""
         from quanta.qec.decoder import DecoderBase, DecoderResult
-        import numpy as np
 
         class TrivialDecoder(DecoderBase):
             @property

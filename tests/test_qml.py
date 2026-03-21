@@ -3,18 +3,16 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from quanta.layer3.qml import (
+    QMLResult,
     QuantumClassifier,
     QuantumKernel,
-    QMLResult,
-    angle_encoding,
     amplitude_encoding,
+    angle_encoding,
     zz_feature_map,
 )
 from quanta.simulator.statevector import StateVectorSimulator
-
 
 # ── Feature Maps ──────────────────────────────
 

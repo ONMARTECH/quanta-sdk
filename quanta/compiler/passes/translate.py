@@ -94,6 +94,34 @@ _DECOMPOSITION_RULES: dict[str, list[tuple[str, list[int], tuple[float, ...]]]] 
         ("RZ", [1], (-np.pi / 4,)),
         ("CX", [0, 1], ()),
     ],
+    # iSWAP = SWAP · CZ · S⊗S (decomposed to CX basis)
+    "iSWAP": [
+        ("CX", [0, 1], ()),
+        ("H", [0], ()),
+        ("CX", [1, 0], ()),
+        ("H", [0], ()),
+        ("CX", [0, 1], ()),
+    ],
+    # CH = Ry(π/4) · CX · Ry(-π/4) (on target)
+    "CH": [
+        ("RY", [1], (np.pi / 4,)),
+        ("CX", [0, 1], ()),
+        ("RY", [1], (-np.pi / 4,)),
+    ],
+    # ECR = RZX(π/4) · X⊗I · RZX(-π/4)
+    "ECR": [
+        ("RZ", [0], (np.pi / 4,)),
+        ("RY", [1], (np.pi / 2,)),
+        ("CX", [0, 1], ()),
+        ("RY", [1], (-np.pi / 2,)),
+        ("RZ", [0], (-np.pi / 4,)),
+    ],
+    # CSWAP = CCX-based: CX(2,1) · CCX(0,1,2) · CX(2,1)
+    "CSWAP": [
+        ("CX", [2, 1], ()),
+        ("CCX", [0, 1, 2], ()),
+        ("CX", [2, 1], ()),
+    ],
 }
 
 class TranslateToTarget:

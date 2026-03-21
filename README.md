@@ -161,7 +161,7 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 │  monte_carlo() · cluster() · resolve()                   │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 2 — Circuit API                                   │
-│  @circuit · 25 gates · measure · run · sweep             │
+│  @circuit · 31 gates · measure · run · sweep             │
 │  SVG visualization · QASM 3.0 export                     │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 1 — Physical Layer                                │
@@ -381,7 +381,7 @@ pip install cupy          # NVIDIA CUDA backend
 ## Project Stats
 
 ```
-Version:     0.8.1        Gates:       25 (full IBM parity)
+Version:     0.8.1        Gates:       31 (full IBM parity)
 Files:       73+          Tests:       530
 Algorithms:  10           Examples:    11
 Simulators:  4            QEC Codes:   6

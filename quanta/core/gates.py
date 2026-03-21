@@ -30,9 +30,11 @@ __all__ = [
     "H", "X", "Y", "Z", "S", "T",
     "CX", "CZ", "CY", "SWAP", "CCX",
     "RX", "RY", "RZ",
-    # New IBM-parity gates
+    # IBM-parity gates
     "I", "SDG", "TDG", "P", "SX", "SXdg",
     "U", "RXX", "RZZ", "RCCX", "RC3X",
+    # v0.9 new gates
+    "ECR", "iSWAP", "CSWAP", "CH", "CP", "MS",
 ]
 
 # ── Constants ──
@@ -434,6 +436,82 @@ U = MultiParametricGate("U", lambda t, p, lam: np.array([
      np.exp(1j * (p + lam)) * np.cos(t / 2)],
 ], dtype=complex), num_params=3)
 
+# ── New v0.9: ECR (Echoed Cross-Resonance) ──
+# IBM Heron native 2-qubit gate
+
+class _ECR(Gate):
+    """Echoed cross-resonance gate. IBM Heron native 2-qubit gate."""
+    name = "ECR"
+    num_qubits = 2
+    def _build_matrix(self) -> np.ndarray:
+        return np.array([
+            [0, 0, 1, 1j],
+            [0, 0, 1j, 1],
+            [1, -1j, 0, 0],
+            [-1j, 1, 0, 0],
+        ], dtype=complex) * _SQRT2_INV
+
+# ── New v0.9: iSWAP ──
+# Google Sycamore native gate
+
+class _iSWAP(Gate):
+    """Imaginary SWAP gate. Google Sycamore native 2-qubit gate."""
+    name = "iSWAP"
+    num_qubits = 2
+    def _build_matrix(self) -> np.ndarray:
+        return np.array([
+            [1, 0, 0, 0],
+            [0, 0, 1j, 0],
+            [0, 1j, 0, 0],
+            [0, 0, 0, 1],
+        ], dtype=complex)
+
+# ── New v0.9: CSWAP (Fredkin) ──
+
+class _CSWAP(Gate):
+    """Controlled-SWAP (Fredkin) gate. 3-qubit."""
+    name = "CSWAP"
+    num_qubits = 3
+    def _build_matrix(self) -> np.ndarray:
+        m = np.eye(8, dtype=complex)
+        # Swap |101⟩ ↔ |110⟩
+        m[5, 5], m[5, 6] = 0, 1
+        m[6, 5], m[6, 6] = 1, 0
+        return m
+
+# ── New v0.9: CH (Controlled-Hadamard) ──
+
+class _CH(Gate):
+    """Controlled-Hadamard gate."""
+    name = "CH"
+    num_qubits = 2
+    def _build_matrix(self) -> np.ndarray:
+        m = np.eye(4, dtype=complex)
+        m[2, 2] = _SQRT2_INV
+        m[2, 3] = _SQRT2_INV
+        m[3, 2] = _SQRT2_INV
+        m[3, 3] = -_SQRT2_INV
+        return m
+
+# ── New v0.9: CP (Controlled-Phase) ──
+
+CP = ParametricGate("CP", lambda t: np.array([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, np.exp(1j * t)],
+], dtype=complex), num_qubits=2)
+
+# ── New v0.9: MS (Mølmer-Sørensen) ──
+# IonQ / trapped-ion native gate
+
+MS = ParametricGate("MS", lambda t: np.array([
+    [np.cos(t / 2), 0, 0, -1j * np.sin(t / 2)],
+    [0, np.cos(t / 2), -1j * np.sin(t / 2), 0],
+    [0, -1j * np.sin(t / 2), np.cos(t / 2), 0],
+    [-1j * np.sin(t / 2), 0, 0, np.cos(t / 2)],
+], dtype=complex), num_qubits=2)
+
 # ── Singleton Instances ──
 H = _H()
 X = _X()
@@ -453,6 +531,10 @@ SWAP = _SWAP()
 CCX = _CCX()
 RCCX = _RCCX()
 RC3X = _RC3X()
+ECR = _ECR()
+iSWAP = _iSWAP()
+CSWAP = _CSWAP()
+CH = _CH()
 
 
 GATE_REGISTRY: dict[str, Gate | ParametricGate] = {
@@ -460,8 +542,12 @@ GATE_REGISTRY: dict[str, Gate | ParametricGate] = {
     "I": I, "SDG": SDG, "TDG": TDG, "SX": SX, "SXdg": SXdg,
     "CX": CX, "CZ": CZ, "CY": CY, "SWAP": SWAP,
     "CCX": CCX, "RCCX": RCCX, "RC3X": RC3X,
+    # New v0.9 fixed gates
+    "ECR": ECR, "iSWAP": iSWAP, "CSWAP": CSWAP, "CH": CH,
     # Parametric gates
     "RX": RX, "RY": RY, "RZ": RZ, "P": P, "U": U,
     "RXX": RXX, "RZZ": RZZ,
+    # New v0.9 parametric gates
+    "CP": CP, "MS": MS,
 }
 

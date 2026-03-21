@@ -7,7 +7,7 @@ A clean, modular quantum computing SDK for Python. **v0.8.1** — [PyPI](https:/
 Quanta provides a 3-layer architecture for quantum computing:
 
 - **Layer 3** (Declarative): `search()`, `optimize()`, `vqe()`, `factor()`, `resolve()`, `QuantumClassifier` -- use quantum without knowing gates
-- **Layer 2** (Circuit): `@circuit`, 25 gates, `measure()`, `run()` -- standard circuit programming
+- **Layer 2** (Circuit): `@circuit`, 31 gates, `measure()`, `run()` -- standard circuit programming
 - **Layer 1** (Physical): DAG, compiler, routing, simulator, QEC, QASM 3.0 -- hardware optimization
 
 ## Quick Start

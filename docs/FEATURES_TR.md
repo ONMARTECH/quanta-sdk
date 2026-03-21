@@ -1,6 +1,6 @@
 # Quanta SDK — Ozellikler
 
-## Kapi Seti (25 Kapi)
+## Kapi Seti (31 Kapi)
 
 | Kapi | Qubit | Aciklama |
 |------|-------|----------|
@@ -29,6 +29,12 @@
 | RZZ(θ) | 2 | ZZ rotasyonu (2-qubit) |
 | RCCX | 3 | Goreli-fazli CCX |
 | RC3X | 4 | Goreli-fazli C3X |
+| ECR | 2 | Ekolu capraz-rezonans (IBM Heron yerli) |
+| iSWAP | 2 | Imajiner SWAP (Google Sycamore yerli) |
+| CSWAP | 3 | Kontrollu-SWAP (Fredkin) |
+| CH | 2 | Kontrollu-Hadamard |
+| CP(θ) | 2 | Kontrollu-Faz |
+| MS(θ) | 2 | Mølmer-Sørensen (IonQ tuzsuzlu-iyon yerli) |
 
 ### Ozel Kapilar
 

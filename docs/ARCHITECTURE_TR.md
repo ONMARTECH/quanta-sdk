@@ -51,7 +51,7 @@ qec/ -------> core/
 | Dosya | Sorumluluk |
 |-------|------------|
 | `types.py` | QubitRef, Instruction, QubitRegister |
-| `gates.py` | 25 kapi + broadcast (IBM Heron paritesi) |
+| `gates.py` | 31 kapi + broadcast (IBM Heron paritesi) |
 | `circuit.py` | @circuit dekoratoru, CircuitBuilder |
 | `measure.py` | Esnek olcum (tam, kismi) |
 | `equivalence.py` | Uniter karsilastirma, sadakat |
