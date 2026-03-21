@@ -83,6 +83,7 @@ nav:
     - "06 — Quantum ML": tutorials/06-qml.md
     - "07 — Noise & QEC": tutorials/07-noise-and-qec.md
     - "08 — MCP & AI": tutorials/08-mcp-ai.md
+    - "09a — Shor: RSA Kırma": tutorials/09a-shor-cryptography.md
   - API Reference:
     - Core:
       - Circuit: api/core/circuit.md
