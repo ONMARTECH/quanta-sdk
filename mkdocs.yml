@@ -86,6 +86,9 @@ nav:
     - "09a — Shor: RSA Kırma": tutorials/09a-shor-cryptography.md
     - "09b — QAOA: Lojistik": tutorials/09b-qaoa-logistics.md
     - "09c — QML: Fraud Detection": tutorials/09c-qml-fraud.md
+    - "10a — VQE: Molekül Simülasyonu": tutorials/10a-vqe-molecular.md
+    - "10b — Bell Eşitsizliği": tutorials/10b-bell-inequality.md
+    - "10c — QEC Threshold": tutorials/10c-qec-threshold.md
   - API Reference:
     - Core:
       - Circuit: api/core/circuit.md
