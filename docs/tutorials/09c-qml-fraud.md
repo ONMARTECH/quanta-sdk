@@ -261,5 +261,9 @@ tahmini, ürün önerisi, siber saldırı tespiti...
 
 ### Sonraki Adımlar
 
+- [VQE: Molekül Simülasyonu](10a-vqe-molecular.md) — İleri seviye #1
+- [Bell Eşitsizliği](10b-bell-inequality.md) — İleri seviye #2
+- [QEC Threshold](10c-qec-threshold.md) — İleri seviye #3
 - [Shor ile RSA Kırma](09a-shor-cryptography.md) — Gerçek hayat problemi #1
 - [QAOA ile Lojistik](09b-qaoa-logistics.md) — Gerçek hayat problemi #2
+

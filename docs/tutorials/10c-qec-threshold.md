@@ -171,7 +171,7 @@ for d in [3, 5, 7]:
         suppression = float('inf')
         efficiency = f"1:{n_qubits} (mükemmel)"
     
-    sup_bar = "█" * min(int(suppression), 30)
+    sup_bar = "█" * min(int(suppression) if suppression != float('inf') else 30, 30)
     print(f"  d={d:>5} │ {n_qubits:>6} │ {r.logical_error_rate:>10.5f} │ {suppression:>10.1f}x │ {efficiency}")
 
 print(f"\n💡 d=3→5→7: her adımda üstel iyileşme")

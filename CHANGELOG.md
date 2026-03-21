@@ -13,7 +13,7 @@ Format: [Semantic Versioning](https://semver.org/)
 - **Post-check workflow**: Automated validation script for SDK health
 
 ### Added — Documentation
-- 11 tutorials (01–09c): Getting Started through QML Fraud Detection
+- 14 tutorials (01–10c): Getting Started through QEC Threshold
 - Migration guides: from-qiskit, from-pennylane, from-cirq
 - 3 cookbook recipes: bell-state, option-pricing, quantum-classification
 - MkDocs documentation site with API reference
