@@ -67,7 +67,7 @@ Quantum algorithms for customer analytics and marketing optimization.
 
 | Module | Description | MCP Tool |
 |--------|-------------|----------|
-| `layer3/entity_resolution.py` | Quantum-classical entity matching | `entity_resolve` |
+| `layer3/entity_resolution.py` | Quantum-classical entity matching | — (Python API) |
 | `layer3/clustering.py` | Swap-test quantum clustering | `cluster_data` |
 | `layer3/qsvm.py` | Quantum kernel classification | — |
 | `layer3/qml.py` | Variational quantum classifier | — |
@@ -110,7 +110,7 @@ print(f"Accuracy: {sum(predictions == y_test) / len(y_test):.1%}")
 
 ### MCP Workflow
 
-1. `entity_resolve` — Deduplicate customer records
+1. Use `resolve_entities()` Python API — Deduplicate customer records
 2. `cluster_data` — Segment customers by behavior
 3. Use results for targeted marketing campaigns
 

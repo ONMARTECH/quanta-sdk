@@ -22,7 +22,7 @@ MCP (Model Context Protocol) lets AI assistants call tools directly. Quanta expo
 | `grover_search` | Quantum search |
 | `shor_factor` | Factor integers |
 | `simulate_noise` | Noisy simulation |
-| `list_gates` | Show all 25 gates |
+| `list_gates` | Show all 31 gates |
 | `explain_result` | AI-friendly result explanation |
 | `monte_carlo_price` | Option pricing |
 | `qaoa_optimize` | Combinatorial optimization |
@@ -101,7 +101,7 @@ You've completed all 8 tutorials:
 | Tutorial | Topic |
 |----------|-------|
 | 01 | Getting Started — first circuit |
-| 02 | Gates and Circuits — all 25 gates |
+| 02 | Gates and Circuits — all 31 gates |
 | 03 | Simulation — noise and fidelity |
 | 04 | Algorithms — Grover, QAOA, VQE, Shor |
 | 05 | IBM Hardware — real quantum computers |

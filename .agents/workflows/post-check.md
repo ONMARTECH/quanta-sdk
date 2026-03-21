@@ -32,7 +32,7 @@ python3 -c "from quanta.mcp_server import mcp; print('✅ MCP server loads OK')"
 
 5. Documentation consistency — check for stale numbers:
 ```bash
-echo "Stale '14 tools' refs:" && grep -rn "14 MCP\|14 tool" quanta/ docs/ README.md --include="*.md" --include="*.py" 2>/dev/null | grep -v __pycache__ | wc -l | xargs -I{} sh -c '[ {} -eq 0 ] && echo "✅ None found" || echo "❌ Found {} stale refs"'
+echo "Stale '25 gates' refs:" && grep -rn "25 gate\|25 kapi\|25 quantum gate" quanta/ docs/ README.md --include="*.md" --include="*.py" 2>/dev/null | grep -v __pycache__ | wc -l | xargs -I{} sh -c '[ {} -eq 0 ] && echo "✅ None found" || echo "❌ Found {} stale refs"'
 ```
 
 6. Architecture alignment check:
@@ -52,7 +52,7 @@ print(f'Circuit._repr_html_: {hasattr(CircuitDefinition, \"_repr_html_\")}')
 ## Expected Results
 
 - Lint: All checks passed
-- Tests: 580+ passed, coverage ≥ 87%
+- Tests: 620+ passed, coverage ≥ 88%
 - Version: Consistent across 5 files
 - MCP: Loads without error
 - Docs: No stale tool/test count references

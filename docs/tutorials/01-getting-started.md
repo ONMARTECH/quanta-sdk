@@ -118,4 +118,4 @@ print(result.summary())
 
 ## What's Next
 
-→ [02 — Gates and Circuits](02-gates-and-circuits.md): Learn all 25 quantum gates
+→ [02 — Gates and Circuits](02-gates-and-circuits.md): Learn all 31 quantum gates

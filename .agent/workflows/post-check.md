@@ -53,7 +53,7 @@ fi
 ```bash
 cd "/Users/aes/Antigravity Projects/Alfa/quanta"
 echo "Scanning for stale references..."
-STALE=$(grep -rn "0\.7\.\|13 tool\|13 MCP\|17 gate\|17 built\|17 kapi\|7 tool\|7 arac\|476 test\|133 qubit\|Heron r1" \
+STALE=$(grep -rn "25 gate\|25 kapi\|25 quantum gate\|14 MCP\|14 tool\|586 pass" \
     README.md docs/ quanta/__init__.py pyproject.toml --include="*.py" --include="*.md" --include="*.toml" 2>/dev/null \
     | grep -v __pycache__ | grep -v ".pyc" || true)
 

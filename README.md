@@ -11,7 +11,7 @@
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-586%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-620%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-8%2F8-gold.svg" alt="Benchmark"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
     <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-16%20tools-teal.svg" alt="MCP"></a>
@@ -141,7 +141,7 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `shor_factor` | Shor's factoring algorithm |
 | `simulate_noise` | Run with noise model |
 | `draw_circuit` | **SVG circuit diagram** |
-| `list_gates` | All 25 quantum gates |
+| `list_gates` | All 31 quantum gates |
 | `explain_result` | Interpret measurements |
 | `monte_carlo_price` | Quantum option pricing |
 | `qaoa_optimize` | QAOA optimization |
@@ -172,7 +172,7 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 
 ## Features
 
-### 25 Quantum Gates (Full IBM Parity)
+### 31 Quantum Gates (Full IBM Parity + Google/IonQ Native)
 
 | Category | Gates |
 |----------|-------|
@@ -381,11 +381,11 @@ pip install cupy          # NVIDIA CUDA backend
 ## Project Stats
 
 ```
-Version:     0.8.1        Gates:       31 (full IBM parity)
-Files:       73+          Tests:       530
+Version:     0.8.1        Gates:       31 (full IBM parity + Google/IonQ)
+Files:       73+          Tests:       620
 Algorithms:  10           Examples:    11
 Simulators:  4            QEC Codes:   6
-MCP Tools:   14           Max Qubits:  156 (IBM Heron r3)
+MCP Tools:   16           Max Qubits:  156 (IBM Heron r3)
 Noise:       7 channels   Backends:    IBM + IonQ + Google + local
 QASM:        3.0          Decoders:    2 (MWPM + UF)
 ```

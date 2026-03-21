@@ -6,6 +6,82 @@ Format: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [v0.8.1] - 2026-03-15
+
+### Fixed
+- **Perplexity rebuttal**: Proof tests addressing all claimed SDK issues
+- **Post-check workflow**: Automated validation script for SDK health
+
+### Added — Documentation
+- 11 tutorials (01–09c): Getting Started through QML Fraud Detection
+- Migration guides: from-qiskit, from-pennylane, from-cirq
+- 3 cookbook recipes: bell-state, option-pricing, quantum-classification
+- MkDocs documentation site with API reference
+- Domain use-case packs: Finance + Marketing/CRM
+
+### Tests
+- **620 tests**, 88% coverage
+
+---
+
+## [v0.8.0] - 2026-03-10
+
+### Added
+- **QML module** (`layer3/qml.py`): Variational quantum classifier with ZZFeatureMap
+- **Quantum Monte Carlo precision**: Golden-section MLE refinement for amplitude estimation
+- **IBM Quantum MCP tools**: `run_on_ibm`, `ibm_backends`, `ibm_job_result` — real hardware via MCP
+- **surface_code_simulate** + **density_matrix_sim** MCP tools
+- **16 MCP tools** total (was 10)
+
+### Fixed
+- 5 critical bugs from Claude MCP stress test
+- Noise fidelity: Kraus density matrix simulation
+- Readout error model + QMC precision scaling
+- QML test suite + CI pipeline stability
+
+### Tests
+- **515 tests**, 87% coverage
+
+---
+
+## [v0.7.1] - 2026-03-09
+
+### Added
+- **IBM Quantum REST backend** (`backends/ibm_rest.py`): Direct REST API, no Qiskit dependency
+  - ISA transpilation for IBM Heron r3 processors
+  - Tested on real hardware (ibm_torino)
+- **SVG circuit visualizer** (`visualize_svg.py`): Professional IBM-inspired circuit diagrams
+- **25 quantum gates**: Full IBM Quantum gate parity
+- **MCP server**: 10 tools for AI agent integration
+
+### Tests
+- **488 tests**, verified on real IBM Quantum hardware
+
+---
+
+## [v0.7.0] - 2026-03-08
+
+### Added — 3 New Quantum Algorithms
+- **Quantum Monte Carlo** (`layer3/monte_carlo.py`): Amplitude estimation for option pricing
+- **QAOA Optimizer** (`layer3/optimize.py`): Combinatorial optimization (MaxCut, TSP)
+- **Quantum Clustering** (`layer3/clustering.py`): Swap-test based data clustering
+
+### Added — MCP Server
+- **FastMCP AI integration** (`mcp_server.py`): 10 tools for Claude/GPT
+  - `run_circuit`, `grover_search`, `shor_factor`, `simulate_noise`
+  - `draw_circuit`, `list_gates`, `explain_result`
+  - `monte_carlo_price`, `qaoa_optimize`, `cluster_data`
+
+### Fixed
+- Shor overflow for large modular exponentiation
+- Grover parameter validation for odd-sized search spaces
+- Recursive factoring edge cases
+
+### Tests
+- **476 tests** (was 457)
+
+---
+
 ## [v0.6.1] - 2026-03-08
 
 ### Fixed — Structural Architecture Improvements

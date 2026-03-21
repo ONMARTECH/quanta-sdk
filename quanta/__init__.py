@@ -23,9 +23,14 @@ from quanta.core.circuit import circuit
 from quanta.core.custom_gate import custom_gate
 from quanta.core.gates import (
     CCX,
+    CH,
+    CP,
+    CSWAP,
     CX,
     CY,
     CZ,
+    ECR,
+    MS,
     RC3X,
     RCCX,
     RX,
@@ -48,6 +53,7 @@ from quanta.core.gates import (
     X,
     Y,
     Z,
+    iSWAP,
 )
 from quanta.core.measure import measure
 from quanta.runner import run, sweep
@@ -57,9 +63,11 @@ __all__ = [
     "H", "X", "Y", "Z", "S", "T",
     "CX", "CY", "CZ", "SWAP", "CCX",
     "RX", "RY", "RZ",
-    # Gates (new)
+    # Gates (IBM-parity)
     "I", "SDG", "TDG", "P", "SX", "SXdg",
     "U", "RXX", "RZZ", "RCCX", "RC3X",
+    # Gates (v0.8+)
+    "ECR", "iSWAP", "CSWAP", "CH", "CP", "MS",
     # Custom gates
     "custom_gate",
     # Circuit

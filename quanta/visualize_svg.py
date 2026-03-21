@@ -509,7 +509,7 @@ def to_html(
     </div>
   </div>
   <div class="footer">
-    Quanta SDK v0.7 — 25 gates, IBM Quantum compatible
+    Quanta SDK v0.8 — 31 gates, IBM Quantum compatible
   </div>
 </body>
 </html>"""

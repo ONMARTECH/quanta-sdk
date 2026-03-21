@@ -236,5 +236,5 @@ Hepsi aynı `optimize()` fonksiyonuyla — sadece cost fonksiyonu değişiyor.
 
 ### Sonraki Adımlar
 
-- [QML ile Fraud Detection](09c-qml-fraud.md) — Gerçek hayat problemi #3
 - [Shor ile RSA Kırma](09a-shor-cryptography.md) — Gerçek hayat problemi #1
+

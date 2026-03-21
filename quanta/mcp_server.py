@@ -14,7 +14,7 @@ Tools (16):
   Education:
     - create_bell_state:         Quick Bell state |Φ+⟩
     - draw_circuit:              SVG circuit diagram
-    - list_gates:                Available quantum gates (25)
+    - list_gates:                Available quantum gates (31)
     - explain_result:            Interpret measurement results
   Research:
     - run_circuit:               Execute quantum circuit code
@@ -36,7 +36,7 @@ Resources (5):
     - quanta://info              SDK capabilities
     - quanta://examples          Example circuits
     - quanta://noise-profiles    7 noise channels detail
-    - quanta://gate-catalog      25 gates with matrices
+    - quanta://gate-catalog      31 gates with matrices
     - quanta://backend-specs     IBM/IonQ/Google specs
 
 Prompts (4):
@@ -90,8 +90,9 @@ def run_circuit(
     Args:
         code: Python code defining a quantum circuit. Must define a
               variable called 'circ' as the circuit to run.
-              All 25 gates pre-loaded: H,X,Y,Z,S,T,I,SDG,TDG,SX,SXdg,
-              RX,RY,RZ,P,U,CX,CY,CZ,SWAP,RXX,RZZ,CCX,RCCX,RC3X.
+              All 31 gates pre-loaded: H,X,Y,Z,S,T,I,SDG,TDG,SX,SXdg,
+              RX,RY,RZ,P,U,CX,CY,CZ,SWAP,RXX,RZZ,CCX,RCCX,RC3X,
+              ECR,iSWAP,CSWAP,CH,CP,MS.
               Also: circuit, measure, run, math, np, pi, sqrt.
               Imports allowed: you can use 'import math', etc.
         shots: Number of measurement repetitions.
@@ -545,6 +546,19 @@ def list_gates() -> str:
          "description": "Relative-phase Toffoli"},
         {"name": "RC3X", "qubits": 4, "type": "Multi-ctrl",
          "description": "3-controlled X"},
+        # v0.8+ gates
+        {"name": "ECR", "qubits": 2, "type": "Clifford",
+         "description": "Echoed cross-resonance — IBM native"},
+        {"name": "iSWAP", "qubits": 2, "type": "Clifford",
+         "description": "√SWAP with phase — Google native"},
+        {"name": "CSWAP", "qubits": 3, "type": "Fredkin",
+         "description": "Controlled-SWAP (Fredkin gate)"},
+        {"name": "CH", "qubits": 2, "type": "Clifford",
+         "description": "Controlled-Hadamard"},
+        {"name": "CP(θ)", "qubits": 2, "type": "Parametric",
+         "description": "Controlled-Phase — diag(1,1,1,e^iθ)"},
+        {"name": "MS(θ)", "qubits": 2, "type": "Parametric",
+         "description": "Mølmer–Sørensen — trapped-ion native"},
     ]
     return json.dumps({
         "total_gates": len(gates),
@@ -1387,7 +1401,7 @@ def sdk_info() -> str:
         "name": "Quanta Quantum SDK",
         "version": "0.8.1",
         "description": "AI-native quantum computing SDK",
-        "total_gates": 25,
+        "total_gates": 31,
         "total_tools": 16,
         "tool_categories": {
             "education": ["create_bell_state", "draw_circuit",
@@ -1399,7 +1413,7 @@ def sdk_info() -> str:
             "hardware": ["run_on_ibm", "ibm_backends", "ibm_job_result"],
         },
         "capabilities": [
-            "25 quantum gates (full IBM Quantum parity)",
+            "31 quantum gates (full IBM Quantum parity + Google/IonQ native)",
             "Statevector simulation (up to 27 qubits)",
             "Density matrix simulation (mixed states + noise)",
             "Pauli Frame simulator (1000+ Clifford qubits)",
@@ -1541,9 +1555,9 @@ def noise_profiles() -> str:
 
 @mcp.resource("quanta://gate-catalog")
 def gate_catalog() -> str:
-    """Complete catalog of all 25 quantum gates with categories."""
+    """Complete catalog of all 31 quantum gates with categories."""
     return json.dumps({
-        "total": 25,
+        "total": 31,
         "heron_native": ["RZ", "SX", "X", "CZ"],
         "categories": {
             "pauli": {
@@ -1577,14 +1591,15 @@ def gate_catalog() -> str:
                 "description": "Any single-qubit unitary",
             },
             "two_qubit": {
-                "gates": ["CX", "CY", "CZ", "SWAP", "RXX(θ)", "RZZ(θ)"],
+                "gates": ["CX", "CY", "CZ", "SWAP", "RXX(θ)", "RZZ(θ)",
+                          "ECR", "iSWAP", "CH", "CP(θ)", "MS(θ)"],
                 "qubits": 2,
                 "description": "Entangling operations",
             },
             "multi_qubit": {
-                "gates": ["CCX", "RCCX", "RC3X"],
+                "gates": ["CCX", "RCCX", "RC3X", "CSWAP"],
                 "qubits": "3-4",
-                "description": "Toffoli and multi-controlled",
+                "description": "Toffoli, Fredkin, and multi-controlled",
             },
             "identity": {
                 "gates": ["I"],

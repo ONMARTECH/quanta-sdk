@@ -68,7 +68,7 @@ pip install quanta-sdk
 ## Hello Quantum
 
 ```python
-from quanta import circuit, H, CX, measure
+from quanta import circuit, H, CX, measure, run
 
 @circuit(qubits=2)
 def bell(q):
@@ -76,7 +76,7 @@ def bell(q):
     CX(q[0], q[1])
     return measure(q)
 
-result = bell.run(shots=1000)
+result = run(bell, shots=1000)
 print(result)  # {'00': ~500, '11': ~500}
 ```
 

@@ -20,7 +20,7 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `shor_factor` | Research | Shor's factoring algorithm |
 | `simulate_noise` | Research | Run circuit with noise model |
 | `draw_circuit` | Education | SVG circuit diagram |
-| `list_gates` | Education | All 25 quantum gates |
+| `list_gates` | Education | All 31 quantum gates |
 | `explain_result` | Education | Interpret measurements |
 | `monte_carlo_price` | Business | Quantum Monte Carlo option pricing |
 | `qaoa_optimize` | Research | QAOA combinatorial optimization |
@@ -38,7 +38,7 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `quanta://info` | SDK version and capabilities |
 | `quanta://examples` | Example quantum circuits |
 | `quanta://noise-profiles` | 7 noise channel specifications |
-| `quanta://gate-catalog` | 25 gates with categories |
+| `quanta://gate-catalog` | 31 gates with categories |
 | `quanta://backend-specs` | IBM hardware specifications |
 
 ## Prompts

@@ -199,4 +199,4 @@ Bu tutorialda:
 ### Sonraki Adımlar
 
 - [QAOA ile Lojistik Optimizasyon](09b-qaoa-logistics.md) — Gerçek hayat problemi #2
-- [QML ile Fraud Detection](09c-qml-fraud.md) — Gerçek hayat problemi #3
+

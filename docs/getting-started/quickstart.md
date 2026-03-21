@@ -5,7 +5,7 @@ Build and run your first quantum circuit in under a minute.
 ## 1. Create a Bell State
 
 ```python
-from quanta import circuit, H, CX, measure
+from quanta import circuit, H, CX, measure, run
 
 @circuit(qubits=2)
 def bell(q):
@@ -13,7 +13,7 @@ def bell(q):
     CX(q[0], q[1])
     return measure(q)
 
-result = bell.run(shots=1024)
+result = run(bell, shots=1024)
 print(result)
 ```
 

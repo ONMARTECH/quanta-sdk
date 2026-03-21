@@ -19,7 +19,7 @@
     {"name": "shor_factor", "description": "Shor's factoring algorithm"},
     {"name": "simulate_noise", "description": "Run circuit with noise model"},
     {"name": "draw_circuit", "description": "SVG circuit diagram"},
-    {"name": "list_gates", "description": "All 25 quantum gates"},
+    {"name": "list_gates", "description": "All 31 quantum gates"},
     {"name": "explain_result", "description": "Interpret measurements"},
     {"name": "monte_carlo_price", "description": "Quantum Monte Carlo option pricing"},
     {"name": "qaoa_optimize", "description": "QAOA combinatorial optimization"},
@@ -34,7 +34,7 @@
     {"uri": "quanta://info", "name": "SDK Info", "description": "SDK capabilities and version"},
     {"uri": "quanta://examples", "name": "Examples", "description": "Example quantum circuits"},
     {"uri": "quanta://noise-profiles", "name": "Noise Profiles", "description": "7 noise channel details"},
-    {"uri": "quanta://gate-catalog", "name": "Gate Catalog", "description": "25 gates with categories"},
+    {"uri": "quanta://gate-catalog", "name": "Gate Catalog", "description": "31 gates with categories"},
     {"uri": "quanta://backend-specs", "name": "Backend Specs", "description": "Hardware specifications"}
   ],
   "prompts": [

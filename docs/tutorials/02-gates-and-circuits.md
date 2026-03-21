@@ -4,13 +4,13 @@
 
 ## What You'll Learn
 
-Master all 25 quantum gates, build multi-qubit circuits, use parametric and custom gates.
+Master all 31 quantum gates, build multi-qubit circuits, use parametric and custom gates.
 
 ## Prerequisites
 
 - [01 — Getting Started](01-getting-started.md)
 
-## The 25 Gates
+## The 31 Gates
 
 ### Single-Qubit Gates (18)
 
