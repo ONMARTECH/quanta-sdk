@@ -15,6 +15,9 @@
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-8%2F8-gold.svg" alt="Benchmark"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
     <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-16%20tools-teal.svg" alt="MCP"></a>
+    <a href="https://onmartech.github.io/quanta-sdk/"><img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs"></a>
+    <a href="#features"><img src="https://img.shields.io/badge/gates-31-blueviolet.svg" alt="Gates"></a>
+    <a href="https://onmartech.github.io/quanta-sdk/tutorials/01-getting-started/"><img src="https://img.shields.io/badge/tutorials-14-informational.svg" alt="Tutorials"></a>
   </p>
 </p>
 
@@ -370,8 +373,12 @@ pip install cupy          # NVIDIA CUDA backend
 
 ## Documentation
 
+📚 **Live Documentation:** [onmartech.github.io/quanta-sdk](https://onmartech.github.io/quanta-sdk/)
+
 | Document | Description |
 |----------|-------------|
+| [📖 Tutorials (14)](https://onmartech.github.io/quanta-sdk/tutorials/01-getting-started/) | Step-by-step guides from basics to advanced |
+| [📘 API Reference](https://onmartech.github.io/quanta-sdk/api/core/circuit/) | Full API docs with live examples |
 | [Architecture (EN)](docs/ARCHITECTURE_EN.md) | System design, DAG IR, compiler pipeline |
 | [Architecture (TR)](docs/ARCHITECTURE_TR.md) | Türkçe mimari dokümanı |
 | [Features (EN)](docs/FEATURES_EN.md) | Complete feature list |
@@ -388,6 +395,7 @@ Simulators:  4            QEC Codes:   6
 MCP Tools:   16           Max Qubits:  156 (IBM Heron r3)
 Noise:       7 channels   Backends:    IBM + IonQ + Google + local
 QASM:        3.0          Decoders:    2 (MWPM + UF)
+Tutorials:   14           Docs Pages:  44
 ```
 
 ## Author
@@ -408,5 +416,6 @@ Feel free to check [issues page](https://github.com/ONMARTECH/quanta-sdk/issues)
 ---
 
 <p align="center">
-  <sub>Built for the quantum computing community — now running on real IBM quantum hardware</sub>
+  <sub>Built for the quantum computing community — now running on real IBM quantum hardware</sub><br>
+  <sub><b>Keywords:</b> quantum computing, quantum SDK, python quantum, MCP server, AI quantum, VQE, QAOA, QML, quantum error correction, surface code, IBM Quantum, Shor algorithm, Bell inequality, quantum machine learning, quantum simulation</sub>
 </p>
