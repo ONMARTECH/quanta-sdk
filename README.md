@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">Quanta SDK</h1>
+  <h1 align="center">ONMARTECH QUANTA QUANTUM SDK</h1>
   <p align="center">
     <strong>AI-native quantum computing SDK for Python</strong><br>
     <em>The quantum runtime built for AI agents, researchers, and production workloads</em>
