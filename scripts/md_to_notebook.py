@@ -12,10 +12,8 @@ Usage:
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
-
 
 GITHUB_REPO = "ONMARTECH/quanta-sdk"
 NOTEBOOK_DIR = Path("notebooks")
@@ -50,16 +48,16 @@ def md_to_notebook(md_path: Path) -> dict:
     content = md_path.read_text(encoding="utf-8")
     basename = md_path.stem
     nb_filename = f"{basename}.ipynb"
-    
+
     cells = []
-    
+
     # 1. Colab badge cell
     badge = COLAB_BADGE_MD.format(repo=GITHUB_REPO, filename=nb_filename)
     cells.append(make_cell("markdown", [badge]))
-    
+
     # 2. Install cell
     cells.append(make_cell("code", [INSTALL_CODE]))
-    
+
     # 3. Parse markdown content into cells
     lines = content.split("\n")
     current_md: list[str] = []
@@ -67,7 +65,7 @@ def md_to_notebook(md_path: Path) -> dict:
     code_lines: list[str] = []
     code_lang = ""
     skip_block = False
-    
+
     for line in lines:
         if line.startswith("```python"):
             # Flush markdown
@@ -104,18 +102,18 @@ def md_to_notebook(md_path: Path) -> dict:
                     cells.append(make_cell("code", ["\n".join(code_lines)]))
             skip_block = False
             continue
-        
+
         if in_code:
             code_lines.append(line)
         else:
             current_md.append(line)
-    
+
     # Flush remaining markdown
     if current_md:
         text = "\n".join(current_md).strip()
         if text:
             cells.append(make_cell("markdown", [text]))
-    
+
     # Build notebook
     notebook = {
         "nbformat": 4,
@@ -139,34 +137,34 @@ def md_to_notebook(md_path: Path) -> dict:
         },
         "cells": cells,
     }
-    
+
     return notebook
 
 
 def main():
     NOTEBOOK_DIR.mkdir(exist_ok=True)
-    
+
     tutorials = sorted(TUTORIAL_DIR.glob("*.md"))
-    
+
     if not tutorials:
         print("❌ No tutorials found in docs/tutorials/")
         sys.exit(1)
-    
+
     print(f"⚛️  Converting {len(tutorials)} tutorials to Jupyter notebooks")
     print(f"   Output: {NOTEBOOK_DIR}/")
     print("=" * 50)
-    
+
     for md_path in tutorials:
         nb = md_to_notebook(md_path)
         nb_path = NOTEBOOK_DIR / f"{md_path.stem}.ipynb"
-        
+
         with open(nb_path, "w", encoding="utf-8") as f:
             json.dump(nb, f, indent=1, ensure_ascii=False)
-        
+
         n_code = sum(1 for c in nb["cells"] if c["cell_type"] == "code")
         n_md = sum(1 for c in nb["cells"] if c["cell_type"] == "markdown")
         print(f"  ✅ {md_path.name:35s} → {nb_path.name:35s} ({n_code} code, {n_md} md)")
-    
+
     # Create README for notebooks dir
     readme = [
         "# Quanta SDK Notebooks\n",
@@ -174,13 +172,13 @@ def main():
         "## Quick Start\n",
         "Click any badge below to open in Google Colab (no install needed):\n",
     ]
-    
+
     for md_path in tutorials:
         nb_name = f"{md_path.stem}.ipynb"
         title = md_path.stem.replace("-", " ").title()
         badge = f"[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/{GITHUB_REPO}/blob/main/notebooks/{nb_name})"
         readme.append(f"- **{title}** {badge}")
-    
+
     readme.extend([
         "",
         "## Local Usage\n",
@@ -196,9 +194,9 @@ def main():
         "python scripts/md_to_notebook.py",
         "```",
     ])
-    
+
     (NOTEBOOK_DIR / "README.md").write_text("\n".join(readme), encoding="utf-8")
-    
+
     print("\n" + "=" * 50)
     print(f"📓 {len(tutorials)} notebooks created + README.md")
 

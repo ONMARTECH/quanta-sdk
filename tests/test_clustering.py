@@ -74,14 +74,14 @@ class TestQuantumCluster:
         assert isinstance(result, ClusterResult)
         assert len(result.labels) == 6
         assert result.k == 2
-        assert all(0 <= l < 2 for l in result.labels)
+        assert all(0 <= lbl < 2 for lbl in result.labels)
         assert result.iterations >= 1
         assert result.inertia >= 0
 
     def test_single_cluster(self) -> None:
         data = [[1, 1], [1.1, 0.9], [0.9, 1.1]]
         result = quantum_cluster(data, k=1, seed=42)
-        assert all(l == 0 for l in result.labels)
+        assert all(lbl == 0 for lbl in result.labels)
 
     def test_three_clusters(self) -> None:
         data = [

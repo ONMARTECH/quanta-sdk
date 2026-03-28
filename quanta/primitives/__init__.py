@@ -21,7 +21,6 @@ import numpy as np
 from quanta.core.circuit import CircuitDefinition
 from quanta.core.types import QuantaError
 from quanta.dag.dag_circuit import DAGCircuit
-from quanta.result import Result
 from quanta.simulator.statevector import StateVectorSimulator
 
 if TYPE_CHECKING:
@@ -57,7 +56,8 @@ class SamplerResult:
 
     def __repr__(self) -> str:
         n = len(self.counts)
-        return f"SamplerResult(circuits={n}, total_shots={sum(sum(c.values()) for c in self.counts)})"
+        total = sum(sum(c.values()) for c in self.counts)
+        return f"SamplerResult(circuits={n}, total_shots={total})"
 
 
 @dataclass
@@ -309,7 +309,7 @@ class Estimator:
         variances = []
         metadata = []
 
-        for circ, obs in zip(circuits, observables):
+        for circ, obs in zip(circuits, observables, strict=True):
             # Simulate to get statevector
             builder = circ.build(**kwargs)
             dag = DAGCircuit.from_builder(builder)
@@ -351,7 +351,7 @@ class Estimator:
                 None,
                 lambda c=c, o=o: self.run(c, [o]),
             )
-            for c, o in zip(circuits, observables)
+            for c, o in zip(circuits, observables, strict=True)
         ]
         results = await asyncio.gather(*tasks)
 

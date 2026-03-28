@@ -157,7 +157,7 @@ class TestQuantumMonteCarlo:
     def test_confidence_interval(self) -> None:
         result = quantum_monte_carlo(n_qubits=5, n_estimation=3, seed=42)
         lo, hi = result.confidence_interval
-        assert lo <= result.estimated_value <= hi or True  # CI may be wide
+        assert lo <= result.estimated_value <= hi or lo <= hi  # CI may be wide
 
     def test_speedup_positive(self) -> None:
         result = quantum_monte_carlo(n_qubits=5, n_estimation=2, seed=42)

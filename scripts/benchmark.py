@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 sys.path.insert(0, ".")
 
@@ -47,7 +47,7 @@ def _time_fn(fn, runs=5) -> float:
 
 def bench_bell_state() -> BenchmarkResult:
     """Build + simulate Bell state."""
-    from quanta import circuit, H, CX, measure, run
+    from quanta import CX, H, circuit, measure, run
 
     @circuit(qubits=2)
     def bell(q):
@@ -61,7 +61,7 @@ def bench_bell_state() -> BenchmarkResult:
 
 def bench_ghz_10() -> BenchmarkResult:
     """10-qubit GHZ state."""
-    from quanta import circuit, H, CX, measure, run
+    from quanta import CX, H, circuit, measure, run
 
     @circuit(qubits=10)
     def ghz10(q):
@@ -76,7 +76,7 @@ def bench_ghz_10() -> BenchmarkResult:
 
 def bench_ghz_20() -> BenchmarkResult:
     """20-qubit GHZ state — stress test."""
-    from quanta import circuit, H, CX, measure, run
+    from quanta import CX, H, circuit, measure, run
 
     @circuit(qubits=20)
     def ghz20(q):
@@ -91,7 +91,7 @@ def bench_ghz_20() -> BenchmarkResult:
 
 def bench_random_circuit() -> BenchmarkResult:
     """Random 8-qubit circuit with 50 gates."""
-    from quanta import circuit, H, CX, RZ, S, T, measure, run
+    from quanta import CX, RZ, H, S, T, circuit, measure, run
 
     @circuit(qubits=8)
     def random8(q):
@@ -141,7 +141,7 @@ def bench_vqe_h2() -> BenchmarkResult:
 
 def bench_estimator() -> BenchmarkResult:
     """Estimator primitive: Bell state ⟨ZZ⟩."""
-    from quanta import circuit, H, CX, measure
+    from quanta import CX, H, circuit, measure
     from quanta.primitives import Estimator
 
     @circuit(qubits=2)
@@ -157,7 +157,7 @@ def bench_estimator() -> BenchmarkResult:
 
 def bench_parameter_shift() -> BenchmarkResult:
     """Parameter-shift gradient."""
-    from quanta import H, CX, RY, measure
+    from quanta import CX, RY, measure
     from quanta.core.quantum import quantum
 
     @quantum(qubits=2, observable=[("ZZ", 1.0)])
@@ -173,7 +173,7 @@ def bench_parameter_shift() -> BenchmarkResult:
 
 def bench_sampler_batch() -> BenchmarkResult:
     """Sampler: 10 circuits batch."""
-    from quanta import circuit, H, CX, RZ, measure
+    from quanta import CX, RZ, H, circuit, measure
     from quanta.primitives import Sampler
 
     circuits = []
@@ -256,7 +256,7 @@ def main():
         f.write("\n".join(md_lines))
 
     print("\n" + "=" * 60)
-    print(f"📊 Results written to docs/BENCHMARK.md")
+    print("📊 Results written to docs/BENCHMARK.md")
     print(f"   {len(results)}/{len(benchmarks)} benchmarks completed")
 
 

@@ -8,6 +8,7 @@ import math
 import pytest
 
 from quanta import CX, RY, H, circuit, measure, quantum, run_async
+from quanta.core.types import QuantaError
 from quanta.primitives import Estimator, EstimatorResult, Sampler, SamplerResult
 
 # ── Fixtures ──
@@ -155,7 +156,7 @@ class TestEstimator:
 
     def test_mismatch_raises(self):
         estimator = Estimator()
-        with pytest.raises(Exception):
+        with pytest.raises(QuantaError):
             estimator.run(
                 [bell, bell, bell],
                 observables=[[("ZZ", 1.0)], [("XX", 1.0)]],

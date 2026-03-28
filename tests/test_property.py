@@ -5,7 +5,6 @@ Tests mathematical invariants that must hold for ALL possible inputs:
 - Matrix dimensions: always 2^n × 2^n
 - Circuit determinism: same seed → same result
 - Probability normalization: Σ p_i = 1
-- QASM round-trip: export → import → same circuit
 """
 
 from __future__ import annotations
@@ -13,28 +12,38 @@ from __future__ import annotations
 import math
 
 import numpy as np
-import pytest
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from quanta import CX, RY, H, circuit, measure, run
 from quanta.core.gates import (
-    GATE_REGISTRY, Gate, ParametricGate,
-    H, X, Y, Z, S, T, CX, CZ, SWAP, ECR, iSWAP, CH,
-    RX, RY, RZ, P, CP, MS, RXX, RZZ,
+    CP,
+    GATE_REGISTRY,
+    MS,
+    RX,
+    RXX,
+    RZ,
+    RZZ,
+    Gate,
+    P,
+    X,
+    Y,
+    Z,
 )
-
+from quanta.primitives import Estimator
 
 # ── Strategies ──
 
-angles = st.floats(min_value=-4 * math.pi, max_value=4 * math.pi, allow_nan=False, allow_infinity=False)
+angles = st.floats(
+    min_value=-4 * math.pi,
+    max_value=4 * math.pi,
+    allow_nan=False,
+    allow_infinity=False,
+)
 small_angles = st.floats(min_value=0.01, max_value=math.pi, allow_nan=False)
 seeds = st.integers(min_value=0, max_value=2**31 - 1)
-shot_counts = st.integers(min_value=1, max_value=8192)
-qubit_counts = st.integers(min_value=1, max_value=6)
 
 # Gate names for random selection
-FIXED_1Q_GATES = ["H", "X", "Y", "Z", "S", "T", "SDG", "TDG", "SX", "SXdg", "I"]
-FIXED_2Q_GATES = ["CX", "CZ", "CY", "SWAP", "ECR", "iSWAP", "CH"]
 PARAM_1Q_GATES = ["RX", "RY", "RZ", "P"]
 PARAM_2Q_GATES = ["RXX", "RZZ", "CP", "MS"]
 
@@ -105,7 +114,7 @@ class TestGateUnitarity:
                 identity = m.conj().T @ m
                 np.testing.assert_allclose(
                     identity, np.eye(n), atol=1e-10,
-                    err_msg=f"{name} is not unitary"
+                    err_msg=f"{name} is not unitary",
                 )
 
 
@@ -152,8 +161,6 @@ class TestDeterminism:
     @given(seed=seeds, shots=st.integers(min_value=10, max_value=1000))
     @settings(max_examples=20)
     def test_bell_deterministic(self, seed, shots):
-        from quanta import circuit, H, CX, measure, run
-
         @circuit(qubits=2)
         def bell(q):
             H(q[0])
@@ -167,8 +174,6 @@ class TestDeterminism:
     @given(angle=small_angles, seed=seeds)
     @settings(max_examples=20)
     def test_parametric_deterministic(self, angle, seed):
-        from quanta import circuit, RY, measure, run
-
         @circuit(qubits=1)
         def rot(q, theta=0.0):
             RY(theta)(q[0])
@@ -190,8 +195,6 @@ class TestProbabilityNormalization:
     @given(seed=seeds, shots=st.integers(min_value=100, max_value=4096))
     @settings(max_examples=15)
     def test_probs_sum_to_one(self, seed, shots):
-        from quanta import circuit, H, CX, measure, run
-
         @circuit(qubits=2)
         def bell(q):
             H(q[0])
@@ -205,8 +208,6 @@ class TestProbabilityNormalization:
     @given(seed=seeds, shots=st.integers(min_value=100, max_value=4096))
     @settings(max_examples=15)
     def test_counts_sum_to_shots(self, seed, shots):
-        from quanta import circuit, H, CX, measure, run
-
         @circuit(qubits=2)
         def bell(q):
             H(q[0])
@@ -263,8 +264,6 @@ class TestEstimatorProperties:
     @settings(max_examples=20)
     def test_expectation_bounded(self, angle):
         """⟨Z⟩ must be in [-1, 1] for any rotation."""
-        from quanta import circuit, RY, measure
-        from quanta.primitives import Estimator
 
         @circuit(qubits=1)
         def rot(q, theta=0.0):
@@ -279,8 +278,6 @@ class TestEstimatorProperties:
     @settings(max_examples=20)
     def test_z_expectation_matches_cos(self, angle):
         """For RY(θ)|0⟩, ⟨Z⟩ = cos(θ)."""
-        from quanta import circuit, RY, measure
-        from quanta.primitives import Estimator
 
         @circuit(qubits=1)
         def rot(q, theta=0.0):
