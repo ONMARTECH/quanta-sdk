@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from quanta.simulator.noise import NoiseModel
 
 # -- Public API --
-__all__ = ["run", "sweep"]
+__all__ = ["run", "run_async", "sweep"]
 
 
 def run(
@@ -210,3 +210,43 @@ def sweep(
         results.append(result)
 
     return results
+
+
+async def run_async(
+    circuits: CircuitDefinition | list[CircuitDefinition],
+    shots: int = 1024,
+    seed: int | None = None,
+    noise: NoiseModel | None = None,
+) -> list[Result]:
+    """Async batch execution of one or more circuits.
+
+    Runs circuits concurrently using asyncio + thread pool.
+    Ideal for batch VQE/QAOA or multi-circuit evaluation.
+
+    Args:
+        circuits: Single circuit or list of circuits.
+        shots: Number of measurement repetitions per circuit.
+        seed: Random seed for reproducibility.
+        noise: Optional noise model.
+
+    Returns:
+        List of Result objects, one per circuit.
+
+    Example:
+        >>> import asyncio
+        >>> results = asyncio.run(run_async([bell, ghz], shots=4096))
+    """
+    import asyncio as _asyncio
+
+    if isinstance(circuits, CircuitDefinition):
+        circuits = [circuits]
+
+    loop = _asyncio.get_event_loop()
+    tasks = [
+        loop.run_in_executor(
+            None,
+            lambda c=c: run(c, shots=shots, seed=seed, noise=noise),
+        )
+        for c in circuits
+    ]
+    return list(await _asyncio.gather(*tasks))

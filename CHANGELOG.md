@@ -6,6 +6,54 @@ Format: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [v0.9.0] - 2026-03-29
+
+### Added — Primitives (IBM V2 Compatible)
+- **Estimator**: `Estimator().run(circuit, observables=[("ZZ", 1.0)])` — exact ⟨ψ|O|ψ⟩
+  - Pauli string → tensor product matrix construction
+  - Variance computation: Var(O) = ⟨O²⟩ - ⟨O⟩²
+  - Single circuit broadcast to multiple observables
+- **Sampler**: `Sampler().run(circuit, shots=4096)` — measurement sampling
+  - Batch execution: pass list of circuits
+  - Quasi-probability distributions + raw counts
+- Both support `run_async()` for parallel batch execution
+
+### Added — @quantum Decorator (PennyLane @qml.qnode Equivalent)
+- `@quantum(qubits=2, observable=[("ZZ", 1.0)])` — auto-differentiable circuits
+- `circuit.expectation()` — exact expectation values
+- `circuit.gradient()` — parameter-shift rule gradients
+  - Correct analytical gradients: d/dθ cos(θ) verified
+- `await circuit.run_async()` — async execution
+- Parametric circuit support: `build(**kwargs)` infrastructure
+
+### Added — Async Execution
+- `run_async(circuits, shots=N)` — top-level async batch runner
+- Thread-pool parallelism via `asyncio.run_in_executor()`
+
+### Added — Benchmark Suite
+- `scripts/benchmark.py` — 10 benchmarks, auto-generates `docs/BENCHMARK.md`
+  - Bell (0.45ms), GHZ-10 (0.69ms), GHZ-20 (83ms)
+  - Grover-4 (0.38ms), Grover-8 (0.49ms), VQE-H₂ (301ms)
+  - Estimator (0.09ms), Gradient (0.51ms), Sampler batch (4.16ms)
+
+### Added — Property-Based Testing
+- `tests/test_property.py` — Hypothesis-based invariant tests
+  - Gate unitarity ∀ θ ∈ [-4π, 4π]: U†U = I
+  - Pauli anticommutation: {σ_i, σ_j} = 2δ_ij
+  - Probability normalization: Σp = 1
+  - Circuit determinism: same seed → same result
+  - Estimator bounds: ⟨Z⟩ ∈ [-1, 1]
+
+### Changed
+- `CircuitDefinition.build()` now accepts `**kwargs` for parametric circuits
+- Version bump: 0.8.1 → 0.9.0
+
+### Tests
+- **669 tests**, 89% coverage
+- 28 primitives tests + 21 property-based tests
+
+---
+
 ## [v0.8.1] - 2026-03-15
 
 ### Fixed

@@ -99,8 +99,12 @@ class CircuitDefinition:
         self.__doc__ = fn.__doc__
         self.__wrapped__ = fn
 
-    def build(self) -> CircuitBuilder:
+    def build(self, **kwargs: float) -> CircuitBuilder:
         """Runs the circuit function and collects instructions.
+
+        Args:
+            **kwargs: Circuit parameters (e.g., theta=0.5). Forwarded
+                to the circuit function if it accepts them.
 
         Returns:
             CircuitBuilder containing all recorded instructions and measurements.
@@ -113,7 +117,13 @@ class CircuitDefinition:
 
         with builder:
             try:
-                self._fn(register)
+                import inspect
+                sig = inspect.signature(self._fn)
+                # Only first param is the qubit register; rest are circuit params
+                if len(sig.parameters) > 1 and kwargs:
+                    self._fn(register, **kwargs)
+                else:
+                    self._fn(register)
             except Exception as exc:
                 if isinstance(exc, CircuitError):
                     raise

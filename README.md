@@ -7,7 +7,7 @@
   <p align="center">
     <a href="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml"><img src="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml/badge.svg" alt="CI"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-88%25-brightgreen.svg" alt="Coverage"></a>
-    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.8.1-blue.svg" alt="Version"></a>
+    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.9.0-blue.svg" alt="Version"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
@@ -25,7 +25,7 @@
 
 Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — with **16 MCP tools** that let Claude, GPT, and other AI assistants run quantum computations directly.
 
-### 🚀 What's New in v0.8.1
+### 🚀 What's New in v0.9.0
 
 - **IBM Quantum Integration** — Run circuits on real quantum hardware (ibm_torino 156q, ibm_fez 156q) via direct REST API. No Qiskit needed.
 - **25 Quantum Gates** — Full IBM parity: I, SDG, TDG, P, SX, SXdg, U(θ,φ,λ), RXX, RZZ, RCCX, RC3X
@@ -388,7 +388,7 @@ pip install cupy          # NVIDIA CUDA backend
 ## Project Stats
 
 ```
-Version:     0.8.1        Gates:       31 (full IBM parity + Google/IonQ)
+Version:     0.9.0        Gates:       31 (full IBM parity + Google/IonQ)
 Files:       73+          Tests:       620
 Algorithms:  10           Examples:    11
 Simulators:  4            QEC Codes:   6

@@ -17,7 +17,7 @@ Quick Start:
     >>> print(result)
 """
 
-__version__ = "0.8.1"
+__version__ = "0.9.0"
 
 from quanta.core.circuit import circuit
 from quanta.core.custom_gate import custom_gate
@@ -56,7 +56,8 @@ from quanta.core.gates import (
     iSWAP,
 )
 from quanta.core.measure import measure
-from quanta.runner import run, sweep
+from quanta.core.quantum import quantum
+from quanta.runner import run, run_async, sweep
 
 __all__ = [
     # Gates (original)
@@ -71,9 +72,9 @@ __all__ = [
     # Custom gates
     "custom_gate",
     # Circuit
-    "circuit",
+    "circuit", "quantum",
     # Measurement
     "measure",
     # Execution
-    "run", "sweep",
+    "run", "run_async", "sweep",
 ]

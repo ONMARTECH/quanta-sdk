@@ -1399,7 +1399,7 @@ def sdk_info() -> str:
     """Quanta SDK version and capabilities."""
     return json.dumps({
         "name": "Quanta Quantum SDK",
-        "version": "0.8.1",
+        "version": "0.9.0",
         "description": "AI-native quantum computing SDK",
         "total_gates": 31,
         "total_tools": 16,
