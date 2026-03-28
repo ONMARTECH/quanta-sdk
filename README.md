@@ -27,15 +27,16 @@ Quanta is an **AI-native quantum computing SDK** — designed to be called by AI
 
 ### 🚀 What's New in v0.9.0
 
-- **IBM Quantum Integration** — Run circuits on real quantum hardware (ibm_torino 156q, ibm_fez 156q) via direct REST API. No Qiskit needed.
-- **25 Quantum Gates** — Full IBM parity: I, SDG, TDG, P, SX, SXdg, U(θ,φ,λ), RXX, RZZ, RCCX, RC3X
-- **ISA Transpilation** — Automatic decomposition to Heron native gates (rz/sx/x/cz)
-- **SVG Circuit Visualization** — Publication-quality HTML/SVG diagrams with color-coded gates
-- **MCP Server** — 16 AI tools + 4 guided prompts for Claude, GPT, and other AI assistants
-- **Quantum Machine Learning** — Variational classifier, quantum kernel, 3 feature maps
+- **Estimator/Sampler Primitives** — IBM Qiskit V2 compatible: `Estimator().run(circuit, observables)`, `Sampler().run(circuit, shots)`
+- **@quantum Decorator** — PennyLane-style auto-differentiation: `.gradient()`, `.expectation()`, parameter-shift rule
+- **Async Execution** — `run_async(circuits, shots)` for parallel batch processing
+- **2-3x Performance Boost** — Vectorized sampling + signature caching. Bell: 0.18ms, GHZ-10: 0.35ms (beats Qiskit)
+- **Property-Based Testing** — 21 Hypothesis tests: gate unitarity, Pauli algebra, determinism
+- **Benchmark Suite** — 10 benchmarks with auto-generated `docs/BENCHMARK.md`
+- **14 Jupyter Notebooks** — Google Colab badges, 1-click launch
+- **31 Quantum Gates** — Full IBM parity + Google/IonQ native gates
+- **MCP Server** — 16 AI tools for Claude, GPT, and other AI assistants
 - **Multi-Backend** — IBM Quantum + IonQ + Google Quantum + local simulator
-- **Quantum Monte Carlo** — Amplitude estimation for option pricing
-- **Quantum Clustering** — Swap-test based distance computation + k-means
 
 ## Table of Contents
 
@@ -389,13 +390,14 @@ pip install cupy          # NVIDIA CUDA backend
 
 ```
 Version:     0.9.0        Gates:       31 (full IBM parity + Google/IonQ)
-Files:       73+          Tests:       620
+Files:       76           Tests:       669 (89% coverage)
 Algorithms:  10           Examples:    11
 Simulators:  4            QEC Codes:   6
 MCP Tools:   16           Max Qubits:  156 (IBM Heron r3)
 Noise:       7 channels   Backends:    IBM + IonQ + Google + local
 QASM:        3.0          Decoders:    2 (MWPM + UF)
-Tutorials:   14           Docs Pages:  44
+Tutorials:   14           Notebooks:   14 (Colab)
+Benchmark:   Bell 0.18ms  Docs Pages:  44
 ```
 
 ## Author
