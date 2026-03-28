@@ -117,10 +117,12 @@ class CircuitDefinition:
 
         with builder:
             try:
-                import inspect
-                sig = inspect.signature(self._fn)
-                # Only first param is the qubit register; rest are circuit params
-                if len(sig.parameters) > 1 and kwargs:
+                # Cache signature to avoid repeated inspect calls
+                if not hasattr(self, "_param_count"):
+                    import inspect
+                    sig = inspect.signature(self._fn)
+                    self._param_count = len(sig.parameters)
+                if self._param_count > 1 and kwargs:
                     self._fn(register, **kwargs)
                 else:
                     self._fn(register)

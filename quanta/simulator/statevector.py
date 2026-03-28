@@ -148,16 +148,15 @@ class StateVectorSimulator:
         dim = len(probs)
         n = self.num_qubits
 
-        # Sample
+        # Sample indices
         indices = self._rng.choice(dim, size=shots, p=probs)
 
-        # Count
-        counts: dict[str, int] = {}
-        for idx in indices:
-            bitstring = format(idx, f"0{n}b")
-            counts[bitstring] = counts.get(bitstring, 0) + 1
+        # Vectorized counting with numpy
+        unique, unique_counts = np.unique(indices, return_counts=True)
 
-        return counts
+        # Pre-built format string
+        fmt = f"0{n}b"
+        return {format(idx, fmt): int(cnt) for idx, cnt in zip(unique, unique_counts, strict=True)}
 
     @property
     def state(self) -> np.ndarray:
