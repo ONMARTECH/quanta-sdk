@@ -10,7 +10,7 @@ Run:
 Or install in Claude Desktop:
     fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 
-Tools (16):
+Tools (18):
   Education:
     - create_bell_state:         Quick Bell state |Φ+⟩
     - draw_circuit:              SVG circuit diagram
@@ -22,8 +22,11 @@ Tools (16):
     - shor_factor:               Shor's factoring algorithm
     - simulate_noise:            Run circuit with noise model
     - qaoa_optimize:             QAOA combinatorial optimization
+    - optimize_circuit:          Compiler optimization with metrics
     - surface_code_simulate:     Surface code QEC simulation
     - compare_decoders:          Compare MWPM vs Union-Find decoders
+  Machine Learning:
+    - qml_classify:              Quantum ML classification
   Business:
     - monte_carlo_price:         Quantum Monte Carlo option pricing
     - cluster_data:              Quantum clustering
@@ -58,10 +61,11 @@ from fastmcp import FastMCP
 mcp = FastMCP(
     "Quanta Quantum SDK",
     instructions=(
-        "AI-native quantum computing SDK. Quanta provides 16 tools organized "
-        "into 4 categories:\n"
+        "AI-native quantum computing SDK. Quanta provides 18 tools organized "
+        "into 5 categories:\n"
         "• Education: Bell states, circuit drawing, gate reference, result explanation\n"
-        "• Research: Grover, Shor, QAOA, noise simulation, QEC surface code\n"
+        "• Research: Grover, Shor, QAOA, noise simulation, circuit optimization, QEC\n"
+        "• Machine Learning: Quantum classifier with feature maps and ansatz presets\n"
         "• Business: Monte Carlo option pricing, quantum clustering\n"
         "• Hardware: Run on real IBM Quantum computers (Heron r3, 156 qubits)\n\n"
         "Start with create_bell_state for a quick demo, or use the prompts "
@@ -999,6 +1003,160 @@ def run_on_ibm(
             "error": str(e),
             "traceback": traceback.format_exc(),
         })
+
+
+# ═══════════════════════════════════════════
+#  Tool: QML Classify
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def qml_classify(
+    X_train: list[list[float]],
+    y_train: list[int],
+    X_test: list[list[float]],
+    n_qubits: int = 4,
+    feature_map: str = "angle",
+    ansatz: str = "hardware_efficient",
+    epochs: int = 10,
+    seed: int = 42,
+) -> str:
+    """Run quantum machine learning classification.
+
+    Trains a variational quantum classifier on your data
+    and predicts labels for test samples.
+
+    Args:
+        X_train: Training feature vectors (list of lists).
+        y_train: Training labels (0 or 1).
+        X_test: Test feature vectors to classify.
+        n_qubits: Number of qubits (default: 4).
+        feature_map: "angle", "zz", or "amplitude".
+        ansatz: "hardware_efficient", "strongly_entangling", or "reuploading".
+        epochs: Training epochs (default: 10).
+        seed: Random seed.
+
+    Returns:
+        JSON with predictions, accuracy, and training loss.
+    """
+    try:
+        from quanta.qml import Classifier
+
+        clf = Classifier(
+            n_qubits=n_qubits,
+            feature_map=feature_map,
+            ansatz=ansatz,
+            seed=seed,
+        )
+        result = clf.fit(X_train, y_train, epochs=epochs)
+        predictions = clf.predict(X_test).tolist()
+
+        return json.dumps({
+            "predictions": predictions,
+            "training_accuracy": f"{result.accuracy:.2%}",
+            "loss_history": [round(v, 4) for v in result.loss_history],
+            "n_qubits": n_qubits,
+            "feature_map": feature_map,
+            "ansatz": ansatz,
+            "n_params": result.n_params,
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+# ═══════════════════════════════════════════
+#  Tool: Optimize Circuit
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def optimize_circuit(
+    circuit_code: str,
+    passes: list[str] | None = None,
+) -> str:
+    """Optimize a quantum circuit using compiler passes.
+
+    Runs optimization passes (gate cancellation, rotation merging,
+    identity removal) and reports before/after metrics.
+
+    Args:
+        circuit_code: Python code defining a @circuit function.
+        passes: List of pass names to run. Default: all available.
+            Options: "CancelInverses", "MergeRotations", "IdentityRemoval"
+
+    Returns:
+        JSON with original and optimized gate counts, depth, and
+        the list of passes applied.
+    """
+    try:
+        from quanta.compiler.passes.optimize import (
+            CancelInverses,
+            CommutationPass,
+            IdentityRemoval,
+            MergeRotations,
+        )
+        from quanta.compiler.pipeline import CompilerPipeline
+        from quanta.dag.dag_circuit import DAGCircuit
+
+        # Execute circuit code in sandbox
+        sandbox: dict[str, Any] = {}
+        exec(  # noqa: S102
+            "from quanta import *\n" + circuit_code,
+            sandbox,
+        )
+
+        # Find the circuit function
+        circ_fn = None
+        for v in sandbox.values():
+            if hasattr(v, "build"):
+                circ_fn = v
+                break
+
+        if circ_fn is None:
+            return json.dumps({"error": "No @circuit function found in code."})
+
+        dag = DAGCircuit.from_builder(circ_fn.build())
+        original_gates = dag.gate_count()
+        original_depth = dag.depth()
+
+        # Select passes
+        available = {
+            "CancelInverses": CancelInverses,
+            "MergeRotations": MergeRotations,
+            "IdentityRemoval": IdentityRemoval,
+            "CommutationPass": CommutationPass,
+        }
+
+        if passes is None:
+            selected = [CancelInverses(), MergeRotations(), IdentityRemoval()]
+        else:
+            selected = []
+            for p in passes:
+                if p in available:
+                    selected.append(available[p]())
+                else:
+                    return json.dumps({
+                        "error": f"Unknown pass '{p}'. Available: {list(available.keys())}",
+                    })
+
+        pipeline = CompilerPipeline(selected)
+        result = pipeline.run(dag)
+
+        return json.dumps({
+            "original": {
+                "gates": original_gates,
+                "depth": original_depth,
+            },
+            "optimized": {
+                "gates": result.gate_count(),
+                "depth": result.depth(),
+            },
+            "reduction": {
+                "gates_removed": original_gates - result.gate_count(),
+                "depth_reduced": original_depth - result.depth(),
+            },
+            "passes_applied": [type(p).__name__ for p in selected],
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e), "traceback": traceback.format_exc()})
 
 @mcp.tool()
 def ibm_backends(region: str = "us") -> str:

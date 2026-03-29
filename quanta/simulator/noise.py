@@ -174,6 +174,17 @@ class AmplitudeDamping(NoiseChannel):
 class NoiseModel:
     """Noise model: manages multiple channels.
 
+    Supports builder pattern and preset profiles:
+
+        # Builder pattern
+        >>> model = (NoiseModel.builder()
+        ...     .depolarizing(0.01)
+        ...     .with_readout(0.01, 0.02)
+        ...     .build())
+
+        # Preset profiles
+        >>> ibm = NoiseModel.ibm_heron()
+        >>> ionq = NoiseModel.ionq_aria()
 
     Example:
         >>> model = NoiseModel()
@@ -207,9 +218,145 @@ class NoiseModel:
                 state = channel.apply(state, qubit, num_qubits, rng)
         return state
 
+    def describe(self) -> str:
+        """Returns a formatted table of noise channels.
+
+        Example:
+            >>> NoiseModel.ibm_heron().describe()
+            '=== Noise Model (3 channels) ===\\n...'
+        """
+        lines = [f"=== Noise Model ({len(self._channels)} channels) ==="]
+        lines.append(f"  {'#':<4} {'Channel':<35} {'Type':<15}")
+        lines.append("  " + "─" * 54)
+        for i, ch in enumerate(self._channels):
+            ch_type = type(ch).__name__
+            lines.append(f"  {i + 1:<4} {ch.name:<35} {ch_type:<15}")
+        return "\n".join(lines)
+
+    # ── Builder Pattern ──
+
+    @classmethod
+    def builder(cls) -> _NoiseModelBuilder:
+        """Start building a noise model with fluent API.
+
+        Example:
+            >>> model = (NoiseModel.builder()
+            ...     .depolarizing(0.01)
+            ...     .with_amplitude_damping(0.005)
+            ...     .with_readout(0.01, 0.02)
+            ...     .build())
+        """
+        return _NoiseModelBuilder()
+
+    # ── Preset Profiles ──
+
+    @classmethod
+    def ibm_heron(cls) -> NoiseModel:
+        """IBM Heron r3 noise profile.
+
+        Based on ibm_fez calibration data (2026):
+          - 1Q gate error: ~0.02%
+          - 2Q gate error: ~0.5%
+          - T1: ~300 μs, T2: ~200 μs
+          - Readout error: ~0.8%
+        """
+        return (
+            cls.builder()
+            .depolarizing(0.005)
+            .with_amplitude_damping(0.003)
+            .with_t2(0.005)
+            .with_readout(0.008, 0.012)
+            .build()
+        )
+
+    @classmethod
+    def ionq_aria(cls) -> NoiseModel:
+        """IonQ Aria noise profile.
+
+        Based on IonQ Aria-1 specs (2026):
+          - 1Q gate fidelity: 99.97%
+          - 2Q gate fidelity: 99.4%
+          - All-to-all connectivity (no SWAP overhead)
+        """
+        return (
+            cls.builder()
+            .depolarizing(0.003)
+            .with_amplitude_damping(0.001)
+            .build()
+        )
+
+    @classmethod
+    def google_willow(cls) -> NoiseModel:
+        """Google Willow noise profile.
+
+        Based on Google Willow specs (2026):
+          - 1Q gate error: ~0.03%
+          - 2Q gate error: ~0.3%
+          - T1: ~70 μs
+          - Below-threshold QEC demonstrated
+        """
+        return (
+            cls.builder()
+            .depolarizing(0.003)
+            .with_amplitude_damping(0.005)
+            .with_t2(0.008)
+            .with_crosstalk(0.002)
+            .build()
+        )
+
     def __repr__(self) -> str:
         names = [ch.name for ch in self._channels]
         return f"NoiseModel(channels={names})"
+
+
+class _NoiseModelBuilder:
+    """Fluent builder for constructing noise models."""
+
+    def __init__(self) -> None:
+        self._model = NoiseModel()
+
+    def depolarizing(self, probability: float = 0.01) -> _NoiseModelBuilder:
+        """Add depolarizing channel."""
+        self._model.add(Depolarizing(probability))
+        return self
+
+    def with_bit_flip(self, probability: float = 0.01) -> _NoiseModelBuilder:
+        """Add bit-flip channel."""
+        self._model.add(BitFlip(probability))
+        return self
+
+    def with_phase_flip(self, probability: float = 0.01) -> _NoiseModelBuilder:
+        """Add phase-flip channel."""
+        self._model.add(PhaseFlip(probability))
+        return self
+
+    def with_amplitude_damping(self, gamma: float = 0.01) -> _NoiseModelBuilder:
+        """Add amplitude damping (T1 decay)."""
+        self._model.add(AmplitudeDamping(gamma))
+        return self
+
+    def with_t2(self, gamma: float = 0.01) -> _NoiseModelBuilder:
+        """Add T2 relaxation (dephasing)."""
+        self._model.add(T2Relaxation(gamma))
+        return self
+
+    def with_crosstalk(
+        self, probability: float = 0.005, offset: int = 1,
+    ) -> _NoiseModelBuilder:
+        """Add crosstalk noise."""
+        self._model.add(Crosstalk(probability, offset))
+        return self
+
+    def with_readout(
+        self, p0_to_1: float = 0.01, p1_to_0: float = 0.02,
+    ) -> _NoiseModelBuilder:
+        """Add readout error."""
+        self._model.add(ReadoutError(p0_to_1, p1_to_0))
+        return self
+
+    def build(self) -> NoiseModel:
+        """Build and return the noise model."""
+        return self._model
 
 def _apply_single_qubit_error(
     state: np.ndarray, qubit: int, num_qubits: int, pauli: int

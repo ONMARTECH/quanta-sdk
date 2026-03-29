@@ -33,11 +33,14 @@ from quanta.layer3.qml import (
     zz_feature_map,
 )
 from quanta.layer3.qsvm import QSVMResult, qsvm_classify
+from quanta.qml.ansatz import Ansatz, AnsatzPreset
 
 __all__ = [
     "Classifier",
     "QSVM",
     "FeatureMap",
+    "Ansatz",
+    "AnsatzPreset",
     "Kernel",
     "QMLResult",
     "QSVMResult",
@@ -125,6 +128,7 @@ class Classifier:
         n_qubits: int = 4,
         n_layers: int = 2,
         feature_map: str = "angle",
+        ansatz: str = "hardware_efficient",
         learning_rate: float = 0.1,
         optimizer: str = "sgd",
         seed: int | None = None,
@@ -135,6 +139,7 @@ class Classifier:
             n_qubits: Number of qubits.
             n_layers: Variational ansatz depth.
             feature_map: "angle", "zz", or "amplitude".
+            ansatz: "hardware_efficient", "strongly_entangling", or "reuploading".
             learning_rate: Gradient descent step size.
             optimizer: Optimization strategy ("sgd", "adam", "spsa").
             seed: Random seed for reproducibility.
@@ -142,9 +147,13 @@ class Classifier:
         self.n_qubits = n_qubits
         self.n_layers = n_layers
         self.feature_map = feature_map
+        self.ansatz = ansatz
         self.learning_rate = learning_rate
         self.optimizer = optimizer
         self.seed = seed
+
+        # Validate ansatz
+        Ansatz.get(ansatz)
 
         # Validate feature map
         FeatureMap.get(feature_map)
@@ -242,6 +251,7 @@ class Classifier:
             "n_qubits": self.n_qubits,
             "n_layers": self.n_layers,
             "feature_map": self.feature_map,
+            "ansatz": self.ansatz,
             "learning_rate": self.learning_rate,
             "optimizer": self.optimizer,
             "seed": self.seed,

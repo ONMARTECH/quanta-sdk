@@ -11,10 +11,10 @@
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-707%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-727%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-10%2F10-gold.svg" alt="Benchmark"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
-    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-16%20tools-teal.svg" alt="MCP"></a>
+    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-18%20tools-teal.svg" alt="MCP"></a>
     <a href="https://onmartech.github.io/quanta-sdk/"><img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs"></a>
     <a href="#features"><img src="https://img.shields.io/badge/gates-31-blueviolet.svg" alt="Gates"></a>
     <a href="https://onmartech.github.io/quanta-sdk/tutorials/01-getting-started/"><img src="https://img.shields.io/badge/tutorials-14-informational.svg" alt="Tutorials"></a>
@@ -390,10 +390,10 @@ pip install cupy          # NVIDIA CUDA backend
 
 ```
 Version:     0.9.0        Gates:       31 (full IBM parity + Google/IonQ)
-Files:       79           Tests:       707 (90% coverage)
+Files:       82           Tests:       727 (91% coverage)
 Algorithms:  10           Examples:    11
 Simulators:  4            QEC Codes:   6
-MCP Tools:   16           Max Qubits:  156 (IBM Heron r3)
+MCP Tools:   18           Max Qubits:  156 (IBM Heron r3)
 Noise:       7 channels   Backends:    IBM + IonQ + Google + local
 QASM:        3.0          Decoders:    2 (MWPM + UF)
 Tutorials:   14           Notebooks:   14 (Colab)
