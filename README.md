@@ -11,7 +11,7 @@
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-727%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-748%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-10%2F10-gold.svg" alt="Benchmark"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
     <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-18%20tools-teal.svg" alt="MCP"></a>
@@ -390,7 +390,7 @@ pip install cupy          # NVIDIA CUDA backend
 
 ```
 Version:     0.9.0        Gates:       31 (full IBM parity + Google/IonQ)
-Files:       82           Tests:       727 (91% coverage)
+Files:       84           Tests:       748 (91% coverage)
 Algorithms:  10           Examples:    11
 Simulators:  4            QEC Codes:   6
 MCP Tools:   18           Max Qubits:  156 (IBM Heron r3)

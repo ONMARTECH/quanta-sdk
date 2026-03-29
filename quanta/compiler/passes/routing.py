@@ -18,25 +18,30 @@ Example:
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from quanta.compiler.pipeline import CompilerPass
 from quanta.dag.dag_circuit import DAGCircuit
 
-__all__ = ["RouteToTopology"]
+__all__ = ["RouteToTopology", "Topology"]
 
 
-def linear_topology(n: int) -> set[tuple[int, int]]:
+# ── Topology Factories ──
+
+
+def _linear_edges(n: int) -> set[tuple[int, int]]:
     """Linear chain: 0-1-2-...-n."""
     return {(i, i + 1) for i in range(n - 1)}
 
 
-def ring_topology(n: int) -> set[tuple[int, int]]:
+def _ring_edges(n: int) -> set[tuple[int, int]]:
     """Ring: 0-1-2-...-n-0."""
-    edges = linear_topology(n)
+    edges = _linear_edges(n)
     edges.add((0, n - 1))
     return edges
 
 
-def grid_topology(rows: int, cols: int) -> set[tuple[int, int]]:
+def _grid_edges(rows: int, cols: int) -> set[tuple[int, int]]:
     """Rectangular grid with nearest-neighbor connectivity."""
     edges: set[tuple[int, int]] = set()
     for r in range(rows):
@@ -47,6 +52,77 @@ def grid_topology(rows: int, cols: int) -> set[tuple[int, int]]:
             if r + 1 < rows:
                 edges.add((q, q + cols))
     return edges
+
+
+@dataclass
+class Topology:
+    """Describes hardware qubit connectivity.
+
+    Example:
+        >>> t = Topology.line(5)
+        >>> t = Topology.grid(4, 4)
+        >>> t = Topology.custom(edges=[(0, 1), (1, 2), (0, 2)])
+        >>> t = Topology.from_backend("ibm_fez")
+    """
+
+    name: str
+    num_qubits: int
+    edges: set[tuple[int, int]]
+
+    @classmethod
+    def line(cls, n: int) -> Topology:
+        """Linear chain topology."""
+        return cls(name=f"line({n})", num_qubits=n, edges=_linear_edges(n))
+
+    @classmethod
+    def ring(cls, n: int) -> Topology:
+        """Ring topology."""
+        return cls(name=f"ring({n})", num_qubits=n, edges=_ring_edges(n))
+
+    @classmethod
+    def grid(cls, rows: int, cols: int) -> Topology:
+        """Rectangular grid topology."""
+        return cls(
+            name=f"grid({rows}x{cols})",
+            num_qubits=rows * cols,
+            edges=_grid_edges(rows, cols),
+        )
+
+    @classmethod
+    def custom(cls, edges: list[tuple[int, int]]) -> Topology:
+        """User-defined topology from edge list."""
+        edge_set = set(edges)
+        n = max(max(a, b) for a, b in edge_set) + 1 if edge_set else 0
+        return cls(name="custom", num_qubits=n, edges=edge_set)
+
+    @classmethod
+    def from_backend(cls, backend_name: str) -> Topology:
+        """Creates topology matching a real hardware backend.
+
+        Args:
+            backend_name: "ibm_fez", "ibm_brisbane", "ionq_aria", "google_willow".
+        """
+        name_lower = backend_name.lower()
+        if name_lower in ("ibm_fez", "ibm_heron"):
+            # IBM Heron r3: 156 qubits, heavy-hex
+            return cls.grid(12, 13)  # Approximate
+        if name_lower == "ibm_brisbane":
+            return cls.grid(9, 15)   # 127q Eagle
+        if name_lower in ("ionq_aria", "ionq"):
+            # IonQ: all-to-all connectivity (25q)
+            n = 25
+            edges = {(i, j) for i in range(n) for j in range(i + 1, n)}
+            return cls(name="ionq_aria", num_qubits=n, edges=edges)
+        if name_lower in ("google_willow",):
+            return cls.grid(6, 12)   # 72q approximate
+
+        raise ValueError(
+            f"Unknown backend '{backend_name}'. "
+            f"Try: ibm_fez, ibm_brisbane, ionq_aria, google_willow"
+        )
+
+    def __repr__(self) -> str:
+        return f"Topology('{self.name}', qubits={self.num_qubits}, edges={len(self.edges)})"
 
 
 class RouteToTopology(CompilerPass):
@@ -65,23 +141,33 @@ class RouteToTopology(CompilerPass):
 
     def __init__(
         self,
-        topology: str = "linear",
+        topology: str | Topology = "linear",
         num_qubits: int = 0,
         grid_rows: int = 0,
         grid_cols: int = 0,
         custom_edges: set[tuple[int, int]] | None = None,
     ) -> None:
-        self._topology = topology
-        self._num_qubits = num_qubits
-
-        if custom_edges is not None:
+        # Accept Topology object directly
+        if isinstance(topology, Topology):
+            self._topology = topology.name
+            self._num_qubits = topology.num_qubits
+            self._edges = topology.edges
+        elif custom_edges is not None:
+            self._topology = "custom"
+            self._num_qubits = num_qubits
             self._edges = custom_edges
         elif topology == "linear":
-            self._edges = linear_topology(num_qubits)
+            self._topology = topology
+            self._num_qubits = num_qubits
+            self._edges = _linear_edges(num_qubits)
         elif topology == "ring":
-            self._edges = ring_topology(num_qubits)
+            self._topology = topology
+            self._num_qubits = num_qubits
+            self._edges = _ring_edges(num_qubits)
         elif topology == "grid":
-            self._edges = grid_topology(grid_rows, grid_cols)
+            self._topology = topology
+            self._num_qubits = grid_rows * grid_cols
+            self._edges = _grid_edges(grid_rows, grid_cols)
         else:
             raise ValueError(f"Unknown topology: {topology}")
 

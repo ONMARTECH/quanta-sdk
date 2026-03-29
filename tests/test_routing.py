@@ -8,9 +8,7 @@ import pytest
 
 from quanta.compiler.passes.routing import (
     RouteToTopology,
-    grid_topology,
-    linear_topology,
-    ring_topology,
+    Topology,
 )
 from quanta.core.circuit import CircuitBuilder, circuit
 from quanta.core.gates import CX, H, X
@@ -24,41 +22,41 @@ from quanta.dag.dag_circuit import DAGCircuit
 
 class TestTopologyGeneration:
     def test_linear_topology(self):
-        edges = linear_topology(5)
-        assert (0, 1) in edges
-        assert (3, 4) in edges
-        assert len(edges) == 4  # n-1 edges
+        t = Topology.line(5)
+        assert (0, 1) in t.edges
+        assert (3, 4) in t.edges
+        assert len(t.edges) == 4  # n-1 edges
 
     def test_linear_no_wrap(self):
-        edges = linear_topology(4)
-        assert (0, 3) not in edges  # no wrap-around
+        t = Topology.line(4)
+        assert (0, 3) not in t.edges  # no wrap-around
 
     def test_ring_topology(self):
-        edges = ring_topology(5)
-        assert (0, 4) in edges  # wrap-around edge
-        assert len(edges) == 5  # n edges
+        t = Topology.ring(5)
+        assert (0, 4) in t.edges  # wrap-around edge
+        assert len(t.edges) == 5  # n edges
 
     def test_ring_has_all_linear_edges(self):
-        ring = ring_topology(4)
-        linear = linear_topology(4)
-        assert linear.issubset(ring)
+        ring = Topology.ring(4)
+        linear = Topology.line(4)
+        assert linear.edges.issubset(ring.edges)
 
     def test_grid_topology_2x2(self):
-        edges = grid_topology(2, 2)
+        t = Topology.grid(2, 2)
         # 0-1, 2-3 (horizontal) + 0-2, 1-3 (vertical)
-        assert (0, 1) in edges
-        assert (2, 3) in edges
-        assert (0, 2) in edges
-        assert (1, 3) in edges
-        assert len(edges) == 4
+        assert (0, 1) in t.edges
+        assert (2, 3) in t.edges
+        assert (0, 2) in t.edges
+        assert (1, 3) in t.edges
+        assert len(t.edges) == 4
 
     def test_grid_topology_3x3(self):
-        edges = grid_topology(3, 3)
-        assert (0, 1) in edges   # horizontal
-        assert (0, 3) in edges   # vertical
-        assert (4, 5) in edges   # center-right
-        assert (4, 7) in edges   # center-down
-        assert len(edges) == 12  # 3*2 + 3*2 per direction
+        t = Topology.grid(3, 3)
+        assert (0, 1) in t.edges   # horizontal
+        assert (0, 3) in t.edges   # vertical
+        assert (4, 5) in t.edges   # center-right
+        assert (4, 7) in t.edges   # center-down
+        assert len(t.edges) == 12  # 3*2 + 3*2 per direction
 
 
 # ═══════════════════════════════════════════

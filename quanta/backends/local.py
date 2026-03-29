@@ -12,7 +12,7 @@ Example:
 
 from __future__ import annotations
 
-from quanta.backends.base import Backend
+from quanta.backends.base import Backend, BackendCapabilities
 from quanta.dag.dag_circuit import DAGCircuit
 from quanta.result import Result
 from quanta.simulator.statevector import StateVectorSimulator
@@ -24,6 +24,7 @@ class LocalSimulator(Backend):
     """Built-in NumPy statevector simulator.
 
     Args:
+        seed: Default random seed.
 
     Example:
         >>> sim = LocalSimulator(seed=42)
@@ -36,6 +37,23 @@ class LocalSimulator(Backend):
     @property
     def name(self) -> str:
         return "LocalSimulator"
+
+    def capabilities(self) -> BackendCapabilities:
+        return BackendCapabilities(
+            max_qubits=25,
+            native_gates=frozenset({
+                "H", "X", "Y", "Z", "S", "T", "SDG", "TDG",
+                "CX", "CY", "CZ", "SWAP", "CCX", "CSWAP",
+                "RX", "RY", "RZ", "P", "U", "SX",
+                "RXX", "RZZ", "ECR", "iSWAP", "CH", "CP", "MS",
+            }),
+            connectivity="all-to-all",
+            supports_noise=True,
+            is_simulator=True,
+        )
+
+    def is_available(self) -> bool:
+        return True
 
     def execute(
         self,
