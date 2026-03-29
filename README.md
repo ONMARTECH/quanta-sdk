@@ -6,13 +6,13 @@
   </p>
   <p align="center">
     <a href="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml"><img src="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml/badge.svg" alt="CI"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-88%25-brightgreen.svg" alt="Coverage"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-89%25-brightgreen.svg" alt="Coverage"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.9.0-blue.svg" alt="Version"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-620%20passed-success.svg" alt="Tests"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-8%2F8-gold.svg" alt="Benchmark"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-669%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-10%2F10-gold.svg" alt="Benchmark"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
     <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-16%20tools-teal.svg" alt="MCP"></a>
     <a href="https://onmartech.github.io/quanta-sdk/"><img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs"></a>
