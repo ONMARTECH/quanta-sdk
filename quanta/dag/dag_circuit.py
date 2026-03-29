@@ -198,6 +198,92 @@ class DAGCircuit:
 
         return [layer_map[d] for d in sorted(layer_map)]
 
+    def node_layer(self, node_id: int) -> int:
+        """Returns the layer index (time step) for a given node.
+
+        Args:
+            node_id: The DAG node identifier.
+
+        Returns:
+            Zero-based layer index. Returns -1 for input nodes.
+        """
+        depth_map: dict[int, int] = {}
+        for node in self.topological_sort():
+            if isinstance(node, InputNode):
+                depth_map[node.node_id] = -1
+            elif isinstance(node, OpNode):
+                preds = self._reverse_edges.get(node.node_id, [])
+                depth_map[node.node_id] = max(
+                    (depth_map.get(p, -1) for p in preds), default=-1
+                ) + 1
+            else:
+                preds = self._reverse_edges.get(node.node_id, [])
+                depth_map[node.node_id] = max(
+                    (depth_map.get(p, -1) for p in preds), default=-1
+                )
+        return depth_map.get(node_id, -1)
+
+    def substitute_node(self, node_id: int, new_op: OpNode) -> None:
+        """Replaces an OpNode in-place, preserving edges.
+
+        Args:
+            node_id: ID of the node to replace.
+            new_op: Replacement OpNode (node_id is updated automatically).
+
+        Raises:
+            KeyError: If node_id does not exist.
+            TypeError: If the target node is not an OpNode.
+        """
+        old = self._nodes[node_id]
+        if not isinstance(old, OpNode):
+            raise TypeError(f"Cannot substitute non-OpNode: {old!r}")
+        self._nodes[node_id] = OpNode(
+            node_id=node_id,
+            gate_name=new_op.gate_name,
+            qubits=new_op.qubits,
+            params=new_op.params,
+        )
+
+    def remove_node(self, node_id: int) -> None:
+        """Removes an OpNode and reconnects its predecessors to successors.
+
+        Args:
+            node_id: ID of the OpNode to remove.
+
+        Raises:
+            KeyError: If node_id does not exist.
+            TypeError: If the target node is not an OpNode.
+        """
+        node = self._nodes[node_id]
+        if not isinstance(node, OpNode):
+            raise TypeError(f"Cannot remove non-OpNode: {node!r}")
+
+        preds = self._reverse_edges.get(node_id, [])
+        succs = self._edges.get(node_id, [])
+
+        # Reconnect: each predecessor → each successor
+        for p in preds:
+            self._edges[p] = [s for s in self._edges[p] if s != node_id]
+            self._edges[p].extend(succs)
+        for s in succs:
+            self._reverse_edges[s] = [
+                p for p in self._reverse_edges[s] if p != node_id
+            ]
+            self._reverse_edges[s].extend(preds)
+
+        # Remove the node itself
+        del self._nodes[node_id]
+        self._edges.pop(node_id, None)
+        self._reverse_edges.pop(node_id, None)
+
+    def predecessors(self, node_id: int) -> list[DAGNode]:
+        """Returns predecessor nodes of the given node."""
+        return [self._nodes[p] for p in self._reverse_edges.get(node_id, [])]
+
+    def successors(self, node_id: int) -> list[DAGNode]:
+        """Returns successor nodes of the given node."""
+        return [self._nodes[s] for s in self._edges.get(node_id, [])]
+
     def __repr__(self) -> str:
         return (
             f"DAGCircuit(qubits={self.num_qubits}, "

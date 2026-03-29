@@ -15,12 +15,25 @@ from quanta.core.types import Instruction
 from quanta.dag.dag_circuit import DAGCircuit
 from quanta.dag.node import OpNode
 
-# ── Public API ──
-__all__ = ["CancelInverses", "MergeRotations"]
+__all__ = [
+    "CancelInverses", "MergeRotations",
+    "IdentityRemoval", "CommutationPass",
+]
 
 _SELF_INVERSE_GATES = frozenset({"H", "X", "Y", "Z", "CX", "CZ", "SWAP"})
 
 _ROTATION_GATES = frozenset({"RX", "RY", "RZ"})
+
+# Gates that commute with each other (can swap order without affecting result)
+_COMMUTING_PAIRS = {
+    frozenset({"RZ", "CZ"}),
+    frozenset({"RZ", "P"}),
+    frozenset({"H", "CZ"}),
+    frozenset({"Z", "CX"}),  # Z on control of CX commutes
+}
+
+# Single-qubit diagonal gates commute with CZ and controlled-Z-like gates
+_DIAGONAL_1Q = frozenset({"RZ", "P", "Z", "S", "T", "SDG", "TDG", "I"})
 
 class CancelInverses:
     """Cancels sequential inverse gates.
@@ -202,3 +215,104 @@ class MergeRotations:
                 ))
 
         return DAGCircuit.from_builder(builder)
+
+
+class IdentityRemoval:
+    """Removes identity gates (I, RZ(0), RX(0), RY(0)) from the circuit.
+
+    Example:
+        >>> dag = IdentityRemoval().run(dag)
+    """
+
+    name = "IdentityRemoval"
+
+    EPSILON = 1e-10
+
+    def run(self, dag: DAGCircuit) -> DAGCircuit:
+        """Removes identity-equivalent gates."""
+        ops = dag.op_nodes()
+        to_remove: set[int] = set()
+
+        for i, op in enumerate(ops):
+            if op.gate_name == "I" or (
+                op.gate_name in _ROTATION_GATES
+                and op.params
+                and abs(op.params[0] % (2 * math.pi)) < self.EPSILON
+            ):
+                to_remove.add(i)
+
+        if not to_remove:
+            return dag
+
+        from quanta.core.circuit import CircuitBuilder
+        builder = CircuitBuilder(dag.num_qubits)
+        builder.measurement = dag.measurement
+        for i, op in enumerate(ops):
+            if i not in to_remove:
+                builder.record(Instruction(
+                    gate_name=op.gate_name,
+                    qubits=op.qubits,
+                    params=op.params,
+                ))
+        return DAGCircuit.from_builder(builder)
+
+
+class CommutationPass:
+    """Reorders commuting gates to expose more cancellation opportunities.
+
+    Moves diagonal 1-qubit gates past each other when they act on
+    different qubits, enabling subsequent CancelInverses/MergeRotations to
+    reduce gate count.
+
+    Example:
+        >>> dag = CommutationPass().run(dag)
+    """
+
+    name = "CommutationPass"
+
+    def run(self, dag: DAGCircuit) -> DAGCircuit:
+        """Reorders commuting op sequences."""
+        ops = list(dag.op_nodes())
+        if len(ops) < 2:
+            return dag
+
+        changed = True
+        max_iters = len(ops)  # prevent infinite loops
+        iteration = 0
+
+        while changed and iteration < max_iters:
+            changed = False
+            iteration += 1
+            for i in range(len(ops) - 1):
+                a, b = ops[i], ops[i + 1]
+                if self._should_swap(a, b):
+                    ops[i], ops[i + 1] = ops[i + 1], ops[i]
+                    changed = True
+
+        # Rebuild DAG with reordered ops
+        from quanta.core.circuit import CircuitBuilder
+        builder = CircuitBuilder(dag.num_qubits)
+        builder.measurement = dag.measurement
+        for op in ops:
+            builder.record(Instruction(
+                gate_name=op.gate_name,
+                qubits=op.qubits,
+                params=op.params,
+            ))
+        return DAGCircuit.from_builder(builder)
+
+    @staticmethod
+    def _should_swap(a: OpNode, b: OpNode) -> bool:
+        """Returns True if swapping a and b enables optimization."""
+        # Only swap if they act on different qubits (no dependency)
+        if set(a.qubits) & set(b.qubits):
+            return False
+
+        # Swap if b can be cancelled/merged with something before a
+        # Heuristic: sort by gate name to cluster same gates together
+        if a.gate_name == b.gate_name:
+            return False
+        # Move diagonal gates earlier (they commute freely
+        # with gates on different qubits)
+        return b.gate_name in _DIAGONAL_1Q and a.gate_name not in _DIAGONAL_1Q
+

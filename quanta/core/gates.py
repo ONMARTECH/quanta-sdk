@@ -83,8 +83,9 @@ def _get_active_builder():
 class Gate:
     """Base class for a quantum gate.
 
-
     Attributes:
+        name: Gate name (e.g. "H", "CX").
+        num_qubits: Number of qubits this gate acts on.
     """
 
     name: str = ""
@@ -98,10 +99,73 @@ class Gate:
     def _build_matrix(self) -> np.ndarray:
         raise NotImplementedError
 
+    @property
+    def inverse(self) -> Gate:
+        """Returns the inverse (adjoint) gate: U†.
+
+        For self-inverse gates (H, X, Y, Z, CX, CZ, SWAP) returns self.
+        For known pairs (S↔SDG, T↔TDG, SX↔SXdg) returns the partner.
+        Otherwise computes U† from the matrix.
+
+        Example:
+            >>> S.inverse.name
+            'SDG'
+            >>> H.inverse is H
+            True
+        """
+        # Check known inverse pairs
+        if self.name in _INVERSE_MAP:
+            return GATE_REGISTRY[_INVERSE_MAP[self.name]]
+        # Self-inverse gates
+        if self.name in _SELF_INVERSE_GATES:
+            return self
+        # Fallback: compute U† from matrix
+        return _MatrixGate(
+            f"{self.name}†", self.matrix.conj().T, self.num_qubits,
+        )
+
+    def controlled(self, num_ctrl: int = 1) -> Gate:
+        """Returns a controlled version of this gate.
+
+        Builds a (num_ctrl + num_qubits)-qubit controlled-U gate.
+        The first num_ctrl qubits are controls, the rest are targets.
+
+        Args:
+            num_ctrl: Number of control qubits (default: 1).
+
+        Returns:
+            A new Gate with the controlled-U matrix.
+
+        Example:
+            >>> X.controlled().name
+            'CX'
+            >>> H.controlled().num_qubits
+            2
+        """
+        if num_ctrl < 1:
+            from quanta.core.types import GateError
+            raise GateError(f"num_ctrl must be >= 1, got {num_ctrl}")
+
+        total_qubits = self.num_qubits + num_ctrl
+        dim = 2 ** total_qubits
+        target_dim = 2 ** self.num_qubits
+
+        # Build controlled-U: identity for all states except
+        # when all controls are |1⟩
+        cu = np.eye(dim, dtype=complex)
+        # Replace bottom-right block with U
+        u_mat = self.matrix
+        start = dim - target_dim
+        cu[start:, start:] = u_mat
+
+        prefix = "C" * num_ctrl
+        return _MatrixGate(f"{prefix}{self.name}", cu, total_qubits)
+
     def __call__(self, *args: QubitRef | Iterable[QubitRef]) -> None:
         """Records gate to active circuit. Supports broadcast.
 
-            H(q[0])           → tek qubit
+            H(q[0])           → single qubit
+            H(q)              → broadcast to all qubits
         """
         qubits = _flatten_qubits(args)
 
@@ -113,9 +177,10 @@ class Gate:
                 )
         else:
             if len(qubits) != self.num_qubits:
-                from quanta.core.types import CircuitError
-                raise CircuitError(
-                    f"Expected {self.num_qubits} qubits, got {len(qubits)}."
+                from quanta.core.types import GateError
+                raise GateError(
+                    f"Gate '{self.name}' expects {self.num_qubits} "
+                    f"qubit(s), got {len(qubits)}."
                 )
             _get_active_builder().record(
                 Instruction(self.name, tuple(qubits))
@@ -550,4 +615,38 @@ GATE_REGISTRY: dict[str, Gate | ParametricGate] = {
     # New v0.9 parametric gates
     "CP": CP, "MS": MS,
 }
+
+
+# ── Inverse Pairs ──
+
+_INVERSE_MAP: dict[str, str] = {
+    "S": "SDG", "SDG": "S",
+    "T": "TDG", "TDG": "T",
+    "SX": "SXdg", "SXdg": "SX",
+}
+
+_SELF_INVERSE_GATES = frozenset({
+    "H", "X", "Y", "Z", "I",
+    "CX", "CZ", "CY", "SWAP", "CCX", "CSWAP",
+    "ECR",
+})
+
+
+# ── MatrixGate (for computed inverse/controlled) ──
+
+class _MatrixGate(Gate):
+    """Gate constructed from an explicit matrix.
+
+    Used internally by .inverse and .controlled() when no named
+    gate exists for the result.
+    """
+
+    def __init__(self, name: str, matrix: np.ndarray, num_qubits: int) -> None:
+        self.name = name
+        self.num_qubits = num_qubits
+        self._matrix = matrix
+
+    def _build_matrix(self) -> np.ndarray:
+        return self._matrix
+
 

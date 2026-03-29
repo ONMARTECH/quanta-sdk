@@ -33,7 +33,9 @@ __all__ = [
     "MeasureSpec",
     "QuantaError",
     "CircuitError",
+    "GateError",
     "QubitIndexError",
+    "SimulatorError",
 ]
 
 
@@ -47,6 +49,14 @@ class QuantaError(Exception):
 
 class CircuitError(QuantaError):
     """Circuit creation or validation error."""
+
+
+class GateError(QuantaError):
+    """Gate definition or application error."""
+
+
+class SimulatorError(QuantaError):
+    """Simulator execution error."""
 
 
 class QubitIndexError(CircuitError):
