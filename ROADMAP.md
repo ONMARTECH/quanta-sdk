@@ -1,19 +1,19 @@
 # Quanta SDK — Roadmap
 
-> Son güncelleme: 29 Mart 2026 · Mevcut: **v0.9.0** · Hedef: **v1.0 (Temmuz 2026)**
+> Son güncelleme: 31 Mart 2026 · Mevcut: **v0.9.0** · Hedef: **v1.0 (Temmuz 2026)**
 
 ---
 
 ## Mevcut Durum Özeti
 
 ```
-Version:     0.9.0            Tests:       669 (89% coverage)
-Gates:       31               Files:       76
-Tutorials:   14 + 14 notebook MCP Tools:   16
+Version:     0.9.0            Tests:       774 (91% coverage)
+Gates:       31               Files:       86
+Tutorials:   14 + 14 notebook MCP Tools:   20
 Backends:    4 (local + IBM + IonQ + Google)
 Compiler:    6-pass (cancel + merge + translate + route + decompose + validate)
 QML:         Classifier + QSVM + 3 feature maps
-QEC:         6 codes (bit/phase/steane/shor/surface/color)
+QEC:         7 codes (bit/phase/steane/shor/surface/color/shor9)
 ```
 
 ---
@@ -274,7 +274,7 @@ QEC:         6 codes (bit/phase/steane/shor/surface/color)
 ---
 
 ### Task 18 — Test Coverage & CI
-**Durum: ✅ 669 test, 89% coverage, 4 CI workflow**
+**Durum: ✅ 774 test, 91% coverage, 4 CI workflow**
 
 | Alt görev | Detay |
 |-----------|-------|
@@ -288,7 +288,7 @@ QEC:         6 codes (bit/phase/steane/shor/surface/color)
 ---
 
 ### Task 19 — MCP / AI Tool Entegrasyonları
-**Durum: ✅ 16 tool mevcut, coverage 39%**
+**Durum: ✅ 20 tool mevcut, coverage 39%**
 
 | Alt görev | Detay |
 |-----------|-------|

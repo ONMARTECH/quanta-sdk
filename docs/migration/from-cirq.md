@@ -11,7 +11,7 @@
 | Dependencies | 15+ packages | 2 (numpy, python-dotenv) |
 | Learning curve | Moderate (Moment, Circuit, Simulator) | Gentle (3 imports to start) |
 | Gate count | 60+ | 25 (IBM Heron parity) |
-| AI Integration | ❌ | ✅ (16 MCP tools for Claude/GPT) |
+| AI Integration | ❌ | ✅ (20 MCP tools for Claude/GPT) |
 | QEC | Basic | Surface code + Color code + decoders |
 
 ## Side-by-Side: 12 Common Patterns

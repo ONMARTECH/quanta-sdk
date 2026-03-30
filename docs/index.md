@@ -53,10 +53,10 @@ hide:
 
 | Feature | Quanta | Qiskit | Cirq | PennyLane |
 |---------|--------|--------|------|-----------|
-| **MCP Server** | ✅ 16 tools | ❌ | ❌ | ❌ |
+| **MCP Server** | ✅ 20 tools | ❌ | ❌ | ❌ |
 | **Dependencies** | 1 (numpy) | 20+ | 10+ | 10+ |
 | **IBM Hardware** | Built-in REST | Via Provider | No | Via plugin |
-| **QEC** | 5 codes, 2 decoders | No | No | No |
+| **QEC** | 7 codes, 2 decoders | No | No | No |
 | **Install time** | ~2s | ~60s | ~30s | ~30s |
 
 ## Install
@@ -87,4 +87,4 @@ print(result)  # {'00': ~500, '11': ~500}
 fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 ```
 
-16 tools · 5 resources · 4 guided prompts — ready for Claude, GPT, and other AI assistants.
+20 tools · 5 resources · 4 guided prompts — ready for Claude, GPT, and other AI assistants.

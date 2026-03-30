@@ -6,6 +6,44 @@ Format: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [v0.9.1] - 2026-03-31
+
+### Added — Option Greeks (Finance)
+- `compute_greeks()` — finite-difference Monte Carlo for Δ,Γ,ν,Θ,ρ
+- `GreeksResult` dataclass with `summary()` method
+- Supports european_call and european_put payoffs
+
+### Added — QEC Decode/Correct API
+- `QECCode.decode()` — inverse of encode() for all codes
+- `QECCode.lookup_table()` — syndrome → correction mapping
+- `correct_error(code, syndrome)` — correction action helper
+- **ShorCode** [[9,1,3]] — Shor's 9-qubit code (encode + decode)
+- BitFlip/PhaseFlip codes now have full decode + lookup
+
+### Added — SDK Configuration
+- `quanta/config.py` — `QuantaConfig` class for credential management
+- TOML round-trip: load/save `~/.quanta/config.toml`
+- Per-backend credential management (IBM, IonQ, Google)
+- `describe()` with masked credential output
+- `QUANTA_CONFIG_DIR` env override
+
+### Added — QASM 3.0 Round-Trip Tests
+- 5 verified round-trip tests: Bell, parametric, GHZ, QASM 2.0, from_qasm_gates
+- Export → import preserves gates, parameters, and measurements
+
+### Added — MCP Tools (18 → 20)
+- `option_greeks` — compute option sensitivities via MCP
+- `qec_diagnose` — syndrome → correction lookup via MCP
+
+### Quality
+- Tests: 748 → 774 (+26 tests)
+- Coverage: 91%
+- Files: 84 → 86
+- QEC codes: 6 → 7 (ShorCode added)
+- Ruff: 0 errors
+
+---
+
 ## [v0.9.0] - 2026-03-29
 
 ### Added — Primitives (IBM V2 Compatible)

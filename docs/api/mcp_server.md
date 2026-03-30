@@ -1,6 +1,6 @@
 # MCP Server
 
-Quanta's MCP server exposes 16 tools, 5 resources, and 4 guided prompts
+Quanta's MCP server exposes 20 tools, 5 resources, and 4 guided prompts
 for AI assistants (Claude, GPT, etc.).
 
 ## Installation
@@ -30,6 +30,10 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `ibm_job_result` | Hardware | Poll job status & fetch results |
 | `surface_code_simulate` | Research | Surface code QEC simulation |
 | `compare_decoders` | Research | Compare MWPM vs Union-Find decoders |
+| `qml_classify` | Business | Quantum machine learning classification |
+| `optimize_circuit` | Core | Compile and optimize quantum circuits |
+| `option_greeks` | Business | Compute option Greeks (Δ,Γ,ν,Θ,ρ) |
+| `qec_diagnose` | Research | Diagnose errors from syndrome measurement |
 
 ## Resources
 
