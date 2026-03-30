@@ -60,10 +60,10 @@ _IMPLICIT_PARAMS: dict[str, tuple[float, ...]] = {
 
 
 def _safe_parse_param(expr: str) -> float:
-    """Safely parse a QASM parameter expression.
+    """Safely parse a QASM parameter expression using AST.
 
     Only allows: numbers, pi, +, -, *, /, parentheses.
-    NO eval() — prevents arbitrary code injection.
+    Uses ast.parse instead of eval() — zero code execution risk.
 
     Args:
         expr: Parameter expression like "pi/2", "3.14", "2*pi".
@@ -74,6 +74,9 @@ def _safe_parse_param(expr: str) -> float:
     Raises:
         ValueError: If expression contains disallowed characters.
     """
+    import ast
+    import operator
+
     expr = expr.strip()
 
     # Whitelist: only digits, pi, operators, parens, whitespace, decimal point
@@ -83,14 +86,32 @@ def _safe_parse_param(expr: str) -> float:
     # Replace 'pi' with actual value
     safe_expr = expr.replace("pi", str(math.pi))
 
-    # Parse using compile() + eval() with NO builtins and NO locals
-    # This is safe because we've already whitelisted the character set
+    # Pure-AST evaluation — no eval(), no exec()
+    _OPS = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+    }
+
+    def _eval_node(node: ast.AST) -> float:
+        if isinstance(node, ast.Expression):
+            return _eval_node(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return float(node.value)
+        if isinstance(node, ast.BinOp) and type(node.op) in _OPS:
+            left = _eval_node(node.left)
+            right = _eval_node(node.right)
+            return _OPS[type(node.op)](left, right)
+        if isinstance(node, ast.UnaryOp) and type(node.op) in _OPS:
+            return _OPS[type(node.op)](_eval_node(node.operand))
+        raise ValueError(f"Disallowed AST node: {type(node).__name__}")
+
     try:
-        code = compile(safe_expr, "<qasm_param>", "eval")
-        # Verify the bytecode only contains numeric operations
-        for name in code.co_names:
-            raise ValueError(f"Disallowed name in expression: {name!r}")
-        return float(eval(code, {"__builtins__": {}}, {}))  # noqa: S307
+        tree = ast.parse(safe_expr, mode="eval")
+        return float(_eval_node(tree))
     except (SyntaxError, TypeError, ZeroDivisionError) as e:
         raise ValueError(f"Cannot parse QASM parameter: {expr!r}") from e
 

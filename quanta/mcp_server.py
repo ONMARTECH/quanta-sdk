@@ -10,7 +10,7 @@ Run:
 Or install in Claude Desktop:
     fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 
-Tools (18):
+Tools (20):
   Education:
     - create_bell_state:         Quick Bell state |Φ+⟩
     - draw_circuit:              SVG circuit diagram
@@ -52,16 +52,84 @@ Prompts (4):
 from __future__ import annotations
 
 import json
-import traceback
+import logging
+import re as _re
 from typing import Any
 
 from fastmcp import FastMCP
+
+logger = logging.getLogger(__name__)
+
+# ── Security: Code Validation & Sandboxing ──
+
+_BLOCKED_PATTERNS = _re.compile(
+    r"\b("
+    r"__import__|importlib|__subclasses__|__globals__|__code__"
+    r"|__builtins__|__loader__|__spec__"
+    r"|exec\s*\(|eval\s*\("
+    r"|open\s*\(|compile\s*\("
+    r"|os\.system|os\.popen|os\.exec"
+    r"|subprocess|shutil\.rmtree"
+    r"|socket\.|http\.client|urllib"
+    r"|getattr\s*\(|setattr\s*\(|delattr\s*\("
+    r"|globals\s*\(|locals\s*\("
+    r")\b",
+    _re.IGNORECASE,
+)
+
+
+def _validate_code(code: str) -> None:
+    """Pre-scan code for dangerous patterns before execution.
+
+    Raises:
+        ValueError: If code contains blocked patterns.
+    """
+    match = _BLOCKED_PATTERNS.search(code)
+    if match:
+        raise ValueError(
+            f"Blocked: code contains disallowed pattern '{match.group()}'. "
+            f"Only Quanta SDK quantum operations are permitted."
+        )
+
+    # Block raw import statements (only 'from quanta' is allowed)
+    for line in code.splitlines():
+        stripped = line.strip()
+        is_import = stripped.startswith("import ") or stripped.startswith("from ")
+        if is_import and not stripped.startswith("from quanta"):
+            raise ValueError(
+                f"Blocked: external imports not allowed. "
+                f"Only 'from quanta ...' is permitted. Got: {stripped!r}"
+            )
+
+
+_SAFE_BUILTINS: dict[str, Any] = {
+    "range": range, "len": len, "int": int, "float": float,
+    "str": str, "bool": bool, "list": list, "dict": dict,
+    "tuple": tuple, "set": set, "enumerate": enumerate,
+    "zip": zip, "map": map, "filter": filter, "sorted": sorted,
+    "reversed": reversed, "abs": abs, "min": min, "max": max,
+    "sum": sum, "round": round, "any": any, "all": all,
+    "isinstance": isinstance, "type": type,
+    "print": print, "repr": repr,
+    "True": True, "False": False, "None": None,
+    "ValueError": ValueError, "TypeError": TypeError,
+}
+
+
+def _safe_error(exc: Exception) -> str:
+    """Return sanitized error message without tracebacks."""
+    logger.exception("MCP tool error")  # log full trace server-side
+    return json.dumps({
+        "error": str(exc),
+        "type": type(exc).__name__,
+    })
+
 
 # ── MCP Server ──
 mcp = FastMCP(
     "Quanta Quantum SDK",
     instructions=(
-        "AI-native quantum computing SDK. Quanta provides 18 tools organized "
+        "AI-native quantum computing SDK. Quanta provides 20 tools organized "
         "into 5 categories:\n"
         "• Education: Bell states, circuit drawing, gate reference, result explanation\n"
         "• Research: Grover, Shor, QAOA, noise simulation, circuit optimization, QEC\n"
@@ -98,7 +166,7 @@ def run_circuit(
               RX,RY,RZ,P,U,CX,CY,CZ,SWAP,RXX,RZZ,CCX,RCCX,RC3X,
               ECR,iSWAP,CSWAP,CH,CP,MS.
               Also: circuit, measure, run, math, np, pi, sqrt.
-              Imports allowed: you can use 'import math', etc.
+               Only 'from quanta ...' imports are allowed.
         shots: Number of measurement repetitions.
         seed: Random seed for reproducibility.
 
@@ -148,9 +216,12 @@ def run_circuit(
             run,
         )
 
-        # Pre-inject all Quanta symbols + math/numpy for convenience
-        # Imports are allowed — users can use import math, etc.
+        # Security: validate code before execution
+        _validate_code(code)
+
+        # Pre-inject Quanta symbols — NO raw __builtins__
         namespace: dict[str, Any] = {
+            "__builtins__": _SAFE_BUILTINS,
             "circuit": circuit, "H": H, "X": X, "Y": Y, "Z": Z,
             "S": S, "T": T, "CX": CX, "CZ": CZ, "CY": CY,
             "SWAP": SWAP, "CCX": CCX, "RX": RX, "RY": RY, "RZ": RZ,
@@ -165,7 +236,7 @@ def run_circuit(
             "pi": math_mod.pi, "sqrt": math_mod.sqrt,
         }
 
-        exec(code, namespace)  # noqa: S102 — sandboxed, no builtins
+        exec(code, namespace)  # noqa: S102 — sandboxed, restricted builtins
 
         if "circ" not in namespace:
             return json.dumps({
@@ -187,7 +258,7 @@ def run_circuit(
         })
 
     except Exception as e:
-        return json.dumps({"error": str(e), "traceback": traceback.format_exc()})
+        return _safe_error(e)
 
 
 # ═══════════════════════════════════════════
@@ -283,7 +354,7 @@ def grover_search(
             "quantum_queries_used": result.gate_count,
         })
     except Exception as e:
-        return json.dumps({"error": str(e), "traceback": traceback.format_exc()})
+        return _safe_error(e)
 
 
 # ═══════════════════════════════════════════
@@ -482,7 +553,7 @@ def simulate_noise(
             ),
         })
     except Exception as e:
-        return json.dumps({"error": str(e), "traceback": traceback.format_exc()})
+        return _safe_error(e)
 
 
 # ═══════════════════════════════════════════
@@ -999,10 +1070,7 @@ def run_on_ibm(
         })
 
     except Exception as e:
-        return json.dumps({
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-        })
+        return _safe_error(e)
 
 
 # ═══════════════════════════════════════════
@@ -1096,10 +1164,26 @@ def optimize_circuit(
         from quanta.compiler.pipeline import CompilerPipeline
         from quanta.dag.dag_circuit import DAGCircuit
 
-        # Execute circuit code in sandbox
-        sandbox: dict[str, Any] = {}
+        # Security: validate code before execution
+        _validate_code(circuit_code)
+
+        # Execute circuit code in restricted sandbox
+        from quanta import (  # noqa: I001
+            CCX, CX, CY, CZ, RC3X, RCCX, RX, RXX, RY, RZ, RZZ,
+            SDG, SWAP, SX, TDG, H, P, S, SXdg, T, U, X, Y, Z,
+            I, circuit, measure, run,  # noqa: E741
+        )
+        sandbox: dict[str, Any] = {
+            "__builtins__": _SAFE_BUILTINS,
+            "circuit": circuit, "measure": measure, "run": run,
+            "H": H, "X": X, "Y": Y, "Z": Z, "S": S, "T": T,
+            "CX": CX, "CZ": CZ, "CY": CY, "SWAP": SWAP, "CCX": CCX,
+            "RX": RX, "RY": RY, "RZ": RZ, "I": I,
+            "SDG": SDG, "TDG": TDG, "P": P, "SX": SX, "SXdg": SXdg,
+            "U": U, "RXX": RXX, "RZZ": RZZ, "RCCX": RCCX, "RC3X": RC3X,
+        }
         exec(  # noqa: S102
-            "from quanta import *\n" + circuit_code,
+            circuit_code,
             sandbox,
         )
 
@@ -1156,7 +1240,7 @@ def optimize_circuit(
             "passes_applied": [type(p).__name__ for p in selected],
         })
     except Exception as e:
-        return json.dumps({"error": str(e), "traceback": traceback.format_exc()})
+        return _safe_error(e)
 
 @mcp.tool()
 def ibm_backends(region: str = "us") -> str:
@@ -1287,10 +1371,7 @@ def ibm_job_result(
         return json.dumps(result)
 
     except Exception as e:
-        return json.dumps({
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-        })
+        return _safe_error(e)
 
 
 # ═══════════════════════════════════════════
@@ -1353,11 +1434,11 @@ def draw_circuit(
         )
         from quanta.visualize_svg import to_html
 
-        _safe = {
-            "range": range, "len": len, "int": int,
-            "float": float, "abs": abs, "min": min, "max": max,
-        }
+        # Security: validate code before execution
+        _validate_code(code)
+
         namespace = {
+            "__builtins__": _SAFE_BUILTINS,
             "circuit": circuit, "measure": measure,
             "H": H, "X": X, "Y": Y, "Z": Z,
             "S": S, "T": T, "CX": CX, "CZ": CZ,
@@ -1368,10 +1449,9 @@ def draw_circuit(
             "U": U, "RXX": RXX, "RZZ": RZZ,
             "RCCX": RCCX, "RC3X": RC3X,
             "np": np, "math": math,
-            "__builtins__": _safe,
         }
 
-        exec(code, namespace)  # noqa: S102
+        exec(code, namespace)  # noqa: S102 — sandboxed, restricted builtins
 
         circ = namespace.get("circ")
         if circ is None:
@@ -1386,10 +1466,7 @@ def draw_circuit(
             "note": "Save to .html file and open in browser",
         })
     except Exception as e:
-        return json.dumps({
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-        })
+        return _safe_error(e)
 
 
 # ═══════════════════════════════════════════
@@ -1457,7 +1534,7 @@ def surface_code_simulate(
             ),
         })
     except Exception as e:
-        return json.dumps({"error": str(e), "traceback": traceback.format_exc()})
+        return _safe_error(e)
 
 
 # ═══════════════════════════════════════════
@@ -1545,7 +1622,7 @@ def compare_decoders(
             ),
         })
     except Exception as e:
-        return json.dumps({"error": str(e), "traceback": traceback.format_exc()})
+        return _safe_error(e)
 
 
 # ═══════════════════════════════════════════
@@ -1593,7 +1670,7 @@ def option_greeks(
             },
         })
     except Exception as exc:
-        return json.dumps({"error": str(exc), "traceback": traceback.format_exc()})
+        return _safe_error(exc)
 
 
 # ═══════════════════════════════════════════
@@ -1646,7 +1723,7 @@ def qec_diagnose(
             "lookup_table": qec.lookup_table(),
         })
     except Exception as exc:
-        return json.dumps({"error": str(exc), "traceback": traceback.format_exc()})
+        return _safe_error(exc)
 
 
 # ═══════════════════════════════════════════
