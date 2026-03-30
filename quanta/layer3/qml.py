@@ -38,7 +38,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.simulator.base import SimulatorBackend
+from quanta.simulator.factory import create_simulator
 
 __all__ = [
     "QuantumClassifier",
@@ -54,7 +55,7 @@ __all__ = [
 
 
 def angle_encoding(
-    sim: StateVectorSimulator,
+    sim: SimulatorBackend,
     x: np.ndarray,
     qubits: tuple[int, ...] | None = None,
 ) -> None:
@@ -76,7 +77,7 @@ def angle_encoding(
 
 
 def zz_feature_map(
-    sim: StateVectorSimulator,
+    sim: SimulatorBackend,
     x: np.ndarray,
     qubits: tuple[int, ...] | None = None,
     reps: int = 2,
@@ -118,7 +119,7 @@ def zz_feature_map(
 
 
 def amplitude_encoding(
-    sim: StateVectorSimulator,
+    sim: SimulatorBackend,
     x: np.ndarray,
 ) -> None:
     """Amplitude encoding: embed data directly into state amplitudes.
@@ -148,7 +149,7 @@ def amplitude_encoding(
 
 
 def _variational_layer(
-    sim: StateVectorSimulator,
+    sim: SimulatorBackend,
     params: np.ndarray,
     n_qubits: int,
     offset: int = 0,
@@ -204,7 +205,7 @@ class QuantumKernel:
 
     def _encode(self, x: np.ndarray) -> np.ndarray:
         """Encode data into quantum state and return statevector."""
-        sim = StateVectorSimulator(self.n_qubits)
+        sim = create_simulator(self.n_qubits)
         if self.feature_map == "zz":
             zz_feature_map(sim, x, reps=self.reps)
         else:
@@ -318,7 +319,7 @@ class QuantumClassifier:
 
         Returns probabilities for each computational basis state.
         """
-        sim = StateVectorSimulator(self.n_qubits)
+        sim = create_simulator(self.n_qubits)
 
         # Feature encoding
         if self.feature_map == "zz":

@@ -23,7 +23,8 @@ from collections.abc import Callable
 import numpy as np
 
 from quanta.result import Result
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.simulator.base import SimulatorBackend
+from quanta.simulator.factory import create_simulator
 
 # ── Public API ──
 __all__ = ["search"]
@@ -62,7 +63,7 @@ def search(
     n_targets = len(targets)
     iterations = max(1, round(math.pi / 4 * math.sqrt(n_states / n_targets)))
 
-    sim = StateVectorSimulator(num_bits, seed=seed)
+    sim = create_simulator(num_bits, seed=seed)
 
     for q in range(num_bits):
         sim.apply("H", (q,))
@@ -94,7 +95,7 @@ def _find_targets(num_bits: int, check: Callable[[int], bool]) -> list[int]:
     """Finds all states satisfying the target condition."""
     return [i for i in range(2 ** num_bits) if check(i)]
 
-def _apply_oracle(sim: StateVectorSimulator, n: int, targets: list[int]) -> None:
+def _apply_oracle(sim: SimulatorBackend, n: int, targets: list[int]) -> None:
     """Oracle: Applies -1 phase to target states.
 
     Uses simulator's public apply_phase() API instead of direct state access.
@@ -102,7 +103,7 @@ def _apply_oracle(sim: StateVectorSimulator, n: int, targets: list[int]) -> None
     for t in targets:
         sim.apply_phase(t, -1)
 
-def _apply_diffusion(sim: StateVectorSimulator, n: int) -> None:
+def _apply_diffusion(sim: SimulatorBackend, n: int) -> None:
     """Diffusion operator: 2|ψ⟩⟨ψ| - I.
 
     Uses simulator's public state property instead of direct _state access.

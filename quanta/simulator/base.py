@@ -99,3 +99,41 @@ class SimulatorBackend(ABC):
         Override in subclasses for optimized reset.
         """
         self.__init__(self.num_qubits)  # type: ignore[misc]
+
+    def apply_phase(self, index: int, phase: complex) -> None:
+        """Applies a phase factor to a specific basis state.
+
+        Used by Grover oracle and similar algorithms.
+        Default implementation modifies the state array directly.
+
+        Args:
+            index: Basis state index (0 to 2^n - 1).
+            phase: Phase factor (e.g., -1 for phase flip).
+
+        Raises:
+            NotImplementedError: If backend doesn't support direct state access.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} does not support apply_phase(). "
+            f"Use a dense or sparse simulator for Grover's algorithm."
+        )
+
+    def apply_noise(
+        self,
+        noise_model: object,
+        qubits: tuple[int, ...],
+        rng: np.random.Generator,
+    ) -> None:
+        """Applies a noise model after a gate operation.
+
+        Args:
+            noise_model: NoiseModel with apply_noise() method.
+            qubits: Qubits the gate acted on.
+            rng: Random number generator.
+
+        Raises:
+            NotImplementedError: If backend doesn't support noise.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} does not support noise simulation."
+        )

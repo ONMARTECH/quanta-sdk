@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.simulator.factory import create_simulator
 
 # ── Public API ──
 __all__ = ["Agent", "MultiAgentSystem"]
@@ -104,7 +104,7 @@ class MultiAgentSystem:
         Returns:
         """
         n = len(self._agents)
-        sim = StateVectorSimulator(n, seed=seed)
+        sim = create_simulator(n, seed=seed)
 
         for name, agent in self._agents.items():
             q = self._qubit_map[name]

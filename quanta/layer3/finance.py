@@ -26,7 +26,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.simulator.factory import create_simulator
 
 __all__ = ["portfolio_optimize", "PortfolioResult"]
 
@@ -185,7 +185,7 @@ def portfolio_optimize(
         })
 
     # Use quantum simulation to find optimal with QAOA-style
-    sim = StateVectorSimulator(n, seed=seed)
+    sim = create_simulator(n, seed=seed)
 
     # Apply Hadamard to create superposition
     for q in range(n):

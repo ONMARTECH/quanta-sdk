@@ -22,7 +22,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.simulator.base import SimulatorBackend
+from quanta.simulator.factory import create_simulator
 
 __all__ = ["qsvm_classify", "QSVMResult"]
 
@@ -54,7 +55,7 @@ class QSVMResult:
 
 
 def _encode_data_point(
-    sim: StateVectorSimulator,
+    sim: SimulatorBackend,
     x: list[float],
     num_qubits: int,
 ) -> None:
@@ -99,12 +100,12 @@ def _quantum_kernel(
     This is the fidelity between two quantum-encoded states.
     """
     # Encode x1
-    sim1 = StateVectorSimulator(num_qubits)
+    sim1 = create_simulator(num_qubits)
     _encode_data_point(sim1, x1, num_qubits)
     state1 = sim1.state
 
     # Encode x2
-    sim2 = StateVectorSimulator(num_qubits)
+    sim2 = create_simulator(num_qubits)
     _encode_data_point(sim2, x2, num_qubits)
     state2 = sim2.state
 

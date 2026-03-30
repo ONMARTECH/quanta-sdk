@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.simulator.factory import create_simulator
 
 __all__ = ["vqe", "VQEResult"]
 
@@ -125,7 +125,7 @@ def _build_ansatz_state(
       - RZ on each qubit (per layer)
       - CNOT chain entanglement (per layer)
     """
-    sim = StateVectorSimulator(num_qubits)
+    sim = create_simulator(num_qubits)
     idx = 0
 
     for _layer in range(layers):

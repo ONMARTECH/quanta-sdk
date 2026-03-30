@@ -30,7 +30,7 @@ import numpy as np
 from quanta.core.circuit import CircuitBuilder
 from quanta.core.types import Instruction
 from quanta.dag.dag_circuit import DAGCircuit
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.simulator.factory import create_simulator
 
 __all__ = ["factor", "factor_recursive", "ShorResult"]
 
@@ -159,7 +159,7 @@ def _quantum_order_finding(
     rng = np.random.default_rng(seed)
 
     # Step 1: Build superposition state
-    sim = StateVectorSimulator(n_count, seed=seed)
+    sim = create_simulator(n_count, seed=seed)
     for q in range(n_count):
         sim.apply("H", (q,))
 

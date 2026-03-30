@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.simulator.factory import create_simulator
 
 __all__ = [
     "quantum_cluster",
@@ -159,7 +159,7 @@ def quantum_distance(
 
     # Swap test circuit: 1 ancilla + 2 data registers = 1 + 2*n_data qubits
     n_total = 1 + 2 * n_data
-    sim = StateVectorSimulator(n_total, seed=seed)
+    sim = create_simulator(n_total, seed=seed)
 
     # Prepare state: |0⟩|ψ⟩|φ⟩
     # Total Hilbert space: 2 * dim * dim

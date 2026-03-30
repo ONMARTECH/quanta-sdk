@@ -25,7 +25,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from quanta.result import Result
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.simulator.base import SimulatorBackend
+from quanta.simulator.factory import create_simulator
 
 # ── Public API ──
 __all__ = ["optimize", "OptimizationResult"]
@@ -176,12 +177,12 @@ def _optimize_qaoa_params(
 
 def _run_qaoa(
     n: int, costs: np.ndarray, params: np.ndarray, seed: int | None
-) -> StateVectorSimulator:
+) -> SimulatorBackend:
     """Runs the QAOA circuit.
 
     Each layer: exp(-i·γ·C)·exp(-i·β·B)
     """
-    sim = StateVectorSimulator(n, seed=seed)
+    sim = create_simulator(n, seed=seed)
     layers = len(params) // 2
 
     for q in range(n):

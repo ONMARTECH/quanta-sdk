@@ -30,7 +30,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from quanta.simulator.statevector import StateVectorSimulator
+from quanta.simulator.factory import create_simulator
 
 __all__ = ["resolve", "ResolutionResult"]
 
@@ -485,7 +485,7 @@ def _qaoa_optimize_block(
         return _greedy_merge_block(records, indices, threshold, fields), 0
 
     # QAOA circuit: encode similarities as rotation angles
-    simulator = StateVectorSimulator(num_qubits, seed=seed)
+    simulator = create_simulator(num_qubits, seed=seed)
 
     # Initial superposition
     for q in range(num_qubits):
