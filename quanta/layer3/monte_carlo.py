@@ -36,6 +36,8 @@ __all__ = [
     "quantum_monte_carlo",
     "MonteCarloResult",
     "amplitude_estimate",
+    "compute_greeks",
+    "GreeksResult",
 ]
 
 
@@ -493,3 +495,111 @@ def _classical_monte_carlo(
         return 0.0
 
     return float(np.mean(values))
+
+
+# ── Greeks (Option Sensitivities) ──
+
+@dataclass
+class GreeksResult:
+    """Option Greeks (sensitivities).
+
+    Attributes:
+        delta: Price sensitivity to spot (∂V/∂S).
+        gamma: Delta sensitivity to spot (∂²V/∂S²).
+        vega: Price sensitivity to volatility (∂V/∂σ).
+        theta: Price sensitivity to time (∂V/∂T).
+        rho: Price sensitivity to interest rate (∂V/∂r).
+    """
+
+    delta: float
+    gamma: float
+    vega: float
+    theta: float
+    rho: float
+
+    def summary(self) -> str:
+        return (
+            f"Greeks: Δ={self.delta:+.4f}  Γ={self.gamma:+.4f}  "
+            f"ν={self.vega:+.4f}  Θ={self.theta:+.4f}  ρ={self.rho:+.4f}"
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"GreeksResult(delta={self.delta:.4f}, gamma={self.gamma:.4f}, "
+            f"vega={self.vega:.4f}, theta={self.theta:.4f}, rho={self.rho:.4f})"
+        )
+
+
+def compute_greeks(
+    spot: float = 100.0,
+    strike: float = 105.0,
+    volatility: float = 0.2,
+    rate: float = 0.05,
+    time_to_expiry: float = 1.0,
+    payoff: str = "european_call",
+    n_samples: int = 100_000,
+    seed: int = 42,
+) -> GreeksResult:
+    """Compute option Greeks using finite-difference Monte Carlo.
+
+    Args:
+        spot: Current asset price (S0).
+        strike: Strike price (K).
+        volatility: Annualized volatility (σ).
+        rate: Risk-free interest rate (r).
+        time_to_expiry: Time to expiry in years (T).
+        payoff: "european_call" or "european_put".
+        n_samples: Number of classical MC samples.
+        seed: Random seed.
+
+    Returns:
+        GreeksResult with delta, gamma, vega, theta, rho.
+
+    Example:
+        >>> from quanta.layer3.monte_carlo import compute_greeks
+        >>> g = compute_greeks(spot=100, strike=105, volatility=0.2)
+        >>> print(g.summary())
+    """
+    rng = np.random.default_rng(seed)
+    h_S = spot * 0.01       # 1% bump for spot
+    h_sigma = 0.001         # 0.1% bump for vol
+    h_T = 1 / 365           # 1 day for theta
+    h_r = 0.0001            # 1 bps for rho
+
+    def _price(S: float, sigma: float, T: float, r: float) -> float:
+        params = {"S0": S, "K": strike, "sigma": sigma, "T": T, "r": r}
+        return _classical_monte_carlo(
+            "lognormal", payoff, params, n_samples, rng,
+        )
+
+    V0 = _price(spot, volatility, time_to_expiry, rate)
+
+    # Delta: ∂V/∂S (central difference)
+    V_up = _price(spot + h_S, volatility, time_to_expiry, rate)
+    V_dn = _price(spot - h_S, volatility, time_to_expiry, rate)
+    delta = (V_up - V_dn) / (2 * h_S)
+
+    # Gamma: ∂²V/∂S² (central second difference)
+    gamma = (V_up - 2 * V0 + V_dn) / (h_S ** 2)
+
+    # Vega: ∂V/∂σ
+    V_vol_up = _price(spot, volatility + h_sigma, time_to_expiry, rate)
+    V_vol_dn = _price(spot, volatility - h_sigma, time_to_expiry, rate)
+    vega = (V_vol_up - V_vol_dn) / (2 * h_sigma)
+
+    # Theta: -∂V/∂T (time decay, negative by convention)
+    if time_to_expiry > h_T:
+        V_T_dn = _price(spot, volatility, time_to_expiry - h_T, rate)
+        theta = -(V0 - V_T_dn) / h_T
+    else:
+        theta = 0.0
+
+    # Rho: ∂V/∂r
+    V_r_up = _price(spot, volatility, time_to_expiry, rate + h_r)
+    V_r_dn = _price(spot, volatility, time_to_expiry, rate - h_r)
+    rho = (V_r_up - V_r_dn) / (2 * h_r)
+
+    return GreeksResult(
+        delta=delta, gamma=gamma, vega=vega,
+        theta=theta, rho=rho,
+    )

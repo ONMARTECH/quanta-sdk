@@ -24,7 +24,8 @@ from quanta.core.gates import CX, H
 from quanta.core.measure import measure
 
 # ── Public API ──
-__all__ = ["QECCode", "BitFlipCode", "PhaseFlipCode", "SteaneCode"]
+__all__ = ["QECCode", "BitFlipCode", "PhaseFlipCode", "SteaneCode", "ShorCode",
+           "correct_error"]
 
 @dataclass(frozen=True)
 class CodeInfo:
@@ -61,8 +62,40 @@ class QECCode:
     def encode(self) -> CircuitDefinition:
         raise NotImplementedError
 
+    def decode(self) -> CircuitDefinition:
+        """Decoding circuit (inverse of encode)."""
+        raise NotImplementedError
+
     def syndrome_measure(self) -> CircuitDefinition:
         raise NotImplementedError
+
+    def lookup_table(self) -> dict[str, str]:
+        """Maps syndrome bitstring to error location.
+
+        Returns:
+            Dict mapping syndrome → correction description.
+        """
+        raise NotImplementedError
+
+
+def correct_error(code: QECCode, syndrome: str) -> str:
+    """Given a syndrome measurement result, returns correction action.
+
+    Args:
+        code: The QEC code used.
+        syndrome: Measured syndrome bitstring.
+
+    Returns:
+        Description of correction to apply.
+
+    Example:
+        >>> code = BitFlipCode()
+        >>> correct_error(code, "11")
+        'Apply X on qubit 0'
+    """
+    table = code.lookup_table()
+    return table.get(syndrome, "No error detected")
+
 
 class BitFlipCode(QECCode):
     """[[3,1,3]] Bit-flip repetition code.
@@ -94,6 +127,14 @@ class BitFlipCode(QECCode):
             CX(q[0], q[2])
         return encode_bitflip
 
+    def decode(self) -> CircuitDefinition:
+        """Bit-flip decoding circuit (inverse of encode)."""
+        @circuit(qubits=3)
+        def decode_bitflip(q):
+            CX(q[0], q[2])
+            CX(q[0], q[1])
+        return decode_bitflip
+
     def syndrome_measure(self) -> CircuitDefinition:
         """Syndrome measurement: error detection with 2 ancilla qubits.
 
@@ -115,6 +156,14 @@ class BitFlipCode(QECCode):
             CX(q[2], q[4])
             return measure(q[3], q[4])
         return syndrome_bitflip
+
+    def lookup_table(self) -> dict[str, str]:
+        return {
+            "00": "No error detected",
+            "01": "Apply X on qubit 2",
+            "10": "Apply X on qubit 1",
+            "11": "Apply X on qubit 0",
+        }
 
 class PhaseFlipCode(QECCode):
     """[[3,1,3]] Phase-flip repetition code.
@@ -138,6 +187,25 @@ class PhaseFlipCode(QECCode):
             H(q[1])
             H(q[2])
         return encode_phaseflip
+
+    def decode(self) -> CircuitDefinition:
+        """Phase-flip decoding circuit."""
+        @circuit(qubits=3)
+        def decode_phaseflip(q):
+            H(q[0])
+            H(q[1])
+            H(q[2])
+            CX(q[0], q[2])
+            CX(q[0], q[1])
+        return decode_phaseflip
+
+    def lookup_table(self) -> dict[str, str]:
+        return {
+            "00": "No error detected",
+            "01": "Apply Z on qubit 2",
+            "10": "Apply Z on qubit 1",
+            "11": "Apply Z on qubit 0",
+        }
 
 class SteaneCode(QECCode):
     """[[7,1,3]] Steane code.
@@ -194,3 +262,68 @@ class SteaneCode(QECCode):
 
             return measure(q[7], q[8], q[9], q[10], q[11], q[12])
         return syndrome_steane
+
+
+class ShorCode(QECCode):
+    """[[9,1,3]] Shor code.
+
+    First quantum error correction code. Protects against
+    arbitrary single-qubit errors (bit-flip + phase-flip).
+
+    Combines 3-qubit bit-flip and 3-qubit phase-flip repetition codes.
+    Encoding: |ψ⟩ = α|0⟩ + β|1⟩ →
+        α(|000⟩+|111⟩)(|000⟩+|111⟩)(|000⟩+|111⟩)/2√2 +
+        β(|000⟩-|111⟩)(|000⟩-|111⟩)(|000⟩-|111⟩)/2√2
+    """
+
+    @property
+    def info(self) -> CodeInfo:
+        return CodeInfo("Shor", n=9, k=1, d=3)
+
+    def encode(self) -> CircuitDefinition:
+        """Shor 9-qubit encoding circuit."""
+        @circuit(qubits=9)
+        def encode_shor(q):
+            # Phase-flip encoding (outer): q[0] → q[0], q[3], q[6]
+            CX(q[0], q[3])
+            CX(q[0], q[6])
+            H(q[0])
+            H(q[3])
+            H(q[6])
+            # Bit-flip encoding (inner): each group of 3
+            CX(q[0], q[1])
+            CX(q[0], q[2])
+            CX(q[3], q[4])
+            CX(q[3], q[5])
+            CX(q[6], q[7])
+            CX(q[6], q[8])
+        return encode_shor
+
+    def decode(self) -> CircuitDefinition:
+        """Shor 9-qubit decoding circuit (inverse of encode)."""
+        @circuit(qubits=9)
+        def decode_shor(q):
+            # Reverse bit-flip
+            CX(q[6], q[8])
+            CX(q[6], q[7])
+            CX(q[3], q[5])
+            CX(q[3], q[4])
+            CX(q[0], q[2])
+            CX(q[0], q[1])
+            # Reverse phase-flip
+            H(q[6])
+            H(q[3])
+            H(q[0])
+            CX(q[0], q[6])
+            CX(q[0], q[3])
+        return decode_shor
+
+    def lookup_table(self) -> dict[str, str]:
+        return {
+            "0000": "No error detected",
+            "0001": "Apply X on qubit 8",
+            "0010": "Apply X on qubit 7",
+            "0011": "Apply X on qubit 6",
+            "0100": "Apply X on qubit 5",
+            "1000": "Apply X on qubit 2",
+        }
