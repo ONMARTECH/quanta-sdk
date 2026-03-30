@@ -24,6 +24,7 @@ import numpy as np
 
 from quanta.core.gates import GATE_REGISTRY, MultiParametricGate, ParametricGate
 from quanta.core.types import QuantaError
+from quanta.simulator.base import SimulatorBackend
 
 # -- Public API --
 __all__ = ["StateVectorSimulator"]
@@ -33,7 +34,7 @@ class SimulatorError(QuantaError):
     """Simulator runtime error."""
 
 
-class StateVectorSimulator:
+class StateVectorSimulator(SimulatorBackend):
     """Tensor-based statevector simulator.
 
     Simulates quantum circuits on a 2^n dimensional complex vector.
