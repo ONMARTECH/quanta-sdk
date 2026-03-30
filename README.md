@@ -14,7 +14,7 @@
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-774%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-10%2F10-gold.svg" alt="Benchmark"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
-    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-18%20tools-teal.svg" alt="MCP"></a>
+    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-20%20tools-teal.svg" alt="MCP"></a>
     <a href="https://onmartech.github.io/quanta-sdk/"><img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs"></a>
     <a href="#features"><img src="https://img.shields.io/badge/gates-31-blueviolet.svg" alt="Gates"></a>
     <a href="https://onmartech.github.io/quanta-sdk/tutorials/01-getting-started/"><img src="https://img.shields.io/badge/tutorials-14-informational.svg" alt="Tutorials"></a>
@@ -393,7 +393,7 @@ Version:     0.9.0        Gates:       31 (full IBM parity + Google/IonQ)
 Files:       86           Tests:       774 (91% coverage)
 Algorithms:  10           Examples:    11
 Simulators:  4            QEC Codes:   7
-MCP Tools:   18           Max Qubits:  156 (IBM Heron r3)
+MCP Tools:   20           Max Qubits:  156 (IBM Heron r3)
 Noise:       7 channels   Backends:    IBM + IonQ + Google + local
 QASM:        3.0          Decoders:    2 (MWPM + UF)
 Tutorials:   14           Notebooks:   14 (Colab)

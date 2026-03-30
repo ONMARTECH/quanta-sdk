@@ -1549,6 +1549,107 @@ def compare_decoders(
 
 
 # ═══════════════════════════════════════════
+#  Tool 19: Option Greeks
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def option_greeks(
+    spot: float = 100.0,
+    strike: float = 105.0,
+    volatility: float = 0.2,
+    rate: float = 0.05,
+    time_to_expiry: float = 1.0,
+    payoff: str = "european_call",
+) -> str:
+    """Compute option Greeks (delta, gamma, vega, theta, rho).
+
+    Uses finite-difference Monte Carlo for sensitivity analysis.
+
+    Args:
+        spot: Current asset price.
+        strike: Strike price.
+        volatility: Annualized volatility (σ).
+        rate: Risk-free interest rate.
+        time_to_expiry: Years to expiry.
+        payoff: "european_call" or "european_put".
+    """
+    try:
+        from quanta.layer3.monte_carlo import compute_greeks as _greeks
+        result = _greeks(
+            spot=spot, strike=strike, volatility=volatility,
+            rate=rate, time_to_expiry=time_to_expiry,
+            payoff=payoff, n_samples=50_000, seed=42,
+        )
+        return json.dumps({
+            "delta": round(result.delta, 6),
+            "gamma": round(result.gamma, 6),
+            "vega": round(result.vega, 6),
+            "theta": round(result.theta, 6),
+            "rho": round(result.rho, 6),
+            "summary": result.summary(),
+            "params": {
+                "spot": spot, "strike": strike,
+                "volatility": volatility, "payoff": payoff,
+            },
+        })
+    except Exception as exc:
+        return json.dumps({"error": str(exc), "traceback": traceback.format_exc()})
+
+
+# ═══════════════════════════════════════════
+#  Tool 20: QEC Diagnose
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def qec_diagnose(
+    code: str = "bitflip",
+    syndrome: str = "11",
+) -> str:
+    """Diagnose a quantum error from syndrome measurement.
+
+    Given a QEC code and syndrome bitstring, returns the
+    correction action needed.
+
+    Args:
+        code: "bitflip", "phaseflip", or "shor".
+        syndrome: Measured syndrome bitstring (e.g., "11").
+    """
+    try:
+        from quanta.qec.codes import (
+            BitFlipCode,
+            PhaseFlipCode,
+            ShorCode,
+            correct_error,
+        )
+        code_map = {
+            "bitflip": BitFlipCode,
+            "phaseflip": PhaseFlipCode,
+            "shor": ShorCode,
+        }
+        code_lower = code.lower().replace(" ", "").replace("-", "")
+        if code_lower not in code_map:
+            return json.dumps({
+                "error": f"Unknown code: {code}",
+                "available": list(code_map.keys()),
+            })
+
+        qec = code_map[code_lower]()
+        correction = correct_error(qec, syndrome)
+        info = qec.info
+
+        return json.dumps({
+            "code": info.name,
+            "notation": f"[[{info.n},{info.k},{info.d}]]",
+            "syndrome": syndrome,
+            "correction": correction,
+            "correctable_errors": info.correctable_errors,
+            "lookup_table": qec.lookup_table(),
+        })
+    except Exception as exc:
+        return json.dumps({"error": str(exc), "traceback": traceback.format_exc()})
+
+
+# ═══════════════════════════════════════════
 #  Resource: SDK Info
 # ═══════════════════════════════════════════
 
