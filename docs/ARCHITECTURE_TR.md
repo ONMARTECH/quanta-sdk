@@ -77,7 +77,12 @@ qec/ -------> core/
 
 | Dosya | Sorumluluk |
 |-------|------------|
-| `statevector.py` | Tensor contraction, 27 qubite kadar, `apply_phase()` + `apply_noise()` public API |
+| `base.py` | `SimulatorBackend` ABC — tüm simülatörler için soyut arayüz |
+| `statevector.py` | Yoğun tensor contraction, 27 qubite kadar (tam doğru) |
+| `sparse.py` | Sözlük tabanlı seyrek statevector, 50 qubite kadar, O(k) bellek |
+| `mps.py` | Matris Çarpım Durumu (SVD), 200+ qubit, O(n·χ²) bellek |
+| `factory.py` | `create_simulator()` — en iyi arka ucu otomatik seçer |
+| `router.py` | Devre-duyarlı yönlendirme (Clifford algılama, qubit sayısı) |
 | `density_matrix.py` | Karisik durumlar + Kraus gurultu, 13 qubite kadar |
 | `pauli_frame.py` | Aaronson-Gottesman stabilizer tablosu, 50-qubit GHZ <5s |
 | `noise.py` | 7 gurultu kanali: Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError |

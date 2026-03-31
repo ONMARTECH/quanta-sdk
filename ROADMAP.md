@@ -7,7 +7,7 @@
 ## Mevcut Durum Özeti
 
 ```
-Version:     0.9.0            Tests:       774 (91% coverage)
+Version:     0.9.2            Tests:       820 (91% coverage)
 Gates:       31               Files:       86
 Tutorials:   14 + 14 notebook MCP Tools:   20
 Backends:    4 (local + IBM + IonQ + Google)
@@ -274,7 +274,7 @@ QEC:         7 codes (bit/phase/steane/shor/surface/color/shor9)
 ---
 
 ### Task 18 — Test Coverage & CI
-**Durum: ✅ 774 test, 91% coverage, 4 CI workflow**
+**Durum: ✅ 820 test, 91% coverage, 4 CI workflow**
 
 | Alt görev | Detay |
 |-----------|-------|

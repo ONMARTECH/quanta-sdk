@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "quanta-sdk"
-version = "0.9.0"
-description = "AI-native quantum computing SDK — 16 MCP tools for AI agents, 25 gates, IBM Quantum hardware, Grover, QAOA, VQE, Shor, QEC"
+version = "0.9.2"
+description = "AI-native quantum computing SDK — 20 MCP tools, 200+ qubit MPS/sparse simulation, 31 gates, IBM Quantum hardware, Grover, QAOA, VQE, Shor, QEC"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"

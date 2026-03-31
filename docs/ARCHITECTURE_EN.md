@@ -77,7 +77,12 @@ qec/ -------> core/
 
 | File | Responsibility |
 |------|----------------|
-| `statevector.py` | Tensor contraction, up to 27 qubits, `apply_phase()` + `apply_noise()` public API |
+| `base.py` | `SimulatorBackend` ABC — abstract interface for all simulators |
+| `statevector.py` | Dense tensor contraction, up to 27 qubits (exact), `apply_phase()` + `apply_noise()` |
+| `sparse.py` | Dict-based sparse statevector, up to 50 qubits, O(k) memory |
+| `mps.py` | Matrix Product State (SVD), 200+ qubits, O(n·χ²) memory |
+| `factory.py` | `create_simulator()` — auto-selects best backend |
+| `router.py` | Circuit-aware routing (Clifford detection, qubit count) |
 | `density_matrix.py` | Mixed states + Kraus noise channels, up to 13 qubits |
 | `pauli_frame.py` | Aaronson-Gottesman stabilizer tableau, 50-qubit GHZ in <5s |
 | `noise.py` | 7 noise channels: Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError |

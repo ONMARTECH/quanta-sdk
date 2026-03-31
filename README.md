@@ -7,11 +7,11 @@
   <p align="center">
     <a href="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml"><img src="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml/badge.svg" alt="CI"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-89%25-brightgreen.svg" alt="Coverage"></a>
-    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.9.0-blue.svg" alt="Version"></a>
+    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.9.2-blue.svg" alt="Version"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-774%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-820%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-10%2F10-gold.svg" alt="Benchmark"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
     <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-20%20tools-teal.svg" alt="MCP"></a>
@@ -23,20 +23,16 @@
 
 ---
 
-Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — with **16 MCP tools** that let Claude, GPT, and other AI assistants run quantum computations directly.
+Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — with **20 MCP tools** that let Claude, GPT, and other AI assistants run quantum computations directly.
 
-### 🚀 What's New in v0.9.0
+### 🚀 What's New in v0.9.2
 
-- **Estimator/Sampler Primitives** — IBM Qiskit V2 compatible: `Estimator().run(circuit, observables)`, `Sampler().run(circuit, shots)`
-- **@quantum Decorator** — PennyLane-style auto-differentiation: `.gradient()`, `.expectation()`, parameter-shift rule
-- **Async Execution** — `run_async(circuits, shots)` for parallel batch processing
-- **2-3x Performance Boost** — Vectorized sampling + signature caching. Bell: 0.18ms, GHZ-10: 0.35ms (beats Qiskit)
-- **Property-Based Testing** — 21 Hypothesis tests: gate unitarity, Pauli algebra, determinism
-- **Benchmark Suite** — 10 benchmarks with auto-generated `docs/BENCHMARK.md`
-- **14 Jupyter Notebooks** — Google Colab badges, 1-click launch
-- **31 Quantum Gates** — Full IBM parity + Google/IonQ native gates
-- **MCP Server** — 16 AI tools for Claude, GPT, and other AI assistants
-- **Multi-Backend** — IBM Quantum + IonQ + Google Quantum + local simulator
+- **200+ Qubit Simulation** — New MPS (tensor network) simulator: 100-qubit GHZ, 200-qubit QAOA ✅
+- **Sparse Simulator** — Dict-based sparse statevector: 35-qubit GHZ in 120 bytes vs 256 GB dense
+- **SimulatorBackend ABC** — Abstract base class for all simulators + factory pattern
+- **Circuit-Aware Router** — Automatic simulator selection (Clifford→PauliFrame, Dense→Sparse→MPS)
+- **Security Hardened** — exec() sandboxing, eval() elimination, traceback leak prevention
+- **Architecture Fix** — Layer 3 algorithms decoupled from specific simulator backends
 
 ## Table of Contents
 
@@ -389,11 +385,11 @@ pip install cupy          # NVIDIA CUDA backend
 ## Project Stats
 
 ```
-Version:     0.9.0        Gates:       31 (full IBM parity + Google/IonQ)
-Files:       86           Tests:       774 (91% coverage)
+Version:     0.9.2        Gates:       31 (full IBM parity + Google/IonQ)
+Files:       84           Tests:       820 (91% coverage)
 Algorithms:  10           Examples:    11
-Simulators:  4            QEC Codes:   7
-MCP Tools:   20           Max Qubits:  156 (IBM Heron r3)
+Simulators:  6            QEC Codes:   7
+MCP Tools:   20           Max Qubits:  200+ (MPS) / 156 (IBM Heron r3)
 Noise:       7 channels   Backends:    IBM + IonQ + Google + local
 QASM:        3.0          Decoders:    2 (MWPM + UF)
 Tutorials:   14           Notebooks:   14 (Colab)

@@ -6,6 +6,57 @@ Format: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [v0.9.2] - 2026-03-31
+
+### Added — Multi-Backend Simulator Architecture
+- `SimulatorBackend` ABC — abstract base class for all simulators
+- `create_simulator(n, method="auto")` — factory with auto-selection
+- `select_simulator(n, gate_names)` — circuit-aware routing
+- New `quanta/simulator/__init__.py` public API exports
+
+### Added — Sparse StateVector Simulator
+- `SparseSimulator` — dict-based amplitude storage, O(k) memory
+- Supports up to 50 qubits for sparse circuits (GHZ, oracle, product states)
+- 35-qubit GHZ: 120 bytes vs 256 GB dense!
+- Optimized 1q, 2q, and Nq gate paths with MSB qubit convention
+- `apply_phase()` for Grover oracle support
+- Diagnostics: `num_nonzero`, `sparsity`, `memory_bytes`
+
+### Added — MPS Tensor Network Simulator
+- `MPSSimulator` — SVD-based Matrix Product State decomposition
+- O(n·χ²) memory: 100-qubit GHZ in ~32 KB, 200-qubit QAOA ✅
+- Bond dimension control via `chi_max` parameter
+- Adjacent gates: einsum + SVD split + truncation
+- Non-adjacent gates: automatic SWAP chain insertion
+- Sequential qubit-by-qubit sampling (O(n·χ²) per sample)
+- `truncation_error`, `bond_dimensions`, `max_bond_dim` diagnostics
+
+### Added — Circuit-Aware Router
+- Clifford detection → PauliFrameSimulator (1000+ qubits)
+- Qubit count routing: dense ≤27 → sparse ≤50 → MPS 50+
+- `analyze_circuit()` — returns circuit analysis with recommendation
+
+### Changed — L3 Architecture Refactor
+- All 10 Layer 3 modules decoupled from `StateVectorSimulator`
+- Now use `create_simulator()` factory: agent, clustering, entity_resolution,
+  finance, optimize, qml, qsvm, search, shor, vqe
+- Type hints use `SimulatorBackend` ABC instead of concrete class
+
+### Security — v0.9.1 Hardening (included)
+- **RCE Prevention**: `_validate_code()` + `_SAFE_BUILTINS` for exec()
+- **eval() Elimination**: Pure AST recursive walker in qasm_import.py
+- **Traceback Leak Fix**: All 14 MCP error responses sanitized with `_safe_error()`
+
+### Quality
+- Tests: 774 → 820 (+46 tests: 22 sparse + 24 MPS)
+- Coverage: 91%
+- Files: 84 Python modules
+- Simulators: 4 → 6 (SparseSimulator + MPSSimulator)
+- Max Qubits: 27 (dense) → 200+ (MPS)
+- Ruff: 0 errors
+
+---
+
 ## [v0.9.1] - 2026-03-31
 
 ### Added — Option Greeks (Finance)
