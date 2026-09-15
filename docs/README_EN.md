@@ -1,6 +1,6 @@
 # Quanta SDK
 
-A clean, modular quantum computing SDK for Python. **v0.8.1** — [PyPI](https://pypi.org/project/quanta-sdk/)
+A clean, modular quantum computing SDK for Python. **v0.9.2** — [PyPI](https://pypi.org/project/quanta-sdk/)
 
 ## Overview
 

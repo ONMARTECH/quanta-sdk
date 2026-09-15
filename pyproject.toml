@@ -49,7 +49,8 @@ dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-cov", "hypothesis", "ruff", "mypy"]
-gpu = ["jax[cuda12]", "cupy-cuda12x"]
+docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
+gpu = ["jax[cuda12]", "cupy-cuda12x", "cuquantum-python-cu12"]
 mcp = ["fastmcp>=3.0"]
 
 [project.urls]

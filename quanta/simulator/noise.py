@@ -67,7 +67,7 @@ class Depolarizing(NoiseChannel):
         if rng.random() > self.probability:
             return state  # No error
 
-        pauli = rng.integers(0, 3)
+        pauli = int(rng.integers(0, 3))
         return _apply_single_qubit_error(state, qubit, num_qubits, pauli)
 
 @dataclass

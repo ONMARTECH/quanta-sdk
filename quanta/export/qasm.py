@@ -51,19 +51,22 @@ _QASM_GATE_MAP: dict[str, str] = {
     "RZZ": "rzz",
 }
 
-def to_qasm(circuit: CircuitDefinition) -> str:
-    """Converts circuit to OpenQASM 3.0 format.
+def to_qasm(circuit: CircuitDefinition | DAGCircuit) -> str:
+    """Converts circuit or DAGCircuit to OpenQASM 3.0 format.
 
     Args:
-        circuit: Circuit defined with @circuit.
+        circuit: Circuit defined with @circuit or a DAGCircuit.
 
     Returns:
-        OpenQASM 3.0 string'i.
-
-    Raises:
+        OpenQASM 3.0 string.
     """
-    builder = circuit.build()
-    dag = DAGCircuit.from_builder(builder)
+    if isinstance(circuit, DAGCircuit):
+        dag = circuit
+        measurement = getattr(dag, "measurement", None)
+    else:
+        builder = circuit.build()
+        dag = DAGCircuit.from_builder(builder)
+        measurement = builder.measurement
 
     lines: list[str] = []
 
@@ -73,11 +76,11 @@ def to_qasm(circuit: CircuitDefinition) -> str:
 
     lines.append(f"qubit[{dag.num_qubits}] q;")
 
-    has_measure = builder.measurement is not None
+    has_measure = measurement is not None
     if has_measure:
         measured = (
-            builder.measurement.qubits
-            if builder.measurement.qubits
+            measurement.qubits
+            if measurement.qubits
             else tuple(range(dag.num_qubits))
         )
         lines.append(f"bit[{len(measured)}] c;")
@@ -91,8 +94,8 @@ def to_qasm(circuit: CircuitDefinition) -> str:
     if has_measure:
         lines.append("")
         measured = (
-            builder.measurement.qubits
-            if builder.measurement.qubits
+            measurement.qubits
+            if measurement.qubits
             else tuple(range(dag.num_qubits))
         )
         for i, q in enumerate(measured):

@@ -17,7 +17,43 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-__all__ = ["QuantaConfig", "get_config_dir"]
+__all__ = ["QuantaConfig", "get_config_dir", "get_system_memory_gb", "get_max_dense_qubits"]
+
+
+def get_system_memory_gb() -> float:
+    """Returns detected total system RAM in gigabytes."""
+    try:
+        return (os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")) / (1024**3)
+    except Exception:
+        return 16.0
+
+
+def get_max_dense_qubits() -> int:
+    """Determines maximum safe qubits for dense statevector simulation.
+
+    Scales dynamically with available system RAM:
+      - >= 44 GB (e.g. Apple Silicon M5 Pro 48GB): up to 30 qubits (~16 GB state)
+      - >= 28 GB (e.g. 32GB RAM): up to 29 qubits (~8 GB state)
+      - >= 14 GB (e.g. 16GB RAM): up to 28 qubits (~4 GB state)
+      - < 14 GB: up to 26 qubits (~1 GB state)
+
+    Can be overridden with QUANTA_MAX_QUBITS environment variable.
+    """
+    if "QUANTA_MAX_QUBITS" in os.environ:
+        try:
+            return int(os.environ["QUANTA_MAX_QUBITS"])
+        except ValueError:
+            pass
+
+    ram_gb = get_system_memory_gb()
+    if ram_gb >= 44.0:
+        return 30
+    if ram_gb >= 28.0:
+        return 29
+    if ram_gb >= 14.0:
+        return 28
+    return 26
+
 
 
 def get_config_dir() -> Path:

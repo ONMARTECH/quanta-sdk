@@ -119,4 +119,4 @@ def fidelity(
     dim = u_a.shape[0]
     trace = np.abs(np.trace(u_a.conj().T @ u_b))
 
-    return trace / dim
+    return float(trace / dim)

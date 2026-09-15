@@ -60,13 +60,13 @@ class PauliFrameSimulator:
         self._measured_qubits: tuple[int, ...] | None = None
 
     def _x_col(self, row: int, qubit: int) -> int:
-        return self._tab[row, qubit]
+        return int(self._tab[row, qubit])
 
     def _z_col(self, row: int, qubit: int) -> int:
-        return self._tab[row, self.n + qubit]
+        return int(self._tab[row, self.n + qubit])
 
     def _phase(self, row: int) -> int:
-        return self._tab[row, 2 * self.n]
+        return int(self._tab[row, 2 * self.n])
 
     def h(self, qubit: int) -> None:
         """Hadamard gate: X<->Z, phase update for Y."""

@@ -20,8 +20,11 @@ Example:
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
+from quanta.config import get_max_dense_qubits
 from quanta.core.gates import GATE_REGISTRY, MultiParametricGate, ParametricGate
 from quanta.core.types import QuantaError
 from quanta.simulator.base import SimulatorBackend
@@ -38,14 +41,14 @@ class StateVectorSimulator(SimulatorBackend):
     """Tensor-based statevector simulator.
 
     Simulates quantum circuits on a 2^n dimensional complex vector.
-    v0.2: O(2^n) performance with np.tensordot -- supports 26 qubits.
+    v0.2: O(2^n) performance with np.tensordot -- supports up to 30 qubits on 48GB RAM.
 
     Args:
         num_qubits: Number of qubits to simulate.
         seed: Random seed for reproducibility.
     """
 
-    MAX_QUBITS = 27  # Memory limit: ~2 GB
+    MAX_QUBITS = get_max_dense_qubits()
 
     __slots__ = ("num_qubits", "_state", "_rng")
 
@@ -187,7 +190,7 @@ class StateVectorSimulator(SimulatorBackend):
 
     def apply_noise(
         self,
-        noise_model: object,
+        noise_model: Any,
         qubits: tuple[int, ...],
         rng: np.random.Generator,
     ) -> None:

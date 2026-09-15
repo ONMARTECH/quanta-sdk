@@ -157,10 +157,7 @@ def tensor_contract(
     flat = result.reshape(-1)
 
     # Convert back to numpy if needed
-    if _backend_name != "numpy":
-        flat = np.asarray(flat)
-
-    return flat
+    return np.asarray(flat)
 
 
 def get_backend_info() -> dict[str, str]:

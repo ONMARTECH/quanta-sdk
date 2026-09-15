@@ -15,7 +15,8 @@ Example:
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -45,11 +46,11 @@ _I = np.eye(2, dtype=complex)
 _thread_local = threading.local()
 
 
-def _get_builders_stack() -> list:
+def _get_builders_stack() -> list[Any]:
     """Returns the per-thread builder stack, creating it if needed."""
     if not hasattr(_thread_local, "builders"):
         _thread_local.builders = []
-    return _thread_local.builders
+    return cast(list[Any], _thread_local.builders)
 
 
 # Public alias for backward compatibility (used by circuit.py)
@@ -61,7 +62,7 @@ _active_builders = type("_BuilderProxy", (), {
 })()
 
 
-def _get_active_builder():
+def _get_active_builder() -> Any:
     """Returns the active CircuitBuilder for the current thread.
 
     Each thread has its own isolated builder stack, so concurrent
@@ -115,7 +116,7 @@ class Gate:
         """
         # Check known inverse pairs
         if self.name in _INVERSE_MAP:
-            return GATE_REGISTRY[_INVERSE_MAP[self.name]]
+            return cast(Gate, GATE_REGISTRY[_INVERSE_MAP[self.name]])
         # Self-inverse gates
         if self.name in _SELF_INVERSE_GATES:
             return self
@@ -197,7 +198,9 @@ class ParametricGate:
         >>> RY(np.pi/4)(q[0])  # θ=π/4 ile RY uygula
     """
 
-    def __init__(self, name: str, matrix_fn, num_qubits: int = 1) -> None:
+    def __init__(
+        self, name: str, matrix_fn: Callable[..., np.ndarray], num_qubits: int = 1
+    ) -> None:
         self.name = name
         self._matrix_fn = matrix_fn
         self.num_qubits = num_qubits
@@ -218,7 +221,7 @@ class _BoundParametricGate:
         self,
         name: str,
         theta: float,
-        matrix_fn,
+        matrix_fn: Callable[..., np.ndarray],
         num_qubits: int = 1,
     ) -> None:
         self.name = name
@@ -228,7 +231,7 @@ class _BoundParametricGate:
 
     @property
     def matrix(self) -> np.ndarray:
-        return self._matrix_fn(self.theta)
+        return np.asarray(self._matrix_fn(self.theta))
 
     def __call__(self, *args: QubitRef | Iterable[QubitRef]) -> None:
         qubits = _flatten_qubits(args)
@@ -252,7 +255,9 @@ class _BoundParametricGate:
 class MultiParametricGate:
     """Multi-parameter gate factory. Like U(θ, φ, λ)."""
 
-    def __init__(self, name: str, matrix_fn, num_params: int = 3) -> None:
+    def __init__(
+        self, name: str, matrix_fn: Callable[..., np.ndarray], num_params: int = 3
+    ) -> None:
         self.name = name
         self._matrix_fn = matrix_fn
         self.num_params = num_params
@@ -271,14 +276,16 @@ class _BoundMultiParametricGate:
 
     num_qubits = 1
 
-    def __init__(self, name: str, params: tuple, matrix_fn) -> None:
+    def __init__(
+        self, name: str, params: tuple[float, ...], matrix_fn: Callable[..., np.ndarray]
+    ) -> None:
         self.name = name
         self.params = params
         self._matrix_fn = matrix_fn
 
     @property
     def matrix(self) -> np.ndarray:
-        return self._matrix_fn(*self.params)
+        return np.asarray(self._matrix_fn(*self.params))
 
     def __call__(self, *args: QubitRef | Iterable[QubitRef]) -> None:
         qubits = _flatten_qubits(args)
@@ -290,7 +297,7 @@ class _BoundMultiParametricGate:
 
 # ═══════════════════════════════════════════
 
-def _flatten_qubits(args) -> list[int]:
+def _flatten_qubits(args: Any) -> list[int]:
     result: list[int] = []
     for arg in args:
         if isinstance(arg, QubitRef):
@@ -312,7 +319,7 @@ def _flatten_qubits(args) -> list[int]:
 class _H(Gate):
     name = "H"
     def _build_matrix(self) -> np.ndarray:
-        return np.array([[1, 1], [1, -1]], dtype=complex) * _SQRT2_INV
+        return np.asarray(np.array([[1, 1], [1, -1]], dtype=complex) * _SQRT2_INV)
 
 class _X(Gate):
     name = "X"
@@ -509,12 +516,12 @@ class _ECR(Gate):
     name = "ECR"
     num_qubits = 2
     def _build_matrix(self) -> np.ndarray:
-        return np.array([
+        return np.asarray(np.array([
             [0, 0, 1, 1j],
             [0, 0, 1j, 1],
             [1, -1j, 0, 0],
             [-1j, 1, 0, 0],
-        ], dtype=complex) * _SQRT2_INV
+        ], dtype=complex) * _SQRT2_INV)
 
 # ── New v0.9: iSWAP ──
 # Google Sycamore native gate
@@ -602,7 +609,7 @@ CSWAP = _CSWAP()
 CH = _CH()
 
 
-GATE_REGISTRY: dict[str, Gate | ParametricGate] = {
+GATE_REGISTRY: dict[str, Gate | ParametricGate | MultiParametricGate] = {
     "H": H, "X": X, "Y": Y, "Z": Z, "S": S, "T": T,
     "I": I, "SDG": SDG, "TDG": TDG, "SX": SX, "SXdg": SXdg,
     "CX": CX, "CZ": CZ, "CY": CY, "SWAP": SWAP,

@@ -1,6 +1,6 @@
 # MCP AI Integration
 
-> Tested with: Quanta SDK v0.8.1
+> Tested with: Quanta SDK v0.9.2
 
 ## What You'll Learn
 
@@ -110,6 +110,6 @@ You've completed all 8 tutorials:
 | 08 | MCP — AI integration |
 
 **Next steps:**
-- [Cookbook](../cookbook/) — Copy-paste recipes for common tasks
+- [Cookbook](../cookbook/index.md) — Copy-paste recipes for common tasks
 - [Migration Guide](../migration/from-qiskit.md) — Coming from Qiskit?
 - [GitHub](https://github.com/ONMARTECH/quanta-sdk) — Contribute!

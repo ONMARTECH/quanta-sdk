@@ -23,8 +23,9 @@ class TestStateVectorCoverage:
     def test_max_qubits_exceeded(self):
         """Line 53: SimulatorError when exceeding MAX_QUBITS."""
         from quanta.simulator.statevector import SimulatorError, StateVectorSimulator
-        with pytest.raises(SimulatorError, match="Max 27 qubits"):
-            StateVectorSimulator(28)
+        max_q = StateVectorSimulator.MAX_QUBITS
+        with pytest.raises(SimulatorError, match=f"Max {max_q} qubits"):
+            StateVectorSimulator(max_q + 1)
 
     def test_numpy_fallback_when_accelerated_unavailable(self):
         """Lines 95-111: Ensure NumPy tensor contraction fallback works."""

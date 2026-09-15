@@ -30,6 +30,8 @@ Example:
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from quanta.core.gates import GATE_REGISTRY, MultiParametricGate, ParametricGate
@@ -259,13 +261,13 @@ class SparseSimulator(SimulatorBackend):
 
     def apply_noise(
         self,
-        noise_model: object,
+        noise_model: Any,
         qubits: tuple[int, ...],
         rng: np.random.Generator,
     ) -> None:
         """Noise via dense conversion (fallback)."""
         dense = self.state
-        dense = noise_model.apply_noise(dense, qubits, self.num_qubits, rng)  # type: ignore[union-attr]
+        dense = noise_model.apply_noise(dense, qubits, self.num_qubits, rng)
         self.state = dense
 
     @property
@@ -282,7 +284,7 @@ class SparseSimulator(SimulatorBackend):
     def sparsity(self) -> float:
         """Fraction of state that is zero: 1.0 = maximally sparse."""
         dim = 2 ** self.num_qubits
-        return 1.0 - len(self._amplitudes) / dim
+        return float(1.0 - len(self._amplitudes) / dim)
 
     @property
     def memory_bytes(self) -> int:

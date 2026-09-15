@@ -141,16 +141,16 @@ class Backend(ABC):
             return LocalSimulator(**kwargs)
 
         if name_lower in ("ibm", "ibm_fez", "ibm_heron", "ibm_quantum"):
-            from quanta.backends.ibm import IBMQuantumBackend
-            return IBMQuantumBackend(**kwargs)
+            from quanta.backends.ibm import IBMBackend
+            return IBMBackend(**kwargs)
 
         if name_lower in ("ionq", "ionq_aria"):
             from quanta.backends.ionq import IonQBackend
             return IonQBackend(**kwargs)
 
         if name_lower in ("google", "google_willow", "gcp"):
-            from quanta.backends.google import GoogleQuantumBackend
-            return GoogleQuantumBackend(**kwargs)
+            from quanta.backends.google import GoogleBackend
+            return GoogleBackend(**kwargs)
 
         available = ["local", "ibm", "ionq", "google"]
         raise ValueError(

@@ -41,24 +41,15 @@ class CustomGate(Gate):
     """
 
     def __init__(self, name: str, matrix: np.ndarray) -> None:
-        self._name = name
+        self.name = name
         self._matrix = np.asarray(matrix, dtype=complex)
-        self._num_qubits = int(np.log2(self._matrix.shape[0]))
+        self.num_qubits = int(np.log2(self._matrix.shape[0]))
 
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def matrix(self) -> np.ndarray:
+    def _build_matrix(self) -> np.ndarray:
         return self._matrix
 
-    @property
-    def num_qubits(self) -> int:
-        return self._num_qubits
-
     def __repr__(self) -> str:
-        return f"CustomGate('{self._name}', {self._num_qubits}q)"
+        return f"CustomGate('{self.name}', {self.num_qubits}q)"
 
 
 def custom_gate(

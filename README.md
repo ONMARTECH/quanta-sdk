@@ -14,7 +14,7 @@
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-820%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-10%2F10-gold.svg" alt="Benchmark"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
-    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-20%20tools-teal.svg" alt="MCP"></a>
+    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-23%20tools-teal.svg" alt="MCP"></a>
     <a href="https://onmartech.github.io/quanta-sdk/"><img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs"></a>
     <a href="#features"><img src="https://img.shields.io/badge/gates-31-blueviolet.svg" alt="Gates"></a>
     <a href="https://onmartech.github.io/quanta-sdk/tutorials/01-getting-started/"><img src="https://img.shields.io/badge/tutorials-14-informational.svg" alt="Tutorials"></a>
@@ -23,10 +23,11 @@
 
 ---
 
-Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — with **20 MCP tools** that let Claude, GPT, and other AI assistants run quantum computations directly.
+Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — with **23 MCP tools** that let Claude, GPT, and other AI assistants run quantum computations directly.
 
 ### 🚀 What's New in v0.9.2
 
+- **NVIDIA GPU Acceleration** — Native `cuStateVec` integration via `cuquantum` SDK for enterprise-scale deep circuits.
 - **200+ Qubit Simulation** — New MPS (tensor network) simulator: 100-qubit GHZ, 200-qubit QAOA ✅
 - **Sparse Simulator** — Dict-based sparse statevector: 35-qubit GHZ in 120 bytes vs 256 GB dense
 - **SimulatorBackend ABC** — Abstract base class for all simulators + factory pattern
@@ -124,7 +125,7 @@ All circuits automatically transpile to Heron's native gate set:
 
 ## MCP AI Integration
 
-Quanta exposes **16 MCP tools** for AI assistants (Claude, GPT, etc.):
+Quanta exposes **23 MCP tools** for AI assistants (Claude, GPT, Gemini, etc.):
 
 ```bash
 # Install as MCP server
@@ -144,13 +145,20 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `list_gates` | All 31 quantum gates |
 | `explain_result` | Interpret measurements |
 | `monte_carlo_price` | Quantum option pricing |
+| `option_greeks` | Calculate option Greeks (delta, gamma, vega) |
 | `qaoa_optimize` | QAOA optimization |
+| `optimize_circuit` | Compiler optimization with metrics |
 | `cluster_data` | Quantum clustering |
+| `qml_classify` | Quantum ML classification |
 | `run_on_ibm` | Run on IBM hardware |
 | `ibm_backends` | List IBM quantum computers |
 | `ibm_job_result` | Poll job status & fetch results |
 | `surface_code_simulate` | Surface code QEC simulation |
 | `compare_decoders` | Compare MWPM vs Union-Find decoders |
+| `qec_diagnose` | Diagnose errors in quantum error-correcting codes |
+| `estimate_fault_tolerant_cost` | Estimate physical qubits, code distance & T-factory budget (FTQC) |
+| `quanta_reasoning_eval` | Deep reasoning audit & gate density evaluation for AI-generated circuits |
+| `transpile_for_target` | Compile circuit to target native gate set (IBM Heron, Google Willow, IonQ Aria) |
 
 ## Architecture
 
@@ -365,7 +373,7 @@ export IBM_INSTANCE_CRN="your-crn"
 **Optional GPU acceleration:**
 ```bash
 pip install jax jaxlib   # JAX GPU backend
-pip install cupy          # NVIDIA CUDA backend
+pip install quanta-sdk[gpu] # Installs cupy and cuquantum-python for NVIDIA GPUs
 ```
 
 ## Documentation
@@ -389,7 +397,7 @@ Version:     0.9.2        Gates:       31 (full IBM parity + Google/IonQ)
 Files:       84           Tests:       820 (91% coverage)
 Algorithms:  10           Examples:    11
 Simulators:  6            QEC Codes:   7
-MCP Tools:   20           Max Qubits:  200+ (MPS) / 156 (IBM Heron r3)
+MCP Tools:   23           Max Qubits:  200+ (MPS) / 156 (IBM Heron r3)
 Noise:       7 channels   Backends:    IBM + IonQ + Google + local
 QASM:        3.0          Decoders:    2 (MWPM + UF)
 Tutorials:   14           Notebooks:   14 (Colab)

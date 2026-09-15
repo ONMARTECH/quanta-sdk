@@ -24,7 +24,7 @@ from __future__ import annotations
 import asyncio
 import functools
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -91,11 +91,12 @@ class QuantumFunction:
         Returns:
             Result: Measurement results.
         """
+        params: dict[str, Any] = dict(kwargs)
         return run(
             self._circuit_def,
             shots=self._shots,
             seed=self._seed,
-            **kwargs,
+            **params,
         )
 
     def expectation(

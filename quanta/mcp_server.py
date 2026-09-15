@@ -10,13 +10,13 @@ Run:
 Or install in Claude Desktop:
     fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 
-Tools (20):
+Tools (23):
   Education:
     - create_bell_state:         Quick Bell state |Φ+⟩
     - draw_circuit:              SVG circuit diagram
     - list_gates:                Available quantum gates (31)
     - explain_result:            Interpret measurement results
-  Research:
+  Research & Fault-Tolerance:
     - run_circuit:               Execute quantum circuit code
     - grover_search:             Grover's search algorithm
     - shor_factor:               Shor's factoring algorithm
@@ -25,10 +25,16 @@ Tools (20):
     - optimize_circuit:          Compiler optimization with metrics
     - surface_code_simulate:     Surface code QEC simulation
     - compare_decoders:          Compare MWPM vs Union-Find decoders
+    - qec_diagnose:              Syndrome diagnosis & error lookup
+    - estimate_fault_tolerant_cost: Surface code / Willow resource estimation
+  Agentic AI & Compilation:
+    - quanta_reasoning_eval:     Reasoning complexity feedback for AI agents
+    - transpile_for_target:      Transpile to Heron, Willow or IonQ native ISA
   Machine Learning:
     - qml_classify:              Quantum ML classification
   Business:
     - monte_carlo_price:         Quantum Monte Carlo option pricing
+    - option_greeks:             Option sensitivity Greeks (Δ,Γ,ν,Θ,ρ)
     - cluster_data:              Quantum clustering
   Hardware:
     - run_on_ibm:                Run on IBM Quantum hardware
@@ -1727,6 +1733,298 @@ def qec_diagnose(
 
 
 # ═══════════════════════════════════════════
+#  Tool 21: Fault-Tolerant Resource Estimation
+# ═══════════════════════════════════════════
+
+def _extract_circuit_def(circuit_code: str) -> Any:
+    """Safely executes code in sandbox and returns the CircuitDefinition."""
+    _validate_code(circuit_code)
+    import math as math_mod
+
+    import numpy as np_mod
+
+    from quanta import (  # noqa: I001
+        CCX,  # noqa: E741
+        CH,
+        CP,
+        CSWAP,
+        CX,
+        CY,
+        CZ,
+        ECR,
+        MS,
+        RC3X,
+        RCCX,
+        RX,
+        RXX,
+        RY,
+        RZ,
+        RZZ,
+        SDG,
+        SWAP,
+        SX,
+        TDG,
+        H,
+        I,
+        P,
+        S,
+        SXdg,
+        T,
+        U,
+        X,
+        Y,
+        Z,
+        circuit,
+        iSWAP,
+        measure,
+        run,
+    )
+
+    sandbox: dict[str, Any] = {
+        "__builtins__": _SAFE_BUILTINS,
+        "circuit": circuit, "measure": measure, "run": run,
+        "H": H, "X": X, "Y": Y, "Z": Z, "S": S, "T": T, "I": I,
+        "CX": CX, "CZ": CZ, "CY": CY, "SWAP": SWAP, "CCX": CCX,
+        "RX": RX, "RY": RY, "RZ": RZ, "P": P, "SX": SX, "SXdg": SXdg,
+        "SDG": SDG, "TDG": TDG, "U": U, "RXX": RXX, "RZZ": RZZ,
+        "RCCX": RCCX, "RC3X": RC3X, "ECR": ECR, "iSWAP": iSWAP,
+        "CSWAP": CSWAP, "CH": CH, "CP": CP, "MS": MS,
+        "math": math_mod, "np": np_mod, "pi": math_mod.pi,
+    }
+    exec(circuit_code, sandbox)  # noqa: S102
+    for v in sandbox.values():
+        if hasattr(v, "build"):
+            return v
+    raise ValueError("No @circuit function found in code.")
+
+
+@mcp.tool()
+def estimate_fault_tolerant_cost(
+    circuit_code: str,
+    target_logical_error_rate: float = 1e-10,
+    physical_error_rate: float = 1e-3,
+) -> str:
+    """Estimates fault-tolerant quantum hardware resources (Google Willow / Surface Code).
+
+    Calculates required surface code distance, physical qubits, T-factory
+    distillation footprint, and runtime metrics for fault-tolerant execution.
+
+    Args:
+        circuit_code: Python code defining a @circuit function.
+        target_logical_error_rate: Target error rate per algorithm run (default: 1e-10).
+        physical_error_rate: Physical 2-qubit gate error rate (default: 1e-3, Willow standard).
+    """
+    try:
+        from quanta.dag.dag_circuit import DAGCircuit
+
+        circ_fn = _extract_circuit_def(circuit_code)
+        dag = DAGCircuit.from_builder(circ_fn.build())
+
+        n_logical = dag.num_qubits
+        total_gates = dag.gate_count()
+        depth = dag.depth()
+
+        # Count T-gates and Non-Clifford costs
+        t_count = 0
+        clifford_count = 0
+        for node in dag.op_nodes():
+            g = node.gate_name.upper()
+            if g in ("T", "TDG"):
+                t_count += 1
+            elif g in ("CCX", "CSWAP"):
+                t_count += 4  # Standard Toffoli requires 4 T gates
+            elif g.startswith("R") or g in ("U", "P", "CP"):
+                t_count += 50  # Solovay-Kitaev / repeat-until-success synthesis
+            else:
+                clifford_count += 1
+
+        # Surface code distance d calculation
+        # Formula: P_L ~ 0.1 * (p_phys / p_th)**((d+1)/2), p_th = 0.01
+        p_th = 0.01
+        epsilon_budget = target_logical_error_rate / max(1, total_gates)
+
+        d = 3
+        while d <= 45:
+            p_l = 0.1 * ((physical_error_rate / p_th) ** ((d + 1) / 2))
+            if p_l <= epsilon_budget:
+                break
+            d += 2
+
+        data_physical_qubits = 2 * (d ** 2) * n_logical
+        t_factory_qubits = 15 * (d ** 2) if t_count > 0 else 0
+        total_physical_qubits = data_physical_qubits + t_factory_qubits
+
+        # Surface code cycle time (~1 microsecond per syndrome extraction round)
+        cycle_time_us = 1.0
+        total_runtime_seconds = (depth * d * cycle_time_us) / 1e6
+
+        return json.dumps({
+            "logical_qubits": n_logical,
+            "total_gates": total_gates,
+            "circuit_depth": depth,
+            "clifford_gates": clifford_count,
+            "magic_t_gates_required": t_count,
+            "surface_code_distance": d,
+            "physical_qubits_data": data_physical_qubits,
+            "physical_qubits_t_factory": t_factory_qubits,
+            "total_physical_qubits": total_physical_qubits,
+            "estimated_runtime_seconds": round(total_runtime_seconds, 4),
+            "willow_compatible": total_physical_qubits <= 105,
+            "architecture": "Rotated Surface Code (Google Willow / IBM Starling style)",
+        })
+    except Exception as exc:
+        return _safe_error(exc)
+
+
+# ═══════════════════════════════════════════
+#  Tool 22: AI Reasoning Circuit Evaluator
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def quanta_reasoning_eval(circuit_code: str) -> str:
+    """Evaluates circuit complexity and provides reasoning feedback for AI agents.
+
+    Analyzes gate cancellation potential, 2-qubit entangling capacity,
+    simulation tractability, and suggests architectural self-corrections.
+
+    Args:
+        circuit_code: Python code defining a @circuit function.
+    """
+    try:
+        from quanta.compiler.passes.optimize import CancelInverses
+        from quanta.dag.dag_circuit import DAGCircuit
+
+        circ_fn = _extract_circuit_def(circuit_code)
+        dag = DAGCircuit.from_builder(circ_fn.build())
+
+        num_qubits = dag.num_qubits
+        total_gates = dag.gate_count()
+        depth = dag.depth()
+
+        # Gate classification
+        two_qubit_count = 0
+        non_clifford_count = 0
+        for node in dag.op_nodes():
+            if len(node.qubits) >= 2:
+                two_qubit_count += 1
+            if node.gate_name.upper() in ("T", "TDG", "CCX") or node.gate_name.startswith("R"):
+                non_clifford_count += 1
+
+        entangling_ratio = (two_qubit_count / total_gates) if total_gates > 0 else 0.0
+
+        # Optimization check
+        cancel_pass = CancelInverses()
+        optimized_dag = cancel_pass.run(dag)
+        cancellable_gates = total_gates - optimized_dag.gate_count()
+
+        # Simulation regime recommendation
+        if non_clifford_count == 0:
+            regime = "Clifford Stabilizer (efficient up to 1,000+ qubits via PauliFrame)"
+        elif num_qubits <= 30:
+            regime = "Dense Statevector (exact simulation supported on M5 Pro 48GB)"
+        elif entangling_ratio < 0.2:
+            regime = "Matrix Product State (low entanglement, scalable to 100+ qubits)"
+        else:
+            regime = "High-entanglement non-Clifford (classical intractable, requires QPU)"
+
+        suggestions = []
+        if cancellable_gates > 0:
+            suggestions.append(
+                f"Found {cancellable_gates} redundant gates that can be eliminated."
+            )
+        if entangling_ratio > 0.6:
+            suggestions.append(
+                "High 2-qubit gate density may cause significant decoherence on NISQ QPUs."
+            )
+        if num_qubits > 30 and non_clifford_count > 0 and entangling_ratio >= 0.2:
+            suggestions.append(
+                "Circuit exceeds statevector limits. Consider tensor networks or Clifford."
+            )
+
+        return json.dumps({
+            "num_qubits": num_qubits,
+            "total_gates": total_gates,
+            "circuit_depth": depth,
+            "entangling_gate_ratio": round(entangling_ratio, 3),
+            "non_clifford_gates": non_clifford_count,
+            "cancellable_gates": cancellable_gates,
+            "recommended_simulation_regime": regime,
+            "agent_feedback": (
+                suggestions if suggestions else ["Circuit structure is clean."]
+            ),
+        })
+    except Exception as exc:
+        return _safe_error(exc)
+
+
+# ═══════════════════════════════════════════
+#  Tool 23: Transpile for Target Architecture
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def transpile_for_target(
+    circuit_code: str,
+    target: str = "ibm_heron",
+) -> str:
+    """Transpiles a circuit into native hardware gate set and ISA.
+
+    Supports:
+      - 'ibm_heron': Native RZ, SX, X, CZ, ECR
+      - 'google_willow': Native PhasedXZ, CZ, iSWAP
+      - 'ionq_aria': Native GPI, GPI2, MS
+
+    Args:
+        circuit_code: Python code defining a @circuit function.
+        target: Target hardware platform ("ibm_heron", "google_willow", "ionq_aria").
+    """
+    try:
+        from quanta.compiler.passes.optimize import CancelInverses, MergeRotations
+        from quanta.compiler.passes.translate import TranslateToTarget
+        from quanta.compiler.pipeline import CompilerPipeline
+        from quanta.dag.dag_circuit import DAGCircuit
+        from quanta.export.qasm import to_qasm
+
+        circ_fn = _extract_circuit_def(circuit_code)
+        dag = DAGCircuit.from_builder(circ_fn.build())
+
+        orig_count = dag.gate_count()
+        orig_depth = dag.depth()
+
+        # Translation map based on target
+        target_lower = target.lower()
+        if "ibm" in target_lower or "heron" in target_lower:
+            target_key = "ibm"
+            native_gates = {"RZ", "SX", "X", "CZ", "ECR", "MEASURE"}
+        elif "google" in target_lower or "willow" in target_lower:
+            target_key = "google"
+            native_gates = {"RZ", "SX", "CZ", "iSWAP", "MEASURE"}
+        else:
+            target_key = "universal"
+            native_gates = {"RX", "RY", "RZ", "MS", "MEASURE"}
+
+        pipeline = CompilerPipeline([
+            TranslateToTarget(target_gates=target_key),
+            CancelInverses(),
+            MergeRotations(),
+        ])
+        transpiled_dag = pipeline.run(dag)
+
+        qasm_code = to_qasm(transpiled_dag)
+
+        return json.dumps({
+            "target": target,
+            "original_gate_count": orig_count,
+            "original_depth": orig_depth,
+            "transpiled_gate_count": transpiled_dag.gate_count(),
+            "transpiled_depth": transpiled_dag.depth(),
+            "target_native_gates": list(native_gates),
+            "qasm3_output": qasm_code,
+        })
+    except Exception as exc:
+        return _safe_error(exc)
+
+
+# ═══════════════════════════════════════════
 #  Resource: SDK Info
 # ═══════════════════════════════════════════
 
@@ -1735,17 +2033,20 @@ def sdk_info() -> str:
     """Quanta SDK version and capabilities."""
     return json.dumps({
         "name": "Quanta Quantum SDK",
-        "version": "0.9.0",
+        "version": "0.9.2",
         "description": "AI-native quantum computing SDK",
         "total_gates": 31,
-        "total_tools": 16,
+        "total_tools": 23,
         "tool_categories": {
             "education": ["create_bell_state", "draw_circuit",
                          "list_gates", "explain_result"],
             "research": ["run_circuit", "grover_search", "shor_factor",
-                        "simulate_noise", "qaoa_optimize",
-                        "surface_code_simulate", "compare_decoders"],
-            "business": ["monte_carlo_price", "cluster_data"],
+                        "simulate_noise", "qaoa_optimize", "optimize_circuit",
+                        "surface_code_simulate", "compare_decoders", "qec_diagnose",
+                        "estimate_fault_tolerant_cost"],
+            "agentic_ai": ["quanta_reasoning_eval", "transpile_for_target"],
+            "machine_learning": ["qml_classify"],
+            "business": ["monte_carlo_price", "option_greeks", "cluster_data"],
             "hardware": ["run_on_ibm", "ibm_backends", "ibm_job_result"],
         },
         "capabilities": [

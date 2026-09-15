@@ -12,24 +12,22 @@ Usage:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from quanta.simulator.base import SimulatorBackend
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    pass
+    from quanta.simulator.base import SimulatorBackend
 
 __all__ = ["create_simulator"]
 
 # Simulator methods registry
-METHODS = ("auto", "dense", "sparse", "mps", "clifford")
+METHODS = ("auto", "dense", "sparse", "mps", "clifford", "custatevec")
 
 
 def create_simulator(
     num_qubits: int,
     method: str = "auto",
     seed: int | None = None,
-    **kwargs: object,
+    **kwargs: Any,
 ) -> SimulatorBackend:
     """Creates the best simulator for the given qubit count.
 
@@ -62,6 +60,13 @@ def create_simulator(
     if method == "dense":
         from quanta.simulator.statevector import StateVectorSimulator
         return StateVectorSimulator(num_qubits, seed=seed)
+
+    if method == "custatevec":
+        try:
+            from quanta.simulator.custatevec import CuStateVecSimulator
+            return CuStateVecSimulator(num_qubits, seed=seed)
+        except ImportError as e:
+            raise ValueError(f"cuQuantum GPU support not available: {e}") from None
 
     if method == "sparse":
         # Phase 2: Will be implemented
