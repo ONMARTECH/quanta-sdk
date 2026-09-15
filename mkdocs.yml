@@ -89,6 +89,8 @@ nav:
     - "10a — VQE: Molekül Simülasyonu": tutorials/10a-vqe-molecular.md
     - "10b — Bell Eşitsizliği": tutorials/10b-bell-inequality.md
     - "10c — QEC Threshold": tutorials/10c-qec-threshold.md
+    - "11 — Google Willow QEC": tutorials/11-willow-dynamic-qec.md
+    - "12 — AI Agentic Auditing": tutorials/12-agentic-circuit-auditing.md
   - API Reference:
     - Core:
       - Circuit: api/core/circuit.md

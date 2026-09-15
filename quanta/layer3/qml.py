@@ -43,8 +43,10 @@ from quanta.simulator.factory import create_simulator
 
 __all__ = [
     "QuantumClassifier",
+    "QuantumRegressor",
     "QuantumKernel",
     "QMLResult",
+    "RegressionResult",
     "angle_encoding",
     "zz_feature_map",
     "amplitude_encoding",
@@ -210,7 +212,7 @@ class QuantumKernel:
             zz_feature_map(sim, x, reps=self.reps)
         else:
             angle_encoding(sim, x)
-        return sim.state
+        return np.asarray(sim.state)
 
     def evaluate(self, x1: np.ndarray, x2: np.ndarray) -> float:
         """Compute kernel value K(x1, x2) = |⟨φ(x1)|φ(x2)⟩|²."""
@@ -261,6 +263,33 @@ class QMLResult:
     def __repr__(self) -> str:
         return (
             f"QMLResult(accuracy={self.accuracy:.2%}, "
+            f"qubits={self.n_qubits}, params={self.n_params})"
+        )
+
+
+@dataclass
+class RegressionResult:
+    """Result of quantum machine learning regression training.
+
+    Attributes:
+        r2: Coefficient of determination R^2 score.
+        mse: Mean squared error on training data.
+        loss_history: Loss values during training.
+        predictions: Last predictions made.
+        n_qubits: Number of qubits used.
+        n_params: Number of trainable parameters.
+    """
+
+    r2: float
+    mse: float
+    loss_history: list[float] = field(default_factory=list)
+    predictions: np.ndarray = field(default_factory=lambda: np.array([]))
+    n_qubits: int = 0
+    n_params: int = 0
+
+    def __repr__(self) -> str:
+        return (
+            f"RegressionResult(r2={self.r2:.4f}, mse={self.mse:.4f}, "
             f"qubits={self.n_qubits}, params={self.n_params})"
         )
 
@@ -337,7 +366,7 @@ class QuantumClassifier:
 
         # Measurement probabilities
         probs = np.abs(sim.state) ** 2
-        return probs
+        return np.asarray(probs)
 
     def _predict_proba(self, x: np.ndarray) -> float:
         """Get probability of class 1 for a single sample.
@@ -465,3 +494,249 @@ class QuantumClassifier:
         """
         predictions = self.predict(X)
         return float(np.mean(predictions == np.asarray(y)))
+
+
+# ── Quantum Regressor ─────────────────────────────
+
+
+class QuantumRegressor:
+    """Variational Quantum Regressor (VQR).
+
+    Continuous quantum regression pipeline:
+      1. Feature map encodes classical features into a quantum state.
+      2. Variational ansatz parameterizes the circuit.
+      3. Expectation value of Pauli-Z on readout qubit is measured.
+      4. Trainable affine parameters (weight, bias) scale expectation in [-1, 1]
+         to continuous target range: y_hat = weight * <Z> + bias.
+      5. Parameter-shift gradients minimize Mean Squared Error (MSE) loss.
+
+    Example:
+        >>> reg = QuantumRegressor(n_qubits=4, n_layers=2)
+        >>> reg.fit(X_train, y_train, epochs=30)
+        >>> preds = reg.predict(X_test)
+        >>> print(f"R2 Score: {reg.score(X_test, y_test):.4f}")
+    """
+
+    def __init__(
+        self,
+        n_qubits: int = 4,
+        n_layers: int = 2,
+        feature_map: str = "angle",
+        learning_rate: float = 0.1,
+        optimizer: str = "adam",
+        seed: int | None = None,
+    ) -> None:
+        """Initialize quantum regressor.
+
+        Args:
+            n_qubits: Number of qubits.
+            n_layers: Variational ansatz depth.
+            feature_map: "angle", "zz", or "amplitude".
+            learning_rate: Gradient descent step size.
+            optimizer: "adam", "sgd", or "spsa".
+            seed: Random seed.
+        """
+        self.n_qubits = n_qubits
+        self.n_layers = n_layers
+        self.feature_map = feature_map
+        self.learning_rate = learning_rate
+        self.optimizer = optimizer
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
+
+        # 2 params per qubit per layer (RY + RZ)
+        self.n_params = 2 * n_qubits * n_layers
+        self.params = self.rng.uniform(
+            -math.pi, math.pi, size=self.n_params,
+        )
+        self.weight = 1.0
+        self.bias = 0.0
+        self.loss_history: list[float] = []
+
+    def _expectation_z(self, x: np.ndarray) -> float:
+        """Evaluate <Z_0> expectation value for a single sample."""
+        sim = create_simulator(self.n_qubits)
+
+        if self.feature_map == "zz":
+            zz_feature_map(sim, x)
+        elif self.feature_map == "amplitude":
+            amplitude_encoding(sim, x)
+        else:
+            angle_encoding(sim, x)
+
+        idx = 0
+        for _ in range(self.n_layers):
+            consumed = _variational_layer(sim, self.params, self.n_qubits, idx)
+            idx += consumed
+
+        probs = np.abs(sim.state) ** 2
+        # <Z> on qubit 0: (+1 for bit 0 == 0, -1 for bit 0 == 1)
+        exp_z = sum(
+            probs[i] if (i & 1) == 0 else -probs[i]
+            for i in range(len(probs))
+        )
+        return float(exp_z)
+
+    def _predict_single(self, x: np.ndarray) -> float:
+        """Predict continuous target for a single sample."""
+        exp_z = self._expectation_z(x)
+        return float(self.weight * exp_z + self.bias)
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """Predict continuous targets for samples.
+
+        Args:
+            X: Data matrix (n_samples, n_features).
+
+        Returns:
+            1D array of predicted continuous values.
+        """
+        X = np.asarray(X, dtype=float)
+        return np.array([self._predict_single(xi) for xi in X], dtype=float)
+
+    def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
+        """Compute Mean Squared Error (MSE) loss."""
+        preds = self.predict(X)
+        return float(np.mean((preds - y) ** 2))
+
+    def score(self, X: np.ndarray, y: np.ndarray) -> float:
+        """Compute R^2 (coefficient of determination) regression score.
+
+        Args:
+            X: Test data.
+            y: True continuous targets.
+
+        Returns:
+            R^2 score as a float (best possible is 1.0).
+        """
+        X = np.asarray(X, dtype=float)
+        y = np.asarray(y, dtype=float)
+        preds = self.predict(X)
+        ss_res = float(np.sum((y - preds) ** 2))
+        ss_tot = float(np.sum((y - np.mean(y)) ** 2))
+        if ss_tot < 1e-12:
+            return 1.0 if ss_res < 1e-12 else 0.0
+        return float(1.0 - ss_res / ss_tot)
+
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        epochs: int = 30,
+    ) -> RegressionResult:
+        """Train the quantum regressor using parameter-shift rule and MSE loss.
+
+        Args:
+            X: Training features (n_samples, n_features).
+            y: Continuous target values.
+            epochs: Number of training epochs.
+
+        Returns:
+            RegressionResult with R^2, MSE, and loss history.
+        """
+        X = np.asarray(X, dtype=float)
+        y = np.asarray(y, dtype=float)
+        n_samples = len(X)
+        if n_samples == 0:
+            raise ValueError("Training dataset cannot be empty.")
+
+        # Data-driven affine initialization
+        y_mean = float(np.mean(y))
+        y_std = float(np.std(y))
+        self.bias = y_mean
+        self.weight = y_std if y_std > 1e-4 else 1.0
+
+        self.loss_history = []
+
+        # Adam state
+        m_params = np.zeros(self.n_params)
+        v_params = np.zeros(self.n_params)
+        m_w, v_w = 0.0, 0.0
+        m_b, v_b = 0.0, 0.0
+        beta1, beta2, eps = 0.9, 0.999, 1e-8
+
+        shift = math.pi / 2
+
+        for t, epoch in enumerate(range(epochs), start=1):
+            # Current predictions and expectation values
+            exp_vals = np.array([self._expectation_z(xi) for xi in X])
+            preds = self.weight * exp_vals + self.bias
+            residuals = preds - y
+            loss = float(np.mean(residuals ** 2))
+            self.loss_history.append(loss)
+
+            grad_b = float(2.0 * np.mean(residuals))
+            grad_w = float(2.0 * np.mean(residuals * exp_vals))
+
+            if self.optimizer == "spsa":
+                delta = self.rng.choice([-1.0, 1.0], size=self.n_params)
+                ck = 0.1 / (epoch + 1) ** 0.101
+                ak = self.learning_rate / (epoch + 1 + 10) ** 0.602
+
+                self.params += ck * delta
+                preds_plus = np.array([
+                    self.weight * self._expectation_z(xi) + self.bias for xi in X
+                ])
+                loss_plus = float(np.mean((preds_plus - y) ** 2))
+
+                self.params -= 2 * ck * delta
+                preds_minus = np.array([
+                    self.weight * self._expectation_z(xi) + self.bias for xi in X
+                ])
+                loss_minus = float(np.mean((preds_minus - y) ** 2))
+
+                self.params += ck * delta
+                grad_spsa = (loss_plus - loss_minus) / (2.0 * ck * delta)
+                self.params -= ak * grad_spsa
+                self.weight -= ak * grad_w
+                self.bias -= ak * grad_b
+            else:
+                grad_params = np.zeros(self.n_params)
+                for j in range(self.n_params):
+                    self.params[j] += shift
+                    exp_plus = np.array([self._expectation_z(xi) for xi in X])
+                    self.params[j] -= 2 * shift
+                    exp_minus = np.array([self._expectation_z(xi) for xi in X])
+                    self.params[j] += shift
+
+                    d_exp = (exp_plus - exp_minus) / 2.0
+                    grad_params[j] = float(np.mean(2.0 * residuals * self.weight * d_exp))
+
+                if self.optimizer == "adam":
+                    m_params = beta1 * m_params + (1 - beta1) * grad_params
+                    v_params = beta2 * v_params + (1 - beta2) * (grad_params ** 2)
+                    m_hat = m_params / (1.0 - beta1 ** t)
+                    v_hat = v_params / (1.0 - beta2 ** t)
+                    self.params -= self.learning_rate * m_hat / (np.sqrt(v_hat) + eps)
+
+                    m_w = beta1 * m_w + (1 - beta1) * grad_w
+                    v_w = beta2 * v_w + (1 - beta2) * (grad_w ** 2)
+                    mw_hat = m_w / (1.0 - beta1 ** t)
+                    vw_hat = v_w / (1.0 - beta2 ** t)
+                    self.weight -= self.learning_rate * mw_hat / (math.sqrt(vw_hat) + eps)
+
+                    m_b = beta1 * m_b + (1 - beta1) * grad_b
+                    v_b = beta2 * v_b + (1 - beta2) * (grad_b ** 2)
+                    mb_hat = m_b / (1.0 - beta1 ** t)
+                    vb_hat = v_b / (1.0 - beta2 ** t)
+                    self.bias -= self.learning_rate * mb_hat / (math.sqrt(vb_hat) + eps)
+                else:
+                    self.params -= self.learning_rate * grad_params
+                    self.weight -= self.learning_rate * grad_w
+                    self.bias -= self.learning_rate * grad_b
+
+            if epoch > 5 and abs(self.loss_history[-1] - self.loss_history[-2]) < 1e-7:
+                break
+
+        final_preds = self.predict(X)
+        final_mse = float(np.mean((final_preds - y) ** 2))
+        final_r2 = self.score(X, y)
+
+        return RegressionResult(
+            r2=final_r2,
+            mse=final_mse,
+            loss_history=self.loss_history,
+            predictions=final_preds,
+            n_qubits=self.n_qubits,
+            n_params=self.n_params,
+        )
