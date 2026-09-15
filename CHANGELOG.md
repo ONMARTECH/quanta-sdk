@@ -4,6 +4,36 @@ All notable changes to Quanta SDK.
 
 Format: [Semantic Versioning](https://semver.org/)
 
+## [v0.9.3] - 2026-09-15
+
+### Added — Apple Silicon M5 Pro (48 GB RAM) Hardware Optimization
+- `quanta/config.py`: Added dynamic RAM detection (`get_system_memory_gb()`, `get_max_dense_qubits()`)
+- `StateVectorSimulator`: Max qubits elevated from 27 to **30 qubits** on 48 GB local hardware ($2^{30} \times 16\text{ B} \approx 16\text{ GB}$)
+- Dynamic hardware memory test in `tests/test_tier1_coverage.py`
+
+### Added — 2026 Agentic MCP Tools (Gemini 3.8 / Claude 3.7 / GPT-5)
+- Tool count increased from 20 to **23 tools**:
+  - `estimate_fault_tolerant_cost`: Surface code distance $d$, physical qubit footprint, and T-factory budget calculation (Google Willow & IBM Starling compatible)
+  - `quanta_reasoning_eval`: Deep reasoning evaluation for LLM-generated circuits (entangling gate density, redundant gate detection, architectural feedback)
+  - `transpile_for_target`: Native target compilation for IBM Heron, Google Willow, and IonQ Aria
+
+### Added — Google Willow Dynamic Surface Code (FTQC)
+- `SurfaceCode.simulate_dynamic()`: Multi-cycle dynamic surface code simulation
+- `DynamicSurfaceCodeResult`: 3D spacetime defect tracking ($\Delta s_t = s_t \oplus s_{t-1}$), measurement flip noise, and Willow exponential suppression factor ($\Lambda$)
+
+### Changed & Hardened — Type Safety & Compilation
+- Fixed 32+ Mypy type violations across core, simulator, and QEC modules
+- `quanta/export/qasm.py`: Extended `to_qasm()` to accept both `CircuitDefinition` and compiled `DAGCircuit`
+- `CustomGate`: Full conformance with `Gate` base class architecture, with isolated registry cleanup fixtures (%100 coverage)
+- Converted all 14 tutorial and migration guides to latest SDK APIs
+
+### Quality & Benchmark
+- Tests: 820 → **889 passed, 1 skipped (0 failed)**
+- Test Coverage: 80.37% → **90.11%** (exceeding strict >= 80% threshold)
+- Mypy: 0 errors across 25 source files (`quanta/core`, `quanta/simulator`, `quanta/qec`)
+- Ruff: 0 errors across entire repository
+- MkDocs: builds in 1.47s with 0 errors
+
 ---
 
 ## [v0.9.2] - 2026-03-31
