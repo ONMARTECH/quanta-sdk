@@ -59,6 +59,11 @@ class PauliFrameSimulator:
 
         self._measured_qubits: tuple[int, ...] | None = None
 
+    @property
+    def num_qubits(self) -> int:
+        """Total number of simulated qubits."""
+        return self.n
+
     def _x_col(self, row: int, qubit: int) -> int:
         return int(self._tab[row, qubit])
 

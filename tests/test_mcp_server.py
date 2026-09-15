@@ -3,22 +3,31 @@
 import json
 
 from quanta.mcp_server import (
+    backend_specs,
+    circuit_debug,
     cluster_data,
     compare_decoders,
     create_bell_state,
     draw_circuit,
     estimate_fault_tolerant_cost,
     explain_result,
+    gate_catalog,
     grover_search,
+    grover_tutorial,
     ibm_backends,
     list_gates,
     monte_carlo_price,
+    noise_profiles,
     optimize_circuit,
     option_greeks,
+    option_pricing,
     qaoa_optimize,
     qec_diagnose,
+    qec_intro,
+    qml_classify,
     quanta_reasoning_eval,
     run_circuit,
+    sdk_examples,
     sdk_info,
     shor_factor,
     simulate_noise,
@@ -207,4 +216,53 @@ def test_transpile_for_target():
     assert "transpiled_gate_count" in data
     assert "target_native_gates" in data
     assert "qasm3_output" in data
+
+
+def test_qml_classify():
+    X_train = [[0.1, 0.2], [0.8, 0.9]]
+    y_train = [0, 1]
+    X_test = [[0.15, 0.25]]
+    res = qml_classify(
+        X_train=X_train, y_train=y_train, X_test=X_test, n_qubits=2, epochs=2, seed=42
+    )
+    data = json.loads(res)
+    assert "predictions" in data
+    assert len(data["predictions"]) == 1
+
+
+def test_mcp_resources():
+    examples_data = json.loads(sdk_examples())
+    assert "bell_state" in examples_data
+
+    profiles_data = json.loads(noise_profiles())
+    assert "channels" in profiles_data
+    assert len(profiles_data["channels"]) == 7
+
+    catalog_data = json.loads(gate_catalog())
+    assert catalog_data["total"] == 31
+
+    specs_data = json.loads(backend_specs())
+    assert "ibm_quantum" in specs_data
+
+
+def test_mcp_prompts():
+    assert "Grover" in grover_tutorial()
+    assert "Monte Carlo" in option_pricing()
+    assert "debug" in circuit_debug().lower()
+    assert "QEC" in qec_intro()
+
+
+def test_optimize_circuit_errors():
+    res_no_circ = optimize_circuit("x = 1")
+    assert "error" in res_no_circ.lower()
+
+    code = (
+        "@circuit(qubits=1)\n"
+        "def circ(q):\n"
+        "    H(q[0])\n"
+        "    return measure(q)\n"
+    )
+    res_unknown_pass = optimize_circuit(circuit_code=code, passes=["NonExistentPass"])
+    assert "error" in res_unknown_pass.lower()
+
 
