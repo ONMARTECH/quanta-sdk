@@ -35,14 +35,18 @@
 - [x] `transpile_for_target`: Devreleri IBM Heron, Google Willow veya IonQ donanım native kapı setlerine derleme.
 - [x] `tests/test_mcp_server.py`: 18 test ile tüm araçlar doğrulandı.
 
-### 🔴 Test Kapsamı Artırımı (Coverage: %80.37 → %88.17)
-- [x] `tests/test_mcp_server.py` — 18 test eklendi, MCP coverage %0'dan %65'e çıktı.
-- [x] `tests/test_density_matrix.py` — 7 test eklendi, DensityMatrix coverage %0'dan %96'ya çıktı.
-- [x] `tests/test_simulator_router.py` — 5 test eklendi, Router coverage %18'den %94'e çıktı.
-- [x] `tests/test_visualize.py` — 4 test eklendi, Visualize coverage %0'dan %90'a çıktı.
-- [x] `tests/test_custom_gate.py` — 6 test eklendi, CustomGate coverage %37'den %100'e çıktı.
-- [x] Toplam test sayısı: **860 passed, 1 skipped (0 failed)**.
-- [x] Dokümantasyon (`mkdocs build`) hatasız derleniyor (1.47 saniye).
+### 🔴 Test Kapsamı Artırımı (Coverage: %80.37 → %90.08)
+- [x] `tests/test_mcp_server.py` — 22 test ile tüm araçlar, promptlar ve kaynaklar doğrulandı (MCP coverage %0'dan %68'e çıktı).
+- [x] `tests/test_result.py` — 6 test eklendi, `quanta/result.py` coverage %65'ten **%100'e** çıktı.
+- [x] `tests/test_simulator_factory.py` — 8 test eklendi, `quanta/simulator/factory.py` coverage %54'ten **%78'e** çıktı.
+- [x] `tests/test_accelerated.py` — 4 test eklendi, `quanta/simulator/accelerated.py` coverage %61'den **%78'e** çıktı.
+- [x] `tests/test_qec_codes.py` — 6 test eklendi, `quanta/qec/codes.py` coverage %78'den **%81'e** çıktı.
+- [x] `tests/test_custom_gate.py` — 6 test eklendi, `custom_gate.py` coverage %37'den **%100'e** çıktı.
+- [x] `tests/test_density_matrix.py` — 7 test eklendi, DensityMatrix coverage %0'dan **%96'ya** çıktı.
+- [x] `tests/test_simulator_router.py` — 5 test eklendi, Router coverage %18'den **%94'e** çıktı.
+- [x] `tests/test_visualize.py` — 4 test eklendi, Visualize coverage %0'dan **%90'a** çıktı.
+- [x] Toplam test sayısı: **888 passed, 1 skipped (0 failed)**.
+- [x] Dokümantasyon (`mkdocs build`) hatasız derleniyor.
 
 ---
 

@@ -6,12 +6,12 @@
   </p>
   <p align="center">
     <a href="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml"><img src="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml/badge.svg" alt="CI"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-89%25-brightgreen.svg" alt="Coverage"></a>
-    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.9.2-blue.svg" alt="Version"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-90%25-brightgreen.svg" alt="Coverage"></a>
+    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.9.3-blue.svg" alt="Version"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-820%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-888%20passed-success.svg" alt="Tests"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-10%2F10-gold.svg" alt="Benchmark"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
     <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-23%20tools-teal.svg" alt="MCP"></a>
@@ -393,8 +393,8 @@ pip install quanta-sdk[gpu] # Installs cupy and cuquantum-python for NVIDIA GPUs
 ## Project Stats
 
 ```
-Version:     0.9.2        Gates:       31 (full IBM parity + Google/IonQ)
-Files:       84           Tests:       820 (91% coverage)
+Version:     0.9.3        Gates:       31 (full IBM parity + Google/IonQ)
+Files:       88           Tests:       888 (90% coverage)
 Algorithms:  10           Examples:    11
 Simulators:  6            QEC Codes:   7
 MCP Tools:   23           Max Qubits:  200+ (MPS) / 156 (IBM Heron r3)
