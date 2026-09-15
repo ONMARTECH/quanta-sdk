@@ -18,6 +18,7 @@ Example:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from quanta.core.circuit import CircuitDefinition, circuit
 from quanta.core.gates import CX, H
@@ -122,7 +123,7 @@ class BitFlipCode(QECCode):
                q[2]─────X──
         """
         @circuit(qubits=3)
-        def encode_bitflip(q):
+        def encode_bitflip(q: Any) -> Any:
             CX(q[0], q[1])
             CX(q[0], q[2])
         return encode_bitflip
@@ -130,7 +131,7 @@ class BitFlipCode(QECCode):
     def decode(self) -> CircuitDefinition:
         """Bit-flip decoding circuit (inverse of encode)."""
         @circuit(qubits=3)
-        def decode_bitflip(q):
+        def decode_bitflip(q: Any) -> Any:
             CX(q[0], q[2])
             CX(q[0], q[1])
         return decode_bitflip
@@ -147,7 +148,7 @@ class BitFlipCode(QECCode):
           11 → error on q[0]
         """
         @circuit(qubits=5)
-        def syndrome_bitflip(q):
+        def syndrome_bitflip(q: Any) -> Any:
             # Syndrome 1: q[0] XOR q[1]
             CX(q[0], q[3])
             CX(q[1], q[3])
@@ -180,7 +181,7 @@ class PhaseFlipCode(QECCode):
 
     def encode(self) -> CircuitDefinition:
         @circuit(qubits=3)
-        def encode_phaseflip(q):
+        def encode_phaseflip(q: Any) -> Any:
             CX(q[0], q[1])
             CX(q[0], q[2])
             H(q[0])
@@ -191,7 +192,7 @@ class PhaseFlipCode(QECCode):
     def decode(self) -> CircuitDefinition:
         """Phase-flip decoding circuit."""
         @circuit(qubits=3)
-        def decode_phaseflip(q):
+        def decode_phaseflip(q: Any) -> Any:
             H(q[0])
             H(q[1])
             H(q[2])
@@ -226,7 +227,7 @@ class SteaneCode(QECCode):
 
         """
         @circuit(qubits=7)
-        def encode_steane(q):
+        def encode_steane(q: Any) -> Any:
             H(q[3])
             H(q[4])
             H(q[5])
@@ -249,7 +250,7 @@ class SteaneCode(QECCode):
         13 qubit circuit: 7 code + 6 syndrome.
         """
         @circuit(qubits=13)
-        def syndrome_steane(q):
+        def syndrome_steane(q: Any) -> Any:
             for s, targets in [(7, [0, 2, 4, 6]), (8, [1, 2, 5, 6]), (9, [3, 4, 5, 6])]:
                 for t in targets:
                     CX(q[t], q[s])
@@ -283,7 +284,7 @@ class ShorCode(QECCode):
     def encode(self) -> CircuitDefinition:
         """Shor 9-qubit encoding circuit."""
         @circuit(qubits=9)
-        def encode_shor(q):
+        def encode_shor(q: Any) -> Any:
             # Phase-flip encoding (outer): q[0] → q[0], q[3], q[6]
             CX(q[0], q[3])
             CX(q[0], q[6])
@@ -302,7 +303,7 @@ class ShorCode(QECCode):
     def decode(self) -> CircuitDefinition:
         """Shor 9-qubit decoding circuit (inverse of encode)."""
         @circuit(qubits=9)
-        def decode_shor(q):
+        def decode_shor(q: Any) -> Any:
             # Reverse bit-flip
             CX(q[6], q[8])
             CX(q[6], q[7])

@@ -204,8 +204,26 @@ class TestSteaneCodeCoverage:
     def test_info(self):
         from quanta.qec.codes import SteaneCode
         info = SteaneCode().info
-        assert info.n == 7, info.k == 1
+        assert info.n == 7
+        assert info.k == 1
         assert info.d == 3
         assert info.correctable_errors == 1
         assert "Steane" in repr(info)
+
+    def test_dynamic_surface_code_simulation(self):
+        code = SurfaceCode(distance=3)
+        res = code.simulate_dynamic(
+            physical_error_rate=0.001,
+            measurement_error_rate=0.001,
+            cycles=3,
+            shots=200,
+            seed=42,
+        )
+        assert res.distance == 3
+        assert res.cycles == 3
+        assert res.shots == 200
+        assert res.defects_detected >= 0
+        assert res.willow_suppression_factor > 0
+        assert "Willow Dynamic Surface Code" in res.summary()
+
 
