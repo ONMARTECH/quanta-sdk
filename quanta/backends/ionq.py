@@ -51,16 +51,27 @@ def _ssl_context() -> ssl.SSLContext:
     """Creates SSL context with proper CA certificates."""
     try:
         import certifi
+
         return ssl.create_default_context(cafile=certifi.where())
     except ImportError:
         return ssl.create_default_context()
 
+
 # Quanta gate name -> IonQ native gate format
 _GATE_MAP: dict[str, str] = {
-    "H": "h", "X": "x", "Y": "y", "Z": "z",
-    "S": "s", "T": "t", "CX": "cnot", "CZ": "cz",
-    "SWAP": "swap", "CCX": "ccx",
-    "RX": "rx", "RY": "ry", "RZ": "rz",
+    "H": "h",
+    "X": "x",
+    "Y": "y",
+    "Z": "z",
+    "S": "s",
+    "T": "t",
+    "CX": "cnot",
+    "CZ": "cz",
+    "SWAP": "swap",
+    "CCX": "ccx",
+    "RX": "rx",
+    "RY": "ry",
+    "RZ": "rz",
 }
 
 
@@ -124,9 +135,7 @@ class IonQBackend(Backend):
 
         return gates
 
-    def _build_job_body(
-        self, dag: DAGCircuit, shots: int
-    ) -> dict[str, Any]:
+    def _build_job_body(self, dag: DAGCircuit, shots: int) -> dict[str, Any]:
         """Builds IonQ API job submission body."""
         return {
             "target": self._target,
@@ -139,9 +148,7 @@ class IonQBackend(Backend):
             },
         }
 
-    def _api_request(
-        self, method: str, path: str, body: dict | None = None
-    ) -> dict[str, Any]:
+    def _api_request(self, method: str, path: str, body: dict | None = None) -> dict[str, Any]:
         """Makes an authenticated request to IonQ API."""
         if not self._api_key:
             raise IonQBackendError(
@@ -170,13 +177,9 @@ class IonQBackend(Backend):
                 return json.loads(resp.read().decode())
         except urllib.error.HTTPError as e:
             error_body = e.read().decode() if e.readable() else ""
-            raise IonQBackendError(
-                f"IonQ API error {e.code}: {error_body}"
-            ) from e
+            raise IonQBackendError(f"IonQ API error {e.code}: {error_body}") from e
         except urllib.error.URLError as e:
-            raise IonQBackendError(
-                f"Cannot reach IonQ API: {e.reason}"
-            ) from e
+            raise IonQBackendError(f"Cannot reach IonQ API: {e.reason}") from e
 
     def execute(
         self,
@@ -207,9 +210,7 @@ class IonQBackend(Backend):
             job = self._api_request("GET", f"/jobs/{job_id}")
 
         if job["status"] != "completed":
-            raise IonQBackendError(
-                f"IonQ job {job_id} ended with status: {job['status']}"
-            )
+            raise IonQBackendError(f"IonQ job {job_id} ended with status: {job['status']}")
 
         # Parse results -- IonQ returns probability distribution
         # In API v0.3+, results are retrieved from /jobs/{job_id}/results or job["results_url"]
@@ -231,9 +232,7 @@ class IonQBackend(Backend):
         )
 
     @staticmethod
-    def _parse_results(
-        data: dict[str, Any], num_qubits: int, shots: int
-    ) -> dict[str, int]:
+    def _parse_results(data: dict[str, Any], num_qubits: int, shots: int) -> dict[str, int]:
         """Converts IonQ probability distribution to measurement counts.
 
         IonQ returns {"0": 0.5, "3": 0.5} or {"data": {"probabilities": ...}}
@@ -250,15 +249,11 @@ class IonQBackend(Backend):
         remaining = shots
 
         # Filter and sort by probability descending for deterministic rounding
-        valid_items = [
-            (str(k), float(v))
-            for k, v in probs.items()
-            if str(k).isdigit()
-        ]
+        valid_items = [(str(k), float(v)) for k, v in probs.items() if str(k).isdigit()]
         sorted_states = sorted(valid_items, key=lambda x: -x[1])
 
         for i, (state_idx, prob) in enumerate(sorted_states):
-            bitstring = format(int(state_idx), f"0{num_qubits}b")
+            bitstring = "".join(str((int(state_idx) >> q) & 1) for q in range(num_qubits))
             if i == len(sorted_states) - 1:
                 # Last state gets remaining shots to ensure exact total
                 count = remaining
