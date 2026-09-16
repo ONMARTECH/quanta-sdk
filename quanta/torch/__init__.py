@@ -8,7 +8,11 @@ and Apple Silicon Metal (MPS).
 from __future__ import annotations
 
 from quanta.torch import ops
-from quanta.torch.brain import BiomorphicResonantBrain
+from quanta.torch.brain import (
+    BiomorphicResonantBrain,
+    QuantumREMSleep,
+    QuantumZenoAttention,
+)
 from quanta.torch.continuous import (
     ContinuousResonantLayer,
     GraphTopologyParser,
@@ -58,6 +62,8 @@ from quanta.torch.ops import (
 __all__ = [
     # Biomorphic Quantum Brain
     "BiomorphicResonantBrain",
+    "QuantumREMSleep",
+    "QuantumZenoAttention",
     # Continuous Quantum Resonance (Milestone 3)
     "ContinuousResonantLayer",
     "_ContinuousResonantFunction",

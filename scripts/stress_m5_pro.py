@@ -2,7 +2,8 @@
 """
 scripts/stress_m5_pro.py -- High-Memory Quantum Statevector Stress Benchmark on Apple M5 Pro.
 
-Pushes the limits of dense quantum statevector simulation on Apple Silicon M5 Pro (48 GB Unified Memory).
+Pushes the limits of dense quantum statevector simulation on
+Apple Silicon M5 Pro (48 GB Unified Memory).
 Targets:
   - 27 Qubits: 134,217,728 amplitudes  -> ~2.15 GB state, ~4.3 GB peak
   - 28 Qubits: 268,435,456 amplitudes  -> ~4.29 GB state, ~8.6 GB peak
@@ -11,11 +12,10 @@ Targets:
 
 import gc
 import json
-import os
-import sys
 import time
-import psutil
+
 import numpy as np
+import psutil
 
 from quanta.simulator.statevector import StateVectorSimulator
 
@@ -48,7 +48,11 @@ def run_stress_qubits(n_qubits: int):
     print("=" * 70)
 
     mem_start = get_memory_info()
-    print(f"[*] Pre-allocation System RAM: Used={mem_start['used_ram_gb']} GB | Avail={mem_start['available_ram_gb']} GB | Process RSS={mem_start['proc_rss_gb']} GB")
+    print(
+        f"[*] Pre-allocation System RAM: Used={mem_start['used_ram_gb']} GB | "
+        f"Avail={mem_start['available_ram_gb']} GB | "
+        f"Process RSS={mem_start['proc_rss_gb']} GB"
+    )
 
     # 1. Statevector Allocation
     t0 = time.perf_counter()
@@ -56,23 +60,34 @@ def run_stress_qubits(n_qubits: int):
     sim = StateVectorSimulator(n_qubits)
     t_alloc = time.perf_counter() - t0
     mem_alloc = get_memory_info()
-    print(f"[+] Allocation completed in {t_alloc:.3f}s | Process RSS: {mem_alloc['proc_rss_gb']} GB")
+    print(
+        f"[+] Allocation completed in {t_alloc:.3f}s | "
+        f"Process RSS: {mem_alloc['proc_rss_gb']} GB"
+    )
 
     # 2. Hadamard on Qubit 0
     t0 = time.perf_counter()
-    print(f"[*] Applying H gate on qubit 0...")
+    print("[*] Applying H gate on qubit 0...")
     sim.apply("H", (0,))
     t_h = time.perf_counter() - t0
     mem_h = get_memory_info()
-    print(f"[+] H gate applied in {t_h:.3f}s | Process RSS: {mem_h['proc_rss_gb']} GB | System Used: {mem_h['used_ram_gb']} GB")
+    print(
+        f"[+] H gate applied in {t_h:.3f}s | "
+        f"Process RSS: {mem_h['proc_rss_gb']} GB | "
+        f"System Used: {mem_h['used_ram_gb']} GB"
+    )
 
     # 3. Entangling CNOT on Qubits (0 -> 1)
     t0 = time.perf_counter()
-    print(f"[*] Applying CX gate (qubit 0 -> qubit 1)...")
+    print("[*] Applying CX gate (qubit 0 -> qubit 1)...")
     sim.apply("CX", (0, 1))
     t_cx = time.perf_counter() - t0
     mem_cx = get_memory_info()
-    print(f"[+] CX gate applied in {t_cx:.3f}s | Process RSS: {mem_cx['proc_rss_gb']} GB | System Used: {mem_cx['used_ram_gb']} GB")
+    print(
+        f"[+] CX gate applied in {t_cx:.3f}s | "
+        f"Process RSS: {mem_cx['proc_rss_gb']} GB | "
+        f"System Used: {mem_cx['used_ram_gb']} GB"
+    )
 
     # 4. Long-Range CNOT (Qubit 1 -> Last Qubit n-1)
     t0 = time.perf_counter()
@@ -80,11 +95,15 @@ def run_stress_qubits(n_qubits: int):
     sim.apply("CX", (1, n_qubits - 1))
     t_cx_long = time.perf_counter() - t0
     mem_cx_long = get_memory_info()
-    print(f"[+] Long-range CX applied in {t_cx_long:.3f}s | Process RSS: {mem_cx_long['proc_rss_gb']} GB | System Used: {mem_cx_long['used_ram_gb']} GB")
+    print(
+        f"[+] Long-range CX applied in {t_cx_long:.3f}s | "
+        f"Process RSS: {mem_cx_long['proc_rss_gb']} GB | "
+        f"System Used: {mem_cx_long['used_ram_gb']} GB"
+    )
 
     # 5. Quantum Mathematical Verification
     t0 = time.perf_counter()
-    print(f"[*] Verifying state amplitudes and quantum norm...")
+    print("[*] Verifying state amplitudes and quantum norm...")
     amp_0 = sim._state[0]
     prob_0 = float(np.abs(amp_0) ** 2)
     norm = float(np.vdot(sim._state, sim._state).real)
@@ -94,11 +113,16 @@ def run_stress_qubits(n_qubits: int):
     print(f"    Amplitude |0...0>: {amp_0:.5f} (P = {prob_0:.4f})")
     print(f"    Total Statevector Norm: {norm:.12f}")
 
-    peak_rss = max(mem_alloc['proc_rss_gb'], mem_h['proc_rss_gb'], mem_cx['proc_rss_gb'], mem_cx_long['proc_rss_gb'])
+    peak_rss = max(
+        mem_alloc["proc_rss_gb"],
+        mem_h["proc_rss_gb"],
+        mem_cx["proc_rss_gb"],
+        mem_cx_long["proc_rss_gb"],
+    )
     print(f"\n🎉 SUMMARY for {n_qubits} QUBITS:")
     print(f"   Peak Process RAM: {peak_rss:.2f} GB")
     print(f"   Total Gate Time: {t_h + t_cx + t_cx_long:.2f}s")
-    print(f"   System Status: Healthy, 0 crashes")
+    print("   System Status: Healthy, 0 crashes")
 
     del sim
     gc.collect()
@@ -120,7 +144,10 @@ def main():
     print("=" * 70)
     print("🔥 APPLE SILICON M5 PRO (48 GB UNIFIED RAM) STRESS BENCHMARK")
     print("   Author: Quanta SDK Team")
-    print(f"   System: {psutil.cpu_count(logical=False)} Cores ({psutil.cpu_count(logical=True)} Threads), {psutil.virtual_memory().total / (1024**3):.1f} GB RAM")
+    cores = psutil.cpu_count(logical=False)
+    threads = psutil.cpu_count(logical=True)
+    ram_gb = psutil.virtual_memory().total / (1024**3)
+    print(f"   System: {cores} Cores ({threads} Threads), {ram_gb:.1f} GB RAM")
     print("=" * 70)
 
     vm = psutil.virtual_memory()

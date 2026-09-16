@@ -9,22 +9,25 @@ scripts/verify_exact_20gb_rss.py -- 20.0+ GB Physical RAM Resident Benchmark on 
 5. Calculates quantum expectation value across the entire 20 GB buffer on Apple M5 Pro.
 """
 
-import gc
 import json
 import time
-import psutil
+
 import numpy as np
+import psutil
 
 
 def main():
     print("=" * 75)
     print("🔥 20.0+ GB PHYSICAL RESIDENT RAM BENCHMARK ON APPLE SILICON M5 PRO")
-    print(f"   System: Apple M5 Pro, {psutil.virtual_memory().total / (1024**3):.1f} GB Total Unified Memory")
+    total_ram_gb = psutil.virtual_memory().total / (1024**3)
+    print(f"   System: Apple M5 Pro, {total_ram_gb:.1f} GB Total Unified Memory")
     print("=" * 75)
 
     proc = psutil.Process()
     vm_start = psutil.virtual_memory()
-    print(f"[*] Initial Memory: Process RSS={proc.memory_info().rss / (1024**3):.2f} GB | Available={vm_start.available / (1024**3):.2f} GB")
+    rss_start = proc.memory_info().rss / (1024**3)
+    avail_start = vm_start.available / (1024**3)
+    print(f"[*] Initial Memory: Process RSS={rss_start:.2f} GB | Available={avail_start:.2f} GB")
 
     # Step 1: Allocate 30-qubit statevector (16.0 GiB / 17.18 GB)
     n_qubits = 30
@@ -43,24 +46,40 @@ def main():
     t_fill1 = time.perf_counter() - t0
     rss_step2 = proc.memory_info().rss / (1024 ** 3)
     vm_step2 = psutil.virtual_memory()
-    print(f"[+] 16.0 GiB populated in {t_fill1:.2f}s ({16.0 / t_fill1:.2f} GiB/s memory write bandwidth)")
-    print(f"    Current Process Physical RSS: {rss_step2:.2f} GB | System Used: {vm_step2.used / (1024**3):.2f} GB")
+    bandwidth = 16.0 / t_fill1
+    used_step2 = vm_step2.used / (1024**3)
+    print(f"[+] 16.0 GiB populated in {t_fill1:.2f}s ({bandwidth:.2f} GiB/s write bandwidth)")
+    print(
+        f"    Current Process Physical RSS: {rss_step2:.2f} GB | "
+        f"System Used: {used_step2:.2f} GB"
+    )
 
     # Step 3: Allocate and populate secondary 3.5 GiB tensor to surpass 20.0 GB RSS
     secondary_dim = 235_000_000  # 235M * 16 bytes = 3.76 GB
-    print(f"\n[3/4] Allocating & populating secondary Hamiltonian tensor ({secondary_dim:,} elements, ~3.76 GB)...")
+    print(
+        f"\n[3/4] Allocating & populating secondary Hamiltonian tensor "
+        f"({secondary_dim:,} elements, ~3.76 GB)..."
+    )
     t0 = time.perf_counter()
     secondary = np.empty(secondary_dim, dtype=np.complex128)
     secondary.fill(np.complex128(0.70710678 + 0.70710678j))
     t_fill2 = time.perf_counter() - t0
     rss_step3 = proc.memory_info().rss / (1024 ** 3)
     vm_step3 = psutil.virtual_memory()
+    used_step3 = vm_step3.used / (1024**3)
+    total_step3 = vm_step3.total / (1024**3)
     print(f"[+] Secondary tensor populated in {t_fill2:.2f}s")
-    print(f"🔥 TOTAL PROCESS PHYSICAL RESIDENT MEMORY (RSS): {rss_step3:.2f} GB (Target 20 GB REACHED!)")
-    print(f"   System Memory Used: {vm_step3.used / (1024**3):.2f} GB / {vm_step3.total / (1024**3):.2f} GB ({vm_step3.percent}%)")
+    print(
+        f"🔥 TOTAL PROCESS PHYSICAL RESIDENT MEMORY (RSS): "
+        f"{rss_step3:.2f} GB (Target 20 GB REACHED!)"
+    )
+    print(
+        f"   System Memory Used: {used_step3:.2f} GB / "
+        f"{total_step3:.2f} GB ({vm_step3.percent}%)"
+    )
 
     # Step 4: Vectorized BLAS computation across the 20 GB resident memory
-    print(f"\n[4/4] Executing quantum inner product across 20 GB resident RAM on M5 Pro...")
+    print("\n[4/4] Executing quantum inner product across 20 GB resident RAM on M5 Pro...")
     t0 = time.perf_counter()
     # Compute dot product of slice
     overlap = np.vdot(state[:secondary_dim], secondary)

@@ -6,11 +6,11 @@ Tests two-qubit entangling gate CX(0, 1) on top of Hadamard on a 30-qubit dense 
 Hilbert Space: 1,073,741,824 complex128 numbers (16.00 GiB).
 """
 
-import gc
 import json
 import time
-import psutil
+
 import numpy as np
+import psutil
 
 from quanta.simulator.statevector import StateVectorSimulator
 
@@ -29,25 +29,30 @@ def main():
     proc = psutil.Process()
 
     sim = StateVectorSimulator(30)
-    print(f"[*] Statevector allocated. Applying H(0)...")
+    print("[*] Statevector allocated. Applying H(0)...")
     t0 = time.perf_counter()
     sim.apply("H", (0,))
     t_h = time.perf_counter() - t0
     rss_h = proc.memory_info().rss / (1024 ** 3)
     print(f"[+] H(0) done in {t_h:.2f}s | Process RSS: {rss_h:.2f} GB")
 
-    print(f"[*] Applying two-qubit entangling gate CX(0, 1)...")
+    print("[*] Applying two-qubit entangling gate CX(0, 1)...")
     t0 = time.perf_counter()
     sim.apply("CX", (0, 1))
     t_cx = time.perf_counter() - t0
     rss_cx = proc.memory_info().rss / (1024 ** 3)
     vm = psutil.virtual_memory()
-    print(f"[+] CX(0, 1) done in {t_cx:.2f}s | Process RSS: {rss_cx:.2f} GB | System RAM Used: {vm.used / (1024**3):.2f} GB")
+    used_gb = vm.used / (1024**3)
+    print(
+        f"[+] CX(0, 1) done in {t_cx:.2f}s | "
+        f"Process RSS: {rss_cx:.2f} GB | System RAM Used: {used_gb:.2f} GB"
+    )
 
     # Verification
     t0 = time.perf_counter()
     amp_0 = sim._state[0]
-    # In tensor indexing for qubits (0, 1): state |110...0> is index 3 (or 2^(n-1) + 2^(n-2)) depending on endianness
+    # In tensor indexing for qubits (0, 1): state |110...0> is index 3
+    # (or 2^(n-1) + 2^(n-2)) depending on endianness
     # Let's find non-zero amplitudes:
     prob_0 = float(np.abs(amp_0) ** 2)
     norm = float(np.vdot(sim._state, sim._state).real)
@@ -75,7 +80,7 @@ def main():
         json.dump(result, f, indent=2)
 
     print("\n" + "=" * 75)
-    print(f"🏆 30-QUBIT ENTANGLEMENT COMPLETE!")
+    print("🏆 30-QUBIT ENTANGLEMENT COMPLETE!")
     print(f"   Peak RAM: {peak_rss:.2f} GB | Total Gate Time: {t_h + t_cx:.2f}s")
     print(f"   Norm Fidelity: {norm:.12f}")
     print("=" * 75)

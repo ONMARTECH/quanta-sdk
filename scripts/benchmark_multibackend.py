@@ -11,19 +11,18 @@ Platforms tested:
 
 import json
 import os
-import sys
 import time
 import tracemalloc
+
 from dotenv import load_dotenv
 
-load_dotenv()
-
-from quanta import circuit, H, CX, measure, run
+from quanta import CX, H, circuit, measure, run
 from quanta.backends.google import GoogleBackend
 from quanta.backends.ionq import IonQBackend
-from quanta.simulator.statevector import StateVectorSimulator
 from quanta.simulator.mps import MPSSimulator
-from quanta.simulator.sparse import SparseSimulator
+from quanta.simulator.statevector import StateVectorSimulator
+
+load_dotenv()
 
 
 def benchmark_quanta_statevector():
@@ -57,7 +56,11 @@ def benchmark_quanta_statevector():
             "peak_mem_mb": round(peak_mb, 2),
             "state_size": f"2^{n} = {2**n:,}",
         })
-        print(f"  {n:2d} qubits: {elapsed*1000:7.2f} ms | Peak RAM: {peak_mb:6.2f} MB | Dimension: {2**n:,}")
+        dim_str = f"{2**n:,}"
+        print(
+            f"  {n:2d} qubits: {elapsed*1000:7.2f} ms | "
+            f"Peak RAM: {peak_mb:6.2f} MB | Dimension: {dim_str}"
+        )
 
     return results
 
@@ -97,6 +100,18 @@ def benchmark_quanta_mps():
     return results
 
 
+def make_ghz_circuit(num_qubits: int):
+    """Creates a parameterized GHZ circuit."""
+    @circuit(qubits=num_qubits)
+    def ghz(q):
+        H(q[0])
+        for i in range(num_qubits - 1):
+            CX(q[i], q[i + 1])
+        return measure(q)
+
+    return ghz
+
+
 def benchmark_google_cirq():
     """Benchmark Google Cirq local simulation on M5 Pro."""
     print("\n" + "=" * 60)
@@ -108,12 +123,7 @@ def benchmark_google_cirq():
     backend = GoogleBackend(simulate_locally=True)
 
     for n in qubit_counts:
-        @circuit(qubits=n)
-        def ghz(q):
-            H(q[0])
-            for i in range(n - 1):
-                CX(q[i], q[i + 1])
-            return measure(q)
+        ghz = make_ghz_circuit(n)
 
         start = time.perf_counter()
         res = run(ghz, shots=1024, backend=backend)
@@ -127,7 +137,8 @@ def benchmark_google_cirq():
             "shots": 1024,
             "num_states_measured": len(res.counts),
         })
-        print(f"  {n:2d} qubits: {elapsed*1000:7.2f} ms | Shots: 1024 | States: {list(res.counts.keys())[:2]}")
+        states_sample = list(res.counts.keys())[:2]
+        print(f"  {n:2d} qubits: {elapsed*1000:7.2f} ms | Shots: 1024 | States: {states_sample}")
 
     return results
 
@@ -143,12 +154,7 @@ def benchmark_ionq_cloud():
 
     test_qubits = [2, 3, 5]
     for n in test_qubits:
-        @circuit(qubits=n)
-        def ghz(q):
-            H(q[0])
-            for i in range(n - 1):
-                CX(q[i], q[i + 1])
-            return measure(q)
+        ghz = make_ghz_circuit(n)
 
         print(f"  Submitting {n}-qubit GHZ circuit to IonQ API...")
         start = time.perf_counter()
@@ -170,7 +176,10 @@ def benchmark_ionq_cloud():
             "fidelity": fidelity,
             "counts": res.counts,
         })
-        print(f"  {n:2d} qubits: {elapsed*1000:7.2f} ms | Fidelity: {fidelity*100:.1f}% | Counts: {res.counts}")
+        print(
+            f"  {n:2d} qubits: {elapsed*1000:7.2f} ms | "
+            f"Fidelity: {fidelity*100:.1f}% | Counts: {res.counts}"
+        )
 
     return results
 

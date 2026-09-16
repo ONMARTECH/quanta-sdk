@@ -7,11 +7,11 @@ Total Memory: 20.0+ GB Physical RAM
 Tests memory bandwidth, zero memory leaks, and quantum correctness.
 """
 
-import gc
 import json
 import time
-import psutil
+
 import numpy as np
+import psutil
 
 from quanta.simulator.statevector import StateVectorSimulator
 
@@ -19,7 +19,7 @@ from quanta.simulator.statevector import StateVectorSimulator
 def main():
     print("=" * 75)
     print("💥 20 GB+ PHYSICAL RAM STRESS BENCHMARK ON APPLE SILICON M5 PRO")
-    print(f"   Architecture: Apple Silicon M5 Pro (18 Cores)")
+    print("   Architecture: Apple Silicon M5 Pro (18 Cores)")
     print(f"   Total Memory: {psutil.virtual_memory().total / (1024**3):.2f} GB")
     print("=" * 75)
 
@@ -56,10 +56,12 @@ def main():
     t_sec = time.perf_counter() - t0
 
     rss_step4 = proc.memory_info().rss / (1024 ** 3)
-    vm = psutil.virtual_memory()
     print(f"[+] Secondary tensor allocated in {t_sec:.2f}s")
     print(f"🔥 TOTAL PROCESS RESIDENT MEMORY (RSS): {rss_step4:.2f} GB")
-    print(f"   System Total Used RAM: {vm.used / (1024**3):.2f} GB / {vm.total / (1024**3):.2f} GB ({vm.percent}%)")
+    vm = psutil.virtual_memory()
+    used_gb = vm.used / (1024**3)
+    total_gb = vm.total / (1024**3)
+    print(f"   System Total Used RAM: {used_gb:.2f} GB / {total_gb:.2f} GB ({vm.percent}%)")
 
     # 5. Parallel Vectorized Computation Across Both Buffers
     print("\n[Step 5] Processing vectorized tensor dot product across 20 GB RAM...")

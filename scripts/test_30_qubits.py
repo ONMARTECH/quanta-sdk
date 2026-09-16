@@ -7,11 +7,11 @@ Raw Memory: 16.0 GiB (17.18 GB)
 Pushing Apple Silicon Unified Memory into the 20 GB range!
 """
 
-import gc
 import json
 import time
-import psutil
+
 import numpy as np
+import psutil
 
 from quanta.simulator.statevector import StateVectorSimulator
 
@@ -38,8 +38,13 @@ def main():
     t_alloc = time.perf_counter() - t0
     rss_alloc = proc.memory_info().rss / (1024 ** 3)
     vm = psutil.virtual_memory()
+    used_gb = vm.used / (1024**3)
+    avail_gb = vm.available / (1024**3)
     print(f"[+] Statevector allocated in {t_alloc:.3f}s")
-    print(f"    Process RSS: {rss_alloc:.2f} GB | System RAM Used: {vm.used / (1024**3):.2f} GB | Available: {vm.available / (1024**3):.2f} GB")
+    print(
+        f"    Process RSS: {rss_alloc:.2f} GB | "
+        f"System RAM Used: {used_gb:.2f} GB | Available: {avail_gb:.2f} GB"
+    )
 
     # 2. Hadamard Gate on Qubit 0 (Touching memory across the 1.074 billion elements!)
     print("\n[*] Step 2: Applying Hadamard gate on qubit 0 (Superposition across 1.074B states)...")
@@ -60,7 +65,10 @@ def main():
     t_verify = time.perf_counter() - t0
 
     print(f"[+] Verification completed in {t_verify:.3f}s")
-    print(f"    Amplitude |00...00>: {amp_0.real:.7f} + {amp_0.imag:.7f}j (Expected: 1/√2 = 0.7071068)")
+    print(
+        f"    Amplitude |00...00>: {amp_0.real:.7f} + {amp_0.imag:.7f}j "
+        "(Expected: 1/√2 = 0.7071068)"
+    )
     print(f"    Probability P(00...00): {prob_0:.7f} (Expected: 0.5000000)")
     print(f"    Total Statevector Norm: {norm:.12f} (Expected: 1.000000000000)")
 
@@ -83,7 +91,7 @@ def main():
     print("\n" + "=" * 75)
     print("🏆 30-QUBIT SIMULATION FINISHED WITH 100% MATHEMATICAL PRECISION!")
     print(f"   Peak Process Memory: {rss_h:.2f} GB RAM")
-    print(f"   Saved report to qubits_30_result.json")
+    print("   Saved report to qubits_30_result.json")
     print("=" * 75)
 
 
