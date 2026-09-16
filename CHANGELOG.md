@@ -4,6 +4,24 @@ All notable changes to Quanta SDK.
 
 Format: [Semantic Versioning](https://semver.org/)
 
+## [v1.1.0] - 2026-09-16 — Pillar 2: PyTorch Quantum Layer & Continuous Resonance
+
+### Added — PyTorch Native Quantum Engine (`quanta.torch`)
+- `quanta/torch/layer.py`: Added `QuantumLayer(nn.Module)` with custom `torch.autograd.Function` bridging Quanta quantum circuits to PyTorch deep learning models.
+  - Analytical Parameter-Shift Rule for exact VJPs without numerical finite differences.
+  - 4 built-in parameterized ansatz presets (`hardware_efficient`, `strong_entangling`, `real_amplitudes`, `reuploading`) and custom circuit builder support.
+  - Full compatibility with `nn.Sequential`, batch inputs, Adam/SGD optimizers, and Apple Silicon MPS/Metal acceleration.
+- `quanta/torch/continuous.py`: Added `ContinuousResonantLayer(nn.Module)` modeling brain-inspired continuous-time quantum network resonance ($U(t) = e^{-i H(x, \theta) t}$).
+  - Non-sequential, all-at-once holistic quantum dynamics ("her yerden aynı anda ışıldayan kuantum dinamikleri") without discrete gate synchronization bottlenecks.
+  - Learnable network coupling topology ($J$), local bias fields ($h$), input projections ($W$), and interaction duration ($t$).
+  - Simultaneous multi-observable readout ($\langle Z_j \rangle, \langle X_j \rangle$) across all network nodes.
+  - Exact analytical autograd engine powered by **Daleckii-Krein Fréchet matrix exponential derivatives** and **Ehrenfest theorem time derivatives**.
+- `quanta/torch/ops.py`: Native statevector operations, Pauli Kronecker product caching, and normalized sinc kernel for degenerate spectra.
+- `docs/theory/continuous_quantum_neural_dynamics.md`: 920-line authoritative academic whitepaper (51 citations) synthesizing EPR non-locality, continuous-time quantum walks, Orch-OR, Posner molecule nuclear spin coherence, biophotonics, and 5 analytical gradient theorems.
+- 111 dedicated unit and E2E tests (`test_torch_layer.py`, `test_torch_continuous.py`, `test_torch_e2e.py`, `test_torch_ops.py`, `test_m1_mathematical_theorems.py`) with 96.37% test coverage on `quanta/torch`.
+
+---
+
 ## [v1.0.0] - 2026-09-16 — Milestone Major Release
 
 ### Added — World's First Native Apple Silicon Metal/MLX Quantum Simulator

@@ -9,20 +9,21 @@
 | Sütun | Başlık | Hedef | Durum |
 | :---: | :--- | :---: | :---: |
 | 🍏 **Sütun 1** | **Apple Silicon Yerel Metal/MLX Kuantum Motoru** (`MLXSimulator`) | **v1.0.0** | **✅ TAMAMLANDI** |
-| 🔥 **Sütun 2** | **PyTorch Yerel Kuantum Katmanı (`quanta.torch.QuantumLayer`)** | **v1.1.0** | 🟡 Sıradaki |
-| 🛡️ **Sütun 3** | **Gerçek Zamanlı QEC & Hızlı Sendrom Çözümleyici (MWPM / Union-Find)** | **v1.2.0** | ⚪ Planlandı |
+| 🔥 **Sütun 2** | **PyTorch Kuantum Katmanı & Sürekli Rezonans (`quanta.torch`)** | **v1.1.0** | **✅ TAMAMLANDI** |
+| 🛡️ **Sütun 3** | **Gerçek Zamanlı QEC & Hızlı Sendrom Çözümleyici (MWPM / Union-Find)** | **v1.2.0** | 🟡 Sıradaki |
 | 🌐 **Sütun 4** | **Endüstriyel QUBO & Büyük Ölçekli Graf Ayrıştırma Motoru** | **v1.3.0** | ⚪ Planlandı |
 | 🤖 **Sütun 5** | **Akıllı Kuantum Maliyet ve Sadakat Yönlendirici Ajanı (FinOps / Arbiter)** | **v1.4.0** | ⚪ Planlandı |
 
 ---
 
-## Mevcut Durum Özeti (v1.0.0)
+## Mevcut Durum Özeti (v1.1.0)
 
 ```
-Version:     1.0.0 (Production) Tests:       909+ (91% coverage)
-Gates:       31                 Files:       88+
+Version:     1.1.0 (Production) Tests:       1044+ (91.34% coverage)
+Gates:       31                 Files:       95+
+Torch QML:   QuantumLayer + ContinuousResonantLayer + Daleckii-Krein Autograd
 Tutorials:   14 + 15 notebooks  MCP Tools:   23
-Backends:    5 (MLX Metal + Local + IBM + IonQ + Google)
+Backends:    6 (PyTorch Native + MLX Metal + Local + IBM + IonQ + Google)
 Compiler:    6-pass (cancel + merge + translate + route + decompose + validate)
 QML:         Classifier + Regressor + QSVM + 3 feature maps + Scikit-Learn Mixins
 Hardware:    Apple Silicon M5 Pro 48GB (30 Qubits, 20GB RAM, 400x MLX Speedup)

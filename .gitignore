@@ -45,3 +45,7 @@ site/
 *benchmark*.json
 *result*.json
 *20gb*.json
+
+# Multi-agent swarm traces
+.agents/
+

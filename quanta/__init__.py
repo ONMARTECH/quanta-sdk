@@ -17,7 +17,7 @@ Quick Start:
     >>> print(result)
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 from quanta.core.circuit import circuit
 from quanta.core.custom_gate import custom_gate
@@ -77,4 +77,16 @@ __all__ = [
     "measure",
     # Execution
     "run", "run_async", "sweep",
+    # Pillar 2
+    "torch",
 ]
+
+# Pillar 2: PyTorch Native Quantum Layer (conditional export)
+try:
+    from quanta import torch as torch_layer
+    torch = torch_layer
+except ImportError:
+    torch = None  # type: ignore[assignment]
+
+
+
