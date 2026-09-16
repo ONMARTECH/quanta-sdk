@@ -41,9 +41,10 @@ class TestCompat:
         # In test env, qiskit is not installed
         assert qiskit_version() is None
 
-    def test_cirq_version_not_installed(self):
-        from quanta.backends.compat import cirq_version
-        assert cirq_version() is None
+    def test_cirq_version_not_installed(self, monkeypatch):
+        from quanta.backends import compat
+        monkeypatch.setattr(compat, "cirq_version", lambda: None)
+        assert compat.cirq_version() is None
 
     def test_check_backend_compatibility_returns_list(self):
         from quanta.backends.compat import check_backend_compatibility
@@ -65,9 +66,10 @@ class TestCompat:
         assert qiskit.compatible is False
         assert "pip install" in qiskit.message
 
-    def test_cirq_not_installed_info(self):
-        from quanta.backends.compat import check_backend_compatibility
-        results = check_backend_compatibility()
+    def test_cirq_not_installed_info(self, monkeypatch):
+        from quanta.backends import compat
+        monkeypatch.setattr(compat, "cirq_version", lambda: None)
+        results = compat.check_backend_compatibility()
         cirq = [r for r in results if r.name == "cirq"][0]
         assert cirq.installed is False
         assert "cirq-google" in cirq.message
@@ -122,12 +124,26 @@ class TestCompat:
             result = compat.cirq_version()
             assert result == "1.4.0"
 
-    def test_import_qiskit_safe_not_installed(self):
+    def test_import_qiskit_safe_not_installed(self, monkeypatch):
+        import builtins
+        real_import = builtins.__import__
+        def fake_import(name, *args, **kwargs):
+            if name == "qiskit":
+                raise ImportError("No module named 'qiskit'")
+            return real_import(name, *args, **kwargs)
+        monkeypatch.setattr(builtins, "__import__", fake_import)
         from quanta.backends.compat import import_qiskit_safe
         with pytest.raises(ImportError):
             import_qiskit_safe()
 
-    def test_import_cirq_safe_not_installed(self):
+    def test_import_cirq_safe_not_installed(self, monkeypatch):
+        import builtins
+        real_import = builtins.__import__
+        def fake_import(name, *args, **kwargs):
+            if name == "cirq":
+                raise ImportError("No module named 'cirq'")
+            return real_import(name, *args, **kwargs)
+        monkeypatch.setattr(builtins, "__import__", fake_import)
         from quanta.backends.compat import import_cirq_safe
         with pytest.raises(ImportError):
             import_cirq_safe()
@@ -490,8 +506,16 @@ class TestShorExtended:
 class TestGoogleBackendExtended:
     """Extended Google backend tests with mocked cirq execution."""
 
-    def test_ensure_cirq_raises_without_cirq(self):
+    def test_ensure_cirq_raises_without_cirq(self, monkeypatch):
+        import builtins
+
         from quanta.backends.google import GoogleBackend, GoogleBackendError
+        real_import = builtins.__import__
+        def fake_import(name, *args, **kwargs):
+            if name == "cirq":
+                raise ImportError("No module named 'cirq'")
+            return real_import(name, *args, **kwargs)
+        monkeypatch.setattr(builtins, "__import__", fake_import)
         backend = GoogleBackend(simulate_locally=True)
         with pytest.raises(GoogleBackendError, match="cirq"):
             backend._ensure_cirq()

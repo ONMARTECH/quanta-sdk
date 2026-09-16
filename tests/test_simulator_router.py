@@ -52,3 +52,14 @@ def test_select_simulator_instances():
     sim_mps = select_simulator(num_qubits=80, gate_names=["H", "T", "CX"], chi_max=32)
     assert isinstance(sim_mps, MPSSimulator)
     assert sim_mps.chi_max == 32
+
+
+def test_select_simulator_dense_mlx():
+    from quanta.simulator.mlx import MLXSimulator, is_mlx_available
+
+    sim = select_simulator(num_qubits=22, gate_names=["H", "T", "CX"])
+    if is_mlx_available():
+        assert isinstance(sim, MLXSimulator)
+    else:
+        assert isinstance(sim, StateVectorSimulator)
+

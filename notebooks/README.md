@@ -20,6 +20,7 @@ Click any badge below to open in Google Colab (no install needed):
 - **10A Vqe Molecular** [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ONMARTECH/quanta-sdk/blob/main/notebooks/10a-vqe-molecular.ipynb)
 - **10B Bell Inequality** [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ONMARTECH/quanta-sdk/blob/main/notebooks/10b-bell-inequality.ipynb)
 - **10C Qec Threshold** [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ONMARTECH/quanta-sdk/blob/main/notebooks/10c-qec-threshold.ipynb)
+- **11 Multi-Cloud Hardware Benchmark** [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ONMARTECH/quanta-sdk/blob/main/notebooks/11-multicloud-quantum-benchmark.ipynb)
 
 ## Local Usage
 

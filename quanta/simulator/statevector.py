@@ -110,9 +110,11 @@ class StateVectorSimulator(SimulatorBackend):
         state_axes = list(qubits)
 
         result = np.tensordot(gate_tensor, state_tensor, axes=(gate_axes, state_axes))
-        result = np.moveaxis(result, list(range(num_gate_qubits)), list(qubits))
+        del state_tensor
+        self._state = None  # Free previous statevector buffer immediately
 
-        self._state = result.reshape(-1)
+        result = np.moveaxis(result, list(range(num_gate_qubits)), list(qubits))
+        self._state = np.ascontiguousarray(result).reshape(-1)
 
     def _get_gate_matrix(
         self, name: str, params: tuple[float, ...]
@@ -149,6 +151,9 @@ class StateVectorSimulator(SimulatorBackend):
             dict: Result -> count. E.g. {'00': 512, '11': 512}
         """
         probs = self.probabilities()
+        prob_sum = np.sum(probs)
+        if prob_sum > 0:
+            probs = probs / prob_sum
         dim = len(probs)
         n = self.num_qubits
 

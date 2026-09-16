@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 __all__ = ["create_simulator"]
 
 # Simulator methods registry
-METHODS = ("auto", "dense", "sparse", "mps", "clifford", "custatevec")
+METHODS = ("auto", "dense", "sparse", "mps", "clifford", "custatevec", "mlx", "metal")
 
 
 def create_simulator(
@@ -36,6 +36,7 @@ def create_simulator(
         method: Simulator method. One of:
             - "auto": Automatic selection based on qubit count.
             - "dense": Full statevector (max ~27 qubits).
+            - "mlx" / "metal": Apple Silicon Metal/MLX GPU accelerated statevector.
             - "sparse": Sparse statevector (max ~50 qubits).
             - "mps": Matrix Product State (100+ qubits, low entanglement).
             - "clifford": Pauli frame / stabilizer (1000+ qubits, Clifford only).
@@ -56,6 +57,13 @@ def create_simulator(
 
     if method == "auto":
         method = _select_method(num_qubits)
+
+    if method in ("mlx", "metal"):
+        try:
+            from quanta.simulator.mlx import MLXSimulator
+            return MLXSimulator(num_qubits, seed=seed)
+        except Exception as e:
+            raise ValueError(f"Apple MLX Metal simulator error: {e}") from e
 
     if method == "dense":
         from quanta.simulator.statevector import StateVectorSimulator

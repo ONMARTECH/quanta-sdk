@@ -13,10 +13,13 @@ Factory:
 
 from quanta.simulator.base import SimulatorBackend
 from quanta.simulator.factory import create_simulator
+from quanta.simulator.mlx import MLXSimulator, is_mlx_available
 from quanta.simulator.router import select_simulator
 
 __all__ = [
     "SimulatorBackend",
+    "MLXSimulator",
+    "is_mlx_available",
     "create_simulator",
     "select_simulator",
 ]

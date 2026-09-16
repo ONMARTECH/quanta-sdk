@@ -99,6 +99,13 @@ def select_simulator(
         return PauliFrameSimulator(num_qubits)  # type: ignore[return-value]
 
     if method == "dense":
+        if num_qubits >= 20:
+            try:
+                from quanta.simulator.mlx import MLXSimulator, is_mlx_available
+                if is_mlx_available():
+                    return MLXSimulator(num_qubits, seed=seed)
+            except Exception:
+                pass
         from quanta.simulator.statevector import StateVectorSimulator
         return StateVectorSimulator(num_qubits, seed=seed)
 

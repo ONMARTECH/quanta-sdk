@@ -2033,7 +2033,7 @@ def sdk_info() -> str:
     """Quanta SDK version and capabilities."""
     return json.dumps({
         "name": "Quanta Quantum SDK",
-        "version": "0.9.3",
+        "version": "1.0.0",
         "description": "AI-native quantum computing SDK",
         "total_gates": 31,
         "total_tools": 23,
@@ -2051,7 +2051,8 @@ def sdk_info() -> str:
         },
         "capabilities": [
             "31 quantum gates (full IBM Quantum parity + Google/IonQ native)",
-            "Statevector simulation (up to 27 qubits)",
+            "Apple Silicon Metal/MLX GPU acceleration (up to 400x speedup, 30+ qubits)",
+            "Statevector simulation (up to 30 qubits)",
             "Density matrix simulation (mixed states + noise)",
             "Pauli Frame simulator (1000+ Clifford qubits)",
             "7 noise channels (depolarizing, bitflip, etc.)",

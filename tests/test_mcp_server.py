@@ -40,7 +40,7 @@ def test_sdk_info_resource():
     info_json = sdk_info()
     data = json.loads(info_json)
     assert data["name"] == "Quanta Quantum SDK"
-    assert data["version"] == "0.9.3"
+    assert data["version"] == "1.0.0"
     assert data["total_tools"] == 23
     assert data["total_gates"] == 31
 

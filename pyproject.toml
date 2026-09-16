@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "quanta-sdk"
-version = "0.9.3"
-description = "AI-native quantum computing SDK — 23 MCP tools, Willow dynamic surface code QEC, 200+ qubit MPS/sparse simulation, M5 Pro 48GB support, 31 gates, IBM Quantum hardware, Grover, QAOA, VQE, Shor"
+version = "1.0.0"
+description = "AI-native quantum computing SDK — Apple Silicon Metal/MLX GPU engine, 23 MCP tools, Willow dynamic surface code QEC, 200+ qubit MPS, M5 Pro 48GB support, 31 gates, IBM & IonQ hardware"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
@@ -19,6 +19,9 @@ keywords = [
     "mcp",
     "mcp-server",
     "ai-native",
+    "apple-silicon",
+    "mlx",
+    "metal",
     "qaoa",
     "vqe",
     "grover",
@@ -31,7 +34,7 @@ keywords = [
     "simulator",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
@@ -48,10 +51,11 @@ classifiers = [
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "pytest-cov", "hypothesis", "ruff", "mypy", "scikit-learn>=1.0"]
+dev = ["pytest>=7.0", "pytest-cov", "hypothesis", "ruff", "mypy", "scikit-learn>=1.0", "mlx>=0.20; sys_platform == 'darwin' and platform_machine == 'arm64'"]
 docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
 gpu = ["jax[cuda12]", "cupy-cuda12x", "cuquantum-python-cu12"]
 mcp = ["fastmcp>=3.0"]
+metal = ["mlx>=0.20", "mlx-metal>=0.20"]
 qml = ["scikit-learn>=1.0"]
 
 [project.urls]

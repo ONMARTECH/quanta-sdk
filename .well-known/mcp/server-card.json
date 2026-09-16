@@ -1,8 +1,8 @@
 {
   "serverInfo": {
     "name": "Quanta Quantum SDK",
-    "version": "0.9.3",
-    "description": "AI-native quantum computing SDK — 23 MCP tools, 4 guided prompts, 5 resources. Run quantum circuits, Grover/Shor/QAOA algorithms, QEC surface code simulations, fault-tolerant resource estimation, reasoning evaluations, target transpilation, and Monte Carlo option pricing. Zero dependencies beyond NumPy.",
+    "version": "1.0.0",
+    "description": "AI-native quantum computing SDK — Apple Silicon Metal/MLX GPU acceleration, 23 MCP tools, 4 guided prompts, 5 resources. Run quantum circuits, Grover/Shor/QAOA algorithms, QEC surface code simulations, fault-tolerant resource estimation, reasoning evaluations, target transpilation, and Monte Carlo option pricing. Zero dependencies beyond NumPy.",
     "vendor": "ONMARTECH",
     "homepage": "https://github.com/ONMARTECH/quanta-sdk",
     "repository": "https://github.com/ONMARTECH/quanta-sdk"

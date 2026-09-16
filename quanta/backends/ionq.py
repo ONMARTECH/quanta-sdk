@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import os
+import ssl
 import time
 import urllib.error
 import urllib.request
@@ -44,6 +45,15 @@ from quanta.result import Result
 __all__ = ["IonQBackend"]
 
 _IONQ_API = "https://api.ionq.co/v0.3"
+
+
+def _ssl_context() -> ssl.SSLContext:
+    """Creates SSL context with proper CA certificates."""
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
 
 # Quanta gate name -> IonQ native gate format
 _GATE_MAP: dict[str, str] = {
@@ -140,7 +150,13 @@ class IonQBackend(Backend):
                 "Get a key at: https://cloud.ionq.com/"
             )
 
-        url = f"{_IONQ_API}{path}"
+        if path.startswith("http://") or path.startswith("https://"):
+            url = path
+        elif path.startswith("/v0.3/"):
+            url = f"https://api.ionq.co{path}"
+        else:
+            url = f"{_IONQ_API}{path}"
+
         headers = {
             "Authorization": f"apiKey {self._api_key}",
             "Content-Type": "application/json",
@@ -150,7 +166,7 @@ class IonQBackend(Backend):
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
 
         try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with urllib.request.urlopen(req, timeout=60, context=_ssl_context()) as resp:
                 return json.loads(resp.read().decode())
         except urllib.error.HTTPError as e:
             error_body = e.read().decode() if e.readable() else ""
@@ -196,7 +212,17 @@ class IonQBackend(Backend):
             )
 
         # Parse results -- IonQ returns probability distribution
-        counts = self._parse_results(job, dag.num_qubits, shots)
+        # In API v0.3+, results are retrieved from /jobs/{job_id}/results or job["results_url"]
+        probs = job.get("data", {}).get("probabilities")
+        if not probs:
+            results_path = job.get("results_url") or f"/jobs/{job_id}/results"
+            try:
+                raw_results = self._api_request("GET", results_path)
+                probs = raw_results
+            except Exception:
+                probs = {}
+
+        counts = self._parse_results(probs or job, dag.num_qubits, shots)
 
         return Result(
             counts=counts,
@@ -206,20 +232,30 @@ class IonQBackend(Backend):
 
     @staticmethod
     def _parse_results(
-        job: dict[str, Any], num_qubits: int, shots: int
+        data: dict[str, Any], num_qubits: int, shots: int
     ) -> dict[str, int]:
         """Converts IonQ probability distribution to measurement counts.
 
-        IonQ returns {"probabilities": {"0": 0.5, "3": 0.5}} where
-        keys are decimal state indices. We convert to bitstring counts.
+        IonQ returns {"0": 0.5, "3": 0.5} or {"data": {"probabilities": ...}}
+        where keys are decimal state indices. We convert to bitstring counts.
         """
-        probs = job.get("data", {}).get("probabilities", {})
+        if "data" in data and "probabilities" in data["data"]:
+            probs = data["data"]["probabilities"]
+        elif "probabilities" in data and isinstance(data["probabilities"], dict):
+            probs = data["probabilities"]
+        else:
+            probs = data
 
         counts: dict[str, int] = {}
         remaining = shots
 
-        # Sort by probability descending for deterministic rounding
-        sorted_states = sorted(probs.items(), key=lambda x: -x[1])
+        # Filter and sort by probability descending for deterministic rounding
+        valid_items = [
+            (str(k), float(v))
+            for k, v in probs.items()
+            if str(k).isdigit()
+        ]
+        sorted_states = sorted(valid_items, key=lambda x: -x[1])
 
         for i, (state_idx, prob) in enumerate(sorted_states):
             bitstring = format(int(state_idx), f"0{num_qubits}b")

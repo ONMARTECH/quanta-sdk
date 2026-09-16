@@ -40,3 +40,8 @@ htmlcov/
 .env.*
 site/
 .hypothesis/
+
+# Benchmark & Stress test outputs
+*benchmark*.json
+*result*.json
+*20gb*.json

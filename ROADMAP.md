@@ -1,19 +1,32 @@
 # Quanta SDK — Roadmap
 
-> Son güncelleme: 31 Mart 2026 · Mevcut: **v0.9.0** · Hedef: **v1.0 (Temmuz 2026)**
+> Son güncelleme: 16 Eylül 2026 · Mevcut: **v1.0.0 (Üretim Sürümü)** · Hedef: **5 Stratejik Sütun (v1.1 - v1.4)**
 
 ---
 
-## Mevcut Durum Özeti
+## 5 Stratejik Sütun (Stratejik Yol Haritası)
+
+| Sütun | Başlık | Hedef | Durum |
+| :---: | :--- | :---: | :---: |
+| 🍏 **Sütun 1** | **Apple Silicon Yerel Metal/MLX Kuantum Motoru** (`MLXSimulator`) | **v1.0.0** | **✅ TAMAMLANDI** |
+| 🔥 **Sütun 2** | **PyTorch Yerel Kuantum Katmanı (`quanta.torch.QuantumLayer`)** | **v1.1.0** | 🟡 Sıradaki |
+| 🛡️ **Sütun 3** | **Gerçek Zamanlı QEC & Hızlı Sendrom Çözümleyici (MWPM / Union-Find)** | **v1.2.0** | ⚪ Planlandı |
+| 🌐 **Sütun 4** | **Endüstriyel QUBO & Büyük Ölçekli Graf Ayrıştırma Motoru** | **v1.3.0** | ⚪ Planlandı |
+| 🤖 **Sütun 5** | **Akıllı Kuantum Maliyet ve Sadakat Yönlendirici Ajanı (FinOps / Arbiter)** | **v1.4.0** | ⚪ Planlandı |
+
+---
+
+## Mevcut Durum Özeti (v1.0.0)
 
 ```
-Version:     0.9.2            Tests:       820 (91% coverage)
-Gates:       31               Files:       86
-Tutorials:   14 + 14 notebook MCP Tools:   20
-Backends:    4 (local + IBM + IonQ + Google)
+Version:     1.0.0 (Production) Tests:       909+ (91% coverage)
+Gates:       31                 Files:       88+
+Tutorials:   14 + 15 notebooks  MCP Tools:   23
+Backends:    5 (MLX Metal + Local + IBM + IonQ + Google)
 Compiler:    6-pass (cancel + merge + translate + route + decompose + validate)
-QML:         Classifier + QSVM + 3 feature maps
-QEC:         7 codes (bit/phase/steane/shor/surface/color/shor9)
+QML:         Classifier + Regressor + QSVM + 3 feature maps + Scikit-Learn Mixins
+Hardware:    Apple Silicon M5 Pro 48GB (30 Qubits, 20GB RAM, 400x MLX Speedup)
+QEC:         7 codes (bit/phase/steane/shor/surface/color/willow dynamic)
 ```
 
 ---
