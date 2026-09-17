@@ -553,11 +553,11 @@ Upon normalization, $|\psi_0^{\text{enriched}}\rangle = e^{i \Phi_{\text{consens
 \label{thm:ebbinghaus_capacity}
 Consider an unmonitored cognitive memory state $|\psi_0\rangle$ stored in a biomorphic bipartite register of dimension $d = 2^N$.
 \begin{enumerate}
-    \item \textbf{Lindblad-Ebbinghaus Equivalence}: Under Markovian pure dephasing governed by local Pauli generators $L_k = \sqrt{\gamma_k} \sigma_k^z$ with total rate $\Gamma = \sum_k \gamma_k$, the state fidelity decays as:
+    \item \textbf{Lindblad-Ebbinghaus Equivalence}: Under Markovian pure dephasing governed by local Pauli generators $L_k = \sqrt{\gamma_k} \sigma_k^z$~\cite{lindblad1976,gks1976} with total rate $\Gamma = \sum_k \gamma_k$, the state fidelity decays as:
     \begin{equation}
         \mathcal{F}(t) \equiv \langle \psi_0 | \rho(t) | \psi_0 \rangle = \frac{1}{d} + \left(1 - \frac{1}{d}\right) \exp(-\Gamma t)
     \end{equation}
-    which is mathematically isomorphic to Hermann Ebbinghaus's (1885) psychological forgetting curve $R(t) = \exp(-t/S)$ with cognitive memory stability $S \equiv 1/\Gamma$.
+    which is mathematically isomorphic to Hermann Ebbinghaus's (1885) psychological forgetting curve $R(t) = \exp(-t/S)$~\cite{ebbinghaus1885} with cognitive memory stability $S \equiv 1/\Gamma$.
     \item \textbf{Spaced Sleep Stability Expansion}: Offline closed-system Quantum REM Sleep annealing rotates memory representations into a Decoherence-Free Subspace (DFS) satisfying $[L_k, \Pi_{\text{DFS}}] = 0$, scaling the effective dephasing rate by $\Gamma^{(c+1)} = \Gamma^{(c)} / (1 + \alpha_{\text{sleep}})$. Across $C$ circadian sleep cycles, memory stability expands exponentially:
     \begin{equation}
         S_C = S_0 \prod_{c=1}^C (1 + \alpha_{\text{sleep}}^{(c)}) \ge S_0 (1 + \bar{\alpha})^C
@@ -591,7 +591,7 @@ Let an episodic engram statevector $|\psi_0\rangle \in \mathcal{H}$ be registere
 \begin{equation}
     \frac{d\rho}{dt} = -i [H_{\text{free}}, \rho] + \sum_{k=1}^d \gamma_k \left( L_k \rho L_k^\dagger - \frac{1}{2} \{ L_k^\dagger L_k, \rho \} \right)
 \end{equation}
-where $L_k = |k\rangle\langle k|$ are local computational-basis dephasing operators with rates modulated by dopaminergic synaptic capture (Frey \& Morris, 1997):
+where $L_k = |k\rangle\langle k|$ are local computational-basis dephasing operators with rates modulated by dopaminergic synaptic tagging and capture~\cite{frey1997}:
 \begin{equation}
     \gamma_k = \frac{\gamma_0}{1 + \lambda_D \cdot D_k}
 \end{equation}
@@ -599,7 +599,7 @@ The engram state fidelity relative to the initial state decays as:
 \begin{equation}
     \mathcal{F}_{\text{engram}}(t) \equiv \langle \psi_0 | \rho(t) | \psi_0 \rangle = \sum_{k=1}^d |c_k|^4 + \sum_{j \ne k} |c_j|^2 |c_k|^2 \exp\left(-\frac{\gamma_0}{1 + \lambda_D D} t\right)
 \end{equation}
-Furthermore, during offline Sharp-Wave Ripple (SWR) replay, probabilistic sampling at temperature $T$:
+Furthermore, during offline Sharp-Wave Ripple (SWR) replay~\cite{buzsaki2015}, probabilistic sampling at temperature $T$:
 \begin{equation}
     P_{\text{replay}}(j) = \frac{\exp(D_j / T)}{\sum_m \exp(D_m / T)}
 \end{equation}
@@ -649,7 +649,7 @@ Let a cortical assembly comprise $k$ exchange-coupled minicolumns isometric to p
         \item Miller's (1956) magical chunking capacity: $k_{\text{eff}} = 3 \implies D_{\text{eff}} = 2^3 = 8 \quad (7 \pm 2\text{ chunks})$~\cite{miller1956};
         \item Multimodal chunking supremum: $k_{\text{eff}} = 4 \implies D_{\text{eff}} = 2^4 = 16$, reducing under parity-conserved Decoherence-Free Subspaces ($\sum \sigma_j^z = 0$) to $D_{\text{DFS}} = \binom{4}{2} = 6$ states.
     \end{itemize}
-    \item \textbf{Entanglement Sudden Death (ESD) Threshold}: Under open-system Lindblad pure dephasing with collective rate $\Gamma > 0$:
+    \item \textbf{Entanglement Sudden Death (ESD) Threshold}: Under open-system Lindblad~\cite{lindblad1976,gks1976} pure dephasing with collective rate $\Gamma > 0$, building on the finite-time disentanglement phenomenon discovered by Yu and Eberly~\cite{yueberly2004,yueberly2009}:
     \begin{equation}
         \frac{d\rho}{dt} = -i [H_{\text{eff}}, \rho] + \frac{\Gamma}{2} \sum_{j=1}^k \left( \sigma_j^z \rho \sigma_j^z - \rho \right)
     \end{equation}
@@ -706,7 +706,7 @@ Classical deep learning architectures (MLPs, Transformers, contrastive framework
 \begin{equation}
     [\sigma_j^z, \sigma_j^x] = 2i \sigma_j^y \neq 0
 \end{equation}
-We now prove that this non-commutative measurement geometry generates non-classical contextuality that cannot be reproduced by any classical non-contextual model without an exponential parameter explosion.
+We now prove that this non-commutative measurement geometry generates non-classical contextuality that cannot be reproduced by any classical non-contextual model without an exponential parameter explosion, establishing the generalized Kochen-Specker~\cite{kochen1967} contextual advantage in biomorphic cognitive architectures.
 
 \begin{theorem}[\textbf{Non-Classical Contextuality, Sheaf-Theoretic Separation, and Kochen-Specker Advantage}]
 \label{thm:contextuality_separation}
@@ -1743,6 +1743,42 @@ R.~D.~Adams, C.~M.~Fisher, S.~Hakim, R.~G.~Ojemann, and W.~H.~Sweet,
 ``Symptomatic occult hydrocephalus with ``normal'' cerebrospinal-fluid pressure: A treatable syndrome,''
 \textit{New England Journal of Medicine}, vol.~273, no.~3, pp.~117--126, 1965.
 
+\bibitem{yueberly2004}
+T.~Yu and J.~H.~Eberly,
+``Finite-time disentanglement via spontaneous emission,''
+\textit{Physical Review Letters}, vol.~93, no.~14, p.~140404, 2004.
+
+\bibitem{yueberly2009}
+T.~Yu and J.~H.~Eberly,
+``Sudden death of entanglement,''
+\textit{Science}, vol.~323, no.~5914, pp.~598--601, 2009.
+
+\bibitem{ebbinghaus1885}
+H.~Ebbinghaus,
+\textit{\"Uber das Ged\"achtnis: Untersuchungen zur experimentellen Psychologie},
+Duncker \& Humblot, Leipzig, 1885.
+
+\bibitem{frey1997}
+U.~Frey and R.~G.~M.~Morris,
+``Synaptic tagging and long-term potentiation,''
+\textit{Nature}, vol.~385, no.~6616, pp.~533--536, 1997.
+
+\bibitem{buzsaki2015}
+G.~Buzs\'aki,
+``Hippocampal sharp wave-ripple: A cognitive biomarker for episodic memory and planning,''
+\textit{Hippocampus}, vol.~25, no.~6, pp.~680--716, 2015.
+
+\bibitem{lindblad1976}
+G.~Lindblad,
+``On the generators of quantum dynamical semigroups,''
+\textit{Communications in Mathematical Physics}, vol.~48, no.~2, pp.~119--130, 1976.
+
+\bibitem{gks1976}
+V.~Gorini, A.~Kossakowski, and E.~C.~G.~Sudarshan,
+``Completely positive dynamical semigroups of N-level systems,''
+\textit{Journal of Mathematical Physics}, vol.~17, no.~5, pp.~821--825, 1976.
+
 \end{thebibliography}
 
 \end{document}
+
