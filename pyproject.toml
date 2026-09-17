@@ -7,7 +7,7 @@ name = "quanta-sdk"
 version = "1.1.0"
 description = "AI-native quantum computing SDK — PyTorch QuantumLayer & Continuous Resonance, Apple Silicon Metal/MLX GPU engine, 23 MCP tools, Willow dynamic QEC, 200+ qubit MPS"
 readme = "README.md"
-license = "Apache-2.0"
+license = { text = "Apache-2.0" }
 requires-python = ">=3.10"
 authors = [
     { name = "Abdullah Enes SARI", email = "info@onmartech.com" },
@@ -60,6 +60,8 @@ dev = [
     "scikit-learn>=1.0",
     "mlx>=0.20; sys_platform == 'darwin' and platform_machine == 'arm64'",
     "torch>=2.0",
+    "pillow",
+    "fastmcp>=3.0",
 ]
 docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
 gpu = ["jax[cuda12]", "cupy-cuda12x", "cuquantum-python-cu12"]

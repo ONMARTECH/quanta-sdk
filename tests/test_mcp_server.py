@@ -1,6 +1,12 @@
 """Tests for quanta.mcp_server — AI Agent MCP tool validation."""
 
 import json
+import pytest
+
+try:
+    import fastmcp  # noqa: F401
+except ImportError:
+    pytest.skip("fastmcp not installed", allow_module_level=True)
 
 from quanta.mcp_server import (
     backend_specs,

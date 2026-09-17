@@ -65,6 +65,11 @@ Uzay-zaman hata düzeltmesinde asıl bilgi kaynağı sendromun kendisi değil, *
 Bir stabilizatör ölçümü 1 geldiğinde bu bir hatayı gösterir; ancak bir sonraki döngüde de 1 gelmeye devam ediyorsa yeni bir hata oluşmamıştır ($\Delta s_t = 1 \oplus 1 = 0$). Sadece hata başladığı ve bittiği zaman $\Delta s_t = 1$ defekti tetiklenir:
 
 ```python
+from quanta.qec.surface_code import SurfaceCode
+
+code_d3 = SurfaceCode(distance=3)
+res_d3 = code_d3.simulate_dynamic(rounds=10, p_phys=0.001, p_meas=0.002, seed=42)
+
 # Sendrom geçmişindeki ardışık rauntları inceleme
 for t, round_data in enumerate(res_d3.syndrome_history[:4]):
     x_syn = round_data.get("x_syndromes", [])
@@ -83,6 +88,8 @@ for defect in res_d3.defects[:3]:
 Google Willow atılımının temel göstergesi, code distance büyüdükçe hata oranının azalmasıdır. Farklı mesafeleri karşılaştıralım:
 
 ```python
+from quanta.qec.surface_code import SurfaceCode
+
 distances = [3, 5, 7]
 results = {}
 
@@ -112,9 +119,13 @@ if lambda_val > 1.0:
 
 ## Adım 4: Ölçüm Gürültüsü (Readout Noise) Toleransı
 
-Ölçüm gürültüsünün ($p_{\\text{meas}}$) etkisini test ederek çok döngülü yapının önemini doğrulayalım:
+Ölçüm gürültüsünün ($p_{\text{meas}}$) etkisini test ederek çok döngülü yapının önemini doğrulayalım:
 
 ```python
+from quanta.qec.surface_code import SurfaceCode
+
+code_d3 = SurfaceCode(distance=3)
+
 # Yüksek ölçüm gürültüsü altında bile defekt korelasyonu
 noisy_res = code_d3.simulate_dynamic(
     rounds=20,

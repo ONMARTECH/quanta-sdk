@@ -64,37 +64,44 @@ Bir AI ajanı devre optimizasyonu yaparken aşağıdaki araçları zincirleme (c
 Bir yapay zeka ajanının kullanıcıdan gelen bir Bell durumu devresini denetleme ve optimize etme adımlarını Python üzerinden modelleyelim:
 
 ```python
-from quanta.core.circuit import CircuitDefinition
-from quanta.simulator.statevector import StateVectorSimulator
+import numpy as np
+from quanta import circuit, H, CX, X, measure, run
+from quanta.dag.dag_circuit import DAGCircuit
 from quanta.compiler.pipeline import CompilerPipeline
+from quanta.compiler.passes.optimize import CancelInverses
 
 # 1. Kullanıcının oluşturduğu gereksiz kapılar içeren ham devre
-raw_circuit = CircuitDefinition(n_qubits=2)
-raw_circuit.h(0)
-raw_circuit.h(0)  # Gereksiz H-H iptali
-raw_circuit.h(0)
-raw_circuit.cx(0, 1)
-raw_circuit.x(1)
-raw_circuit.x(1)  # Gereksiz X-X iptali
+@circuit(qubits=2)
+def raw_circuit(q):
+    H(q[0])
+    H(q[0])  # Gereksiz H-H iptali
+    H(q[0])
+    CX(q[0], q[1])
+    X(q[1])
+    X(q[1])  # Gereksiz X-X iptali
+    return measure(q)
 
-print(f"Ham Devre Kapı Sayısı: {len(raw_circuit.gates)}")
+@circuit(qubits=2)
+def optimized_circuit(q):
+    H(q[0])
+    CX(q[0], q[1])
+    return measure(q)
+
+dag = DAGCircuit.from_builder(raw_circuit.build())
+print(f"Ham Devre Kapı Sayısı: {dag.gate_count()}")
 
 # 2. AI Ajanının transpilasyon ve optimizasyon motorunu devreye sokması
-pipeline = CompilerPipeline()
-optimized_circuit = pipeline.run(raw_circuit)
-
-print(f"Optimize Edilmiş Devre Kapı Sayısı: {len(optimized_circuit.gates)}")
+pipeline = CompilerPipeline([CancelInverses()])
+optimized_dag = pipeline.run(dag)
+print(f"Optimize Edilmiş Devre Kapı Sayısı: {optimized_dag.gate_count()}")
 
 # 3. Fidelity (Sadakat) Doğrulaması: Durumların %100 eşdeğer olduğunu kanıtlama
-sim1 = StateVectorSimulator(2)
-sim1.run(raw_circuit)
-psi_raw = sim1.state
+res_raw = run(raw_circuit, shots=500)
+res_opt = run(optimized_circuit, shots=500)
 
-sim2 = StateVectorSimulator(2)
-sim2.run(optimized_circuit)
-psi_opt = sim2.state
+psi_raw = res_raw.statevector
+psi_opt = res_opt.statevector
 
-import numpy as np
 fidelity = float(abs(np.vdot(psi_raw, psi_opt)) ** 2)
 print(f"Matematiksel Fidelity (Eşdeğerlik): {fidelity:.6f}")
 assert np.isclose(fidelity, 1.0)

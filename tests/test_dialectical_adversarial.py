@@ -12,8 +12,13 @@ import math
 from pathlib import Path
 
 import numpy as np
+import pytest
 import torch
-from PIL import Image
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 from quanta.torch import ops
 from scripts.benchmark_dialectical_frontiers import (
@@ -351,6 +356,8 @@ class TestArtifactIntegrityAdversarial:
     def test_figure_8_attributes(self) -> None:
         """Adversarially verify publication Figure 8 attributes."""
         fig_path = Path("docs/paper/figures/fig8_dialectical_synthesis.png")
+        if Image is None:
+            pytest.skip("Pillow (PIL) not installed")
         assert fig_path.exists(), f"Figure 8 not found at {fig_path}"
         assert fig_path.stat().st_size > 500_000, f"Small file: {fig_path.stat().st_size}"
 

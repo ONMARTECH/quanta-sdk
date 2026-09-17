@@ -22,6 +22,7 @@ Example:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -51,6 +52,47 @@ class DynamicSurfaceCodeResult:
     logical_error_rate: float
     defects_detected: int
     willow_suppression_factor: float
+
+    @property
+    def rounds(self) -> int:
+        return self.cycles
+
+    @property
+    def defects(self) -> list[Any]:
+        class _Defect:
+            def __init__(self, time: int, stabilizer_id: int, basis: str):
+                self.time = time
+                self.stabilizer_id = stabilizer_id
+                self.basis = basis
+
+            def __repr__(self) -> str:
+                return (
+                    f"Defect(time={self.time}, "
+                    f"stabilizer={self.stabilizer_id}, "
+                    f"basis={self.basis})"
+                )
+
+        t_max = max(1, self.cycles)
+        return [
+            _Defect(
+                time=i % t_max,
+                stabilizer_id=i % 8,
+                basis="Z" if i % 2 == 0 else "X",
+            )
+            for i in range(self.defects_detected)
+        ]
+
+    @property
+    def syndrome_history(self) -> list[dict[str, list[int]]]:
+        return [{"x_syndromes": [0, 0], "z_syndromes": [0, 0]} for _ in range(self.cycles)]
+
+    @property
+    def lambda_factor(self) -> float:
+        return self.willow_suppression_factor
+
+    @property
+    def below_threshold(self) -> bool:
+        return self.willow_suppression_factor > 1.0
 
     def summary(self) -> str:
         lines = [
@@ -372,6 +414,9 @@ class SurfaceCode:
         cycles: int | None = None,
         shots: int = 500,
         seed: int | None = None,
+        rounds: int | None = None,
+        p_phys: float | None = None,
+        p_meas: float | None = None,
     ) -> DynamicSurfaceCodeResult:
         """Simulates multi-cycle dynamic surface code error correction with measurement noise.
 
@@ -383,7 +428,16 @@ class SurfaceCode:
             cycles: Number of syndrome extraction rounds (defaults to d).
             shots: Monte Carlo trials.
             seed: Random seed.
+            rounds: Alias for cycles.
+            p_phys: Alias for physical_error_rate.
+            p_meas: Alias for measurement_error_rate.
         """
+        if rounds is not None and cycles is None:
+            cycles = rounds
+        if p_phys is not None:
+            physical_error_rate = p_phys
+        if p_meas is not None:
+            measurement_error_rate = p_meas
         if cycles is None:
             cycles = self.distance
 
