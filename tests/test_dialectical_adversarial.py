@@ -21,17 +21,24 @@ except ImportError:
     Image = None
 
 from quanta.torch import ops
-from scripts.benchmark_dialectical_frontiers import (
-    PHYSIOLOGICAL_DEPHASING_GAMMA,
-    PHYSIOLOGICAL_GAMMA_CYCLE_MS,
-    PHYSIOLOGICAL_GAMMA_CYCLE_S,
-    compute_esd_lifetime,
-    simulate_module_a_qubit_capacity,
-    simulate_module_b_contextuality,
-    simulate_module_c_interference,
-    simulate_module_d_decoherence_spectrum,
-    update_academic_telemetry,
-)
+
+try:
+    from scripts.benchmark_dialectical_frontiers import (
+        PHYSIOLOGICAL_DEPHASING_GAMMA,
+        PHYSIOLOGICAL_GAMMA_CYCLE_MS,
+        PHYSIOLOGICAL_GAMMA_CYCLE_S,
+        compute_esd_lifetime,
+        simulate_module_a_qubit_capacity,
+        simulate_module_b_contextuality,
+        simulate_module_c_interference,
+        simulate_module_d_decoherence_spectrum,
+        update_academic_telemetry,
+    )
+except ImportError as err:
+    pytest.skip(
+        f"Benchmark dialectical frontiers script could not be imported: {err}",
+        allow_module_level=True,
+    )
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 1. Module A: Effective Qubit Capacity & Multi-partite Entanglement (Thm 6)

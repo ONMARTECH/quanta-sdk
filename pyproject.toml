@@ -62,6 +62,7 @@ dev = [
     "torch>=2.0",
     "pillow",
     "fastmcp>=3.0",
+    "matplotlib>=3.7",
 ]
 docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
 gpu = ["jax[cuda12]", "cupy-cuda12x", "cuquantum-python-cu12"]

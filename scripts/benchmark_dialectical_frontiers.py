@@ -37,30 +37,34 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+
+    # Publication plotting aesthetics
+    plt.style.use(
+        "seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default"
+    )
+    plt.rcParams.update(
+        {
+            "font.family": "serif",
+            "font.size": 10.5,
+            "axes.labelsize": 11.5,
+            "axes.titlesize": 12.0,
+            "xtick.labelsize": 9.5,
+            "ytick.labelsize": 9.5,
+            "legend.fontsize": 9.0,
+            "figure.titlesize": 13.5,
+            "lines.linewidth": 2.2,
+            "mathtext.fontset": "cm",
+        }
+    )
+except ImportError:
+    plt = None
+
 import numpy as np
 import torch
 
 from quanta.torch import BiomorphicResonantBrain, ops
-
-# Publication plotting aesthetics
-plt.style.use(
-    "seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default"
-)
-plt.rcParams.update(
-    {
-        "font.family": "serif",
-        "font.size": 10.5,
-        "axes.labelsize": 11.5,
-        "axes.titlesize": 12.0,
-        "xtick.labelsize": 9.5,
-        "ytick.labelsize": 9.5,
-        "legend.fontsize": 9.0,
-        "figure.titlesize": 13.5,
-        "lines.linewidth": 2.2,
-        "mathtext.fontset": "cm",
-    }
-)
 
 FIGURES_DIR = Path("docs/paper/figures")
 FIGURES_DIR.mkdir(parents=True, exist_ok=True)
@@ -593,6 +597,11 @@ def generate_publication_figure_8(
         (c) Quantum Phase Interference vs Classical Convex Mixture
         (d) 18-Order-of-Magnitude Thermal Decoherence Spectrum Across Physical Carriers
     """
+    if plt is None:
+        raise ImportError(
+            "matplotlib is required to generate Figure 8. Install it via 'pip install matplotlib'."
+        )
+
     print("--> Generating Publication Figure 8 (300 DPI, 2x2 Grid)...")
 
     fig, axes = plt.subplots(2, 2, figsize=(13.2, 10.5))
