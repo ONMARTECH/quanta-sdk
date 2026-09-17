@@ -30,7 +30,12 @@ import torch.nn as nn
 
 from quanta.torch import ops
 
-__all__ = ["BiomorphicResonantBrain", "QuantumREMSleep", "QuantumZenoAttention"]
+__all__ = [
+    "BiomorphicResonantBrain",
+    "NoisyHippocampalBuffer",
+    "QuantumREMSleep",
+    "QuantumZenoAttention",
+]
 
 
 class BiomorphicResonantBrain(nn.Module):
@@ -566,12 +571,378 @@ class QuantumREMSleep(nn.Module):
         """
         return self.brain_module.forward(x)
 
+    def consolidate_hippocampus(
+        self,
+        hippocampus: NoisyHippocampalBuffer,
+        cycles: int | None = None,
+        batch_size: int | None = None,
+    ) -> dict[str, Any]:
+        """Consolidates memory engrams replayed from a NoisyHippocampalBuffer.
+
+        Args:
+            hippocampus: NoisyHippocampalBuffer containing episodic memory traces.
+            cycles: Optional override for sleep annealing cycles.
+            batch_size: Optional SWR replay batch size.
+
+        Returns:
+            Dictionary containing consolidation diagnostics and hippocampal metrics.
+        """
+        return hippocampus.consolidate_with_sleep(self, cycles=cycles, batch_size=batch_size)
+
     def __repr__(self) -> str:
         return (
             f"QuantumREMSleep(sleep_cycles={self.sleep_cycles}, "
             f"learning_rate={self.learning_rate}, "
             f"orthogonalization_weight={self.orthogonalization_weight}, "
             f"stored_states={len(self.memory_states)})"
+        )
+
+
+class NoisyHippocampalBuffer(nn.Module):
+    _dummy: torch.Tensor
+
+    """Biologically realistic noisy hippocampal episodic memory buffer (CA3-CA1).
+
+    Simulates mammalian episodic memory buffering under continuous thermal noise,
+    Lindblad phase diffusion, and dopaminergic synaptic capture (Frey & Morris, 1997).
+    Replaces idealized lossless engram replay with biologically authentic stochastic
+    degradation:
+
+    1. Finite Buffer Capacity & Eviction: Holds up to `capacity` episodic engrams.
+       When capacity is reached, evicts the oldest engrams (FIFO).
+    2. Lindblad Phase Diffusion: Continuous dephasing drift on quantum engram phases:
+         psi_k(t + dt) = psi_k(t) * exp(i * d_theta_k), d_theta_k ~ N(0, sigma_phi_eff^2 * dt)
+    3. Thermal Amplitude Jitter: Background depolarizing synaptic fluctuations:
+         psi(t + dt) = (psi(t) + xi) / ||psi(t) + xi||,  xi ~ CN(0, sigma_noise_eff^2 * dt)
+    4. Dopaminergic Synaptic Tagging: Novelty and reward tags scale down effective noise:
+         sigma_eff = sigma / (1.0 + lambda_D * max(0.0, dopamine_tag))
+    5. Sharp-Wave Ripple (SWR) Replay: Probabilistic sampling of degraded engrams
+       during offline sleep consolidation (coupled with QuantumREMSleep).
+    6. Objective Ebbinghaus Fidelity Tracking: Computes real-time retention fidelity
+       F(t) = |<psi_0 | psi(t)>|^2 to observe biological forgetting curves.
+
+    Args:
+        capacity: Maximum number of episodic engram slots (default: 64).
+        noise_level: Thermal amplitude jitter standard deviation sigma_noise (default: 0.05).
+        phase_diffusion_rate: Phase diffusion rate sigma_phi (default: 0.02).
+        temporal_decay_rate: Ebbinghaus Lindblad decay constant gamma (default: 0.01).
+        dopamine_protection: Sensitivity parameter lambda_D for dopamine stabilization (1.0).
+        device: PyTorch device ('cpu', 'mps', or torch.device).
+        dtype: Real floating-point dtype (torch.float32 or torch.float64).
+    """
+
+    def __init__(
+        self,
+        capacity: int = 64,
+        noise_level: float = 0.05,
+        phase_diffusion_rate: float = 0.02,
+        temporal_decay_rate: float = 0.01,
+        dopamine_protection: float = 1.0,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
+        super().__init__()
+        if capacity < 1:
+            raise ValueError(f"capacity must be >= 1, got {capacity}")
+        if noise_level < 0.0:
+            raise ValueError(f"noise_level must be non-negative, got {noise_level}")
+        if phase_diffusion_rate < 0.0:
+            raise ValueError(
+                f"phase_diffusion_rate must be non-negative, got {phase_diffusion_rate}"
+            )
+        if temporal_decay_rate < 0.0:
+            raise ValueError(
+                f"temporal_decay_rate must be non-negative, got {temporal_decay_rate}"
+            )
+        if dopamine_protection < 0.0:
+            raise ValueError(
+                f"dopamine_protection must be non-negative, got {dopamine_protection}"
+            )
+
+        self.capacity = capacity
+        self.noise_level = float(noise_level)
+        self.phase_diffusion_rate = float(phase_diffusion_rate)
+        self.temporal_decay_rate = float(temporal_decay_rate)
+        self.dopamine_protection = float(dopamine_protection)
+
+        target_dev = ops.resolve_device(device) if device is not None else None
+        dev = target_dev if target_dev is not None else torch.device("cpu")
+        if (
+            target_dev is not None
+            and target_dev.type == "mps"
+            and dtype in (torch.float64, torch.complex128)
+        ):
+            raise ops.UnsupportedDtypeError(
+                f"Apple Silicon MPS does not support 64-bit precision ({dtype}). "
+                f"Use torch.float32 on MPS or switch execution to device='cpu'."
+            )
+        self.real_dtype = (
+            dtype if dtype is not None else (torch.float32 if dev.type == "mps" else torch.float64)
+        )
+        self.complex_dtype = ops.resolve_complex_dtype(self.real_dtype, dev)
+
+        # Register a dummy buffer to track module device and dtype transfers automatically
+        self.register_buffer("_dummy", torch.empty(0, device=dev, dtype=self.real_dtype))
+
+        self.buffer: list[dict[str, Any]] = []
+
+    @property
+    def current_device(self) -> torch.device:
+        return self._dummy.device
+
+    @property
+    def current_real_dtype(self) -> torch.dtype:
+        return self._dummy.dtype
+
+    @property
+    def current_complex_dtype(self) -> torch.dtype:
+        return ops.resolve_complex_dtype(self._dummy.dtype, self._dummy.device)
+
+    def _apply(self, fn: Any, recurse: bool = True) -> Any:
+        res = super()._apply(fn, recurse=recurse)
+        dev = self.current_device
+        cdtype = self.current_complex_dtype
+        for e in self.buffer:
+            e["pristine_state"] = e["pristine_state"].to(device=dev, dtype=cdtype)
+            e["degraded_state"] = e["degraded_state"].to(device=dev, dtype=cdtype)
+        return res
+
+    def store(
+        self,
+        state: torch.Tensor,
+        dopamine_tag: float | torch.Tensor = 1.0,
+        metadata: dict[str, Any] | None = None,
+    ) -> list[int] | int:
+        """Stores engram statevector(s) in hippocampal buffer with dopaminergic tags.
+
+        Args:
+            state: Statevector of shape [dim] or batch [B, dim].
+            dopamine_tag: Dopaminergic salience tag (scalar or [B] tensor).
+            metadata: Optional dictionary with custom contextual tags.
+
+        Returns:
+            Index or list of indices assigned to stored engram(s).
+        """
+        if state.dim() == 1:
+            return self._store_single(state, dopamine_tag, metadata)
+        elif state.dim() == 2:
+            B = state.shape[0]
+            indices_list: list[int] = []
+            if isinstance(dopamine_tag, (int, float)):
+                d_tags = [float(dopamine_tag)] * B
+            elif torch.is_tensor(dopamine_tag):
+                if dopamine_tag.dim() == 0:
+                    d_tags = [float(dopamine_tag.item())] * B
+                else:
+                    d_tags = [float(d.item()) for d in dopamine_tag.flatten()[:B]]
+                    if len(d_tags) < B:
+                        d_tags.extend([1.0] * (B - len(d_tags)))
+            else:
+                d_tags = [1.0] * B
+
+            for i in range(B):
+                idx = self._store_single(state[i], d_tags[i], metadata)
+                indices_list.append(idx)
+            return indices_list
+        else:
+            raise ValueError(f"Expected 1D or 2D state tensor, got shape {tuple(state.shape)}")
+
+    def _store_single(
+        self,
+        state: torch.Tensor,
+        dopamine_tag: float | torch.Tensor,
+        metadata: dict[str, Any] | None = None,
+    ) -> int:
+        dev = self.current_device
+        cdtype = self.current_complex_dtype
+
+        st = state.detach().to(device=dev, dtype=cdtype)
+        norm = torch.linalg.norm(st)
+        if norm > 1e-12:
+            st = st / norm
+        else:
+            raise ValueError("Cannot store null/zero statevector in hippocampal buffer.")
+
+        d_val = float(dopamine_tag.item()) if torch.is_tensor(dopamine_tag) else float(dopamine_tag)
+        meta = dict(metadata) if metadata is not None else {}
+
+        # FIFO eviction if capacity is reached
+        if len(self.buffer) >= self.capacity:
+            self.buffer.pop(0)
+
+        engram = {
+            "pristine_state": st.clone(),
+            "degraded_state": st.clone(),
+            "dopamine_tag": max(0.0, d_val),
+            "age": 0.0,
+            "metadata": meta,
+        }
+        self.buffer.append(engram)
+        return len(self.buffer) - 1
+
+    def step(self, dt: float = 1.0) -> None:
+        """Simulates biological time progression with Lindblad phase diffusion & thermal noise.
+
+        Args:
+            dt: Biological time step duration (default: 1.0).
+        """
+        if dt <= 0.0 or not self.buffer:
+            return
+
+        dev = self.current_device
+        rdtype = self.current_real_dtype
+        cdtype = self.current_complex_dtype
+
+        for engram in self.buffer:
+            d_tag = engram["dopamine_tag"]
+            protection = 1.0 + self.dopamine_protection * d_tag
+
+            # Effective noise scaled by dopamine protection and sqrt(dt)
+            sigma_noise_eff = (self.noise_level / protection) * math.sqrt(dt)
+            sigma_phi_eff = (self.phase_diffusion_rate / protection) * math.sqrt(dt)
+            gamma_decay_eff = (self.temporal_decay_rate / protection) * dt
+
+            current_state = engram["degraded_state"]
+            dim = current_state.shape[0]
+
+            # 1. Phase diffusion: psi_k -> psi_k * exp(i * delta_theta_k)
+            if sigma_phi_eff > 1e-9:
+                delta_theta = torch.randn(dim, device=dev, dtype=rdtype) * sigma_phi_eff
+                phase_factor = torch.exp(1j * delta_theta.to(dtype=cdtype))
+                current_state = current_state * phase_factor
+
+            # 2. Thermal amplitude noise: xi ~ CN(0, sigma_noise_eff^2 * I)
+            if sigma_noise_eff > 1e-9:
+                scale = sigma_noise_eff / math.sqrt(2.0)
+                noise_r = torch.randn(dim, device=dev, dtype=rdtype) * scale
+                noise_i = torch.randn(dim, device=dev, dtype=rdtype) * scale
+                xi = torch.complex(noise_r, noise_i)
+                current_state = current_state + xi
+
+            # 3. Temporal Lindblad dephasing damping (Ebbinghaus drift toward maximally mixed noise)
+            if gamma_decay_eff > 1e-9:
+                decay_factor = math.exp(-gamma_decay_eff)
+                rand_r = torch.randn(dim, device=dev, dtype=rdtype)
+                rand_i = torch.randn(dim, device=dev, dtype=rdtype)
+                thermal_bath_state = torch.complex(rand_r, rand_i)
+                bath_norm = torch.linalg.norm(thermal_bath_state)
+                if bath_norm > 1e-12:
+                    thermal_bath_state = thermal_bath_state / bath_norm
+                current_state = (
+                    decay_factor * current_state + (1.0 - decay_factor) * thermal_bath_state
+                )
+
+            # 4. Renormalize to maintain unitary physical validity
+            norm = torch.linalg.norm(current_state)
+            if norm > 1e-12:
+                current_state = current_state / norm
+
+            engram["degraded_state"] = current_state
+            engram["age"] += dt
+
+    def replay(
+        self,
+        batch_size: int | None = None,
+        temperature: float = 1.0,
+        apply_degradation: bool = True,
+    ) -> torch.Tensor:
+        """Samples episodic engrams (Sharp-Wave Ripples) for offline consolidation.
+
+        Args:
+            batch_size: Number of engrams to sample. If None or >= len(buffer), returns all.
+            temperature: Sampling temperature T. Lower T concentrates on highest dopamine engrams;
+                T <= 1e-4 selects deterministically by dopamine rank.
+            apply_degradation: If True, returns biologically degraded states;
+                if False, returns pristine.
+
+        Returns:
+            Tensor of shape [batch_size, dim] containing complex engram statevectors.
+        """
+        if not self.buffer:
+            raise ValueError("Hippocampal buffer is empty. Cannot replay engrams.")
+
+        N = len(self.buffer)
+        target_k = min(N, batch_size) if batch_size is not None and batch_size > 0 else N
+        key = "degraded_state" if apply_degradation else "pristine_state"
+
+        if target_k == N and temperature >= 1.0:
+            return torch.stack([e[key] for e in self.buffer], dim=0)
+
+        d_tags = torch.tensor([e["dopamine_tag"] for e in self.buffer], dtype=torch.float32)
+
+        if temperature <= 1e-4:
+            _, top_indices = torch.topk(d_tags, k=target_k)
+            selected_indices = top_indices.tolist()
+        else:
+            logits = d_tags / max(1e-4, float(temperature))
+            probs = torch.softmax(logits, dim=0)
+            selected_indices = torch.multinomial(
+                probs, num_samples=target_k, replacement=False
+            ).tolist()
+
+        return torch.stack([self.buffer[i][key] for i in selected_indices], dim=0)
+
+    def consolidate_with_sleep(
+        self,
+        rem_sleep: QuantumREMSleep,
+        cycles: int | None = None,
+        batch_size: int | None = None,
+    ) -> dict[str, Any]:
+        """Consolidates buffered degraded engrams into neocortex via QuantumREMSleep.
+
+        Replaces idealized clean states with biologically degraded engrams replayed
+        from the hippocampus.
+
+        Args:
+            rem_sleep: QuantumREMSleep module instance to perform neocortical orthogonalization.
+            cycles: Optional override for sleep annealing cycles.
+            batch_size: Optional batch size for SWR replay sampling.
+
+        Returns:
+            Sleep consolidation result dictionary with added hippocampal metadata.
+        """
+        replayed_states = self.replay(batch_size=batch_size, apply_degradation=True)
+        rem_sleep.clear_memory_states()
+        rem_sleep.register_memory_state(replayed_states)
+        sleep_result = rem_sleep.sleep(cycles=cycles)
+
+        fidelities = self.get_fidelities()
+        mean_fidelity = float(sum(fidelities) / len(fidelities)) if fidelities else 0.0
+
+        sleep_result["hippocampal_mean_fidelity"] = mean_fidelity
+        sleep_result["hippocampal_fidelities"] = fidelities
+        sleep_result["hippocampal_engram_count"] = len(self.buffer)
+        return sleep_result
+
+    def get_fidelities(self) -> list[float]:
+        """Returns the current state fidelity F = |<psi_0 | psi(t)>|^2 for all engrams."""
+        res: list[float] = []
+        for e in self.buffer:
+            overlap = torch.vdot(e["pristine_state"], e["degraded_state"])
+            fid = float((torch.abs(overlap) ** 2).item())
+            res.append(max(0.0, min(1.0, fid)))
+        return res
+
+    def get_mean_fidelity(self) -> float:
+        """Returns the mean engram fidelity across all active engrams."""
+        fids = self.get_fidelities()
+        return float(sum(fids) / len(fids)) if fids else 1.0
+
+    def clear(self) -> None:
+        """Clears all stored engrams from buffer."""
+        self.buffer.clear()
+
+    def __len__(self) -> int:
+        return len(self.buffer)
+
+    def __repr__(self) -> str:
+        mean_fid = self.get_mean_fidelity()
+        return (
+            f"NoisyHippocampalBuffer(capacity={self.capacity}, "
+            f"stored={len(self.buffer)}, "
+            f"mean_fidelity={mean_fid:.3f}, "
+            f"noise_level={self.noise_level}, "
+            f"phase_diffusion={self.phase_diffusion_rate})"
         )
 
 

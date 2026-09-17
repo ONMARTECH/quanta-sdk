@@ -17,6 +17,7 @@ import torch.nn as nn
 from quanta.torch import ops
 from quanta.torch.brain import (
     BiomorphicResonantBrain,
+    NoisyHippocampalBuffer,
     QuantumREMSleep,
     QuantumZenoAttention,
 )
@@ -571,4 +572,205 @@ def test_mps_unsupported_64bit_dtype_errors():
 
     with pytest.raises(ops.UnsupportedDtypeError):
         QuantumZenoAttention(dim=4, device="mps", dtype=torch.float64)
+
+    with pytest.raises(ops.UnsupportedDtypeError):
+        NoisyHippocampalBuffer(capacity=16, device="mps", dtype=torch.float64)
+
+
+def test_hippocampal_buffer_initialization_and_validation():
+    buf = NoisyHippocampalBuffer(capacity=32, noise_level=0.04, phase_diffusion_rate=0.01)
+    assert buf.capacity == 32
+    assert buf.noise_level == 0.04
+    assert buf.phase_diffusion_rate == 0.01
+    assert len(buf) == 0
+    assert "NoisyHippocampalBuffer" in repr(buf)
+
+    # Validation errors
+    with pytest.raises(ValueError, match="capacity must be >= 1"):
+        NoisyHippocampalBuffer(capacity=0)
+
+    with pytest.raises(ValueError, match="noise_level must be non-negative"):
+        NoisyHippocampalBuffer(noise_level=-0.1)
+
+    with pytest.raises(ValueError, match="phase_diffusion_rate must be non-negative"):
+        NoisyHippocampalBuffer(phase_diffusion_rate=-0.01)
+
+    with pytest.raises(ValueError, match="temporal_decay_rate must be non-negative"):
+        NoisyHippocampalBuffer(temporal_decay_rate=-0.01)
+
+    with pytest.raises(ValueError, match="dopamine_protection must be non-negative"):
+        NoisyHippocampalBuffer(dopamine_protection=-0.5)
+
+
+def test_hippocampal_buffer_store_single_and_batch():
+    buf = NoisyHippocampalBuffer(capacity=4)
+
+    # Store 1D state
+    psi1 = torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.complex64)
+    idx1 = buf.store(psi1, dopamine_tag=1.5, metadata={"task": 1})
+    assert idx1 == 0
+    assert len(buf) == 1
+
+    # Store 2D batch of states
+    psi_batch = torch.tensor(
+        [
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+        ],
+        dtype=torch.complex64,
+    )
+    indices = buf.store(psi_batch, dopamine_tag=torch.tensor([0.5, 2.0]))
+    assert len(indices) == 2
+    assert len(buf) == 3
+
+    # FIFO eviction when capacity is exceeded
+    psi_extra = torch.tensor(
+        [
+            [0.0, 0.0, 0.0, 1.0],
+            [0.5, 0.5, 0.5, 0.5],
+        ],
+        dtype=torch.complex64,
+    )
+    buf.store(psi_extra)
+    # Capacity is 4, so first stored item should be evicted
+    assert len(buf) == 4
+
+    # Invalid state: zero norm
+    with pytest.raises(ValueError, match="Cannot store null/zero statevector"):
+        buf.store(torch.zeros(4, dtype=torch.complex64))
+
+    # Invalid state dimension
+    with pytest.raises(ValueError, match="Expected 1D or 2D state tensor"):
+        buf.store(torch.randn(2, 2, 4))
+
+
+def test_hippocampal_buffer_step_time_and_degradation():
+    torch.manual_seed(42)
+    buf = NoisyHippocampalBuffer(
+        capacity=10, noise_level=0.1, phase_diffusion_rate=0.1, temporal_decay_rate=0.05
+    )
+
+    psi = torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.complex64)
+    buf.store(psi, dopamine_tag=0.0)
+
+    initial_fid = buf.get_fidelities()[0]
+    assert initial_fid == pytest.approx(1.0, abs=1e-5)
+
+    # Advance time: step(dt=2.0)
+    buf.step(dt=2.0)
+
+    # Norm must remain unitary
+    norm_after = float(torch.linalg.norm(buf.buffer[0]["degraded_state"]).item())
+    assert norm_after == pytest.approx(1.0, abs=1e-6)
+
+    # Fidelity should have decayed
+    decayed_fid = buf.get_fidelities()[0]
+    assert decayed_fid < 1.0
+
+    # Step with dt <= 0 does nothing
+    buf.step(dt=0.0)
+    assert buf.get_fidelities()[0] == pytest.approx(decayed_fid, abs=1e-6)
+
+
+def test_hippocampal_buffer_dopamine_protection():
+    torch.manual_seed(42)
+    buf = NoisyHippocampalBuffer(
+        capacity=10,
+        noise_level=0.15,
+        phase_diffusion_rate=0.15,
+        temporal_decay_rate=0.1,
+        dopamine_protection=2.0,
+    )
+
+    # High dopamine vs low dopamine engram
+    psi_a = torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.complex64)
+    psi_b = torch.tensor([0.0, 1.0, 0.0, 0.0], dtype=torch.complex64)
+
+    buf.store(psi_a, dopamine_tag=5.0)  # strongly protected
+    buf.store(psi_b, dopamine_tag=0.0)  # unprotected
+
+    # Run multiple temporal steps
+    for _ in range(5):
+        buf.step(dt=1.0)
+
+    fids = buf.get_fidelities()
+    fid_high_dopamine = fids[0]
+    fid_low_dopamine = fids[1]
+
+    # High dopamine engram must retain substantially higher fidelity
+    assert fid_high_dopamine > fid_low_dopamine
+    assert fid_high_dopamine >= 0.70
+
+
+def test_hippocampal_buffer_replay_swr():
+    torch.manual_seed(42)
+    buf = NoisyHippocampalBuffer(capacity=10, noise_level=0.05)
+
+    # Empty buffer raises ValueError
+    with pytest.raises(ValueError, match="Hippocampal buffer is empty"):
+        buf.replay()
+
+    # Store 3 states with distinct dopamine tags
+    psi = torch.eye(4, dtype=buf.complex_dtype)
+    buf.store(psi[0], dopamine_tag=0.1)
+    buf.store(psi[1], dopamine_tag=1.0)
+    buf.store(psi[2], dopamine_tag=10.0)
+
+    # Replay all
+    all_replayed = buf.replay(apply_degradation=False)
+    assert all_replayed.shape == (3, 4)
+    assert torch.allclose(all_replayed[0], psi[0])
+
+    # Deterministic top-1 replay (temperature <= 1e-4) selects highest dopamine (psi[2])
+    top_replayed = buf.replay(batch_size=1, temperature=0.0, apply_degradation=False)
+    assert top_replayed.shape == (1, 4)
+    assert torch.allclose(top_replayed[0], psi[2])
+
+    # Replay degraded vs pristine after time step
+    buf.step(dt=3.0)
+    degraded_replayed = buf.replay(batch_size=2, apply_degradation=True)
+    pristine_replayed = buf.replay(batch_size=2, apply_degradation=False)
+    assert not torch.allclose(degraded_replayed, pristine_replayed)
+
+
+def test_hippocampal_buffer_and_rem_sleep_consolidation():
+    torch.manual_seed(42)
+    brain = BiomorphicResonantBrain(in_features=4, num_left_qubits=2, num_right_qubits=2)
+    sleep_module = QuantumREMSleep(brain, sleep_cycles=5)
+    hippocampus = NoisyHippocampalBuffer(
+        capacity=16, noise_level=0.05, phase_diffusion_rate=0.02
+    )
+
+    # Run brain on inputs and store generated quantum states into hippocampus
+    x1 = torch.randn(1, 4, dtype=brain.real_dtype)
+    x2 = torch.randn(1, 4, dtype=brain.real_dtype)
+
+    out1 = brain(x1)
+    out2 = brain(x2)
+
+    hippocampus.store(out1["state"], dopamine_tag=2.0)
+    hippocampus.store(out2["state"], dopamine_tag=0.5)
+    assert len(hippocampus) == 2
+
+    # Simulate wakefulness time passing
+    hippocampus.step(dt=2.0)
+    assert hippocampus.get_mean_fidelity() < 1.0
+
+    # Consolidate via QuantumREMSleep
+    result = hippocampus.consolidate_with_sleep(sleep_module, cycles=5)
+    assert "initial_overlap" in result
+    assert "final_overlap" in result
+    assert "hippocampal_mean_fidelity" in result
+    assert result["hippocampal_engram_count"] == 2
+    assert result["final_overlap"] <= result["initial_overlap"] + 1e-5
+
+    # Test reverse call from QuantumREMSleep
+    result_reverse = sleep_module.consolidate_hippocampus(hippocampus, cycles=3)
+    assert "hippocampal_mean_fidelity" in result_reverse
+
+    # Clear buffer
+    hippocampus.clear()
+    assert len(hippocampus) == 0
+    assert hippocampus.get_mean_fidelity() == 1.0
+
 

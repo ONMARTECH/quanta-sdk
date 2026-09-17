@@ -10,6 +10,7 @@ from __future__ import annotations
 from quanta.torch import ops
 from quanta.torch.brain import (
     BiomorphicResonantBrain,
+    NoisyHippocampalBuffer,
     QuantumREMSleep,
     QuantumZenoAttention,
 )
@@ -62,6 +63,7 @@ from quanta.torch.ops import (
 __all__ = [
     # Biomorphic Quantum Brain
     "BiomorphicResonantBrain",
+    "NoisyHippocampalBuffer",
     "QuantumREMSleep",
     "QuantumZenoAttention",
     # Continuous Quantum Resonance (Milestone 3)
