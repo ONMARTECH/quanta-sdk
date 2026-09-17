@@ -1451,6 +1451,24 @@ A persistent debate in quantum biology concerns whether quantum coherence can su
 
 The Biomorphic Quantum Brain Architecture resolves this debate pragmatically: whether biological brains utilize microscopic quantum coherence or whether quantum mechanics serves as the superior computational algebra for neuromorphic dynamics, our continuous-time Hamiltonian model provides the optimal algorithmic substrate. Synthetic trapped-ion and superconducting quantum chips operate as cryogenic quantum coprocessors that embody these biomorphic dynamics without biological decoherence limitations.
 
+\subsection{The Dual Nature of Memory: Catastrophic Forgetting Immunity vs. Active Synaptic Pruning}
+\label{subsec:dual_memory_nature}
+
+A foundational question in artificial intelligence and neuromorphic computation is whether an ideal cognitive agent should preserve all historic episodic traces indefinitely ($\mathcal{R} \to 100\%$). While standard deep neural networks suffer from the pathological vulnerability of \textit{catastrophic forgetting}~\cite{mccloskey1989,french1999,kirkpatrick2017}---wherein gradient updates on subsequent tasks destructively overwrite prior knowledge---biological memory systems are governed by a dialectical synthesis: they vigorously consolidate macroscopic task basins during offline sleep while actively pruning transient, obsolete, or decayed synaptic traces.
+
+In systems neuroscience, forgetting is not merely a passive decay of information or an engineering defect; rather, it is an active, biochemically regulated cognitive operation~\cite{davis2017,hardt2013}. Pioneering work by Crick and Mitchison~\cite{crick1983} established the ``reverse learning'' hypothesis, proposing that offline REM sleep actively destabilizes and eliminates parasitic, ungrounded associative modes to prevent neural network saturation. At the cellular level, synaptic pruning orchestrated by microglial engulfment and dopamine-modulated actin remodeling~\cite{paolicelli2011,davis2017} selectively dismantles low-salience synaptic connections, preventing cognitive interference and preserving finite synaptic capacity.
+
+Our theoretical and empirical framework unifies both aspects into an integrated biomorphic memory hierarchy:
+\begin{enumerate}
+    \item \textbf{Macroscopic Continual Stability}: As formalized in Theorem~\ref{thm:continual_orthogonalization}, foundational architectural constraints and consolidated task representations are protected against destructive gradient overwrite via offline Quantum REM Sleep orthogonalization ($\mathcal{R} \ge 95\%$). Unitary closed-system Hamiltonian annealing rotates stored statevectors into mutually orthogonal Decoherence-Free Subspaces (DFS)~\cite{lidar1998}, resolving the classical catastrophic interference problem without storing or replaying raw historical data.
+    \item \textbf{Microscopic Synaptic Pruning and Dynamic Clearance}: Concurrently, unmonitored episodic buffer states experience Lindblad-Ebbinghaus dephasing (Theorem~\ref{thm:ebbinghaus_capacity}, $\mathcal{F}(t) \approx \frac{1}{d} + (1 - \frac{1}{d}) \exp(-\Gamma t)$). To prevent context smothering and respect the dimensional Pigeonhole capacity bound ($K \le K_{\text{crit}} \equiv \lfloor 2^N / \bar{d} \rfloor$), our architecture incorporates an active microglial clearance operator $\mathcal{P}_{\text{prune}}$:
+    \begin{equation}
+        \mathcal{P}_{\text{prune}} \rho = \sum_{j : \mathcal{F}_j(t) < \mathcal{F}_{\text{th}} \wedge D_j < D_{\text{th}}} |0\rangle \langle \psi_j| \rho |\psi_j\rangle \langle 0| + \sum_{k \in \text{active}} \Pi_k \rho \Pi_k
+    \end{equation}
+    Transient, low-salience notes ($D < 0.5$) that decay below a retention threshold ($\mathcal{F} < 0.70$) are actively extinguished, and obsolete decisions are explicitly superseded ($\Pi_{\text{new}} |\psi_{\text{old}}\rangle \to 0$).
+\end{enumerate}
+This dual mechanism demonstrates that true artificial general intelligence requires both robust invariant preservation (immunity to catastrophic forgetting) and conscious micro-scale pruning (active forgetting). Without active synaptic pruning, continual learners inevitably saturate their working memory capacity; without quantum orthogonalization, sequential updates overwrite foundational safety constraints.
+
 \subsection{Philosophical Implications for AGI and Quantum Cognition}
 \label{subsec:philosophical}
 
@@ -1459,6 +1477,7 @@ The theorems proven in this monograph provide profound insights into Artificial 
     \item \textbf{Cognition without Heat}: Intelligence does not require megawatt dissipation. Reversible unitary deliberation consumes zero energy ($Q = 0$); thermal cost is incurred only when collapsing possibilities into definitive actions ($Q \ge k_B T \ln 2$).
     \item \textbf{Sleep as Geometric Orthogonalization}: Sleep is not an evolutionary defect, but a mathematical necessity for continual learning in bounded dynamical systems.
     \item \textbf{Creativity as Quantum Tunneling}: The dichotomy between deep concentration and creative Eureka insight is fundamentally the duality between Quantum Zeno pinning and dopaminergic Anti-Zeno tunneling with constructive phase kickback.
+    \item \textbf{Forgetting as an Active Bounded-Rationality Mechanism}: Biological memory does not fail when it forgets; it optimizes. An intelligent agent bounded by finite thermodynamic resources ($20\,\text{W}$) and dimensional Hilbert limits ($2^N$) must actively prune obsolete micro-representations to avoid context smothering, maintaining minimal entropy while protecting invariant survival constraints.
 \end{enumerate}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -1843,6 +1862,26 @@ S.~R.~White,
 A.~S.~Posner and F.~Betts,
 ``Synthetic amorphous calcium phosphate and its relation to bone mineral structure,''
 \textit{Accounts of Chemical Research}, vol.~8, no.~8, pp.~273--281, 1975.
+
+\bibitem{crick1983}
+F.~Crick and G.~Mitchison,
+``The function of dream sleep,''
+\textit{Nature}, vol.~304, no.~5922, pp.~111--114, 1983.
+
+\bibitem{davis2017}
+R.~L.~Davis and Y.~Zhong,
+``The biology of forgetting---a perspective,''
+\textit{Neuron}, vol.~95, no.~3, pp.~490--503, 2017.
+
+\bibitem{paolicelli2011}
+R.~C.~Paolicelli, G.~Bolasco, F.~Pagani, L.~Maggi, M.~Scianni, P.~Panzanelli, M.~Giustetto, T.~A.~Ferreira, E.~Guiducci, L.~Dumas, D.~Ragozzino, and C.~T.~Gross,
+``Synaptic pruning by microglia is necessary for normal brain development,''
+\textit{Science}, vol.~333, no.~6048, pp.~1456--1458, 2011.
+
+\bibitem{hardt2013}
+O.~Hardt, K.~Nader, and L.~Nadel,
+``Decay happens: the role of active forgetting in memory,''
+\textit{Trends in Cognitive Sciences}, vol.~17, no.~3, pp.~111--120, 2013.
 
 \end{thebibliography}
 
