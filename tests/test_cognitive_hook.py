@@ -34,9 +34,10 @@ class TestQuantaSubconsciousHook:
             assert "injectSteps" in data
             assert len(data["injectSteps"]) == 1
             ephemeral = data["injectSteps"][0]["ephemeralMessage"]
-            assert "Bilinçaltı Kuantum Hafıza Çıpası" in ephemeral
+            assert "Quanta Bilişsel Çıpa" in ephemeral
             assert "executive_summary_rule" in ephemeral
             assert "scientific_integrity_rule" in ephemeral
+            assert "%100.0" not in ephemeral  # Must never output flat 100.0%
 
             # Check that state file was created
             state_file = Path(tmp_dir) / "quanta_cognitive_state.json"
@@ -47,19 +48,14 @@ class TestQuantaSubconsciousHook:
                 assert state_data["turn_count"] == 1
                 assert len(state_data["engrams"]) >= 2
 
-            # Second invocation (subsequent turn)
-            res2 = subprocess.run(
+            # Immediate re-invocation within 2 seconds should be debounced
+            res_debounced = subprocess.run(
                 [sys.executable, str(HOOK_PATH)],
                 input=raw_input,
                 capture_output=True,
                 check=True,
             )
-            data2 = json.loads(res2.stdout.decode("utf-8"))
-            assert "injectSteps" in data2
-
-            with open(state_file) as sf:
-                state_data2 = json.load(sf)
-                assert state_data2["turn_count"] == 2
+            assert res_debounced.stdout.strip() == b"{}"
 
     def test_hook_empty_input_failsafe(self) -> None:
         res = subprocess.run(
