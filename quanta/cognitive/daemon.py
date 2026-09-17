@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import math
 import os
 import signal
 import threading
@@ -106,6 +107,7 @@ class SubconsciousDaemon:
         self._last_dream_time: float | None = None
         self._start_time: float | None = None
         self._last_active_time: float = time.time()
+        self._foreground: bool = False
 
         # Register SIGUSR1 signal handler for instant preemption if in main thread
         self._setup_signals()
@@ -200,8 +202,11 @@ class SubconsciousDaemon:
         self._is_running = True
         self._start_time = time.time()
         self._last_active_time = time.time()
+        self._foreground = foreground
 
         if foreground:
+            print("👁️  Canlı Telemetri Devrede: Terminalde rüya döngüleri izleniyor.", flush=True)
+            print("   (Durdurmak için Ctrl + C tuşlarına basabilirsiniz)\n", flush=True)
             try:
                 self._run_loop()
             finally:
@@ -287,6 +292,11 @@ class SubconsciousDaemon:
                 context_keys=["quanta.cognitive.darwin_idle"],
             )
 
+        if self._foreground:
+            print(f"\n🌙 [Rüya Başladı] Konu: '{seed.topic}'", flush=True)
+            print(f"   Soru: '{seed.speculative_question}'", flush=True)
+            print("   DMN (T=0.85) ile Zeno (T=0.20) müzakere ediyor...", flush=True)
+
         def preemption_check() -> bool:
             return self._preemption_event.is_set() or self._stop_event.is_set()
 
@@ -296,13 +306,21 @@ class SubconsciousDaemon:
             self._last_dream_time = time.time()
             self.consolidator.consolidate_insight(insight)
             self._consolidated_count += 1
+            if self._foreground:
+                conf = insight.confidence * 100.0
+                print(f"💡 [Uzlaşı Sağlandı - Güven: %{conf:.1f}]:", flush=True)
+                print(f"   {insight.synthesis[:120]}...", flush=True)
+                print(f"🧠 [SWR Mühürlendi]: insight_{seed.topic} (%100)\n", flush=True)
             return insight
         else:
             self._preempted_count += 1
+            if self._foreground:
+                print("⚡ [Uyanma Refleksi] Rüya döngüsü kesildi.\n", flush=True)
             return None
 
     def _run_loop(self) -> None:
         """Internal main coordination loop executed under background QoS."""
+        last_heartbeat = time.time()
         while not self._stop_event.is_set():
             try:
                 self._preemption_event.clear()
@@ -314,6 +332,19 @@ class SubconsciousDaemon:
                     idle_threshold=self.idle_threshold,
                     max_thermal=self.max_thermal,
                 )
+
+                if self._foreground and (now - last_heartbeat >= 5.0):
+                    last_heartbeat = now
+                    idle_dur = max(0.0, now - self._last_active_time)
+                    rate = self.trigger.compute_rate(
+                        now, self._last_active_time, fatigue=0.0, tom_urgency=1.5
+                    )
+                    prob = 1.0 - math.exp(-rate * 1.0)
+                    msg = (
+                        f"⏳ [İzleme] Sessizlik: {idle_dur:.0f}s | "
+                        f"Donanım: {idle} | Poisson: %{prob * 100:.1f} | Bekleniyor..."
+                    )
+                    print(msg, flush=True)
 
                 if idle:
                     # 2. Stochastic Poisson spindle evaluation
