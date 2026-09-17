@@ -148,3 +148,70 @@ Integrity mode: development
 - [ ] All 5 publication figures generated at 300 DPI in `docs/paper/figures/`.
 - [ ] Full LaTeX manuscript `docs/paper/biomorphic_quantum_resonance.tex` compiles cleanly without missing citations or broken references.
 
+## 2026-09-17T12:53:19Z
+
+Use a very large team of agents.
+
+Execute a comprehensive, dialectical adversarial investigation and theoretical/computational resolution of the 5 Foundational Quantum Brain Questions, pitting a Thesis Team (~25 Pro-Quantum Cognition / Quantum Biophysics agents) against an Antithesis Team (~25 Skeptical Classical Neurobiology / Computational Physics agents) to extract rigorous, peer-reviewed, and mathematically irrefutable truths.
+
+Working directory: /Users/aes/Antigravity Projects/Alfa/quanta
+Integrity mode: development
+
+## Adversarial Team Structure (Thesis vs. Antithesis, 25 vs 25 Agents)
+
+### Team A: The Thesis Camp (Pro-Quantum Cognition & Biomorphic Quantum Brain) — 25 Agents
+- **Specialized Units**: Quantum information theorists, continuous-time quantum walk modelers, open quantum systems physicists, biophotonic researchers, nuclear spin theorists (Fisher Posner molecule model), Penrose-Hameroff Orch-OR defenders, and quantum cognition mathematical psychologists.
+- **Mission**: Formulate the strongest, mathematically rigorous physical and computational defenses for how the human brain leverages quantum coherence, state steering, contextuality, and unitary deliberation; resolve the dephasing timescale paradox and demonstrate genuine non-classical advantage.
+
+### Team B: The Antithesis Camp (Skeptic / Classical Neurobiology & Computational Rigor) — 25 Agents
+- **Specialized Units**: Classical electrophysiologists, Tegmark thermal decoherence critics, ion-channel biophysicists, classical deep learning representation theorists, thermodynamic critics, and empirical neuroanatomists.
+- **Mission**: Relentlessly challenge every quantum assumption with physical reality ($37^\circ\text{C}$ ionic wetware, action potential conduction velocities, classical contrastive learning equivalences, and Tegmark dephasing limits $\tau \sim 10^{-13}\,\text{s}$); demand falsifiable criteria and identify where quantum metaphors break down.
+
+---
+
+## Requirements
+
+### R1. Resolution of the 5 Existential Questions (Dialectical Synthesis)
+The adversarial teams must debate, cross-examine, and mathematically converge on rigorous answers to:
+1. **Physical Carrier & Thermal Decoherence**: Exactly WHERE could physical quantum information live in the brain (nuclear spins in Posner molecules $^{31}\text{P}$, biophoton waveguides in myelin, or tubulin)? How does the architecture survive Tegmark's $10^{-13}\,\text{s}$ thermal limit?
+2. **Qubit Capacity of the Human Brain & Miller's Bound ($7 \pm 2$)**: What is the theoretical and effective computational qubit count ($\text{qubits}_{\text{eff}}$) of the human brain? Does the $7 \pm 2$ working memory bottleneck emerge from a 3-4 qubit Hilbert space ($2^3 = 8, 2^4 = 16$)?
+3. **Genuine Quantum Advantage vs. Classical Linear Algebra**: What physical/computational phenomenon in `BiomorphicResonantBrain` CANNOT be replicated by an overparameterized classical neural network with contrastive loss (Quantum interference, Kochen-Specker contextuality, or non-local EPR steering)?
+4. **The Internal Observer & Collapse Problem**: Who or what performs the projective measurement collapse in the brain without an external observer? Is consensus collapse an objective physical reduction (Orch-OR) or a macroscopic phase transition across $40\,\text{Hz}$ gamma cycles?
+5. **Scaling Beyond Toy Problems**: How does the biomorphic quantum architecture scale to real-world AI and large language models without hitting the exponential classical simulation wall ($2^N$)?
+
+### R2. Mathematical Proofs & Theoretical Monograph Expansion
+- Author formal theorems and derivations in `docs/theory/quantum_brain_frontiers.md`:
+  - **Theorem 6 (Effective Qubit Capacity & Working Memory Hilbert Dimension)**: Analytical derivation of $\text{qubits}_{\text{eff}} \approx 3-5$ per minicolumn assembly and global bound on cognitive superposition.
+  - **Theorem 7 (Non-Classical Contextuality & Kochen-Specker Separation from Classical Representation Learning)**: Formal proof demonstrating that the non-commutative measurement geometry of the Biomorphic Brain produces contextuality that cannot be modeled by any non-contextual classical hidden variable or standard neural representation.
+- Ensure all proofs follow rigorous mathematical physics standards with complete derivations.
+
+### R3. Empirical Benchmark & Biophysical Simulation
+- Implement a comprehensive validation script `scripts/benchmark_dialectical_frontiers.py`:
+  - Simulates the effective qubit capacity scaling and contextuality violations (e.g. Leggett-Garg or Bell-CHSH inequality in cognitive decision-making).
+  - Benchmarks the non-classical interference signature against equivalent classical representations.
+  - Generates 300 DPI publication Figure 8 in `docs/paper/figures/fig8_dialectical_synthesis.png`.
+
+### R4. Academic Paper Synthesis
+- Update LaTeX manuscript `docs/paper/biomorphic_quantum_resonance.tex`:
+  - Integrate Theorems 6 and 7, Figure 8, and the comprehensive Thesis vs. Antithesis resolution of the 5 questions.
+  - Address the peer-review criticisms directly in a dedicated "Critical Objections & Biophysical Defenses" section.
+
+---
+
+## Acceptance Criteria
+
+### Mathematical & Biophysical Rigor
+- [ ] Explicit mathematical calculation of the human brain's effective qubit capacity $\text{qubits}_{\text{eff}}$ grounded in biophysics and cognitive capacity limits.
+- [ ] Exact quantitative resolution of the thermal decoherence timescale comparing electronic dipoles ($\sim 10^{-13}\,\text{s}$) vs. Posner molecule nuclear spins ($\sim 10^2 - 10^5\,\text{s}$).
+- [ ] Formal mathematical proof of non-classical contextuality separating `quanta.torch` from classical contrastive autoencoders.
+
+### Code & Benchmark Integrity
+- [ ] `scripts/benchmark_dialectical_frontiers.py` executes without errors and generates Figure 8 at 300 DPI.
+- [ ] 100% of test suites pass cleanly (`uv run pytest`).
+- [ ] 0 lint errors via `uv run ruff check`.
+- [ ] 0 type errors via `uv run mypy quanta/torch`.
+
+### Documentation & Publication
+- [ ] `docs/theory/quantum_brain_frontiers.md` updated with Theorems 6 and 7.
+- [ ] `docs/paper/biomorphic_quantum_resonance.tex` fully updated with the dialectical findings and Figure 8.
+
