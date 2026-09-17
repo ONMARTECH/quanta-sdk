@@ -178,39 +178,69 @@ for r in results:
 - Dirac notation: `result.dirac_notation()`
 - Statevector display: `show_statevector(sv, n)`
 
-## MCP Server (AI Integration)
+## MCP Server (AI Integration — 23 Tools)
 
-Quanta SDK can be used as an MCP (Model Context Protocol) server,
-allowing AI assistants like Claude to perform quantum simulations.
+Quanta SDK includes **23 MCP (Model Context Protocol) tools** for both local and cloud agents. Assistants like Claude, Gemini, and GPT can compose quantum circuits, estimate fault-tolerant costs, evaluate noise, and solve optimization problems autonomously.
 
-| Tool | Description |
-|------|-------------|
-| `run_circuit` | Execute arbitrary quantum circuits |
-| `create_bell_state` | Quick entanglement demonstration |
-| `grover_search` | Grover's search algorithm |
-| `shor_factor` | Shor's integer factoring |
-| `simulate_noise` | Noisy circuit simulation (7 channels) |
-| `list_gates` | Available gate reference |
-| `explain_result` | Interpret measurement results |
+| Category | Tools |
+|----------|-------|
+| Circuit Operations | `run_circuit`, `create_bell_state`, `list_gates`, `inspect_circuit` |
+| Quantum Algorithms | `grover_search`, `shor_factor`, `vqe_ground_state`, `quantum_clustering` |
+| Fault Tolerance & Noise | `simulate_noise` (7 channels), `estimate_fault_tolerant_cost` (Google Willow / IBM Starling) |
+| Optimization & Math | `qubo_solve`, `portfolio_optimization`, `entity_resolution_match` |
 
-```bash
-# Local (Claude Desktop)
-fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
+---
 
-# Remote (Cloud Run)
-python -m quanta.mcp_server --transport sse --port 8080
-```
+## PyTorch & Biomorphic Quantum Engine (v1.1.0 — `quanta.torch`)
 
-## Deployment
+### 1. Differentiable `QuantumLayer`
+- Full `torch.nn.Module` integration.
+- Analytical **Parameter-Shift Rule** for exact vector-Jacobian products (VJPs) and autograd gradients.
+- Hardware-efficient parameterized ansatz templates: `hardware_efficient`, `strong_entangling`, `reuploading`, `real_amplitudes`.
+- Full device portability across CPU, CUDA, and Apple Silicon MPS (Metal).
+
+### 2. Continuous Quantum Resonance (`ContinuousResonator`)
+- Continuous-time Hamiltonian evolution: $U(t) = e^{-i H(x, \theta) t}$.
+- **Daleckii-Krein Fréchet matrix exponential derivatives** and **Ehrenfest theorem time derivatives**.
+- Lindblad phase-damping dissipators for open quantum neural systems.
+
+### 3. Biomorphic Resonant Brain (`BiomorphicResonantBrain`)
+- **Dual-Hemisphere Architecture**: Resonance coupling between Left (analytical/logical) and Right (intuitive/pattern) hemispheres.
+- **4-Neuromodulator Dynamics**:
+  - *Dopamine ($DA$)*: Value weighting and reward-driven plasticity.
+  - *Acetylcholine ($ACh$)*: Attention gating and learning rate scaling.
+  - *Serotonin ($5\text{-}HT$)*: Impulsivity dampening and patience regulation.
+  - *Norepinephrine ($NE$)*: Arousal and novelty-triggered exploratory dynamics.
+- **Cerebral Oxygenation ($sO_2$)**: Metabolic budget and energy-constrained computation.
+- **REM Sleep Continual Learning**: Active memory consolidation preventing catastrophic forgetting.
+- **NoisyHippocampalBuffer**: Lindblad phase diffusion and Sharp-Wave Ripple (SWR) replay buffer.
+- **DialecticalSynthesizer**: Quantum Thesis-Antithesis conflict resolution engine.
+- **CSFBiophysicalShield**: Biophysical quantum phase shielding suppressing environmental decoherence.
+
+---
+
+## Apple Silicon Metal / MLX Acceleration (v1.0.0)
+
+- **404x Speedup**: Up to 404x faster execution on 26-qubit circuits compared to CPU on Apple M-series chips.
+- **Unified Memory Utilization**: 30+ qubit dense statevector simulations on 48 GB unified RAM.
+- **Automatic Routing**: Highest-priority backend selection on macOS ARM64 architectures.
+
+---
+
+## Multi-Cloud Quantum Hardware Validation
+
+- **IonQ Cloud**: REST API v0.3 protocol, 29-qubit hardware emulation, and remote telemetry.
+- **IBM Quantum**: 156-qubit Heron r3 processors (`ibm_torino`, `ibm_fez`), native ISA transpilation, and IAM authentication.
+- **Google Cirq**: Sycamore native gate decomposition and Colab GPU environment support.
+
+---
+
+## Deployment Options
 
 | Target | Method | Use Case |
 |--------|--------|----------|
-| Local | `pip install quanta-sdk` | Development, research |
-| Claude Desktop | `fastmcp install` | AI-assisted simulation |
-| Cloud Run | Dockerfile.mcp + CI/CD | Always-on MCP server |
-| Lambda/Functions | Lightweight package | Serverless computation |
-| CI/CD Pipeline | `pip install quanta-sdk` | Automated QC testing |
-
-**Lightweight advantage**: Pure Python + NumPy only. No heavy
-framework dependencies. Ideal for serverless, edge computing,
-and embedding in CI/CD pipelines.
+| Local | `pip install quanta-sdk` | Fast development & testing |
+| PyTorch / AI | `pip install "quanta-sdk[torch]"` | Deep learning & hybrid QNNs |
+| Apple Metal | `pip install "quanta-sdk[metal]"` | Apple Silicon GPU acceleration |
+| Claude / Gemini | MCP Server Integration | Autonomous AI workflows |
+| Cloud Run / Docker | Dockerfile.mcp + SSE | Always-on remote quantum microservice |

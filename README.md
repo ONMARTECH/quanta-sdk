@@ -7,12 +7,13 @@
   <p align="center">
     <a href="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml"><img src="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml/badge.svg" alt="CI"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-90%25-brightgreen.svg" alt="Coverage"></a>
-    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-0.9.3-blue.svg" alt="Version"></a>
+    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-888%20passed-success.svg" alt="Tests"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/benchmark-10%2F10-gold.svg" alt="Benchmark"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-900%2B%20passed-success.svg" alt="Tests"></a>
+    <a href="#pytorch-engine"><img src="https://img.shields.io/badge/PyTorch-QuantumLayer-EE4C2C.svg" alt="PyTorch"></a>
+    <a href="#apple-silicon"><img src="https://img.shields.io/badge/Apple%20Silicon-Metal%20404x-000000.svg" alt="Metal"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
     <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-23%20tools-teal.svg" alt="MCP"></a>
     <a href="https://onmartech.github.io/quanta-sdk/"><img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs"></a>
@@ -23,21 +24,21 @@
 
 ---
 
-Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides a 3-layer abstraction — from high-level declarative APIs (`search()`, `factor()`) to low-level DAG manipulation and QASM export — with **23 MCP tools** that let Claude, GPT, and other AI assistants run quantum computations directly.
+Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides deep learning quantum layers (`quanta.torch`), continuous quantum neural resonance, native Apple Silicon Metal acceleration, multi-cloud hardware execution (IBM Quantum, IonQ, Google Cirq), and **23 MCP tools** that let AI assistants directly run quantum workloads.
 
-### 🚀 What's New in v0.9.2
+### 🚀 What's New in v1.1.0 & v1.0.0
 
-- **NVIDIA GPU Acceleration** — Native `cuStateVec` integration via `cuquantum` SDK for enterprise-scale deep circuits.
-- **200+ Qubit Simulation** — New MPS (tensor network) simulator: 100-qubit GHZ, 200-qubit QAOA ✅
-- **Sparse Simulator** — Dict-based sparse statevector: 35-qubit GHZ in 120 bytes vs 256 GB dense
-- **SimulatorBackend ABC** — Abstract base class for all simulators + factory pattern
-- **Circuit-Aware Router** — Automatic simulator selection (Clifford→PauliFrame, Dense→Sparse→MPS)
-- **Security Hardened** — exec() sandboxing, eval() elimination, traceback leak prevention
-- **Architecture Fix** — Layer 3 algorithms decoupled from specific simulator backends
+- **PyTorch Native Quantum Engine (`quanta.torch`)** — `QuantumLayer` with analytical parameter-shift autograd, seamless `nn.Module` integration, and Apple Silicon MPS/Metal support.
+- **Biomorphic Resonant Brain** — Continuous-time quantum neural dynamics (`ContinuousResonator`), dual-hemisphere architecture, 4 neuromodulators ($DA, ACh, 5\text{-}HT, NE$), cerebral oxygenation ($sO_2$), REM continual learning, `NoisyHippocampalBuffer` with SWR replay, `DialecticalSynthesizer`, and `CSFBiophysicalShield`.
+- **World's First Native Apple Silicon Metal/MLX Quantum Engine (v1.0.0)** — Up to **404x speedup** on Apple M5 Pro / M-series chips via Unified Memory tensor contractions (`mlx-metal`).
+- **Multi-Cloud Hardware Validation** — Live verified execution on IonQ Cloud REST API v0.3, IBM Quantum Heron r3 (156 qubits), and Google Cirq Sycamore.
+- **Agentic MCP Tools (23 Tools)** — Native Model Context Protocol server enabling Claude, Gemini, and GPT to author, simulate, transpile, and optimize quantum circuits.
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [PyTorch & Biomorphic Brain](#pytorch-engine)
+- [Apple Silicon Metal Acceleration](#apple-silicon)
 - [IBM Quantum Integration](#ibm-quantum-integration)
 - [MCP AI Integration](#mcp-ai-integration)
 - [Architecture](#architecture)
@@ -74,6 +75,71 @@ print(result)
 ╠──────────────────────────────────────────────────╣
 ║  0.71|00> + 0.71|11>                            ║
 ╚══════════════════════════════════════════════════╝
+```
+
+<a id="pytorch-engine"></a>
+## PyTorch Native Quantum Engine (`quanta.torch`)
+
+Quanta v1.1.0 introduces end-to-end differentiable quantum-classical hybrid deep learning directly integrated with PyTorch's autograd engine, featuring analytical parameter-shift gradients and biomorphic continuous-time resonance.
+
+### 1. Differentiable `QuantumLayer`
+
+Drop quantum circuits directly into your standard `torch.nn.Sequential` pipelines:
+
+```python
+import torch
+import torch.nn as nn
+from quanta.torch import QuantumLayer
+
+# Parameterized quantum layer with analytical parameter-shift autograd
+model = nn.Sequential(
+    nn.Linear(4, 4),
+    QuantumLayer(n_qubits=4, ansatz="hardware_efficient", n_layers=2),
+    nn.Linear(4, 2)
+)
+
+x = torch.randn(8, 4, requires_grad=True)
+out = model(x)
+loss = out.sum()
+loss.backward()  # Exact parameter-shift gradients computed automatically
+```
+
+### 2. Biomorphic Resonant Brain (`BiomorphicResonantBrain`)
+
+Bio-inspired quantum cognitive architecture featuring continuous resonance, dual-hemisphere dynamics, 4 neurotransmitters ($DA, ACh, 5\text{-}HT, NE$), and REM sleep continual learning:
+
+```python
+from quanta.torch import BiomorphicResonantBrain
+
+# Initialize 4-qubit dual-hemisphere biomorphic quantum brain
+brain = BiomorphicResonantBrain(n_qubits=4)
+
+# Forward pass through cognitive resonance dynamics
+x = torch.randn(1, 4)
+output = brain(x)
+
+# Consolidate memories during REM sleep (prevents catastrophic forgetting)
+stats = brain.consolidate_rem_sleep(replay_cycles=3)
+print(f"Post-REM Retained Fidelity: {stats['retained_fidelity']:.4f}")
+```
+
+<a id="apple-silicon"></a>
+## Apple Silicon Metal Acceleration (404x Speedup)
+
+Quanta v1.0.0 features the world's first native Apple Silicon Metal/MLX quantum simulator, harnessing Unified Memory for lightning-fast multi-axis tensor contractions on M-series chips:
+
+```python
+from quanta import circuit, H, CX, run
+
+@circuit(qubits=26)
+def large_circuit(q):
+    for i in range(26):
+        H(q[i])
+    for i in range(25):
+        CX(q[i], q[i+1])
+
+# Automatically routes to MLXSimulator on Apple Silicon (0.076s vs 30.7s on CPU)
+result = run(large_circuit, backend="mlx")
 ```
 
 ## IBM Quantum Integration

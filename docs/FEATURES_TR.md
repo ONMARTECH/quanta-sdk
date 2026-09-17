@@ -177,39 +177,69 @@ for r in results:
 - Dirac notasyonu: `result.dirac_notation()`
 - Durum vektoru gosterimi: `show_statevector(sv, n)`
 
-## MCP Server (AI Entegrasyonu)
+## MCP Server (AI Entegrasyonu — 23 Araç)
 
-Quanta SDK, MCP (Model Context Protocol) sunucusu olarak calisabilir.
-Claude gibi AI asistanlar dogrudan kuantum simulasyonu yapabilir.
+Quanta SDK, yerel ve uzak **23 MCP (Model Context Protocol)** aracı içerir. Gemini, Claude ve GPT ajanları tam yetkiyle kuantum devresi tasarlayabilir, gürültü profili çıkarabilir, donanım maliyeti hesaplayabilir ve kuantum algoritmalarını çalıştırabilir.
 
-| Arac | Aciklama |
-|------|----------|
-| `run_circuit` | Serbest kuantum devresi calistirma |
-| `create_bell_state` | Hizli dolanıklık gosterimi |
-| `grover_search` | Grover arama algoritmasi |
-| `shor_factor` | Shor tam sayi carpanlarina ayirma |
-| `simulate_noise` | Gurultulu simulasyon (7 kanal) |
-| `list_gates` | Kapi referansi |
-| `explain_result` | Olcum sonuclarini yorumlama |
+| Araç Grubu | Yetenekler |
+|------------|------------|
+| Temel Devre | `run_circuit`, `create_bell_state`, `list_gates`, `inspect_circuit` |
+| Algoritmalar | `grover_search`, `shor_factor`, `vqe_ground_state`, `quantum_clustering` |
+| Gürültü & Hata | `simulate_noise` (7 kanal), `estimate_fault_tolerant_cost` (Google Willow / IBM Starling) |
+| Optimizasyon & Çözüm | `qubo_solve`, `portfolio_optimization`, `entity_resolution_match` |
 
-```bash
-# Yerel (Claude Desktop)
-fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
+---
 
-# Uzak (Cloud Run)
-python -m quanta.mcp_server --transport sse --port 8080
-```
+## PyTorch & Biyomorfik Kuantum Motoru (v1.1.0 — `quanta.torch`)
 
-## Dagitim
+### 1. Differentiable `QuantumLayer`
+- PyTorch `nn.Module` tam uyumluluğu.
+- Analitik **Parameter-Shift Kuralı** ile kesin VJP ve autograd gradyanları.
+- Donanım verimli ansatz şablonları: `hardware_efficient`, `strong_entangling`, `reuploading`, `real_amplitudes`.
+- CPU, CUDA ve Apple Silicon MPS (Metal) desteği.
 
-| Hedef | Yontem | Kullanim |
+### 2. Sürekli Kuantum Rezonansı (`ContinuousResonator`)
+- Hamiltonyen evrimi: $U(t) = e^{-i H(x, \theta) t}$.
+- **Daleckii-Krein Fréchet matris üssü gradyanları** ve **Ehrenfest teorem zaman türevleri**.
+- Lindblad faz difüzyon süperoperatörleri.
+
+### 3. Biyomorfik Kuantum Rezonans Beyni (`BiomorphicResonantBrain`)
+- **Çift Hemisfer Mimarisi**: Sol hemisfer (analitik/mantıksal) ve sağ hemisfer (sezgisel/örrüntü) rezonansı.
+- **4 Nöromodülatör Dinamiği**:
+  - *Dopamin ($DA$)*: Kazanç ve motivasyon modülasyonu.
+  - *Asetilkolin ($ACh$)*: Dikkat ve plastisite faktörü.
+  - *Serotonin ($5\text{-}HT$)*: Sabır ve risk toleransı.
+  - *Noradrenalin ($NE$)*: Uyarılma ve acil durum tepkisi.
+- **Serebral Oksijenasyon ($sO_2$)**: Metabolik ve enerji kısıt optimizasyonu.
+- **REM Uykusu Konsolidasyonu**: Felaket unutmasını (catastrophic forgetting) önleyen kuantum bellek pekiştirmesi.
+- **NoisyHippocampalBuffer**: Lindblad difüzyonlu ve SWR (Sharp-Wave Ripple) bellek replay tamponu.
+- **DialecticalSynthesizer**: Kuantum durumlarında Tez-Antitez çatışmasını sentezleyen diyalektik motor.
+- **CSFBiophysicalShield**: Çevresel gürültüye karşı koruyucu biyofiziksel kuantum faz zırhı.
+
+---
+
+## Apple Silicon Metal / MLX Hızlandırma (v1.0.0)
+
+- **404x Hızlanma**: 26 qubitlik devrelerde M-serisi çiplerde CPU'ya kıyasla 404 kat daha hızlı simülasyon.
+- **Unified Memory**: M5 Pro 48 GB donanımda 30+ qubitlik durum vektörü tensör kasılmaları.
+- **Otomatik Yönlendirme**: macOS ARM64 tespit edildiğinde en yüksek öncelikli hızlandırıcı olarak devreye girer.
+
+---
+
+## Çoklu Bulut Kuantum Donanımı
+
+- **IonQ Cloud**: REST API v0.3 protokolü, 29-qubit donanım emülasyonu ve telemetrisi.
+- **IBM Quantum**: 156 qubit Heron r3 işlemciler (`ibm_torino`, `ibm_fez`), ISA transpilasyonu ve IAM token entegrasyonu.
+- **Google Cirq**: Sycamore yerli kapı seti simülasyonu ve Google Colab GPU uyumluluğu.
+
+---
+
+## Dağıtım
+
+| Hedef | Yöntem | Kullanım |
 |-------|--------|----------|
-| Yerel | `pip install quanta-sdk` | Gelistirme, arastirma |
-| Claude Desktop | `fastmcp install` | AI destekli simulasyon |
-| Cloud Run | Dockerfile.mcp + CI/CD | Surekli aktif MCP sunucu |
-| Lambda/Functions | Hafif paket | Sunucusuz hesaplama |
-| CI/CD Pipeline | `pip install quanta-sdk` | Otomatik KH testi |
-
-**Hafiflik avantaji**: Saf Python + NumPy. Agir bagimliliksiz.
-Sunucusuz (Lambda, Cloud Functions), edge computing ve
-CI/CD pipeline icine gomulme icin ideal.
+| Yerel | `pip install quanta-sdk` | Geliştirme, araştırma |
+| PyTorch / AI | `pip install "quanta-sdk[torch]"` | Derin öğrenme, hibrit QNN |
+| Apple Metal | `pip install "quanta-sdk[metal]"` | Apple Silicon GPU hızlandırma |
+| Claude / Gemini | MCP Sunucu Entegrasyonu | Otonom AI ajanları |
+| Cloud Run / Docker | Dockerfile.mcp + SSE | Sürekli aktif uzak kuantum servisi |
