@@ -21,10 +21,15 @@ from pathlib import Path
 from typing import Any
 
 from quanta.cognitive.consolidation import SubconsciousConsolidator
-from quanta.cognitive.darwin_idle import is_system_idle, set_background_qos
+from quanta.cognitive.darwin_idle import (
+    get_user_idle_seconds,
+    is_system_idle,
+    set_background_qos,
+)
 from quanta.cognitive.mind_wander import DreamInsight, MindWanderEngine
 from quanta.cognitive.poisson_trigger import PoissonSpindleTrigger
 from quanta.cognitive.tom_analyzer import DreamSeed, TheoryOfMindAnalyzer
+from quanta.cognitive.workspace_harvester import WorkspaceContextHarvester
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +98,7 @@ class SubconsciousDaemon:
             max_tokens=max_tokens,
         )
         self.consolidator = SubconsciousConsolidator(state_file=self.state_file)
+        self.workspace_harvester = WorkspaceContextHarvester(state_file=self.state_file)
 
         # Threading & Preemption primitives
         self._stop_event = threading.Event()
@@ -281,24 +287,34 @@ class SubconsciousDaemon:
         self._total_cycles += 1
 
         if seed is None:
-            # Synthesize seed based on Theory of Mind
-            _, seeds = self.tom_analyzer.analyze_conversation(
-                [{"role": "user", "content": "I wonder if our background QoS can be optimized."}]
-            )
-            seed = seeds[0] if seeds else DreamSeed(
-                topic="background_optimization",
-                speculative_question="How to optimize thread pinning on Apple Silicon E-cores?",
-                urgency=2.0,
-                context_keys=["quanta.cognitive.darwin_idle"],
-            )
+            # Dynamically harvest speculative seed across workspace projects
+            seed = self.workspace_harvester.generate_next_seed()
+
+        proj_label = (
+            seed.context_keys[0]
+            if seed.context_keys and seed.context_keys[0] != seed.topic
+            else "quanta"
+        )
 
         if self._foreground:
-            print(f"\n🌙 [Rüya Başladı] Konu: '{seed.topic}'", flush=True)
+            print(f"\n🌙 [Rüya Başladı] Proje: '{proj_label}' | Konu: '{seed.topic}'", flush=True)
             print(f"   Soru: '{seed.speculative_question}'", flush=True)
             print("   DMN (T=0.85) ile Zeno (T=0.20) müzakere ediyor...", flush=True)
 
+        start_user_idle = get_user_idle_seconds()
+
         def preemption_check() -> bool:
-            return self._preemption_event.is_set() or self._stop_event.is_set()
+            if self._preemption_event.is_set() or self._stop_event.is_set():
+                return True
+            # Real-time physical user input check (< 20ms preemption reflex).
+            # Fires if the system was idle when dream initiated (start_user_idle >= 1.0s)
+            # and the user subsequently generated physical HID input (uidle < 1.0s).
+            if start_user_idle is not None and start_user_idle >= 1.0:
+                uidle = get_user_idle_seconds()
+                if uidle is not None and uidle < 1.0:
+                    self._preemption_event.set()
+                    return True
+            return False
 
         insight = self.wander_engine.execute_dream_cycle(seed, preemption_check=preemption_check)
 
@@ -315,7 +331,11 @@ class SubconsciousDaemon:
         else:
             self._preempted_count += 1
             if self._foreground:
-                print("⚡ [Uyanma Refleksi] Rüya döngüsü kesildi.\n", flush=True)
+                print(
+                    "⚡ [Uyanma Refleksi] Kullanıcı aktivitesi (klavye/fare) algılandı; "
+                    "rüya anında kesildi.\n",
+                    flush=True,
+                )
             return None
 
     def _run_loop(self) -> None:
@@ -327,27 +347,45 @@ class SubconsciousDaemon:
                 now = time.time()
                 last_dream = self._last_dream_time if self._last_dream_time is not None else 0.0
 
-                # 1. Hardware quiescence check
-                idle = is_system_idle(
+                # 1. Physical user HID activity check (macOS CoreGraphics / Windows LastInput)
+                user_idle = get_user_idle_seconds()
+                if user_idle is not None:
+                    self._last_active_time = now - user_idle
+                    idle_dur = user_idle
+                    user_is_idle = user_idle >= self.idle_min
+                else:
+                    idle_dur = max(0.0, now - self._last_active_time)
+                    user_is_idle = idle_dur >= self.idle_min
+
+                # 2. Hardware quiescence check (Mach CPU idle ticks + thermal pressure)
+                hw_idle = is_system_idle(
                     idle_threshold=self.idle_threshold,
                     max_thermal=self.max_thermal,
                 )
 
+                # Subconscious mind-wandering proceeds only when user is idle AND hardware is quiet
+                can_dream = user_is_idle and hw_idle
+
                 if self._foreground and (now - last_heartbeat >= 5.0):
                     last_heartbeat = now
-                    idle_dur = max(0.0, now - self._last_active_time)
                     rate = self.trigger.compute_rate(
                         now, self._last_active_time, fatigue=0.0, tom_urgency=1.5
                     )
                     prob = 1.0 - math.exp(-rate * 1.0)
-                    msg = (
-                        f"⏳ [İzleme] Sessizlik: {idle_dur:.0f}s | "
-                        f"Donanım: {idle} | Poisson: %{prob * 100:.1f} | Bekleniyor..."
-                    )
+                    if user_idle is not None and user_idle < self.idle_min:
+                        msg = (
+                            f"⏳ [İzleme] Kullanıcı Aktif: {user_idle:.1f}s | "
+                            f"Eşik: {self.idle_min:.0f}s | Donanım: {hw_idle} | Bekleniyor..."
+                        )
+                    else:
+                        msg = (
+                            f"⏳ [İzleme] Sessizlik: {idle_dur:.0f}s | "
+                            f"Donanım: {hw_idle} | Poisson: %{prob * 100:.1f} | Bekleniyor..."
+                        )
                     print(msg, flush=True)
 
-                if idle:
-                    # 2. Stochastic Poisson spindle evaluation
+                if can_dream:
+                    # 3. Stochastic Poisson spindle evaluation
                     should_fire = self.trigger.should_trigger(
                         current_time=now,
                         last_active_time=self._last_active_time,

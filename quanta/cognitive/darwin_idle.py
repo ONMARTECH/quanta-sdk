@@ -146,6 +146,7 @@ class DarwinIdleMonitor:
         self._libsystem: ctypes.CDLL | None = None
         self._iokit: ctypes.CDLL | None = None
         self._cf: ctypes.CDLL | None = None
+        self._cg: ctypes.CDLL | None = None
         self._thermal_token: ctypes.c_int = ctypes.c_int(0)
         self._last_snapshot: CpuTickSnapshot | None = None
 
@@ -315,6 +316,19 @@ class DarwinIdleMonitor:
             except Exception:
                 self._iokit = None
                 self._cf = None
+
+            # 3. CoreGraphics for user HID event idle timing (keyboard/mouse)
+            try:
+                self._cg = ctypes.cdll.LoadLibrary(
+                    "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics"
+                )
+                self._cg.CGEventSourceSecondsSinceLastEventType.restype = ctypes.c_double
+                self._cg.CGEventSourceSecondsSinceLastEventType.argtypes = [
+                    ctypes.c_uint32,
+                    ctypes.c_uint32,
+                ]
+            except Exception:
+                self._cg = None
         except Exception:
             self._libsystem = None
 
@@ -967,6 +981,37 @@ class DarwinIdleMonitor:
         thermal = self.get_thermal_state()
         return (quiescence >= idle_threshold) and (thermal <= max_thermal)
 
+    def get_user_idle_seconds(self) -> float | None:
+        """Return the elapsed time in seconds since the last user HID input (mouse/keyboard).
+
+        On Darwin, queries Quartz/CoreGraphics CGEventSourceSecondsSinceLastEventType.
+        On Windows, queries GetLastInputInfo.
+        Returns float seconds or None if telemetry is unavailable.
+        """
+        if self.is_darwin and self._cg is not None:
+            try:
+                # kCGEventSourceStateCombinedSessionState = 0
+                # kCGAnyInputEventType = ~0 (0xFFFFFFFF)
+                val = self._cg.CGEventSourceSecondsSinceLastEventType(0, 0xFFFFFFFF)
+                return max(0.0, float(val))
+            except Exception:
+                pass
+        elif IS_WINDOWS:
+            try:
+                windll = getattr(ctypes, "windll", None)
+                if windll is not None:
+                    class LASTINPUTINFO(ctypes.Structure):
+                        _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
+
+                    lii = LASTINPUTINFO()
+                    lii.cbSize = ctypes.sizeof(LASTINPUTINFO)
+                    if windll.user32.GetLastInputInfo(ctypes.byref(lii)):
+                        millis = windll.kernel32.GetTickCount() - lii.dwTime
+                        return float(max(0.0, millis / 1000.0))
+            except Exception:
+                pass
+        return None
+
 
 # ============================================================================
 # Process-Wide Singleton & Public Module-Level API Functions
@@ -1050,6 +1095,15 @@ def is_system_idle(idle_threshold: float = 0.70, max_thermal: int = 1) -> bool:
     )
 
 
+def get_user_idle_seconds() -> float | None:
+    """Return the elapsed time in seconds since the last user HID input (mouse/keyboard).
+
+    Returns:
+        float | None: Seconds since last user activity, or None if unavailable.
+    """
+    return get_default_monitor().get_user_idle_seconds()
+
+
 __all__ = [
     "QOS_CLASS_USER_INTERACTIVE",
     "QOS_CLASS_USER_INITIATED",
@@ -1090,4 +1144,5 @@ __all__ = [
     "get_thermal_state",
     "is_on_battery",
     "is_system_idle",
+    "get_user_idle_seconds",
 ]

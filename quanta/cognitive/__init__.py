@@ -12,6 +12,7 @@ from quanta.cognitive import (
     mind_wander,
     poisson_trigger,
     tom_analyzer,
+    workspace_harvester,
 )
 from quanta.cognitive.arbiter import QuantumDecisionArbiter
 from quanta.cognitive.consolidation import SubconsciousConsolidator
@@ -19,6 +20,7 @@ from quanta.cognitive.daemon import SubconsciousDaemon
 from quanta.cognitive.darwin_idle import (
     QOS_CLASS_BACKGROUND,
     DarwinIdleMonitor,
+    get_user_idle_seconds,
     is_system_idle,
     set_background_qos,
 )
@@ -27,6 +29,7 @@ from quanta.cognitive.middleware import QuantaCognitiveMiddleware
 from quanta.cognitive.mind_wander import DreamInsight, MindWanderEngine
 from quanta.cognitive.poisson_trigger import PoissonSpindleTrigger
 from quanta.cognitive.tom_analyzer import DreamSeed, TheoryOfMindAnalyzer
+from quanta.cognitive.workspace_harvester import WorkspaceContextHarvester
 
 __all__ = [
     "CognitiveMemoryManager",
@@ -41,11 +44,13 @@ __all__ = [
     "SubconsciousConsolidator",
     "SubconsciousDaemon",
     "TheoryOfMindAnalyzer",
+    "WorkspaceContextHarvester",
     "arbiter",
     "consolidation",
     "daemon",
     "darwin_idle",
     "decision_arbiter",
+    "get_user_idle_seconds",
     "is_system_idle",
     "memory",
     "memory_manager",
@@ -55,4 +60,5 @@ __all__ = [
     "set_background_qos",
     "text_to_statevector",
     "tom_analyzer",
+    "workspace_harvester",
 ]
