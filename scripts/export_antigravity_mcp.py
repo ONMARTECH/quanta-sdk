@@ -2,8 +2,8 @@
 
 import asyncio
 import json
-import os
 from pathlib import Path
+
 from quanta.mcp_server import mcp
 
 ANTIGRAVITY_MCP_DIR = Path("/Users/aes/.gemini/antigravity/mcp/quanta")
@@ -46,7 +46,7 @@ async def export_tools() -> None:
 
     # Register in mcp_config.json if not already present
     if ANTIGRAVITY_CONFIG_FILE.exists():
-        with open(ANTIGRAVITY_CONFIG_FILE, "r", encoding="utf-8") as f:
+        with open(ANTIGRAVITY_CONFIG_FILE, encoding="utf-8") as f:
             config = json.load(f)
 
         mcp_servers = config.setdefault("mcpServers", {})

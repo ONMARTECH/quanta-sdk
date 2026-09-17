@@ -1,0 +1,298 @@
+"""quanta/cli.py — Command-Line Interface for the Quanta SDK.
+
+Supports autonomous biomorphic subconscious mind-wandering daemon commands:
+  quanta dream start [--idle-min SEC] [--lambda RATE] [--foreground]
+  quanta dream stop
+  quanta dream status
+  quanta dream inspect [--limit N]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import time
+from typing import Any
+
+from quanta.cognitive.daemon import SubconsciousDaemon
+
+
+def _format_status_table(status: dict[str, Any]) -> str:
+    """Formats the daemon status dictionary into a clean CLI display table."""
+    lines = [
+        "=" * 60,
+        "   QUANTA SUBCONSCIOUS MIND-WANDERING DAEMON STATUS",
+        "=" * 60,
+        f"  Running:               {status.get('running', False)}",
+        f"  Process ID (PID):      {status.get('pid', 'N/A')}",
+        f"  Hardware Quiescent:    {status.get('system_idle', False)}",
+        f"  Total Cycles:          {status.get('total_cycles', 0)}",
+        f"  Consolidated Insights: {status.get('consolidated_insights', 0)}",
+        f"  Preempted Cycles:      {status.get('preempted_cycles', 0)}",
+        f"  Uptime (seconds):      {status.get('uptime_seconds', 0.0)}",
+        f"  Quality of Service:    {status.get('qos', 'QOS_CLASS_BACKGROUND')}",
+        f"  I/O Policy:            {status.get('io_policy', 'IOPOL_THROTTLE')}",
+        f"  PID File:              {status.get('pid_file', '')}",
+        f"  State Storage:         {status.get('state_file', '')}",
+        "=" * 60,
+    ]
+    return "\n".join(lines)
+
+
+def _format_insights_list(insights: list[dict[str, Any]]) -> str:
+    """Formats inspected subconscious dream insights for human-readable CLI output."""
+    if not insights:
+        return "No subconscious dream insights consolidated yet."
+
+    lines = [
+        f"Found {len(insights)} consolidated subconscious dream insight(s):",
+        "-" * 60,
+    ]
+    for idx, item in enumerate(insights, start=1):
+        topic = item.get("topic", item.get("key", "unnamed"))
+        synthesis = item.get("content", item.get("description", ""))
+        fid = item.get("fidelity", 1.0)
+        salience = item.get("salience", 1.0)
+        conf = item.get("confidence", 1.0)
+        tags = ", ".join(item.get("tags", []))
+
+        lines.extend([
+            f"[{idx}] Topic:      {topic}",
+            f"    Synthesis:  {synthesis}",
+            f"    Fidelity:   {fid:.4f} ({fid * 100.0:.2f}%)",
+            f"    Salience:   {salience:.2f} | Confidence: {conf:.2f}",
+            f"    Tags:       [{tags}]",
+            "-" * 60,
+        ])
+    return "\n".join(lines)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Constructs the root argument parser and subcommands for the Quanta CLI."""
+    parser = argparse.ArgumentParser(
+        prog="quanta",
+        description="Quanta SDK — AI-native Quantum & Neuromorphic Computing Framework",
+    )
+    subparsers = parser.add_subparsers(dest="subcommand", help="Command category to execute")
+
+    # `quanta dream ...`
+    dream_parser = subparsers.add_parser(
+        "dream",
+        help="Autonomous biomorphic subconscious mind-wandering daemon commands",
+    )
+    dream_subparsers = dream_parser.add_subparsers(
+        dest="dream_action",
+        help="Subconscious daemon action to perform",
+    )
+
+    # `quanta dream start`
+    start_parser = dream_subparsers.add_parser("start", help="Start the subconscious daemon")
+    start_parser.add_argument(
+        "--idle-min",
+        type=float,
+        default=15.0,
+        help="Minimum system idle seconds before dreaming initiates (default: 15.0)",
+    )
+    start_parser.add_argument(
+        "--lambda",
+        dest="lambda_rate",
+        type=float,
+        default=0.1,
+        help="Poisson asymptotic spindle burst rate lambda_0 (default: 0.1)",
+    )
+    start_parser.add_argument(
+        "--foreground",
+        action="store_true",
+        help="Run daemon in the foreground instead of background thread",
+    )
+    start_parser.add_argument(
+        "--pid-file",
+        type=str,
+        default="quanta_dream.pid",
+        help="Path to PID tracking file (default: quanta_dream.pid)",
+    )
+    start_parser.add_argument(
+        "--state-file",
+        type=str,
+        default="quanta_cognitive_state.json",
+        help="Path to persistent state file (default: quanta_cognitive_state.json)",
+    )
+
+    # `quanta dream stop`
+    stop_parser = dream_subparsers.add_parser("stop", help="Stop the subconscious daemon")
+    stop_parser.add_argument(
+        "--pid-file",
+        type=str,
+        default="quanta_dream.pid",
+        help="Path to PID tracking file (default: quanta_dream.pid)",
+    )
+    stop_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=5.0,
+        help="Graceful termination timeout in seconds (default: 5.0)",
+    )
+
+    # `quanta dream status`
+    status_parser = dream_subparsers.add_parser(
+        "status",
+        help="Check status of the subconscious daemon",
+    )
+    status_parser.add_argument(
+        "--pid-file",
+        type=str,
+        default="quanta_dream.pid",
+        help="Path to PID tracking file (default: quanta_dream.pid)",
+    )
+    status_parser.add_argument(
+        "--state-file",
+        type=str,
+        default="quanta_cognitive_state.json",
+        help="Path to persistent state file (default: quanta_cognitive_state.json)",
+    )
+    status_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output status in raw JSON format",
+    )
+
+    # `quanta dream inspect`
+    inspect_parser = dream_subparsers.add_parser(
+        "inspect",
+        help="Inspect consolidated dream insights",
+    )
+    inspect_parser.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+        help="Maximum number of insights to display (default: 10)",
+    )
+    inspect_parser.add_argument(
+        "--state-file",
+        type=str,
+        default="quanta_cognitive_state.json",
+        help="Path to persistent state file (default: quanta_cognitive_state.json)",
+    )
+    inspect_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output insights in raw JSON format",
+    )
+
+    return parser
+
+
+def handle_dream(args: argparse.Namespace) -> int:
+    """Executes subconscious mind-wandering daemon CLI commands."""
+    action = getattr(args, "dream_action", None)
+
+    if action == "start":
+        daemon = SubconsciousDaemon(
+            state_file=args.state_file,
+            pid_file=args.pid_file,
+            idle_min=args.idle_min,
+            lambda_0=args.lambda_rate,
+        )
+        if daemon.is_running():
+            print(f"Subconscious daemon is already running (PID: {daemon._read_pid()}).")
+            return 0
+
+        if args.foreground:
+            pid = os.getpid()
+            print(f"Subconscious mind-wandering daemon started in foreground (PID: {pid}).")
+            daemon.start(foreground=True)
+            return 0
+        else:
+            cmd = [
+                sys.executable,
+                "-m",
+                "quanta.cli",
+                "dream",
+                "start",
+                "--foreground",
+                "--idle-min",
+                str(args.idle_min),
+                "--lambda",
+                str(args.lambda_rate),
+                "--pid-file",
+                str(args.pid_file),
+                "--state-file",
+                str(args.state_file),
+            ]
+            proc = subprocess.Popen(
+                cmd,
+                start_new_session=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            # Wait briefly for detached process to initialize and write its PID
+            t_end = time.time() + 2.0
+            while time.time() < t_end and not daemon.pid_file.exists():
+                time.sleep(0.02)
+
+            pid = daemon._read_pid() or proc.pid
+            print(f"Subconscious mind-wandering daemon started in background (PID: {pid}).")
+            return 0
+
+    elif action == "stop":
+        pid_file = getattr(args, "pid_file", "quanta_dream.pid")
+        timeout = getattr(args, "timeout", 5.0)
+        daemon = SubconsciousDaemon(pid_file=pid_file)
+        if not daemon.is_running():
+            print("Subconscious daemon is not running.")
+            return 0
+
+        daemon.stop(timeout=timeout)
+        print("Subconscious mind-wandering daemon stopped successfully.")
+        return 0
+
+    elif action == "status":
+        pid_file = getattr(args, "pid_file", "quanta_dream.pid")
+        state_file = getattr(args, "state_file", "quanta_cognitive_state.json")
+        daemon = SubconsciousDaemon(pid_file=pid_file, state_file=state_file)
+        stat = daemon.status()
+        if getattr(args, "json", False):
+            print(json.dumps(stat, indent=2))
+        else:
+            print(_format_status_table(stat))
+        return 0
+
+    elif action == "inspect":
+        limit = getattr(args, "limit", 10)
+        state_file = getattr(args, "state_file", "quanta_cognitive_state.json")
+        daemon = SubconsciousDaemon(state_file=state_file)
+        insights = daemon.inspect(limit=limit)
+        if getattr(args, "json", False):
+            print(json.dumps(insights, indent=2))
+        else:
+            print(_format_insights_list(insights))
+        return 0
+
+    else:
+        print("Usage: quanta dream {start,stop,status,inspect} [options]")
+        return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Main CLI entry point for the Quanta SDK."""
+    if argv is None:
+        argv = sys.argv[1:]
+
+    parser = build_parser()
+    if not argv:
+        parser.print_help()
+        return 0
+
+    args = parser.parse_args(argv)
+    if args.subcommand == "dream":
+        return handle_dream(args)
+
+    parser.print_help()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

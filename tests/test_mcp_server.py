@@ -1,6 +1,7 @@
 """Tests for quanta.mcp_server — AI Agent MCP tool validation."""
 
 import json
+
 import pytest
 
 try:

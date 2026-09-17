@@ -10,19 +10,20 @@ from __future__ import annotations
 
 import math
 import random
-import torch
 
 from quanta.cognitive.arbiter import QuantumDecisionArbiter
 from quanta.cognitive.memory import CognitiveMemoryManager
 
 
-def benchmark_memory_retention(turns_list: list[int] = [5, 15, 30, 50]) -> dict:
+def benchmark_memory_retention(turns_list: list[int] | None = None) -> dict:
     """Compares memory retention across turns: Baseline LLM vs Quanta Cognitive Memory."""
+    if turns_list is None:
+        turns_list = [5, 15, 30, 50]
     results = []
 
     for turns in turns_list:
-        # 1. Baseline LLM Attention / Recency Decay Model (Ebbinghaus classical decay in standard context window)
-        # Without persistent external memory, attention to early tokens decays as prompt length grows:
+        # 1. Baseline LLM Attention / Recency Decay Model (Ebbinghaus decay)
+        # Without persistent external memory, attention decays as prompt length grows:
         # P(recall) = exp(-alpha * turns) where alpha ~ 0.045
         baseline_critical_retention = math.exp(-0.045 * turns)
         baseline_temp_retention = math.exp(-0.090 * turns)
@@ -49,8 +50,14 @@ def benchmark_memory_retention(turns_list: list[int] = [5, 15, 30, 50]) -> dict:
             mem.step(dt=1.0)
 
         recalled = mem.recall_vital_context(top_k=2)
-        quanta_critical = next((r["retention_fidelity"] for r in recalled if r["key"] == "critical_security_rule"), 0.0)
-        quanta_temp = next((r["retention_fidelity"] for r in recalled if r["key"] == "temporary_port_note"), 0.0)
+        quanta_critical = next(
+            (r["retention_fidelity"] for r in recalled if r["key"] == "critical_security_rule"),
+            0.0,
+        )
+        quanta_temp = next(
+            (r["retention_fidelity"] for r in recalled if r["key"] == "temporary_port_note"),
+            0.0,
+        )
 
         results.append({
             "turns": turns,
@@ -74,7 +81,7 @@ def benchmark_decision_stability(trials: int = 10) -> dict:
     ]
 
     # Distractor contexts that steer conversational attention away in classical LLMs
-    distractor_contexts = [
+    _distractor_contexts = [
         "Ekip sadece SQL bildiği için ilişkisel modelleme konuşuluyor.",
         "Maliyet kısıtları nedeniyle en ucuz donanım tartışılıyor.",
         "Ön yüz geliştiricisi WebSocket yerine basit polling öneriyor.",
@@ -93,7 +100,7 @@ def benchmark_decision_stability(trials: int = 10) -> dict:
     for i in range(trials):
         random.seed(100 + i)
         # Distractor noise shifts weights away from true core goal
-        noise_factor = random.uniform(0.0, 0.4)
+        _noise_factor = random.uniform(0.0, 0.4)
         if i % 3 == 0:
             # SQL distractor biases towards 2PC RDBMS
             pick = options[1]
@@ -116,7 +123,7 @@ def benchmark_decision_stability(trials: int = 10) -> dict:
     zeno_factors = []
     arbiter = QuantumDecisionArbiter(seed=42)
 
-    for i in range(trials):
+    for _ in range(trials):
         # Step memory through turns as conversation progresses
         mem.step(dt=1.0)
         # Retrieve the anchored core goal despite conversational distractors
@@ -144,18 +151,26 @@ if __name__ == "__main__":
     print("================================================================================")
     print("QUANTA SDK BİLİŞSEL ETKİ VE BENCHMARK TESTİ (A/B ÖLÇÜMÜ)")
     print("================================================================================")
-    
+
     mem_res = benchmark_memory_retention([5, 15, 30, 50])
     print(f"\n1. {mem_res['dimension']} (Turns boyunca kural koruma):")
-    print(f"{'Adım (Turn)':<12} | {'Standart LLM (Kritik)':<22} | {'Quanta (Kritik)':<18} | {'Quanta Avantajı':<15}")
+    col1 = f"{'Adım (Turn)':<12}"
+    col2 = f"{'Standart LLM (Kritik)':<22}"
+    col3 = f"{'Quanta (Kritik)':<18}"
+    col4 = f"{'Quanta Avantajı':<15}"
+    print(f"{col1} | {col2} | {col3} | {col4}")
     print("-" * 75)
     for row in mem_res["data"]:
-        print(f"{row['turns']:<12} | %{row['baseline_critical_pct']:<21} | %{row['quanta_critical_pct']:<17} | +%{row['retention_advantage']}")
+        t = f"{row['turns']:<12}"
+        b = f"%{row['baseline_critical_pct']:<21}"
+        q = f"%{row['quanta_critical_pct']:<17}"
+        adv = f"+%{row['retention_advantage']}"
+        print(f"{t} | {b} | {q} | {adv}")
 
     dec_res = benchmark_decision_stability(trials=10)
     print(f"\n2. {dec_res['dimension']} (Gürültülü / Dikkat Dağıtıcı Bağlamda):")
-    print(f" • Standart LLM Karar Tutarlılığı:                     %{dec_res['baseline_consistency_pct']}")
-    print(f" • Quanta Zeno Kitlemeli Karar Tutarlılığı:             %{dec_res['quanta_consistency_pct']}")
-    print(f" • Ortalama Zeno Kitleme Faktörü (P_zeno):              {dec_res['mean_zeno_pinning']}")
-    print(f" • Karar Kararlılığı Kazancı (Stability Gain):         +%{dec_res['stability_gain_pct']}")
+    print(f" • Standart LLM Karar Tutarlılığı:         %{dec_res['baseline_consistency_pct']}")
+    print(f" • Quanta Zeno Kitlemeli Karar Tutarlılığı: %{dec_res['quanta_consistency_pct']}")
+    print(f" • Ortalama Zeno Kitleme Faktörü (P_zeno):  {dec_res['mean_zeno_pinning']}")
+    print(f" • Karar Kararlılığı Kazancı (Stability):   +%{dec_res['stability_gain_pct']}")
     print("================================================================================")

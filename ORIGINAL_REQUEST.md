@@ -316,4 +316,138 @@ Integrity mode: development
 - [ ] 0 errors on `uv run ruff check quanta/ tests/ scripts/`.
 - [ ] 0 errors on `uv run mypy quanta/torch`.
 
+## 2026-09-17T20:22:29Z
+
+Use a very large team of agents combining: (1) Low-level systems engineers, assembly programmers, Mach/XNU kernel developers, Apple Darwin/macOS/iOS specialists, and microprocessor architects, (2) Clinical neurosurgeons and neurophysiologists, (3) Cognitive psychologists, psychiatrists, and behavioral sociologists, and (4) Google Antigravity SDK distributed systems engineers and stochastic mathematicians.
+
+Design, mathematically formulate, implement, and benchmark Pillar 3 of the Quanta Cognitive Architecture:
+**The Autonomous Biomorphic Subconscious Mind-Wandering & Anticipatory Prospection Engine (Apple Silicon / Darwin Kernel QoS, Stochastic Poisson Spindles, Theory of Mind Social Dynamics, and Google Antigravity SDK Headless Dialectics)**.
+
+Working directory: /Users/aes/Antigravity Projects/Alfa/quanta
+Integrity mode: development
+
+---
+
+## Multidisciplinary Theoretical & Systems Foundation
+
+### 1. Hardware, Assembly & Darwin Kernel Architecture (Apple Silicon / macOS / iOS)
+- **Quality of Service (QoS) & Mach Thread Scheduling**:
+  - The subconscious engine must run under `QOS_CLASS_BACKGROUND` (or Darwin `pthread_set_qos_class_np`) and I/O throttle policy `IOPOL_THROTTLE`.
+  - Execution utilizes Apple Silicon Efficiency cores (E-cores) without waking high-power Performance cores (P-cores), preserving the ~20W biomorphic thermodynamic budget and avoiding thermal throttling or battery drain.
+  - Hardware idle state detection via Darwin Mach host statistics (`host_processor_info`, `mach_vm_read`), tracking CPU quiescence, thermal pressure notifications, and memory footprint.
+- **Assembly & Zero-Copy State Transfer**:
+  - Ultra-fast IPC and shared memory primitives between Antigravity processes to ensure turn-switching and preemption occur at microsecond scale ($< 1\,\text{ms}$ kernel interrupt handling).
+
+### 2. Clinical Neurosurgery & Neurophysiology (The Biological Substrate)
+- **Cortical Oscillations & Sleep Spindles**:
+  - Model thalamocortical spindle bursts ($11-16\,\text{Hz}$) and hippocampal sharp-wave ripples (SWR, $150-250\,\text{Hz}$) that gate information transfer from temporary memory to neocortex.
+  - Sleep depth modulation: Transitioning from light daydreaming (Alpha/Theta state, $4-8\,\text{Hz}$) to deep slow-wave consolidation (Delta, $0.5-4\,\text{Hz}$).
+- **Glymphatic & Synaptic Homeostasis (Tononi & Cirelli SHY)**:
+  - Active baseline reset: Subconscious cycles consolidate high-signal synaptic connections while actively pruning low-entropy chatter, preventing associative saturation.
+
+### 3. Cognitive Psychology, Psychiatry & Behavioral Sociology
+- **Incubation & Insight Dynamics (Wallas 4-Stage Model)**:
+  - Preparation $\to$ Incubation (unconscious associative search) $\to$ Illumination ("Aha!" phase kickback) $\to$ Verification.
+- **Psychiatric Safeguards (Anti-Rumination & Coherence Bounds)**:
+  - Guard against pathological loops: Detect cognitive rumination (repetitive cycling on identical thought vectors) using Shannon entropy and von Neumann spectral divergence. If rumination is detected, trigger synthetic noradrenaline reset.
+- **Theory of Mind (ToM) & Sociological Interaction Clues**:
+  - The subconscious engine models the user's conversational intent, rhythm, emotional valence, and latent technical objectives.
+  - Social pattern recognition predicts what the user will need next (anticipatory empathy), directing dreams toward high-utility problem domains.
+
+### 4. Google Antigravity SDK Architecture (`google-antigravity-sdk`)
+- **Agent Orchestration**: `LocalAgentConfig` instantiates a dual-persona subconscious cognitive agent.
+- **Conversation Decoupling**: Runs in a headless, background `Conversation` completely isolated from the user's active UI and prompt stream.
+- **Connection Isolation**: Uses `LocalConnectionStrategy` with local lightweight fallback, keeping network pipes clear.
+- **Triggers & Safety Policies**: Dynamic non-homogeneous Poisson `triggers` with strict token budget limits (`StopReason.BUDGET_EXCEEDED`) and turn caps.
+
+---
+
+## Core Pillars & Deliverables
+
+### Pillar 1: Low-Level Darwin Kernel & Hardware Quiescence Monitor (`quanta.cognitive.darwin_idle`)
+- Native Python/C-types bindings interfacing with macOS/Darwin Mach subsystem:
+  - Reads `host_cpu_load_info` and thread state.
+  - Checks Apple Silicon thermal state (`kIOPlatformThermalNotificationKey`) and battery status (`IOPMPowerSource`).
+  - Sets process QoS to `QOS_CLASS_BACKGROUND` so subconscious processes yield immediately if any foreground task claims CPU cycles.
+
+### Pillar 2: Non-Homogeneous Poisson Spindle Trigger (`quanta.cognitive.poisson_trigger`)
+- Biologically realistic stochastic scheduler:
+  $$P(\text{dream pulse in }[t, t+dt]) = \lambda(t) dt$$
+  $$\lambda(t) = \lambda_0 \cdot \sigma\left(\frac{t - T_{\text{idle\_min}}}{\tau}\right) \cdot (1 - \mathcal{F}_{\text{fatigue}}) \cdot \mathcal{S}_{\text{ToM}}$$
+  where $\mathcal{S}_{\text{ToM}}$ is the sociological urgency factor derived from user interaction clues.
+- Exponential inter-arrival intervals $\Delta t \sim -\frac{\ln(U)}{\lambda(t)}$ ensure unpredictable, organic timing.
+
+### Pillar 3: Theory of Mind (ToM) & Latent Needs Extractor (`quanta.cognitive.tom_analyzer`)
+- Analyzes recent conversation history, user query cadence, and project state to generate "Dream Seeds" (high-value speculative questions).
+- Employs sociolinguistic heuristics to identify unresolved user doubts, upcoming deployment milestones, or potential edge-case failures.
+
+### Pillar 4: Google Antigravity SDK Isolated Dialectical Conversation (`quanta.cognitive.mind_wander`)
+- Headless multi-agent dialectic:
+  - **The Generative Dreamer (DMN Incubator)**: Explores associative links, hypothesizes code refactors, anticipates future requirements.
+  - **The Evaluative Arbiter (Zeno Prefrontal Critic)**: Challenges logic, runs virtual mental rollouts, prunes dead branches.
+- Built strictly with Google Antigravity SDK (`Agent`, `Conversation`, `LocalAgentConfig`).
+- Automatic psychiatric anti-rumination check aborts repetitive thought loops.
+
+### Pillar 5: SWR Memory Consolidation & Instant Preemption Reflex (Uyanma Protokolü)
+- Distills dialectical consensus into `quanta.cognitive.memory.CognitiveMemoryManager` engrams.
+- **Instant Preemption**: Subconscious process catches user turn events or hardware interrupts, terminating or checkpointing in $< 20\,\text{ms}$.
+- Hook integration (`scripts/hooks/quanta_subconscious_hook.py`) delivers pre-incubated solutions upon subsequent user turns.
+
+---
+
+## Detailed Requirements
+
+### R1. Interdisciplinary Theoretical Treatise
+- Author a comprehensive scientific foundation in `docs/theory/subconscious_mind_wandering_and_dmn.md`:
+  - Mathematical formulation of Poisson renewal theory, Mach QoS mechanics, and Landauer energy bounds on Apple Silicon.
+  - Synthesis of neurosurgical sleep spindle literature, psychiatric rumination avoidance, and sociological Theory of Mind.
+
+### R2. Systems & Engine Implementation (`quanta/cognitive/`)
+- Implement `darwin_idle.py`: macOS/Darwin Mach kernel load and QoS interface.
+- Implement `poisson_trigger.py`: Stochastic Poisson spindle generator with refractory gating.
+- Implement `tom_analyzer.py`: Sociological Theory of Mind and conversation pattern extractor.
+- Implement `mind_wander.py`: Google Antigravity SDK headless dialectical conversation engine.
+- Implement `consolidation.py`: SWR memory integration into `quanta_cognitive_state.json`.
+- Implement `daemon.py`: Background daemon manager with `quanta dream start/stop/status/inspect` CLI.
+
+### R3. Safety, Bounded Resource & Anti-Rumination Policies
+- Hard turn limit ($\le 5$ turns per dream cycle), token ceiling ($\le 2500$ tokens per cycle).
+- Mach QoS background enforcement (`QOS_CLASS_BACKGROUND`).
+- Rumination detector: If cosine similarity between consecutive thoughts exceeds $0.95$, force immediate phase reset.
+
+### R4. Verification, Testing & Empirical Benchmarking
+- Test suite in `tests/test_darwin_idle.py`, `tests/test_poisson_trigger.py`, and `tests/test_mind_wander.py`:
+  - Validate Mach kernel QoS assignment and idle detection accuracy.
+  - Kolmogorov-Smirnov statistical goodness-of-fit for Poisson stochastic intervals.
+  - Verification of preemption latency ($< 50\,\text{ms}$).
+  - End-to-end integration: User idle $\to$ Poisson trigger $\to$ ToM seed generated $\to$ Antigravity headless chat $\to$ SWR memory updated $\to$ hook serves answer.
+- 0 lint errors (`ruff check`) and 0 type errors (`mypy`).
+
+---
+
+## Acceptance Criteria
+
+### Theoretical & Clinical Rigor
+- [ ] `docs/theory/subconscious_mind_wandering_and_dmn.md` synthesizes Mach kernel mechanics, neurosurgical sleep dynamics, and cognitive Theory of Mind with full citations.
+- [ ] Anti-rumination entropy bound mathematically defined and implemented.
+
+### Systems & Apple Silicon Integration
+- [ ] Darwin QoS background scheduling verified (process executes under background QoS without starving UI).
+- [ ] Hardware quiescence monitor accurately tracks CPU and thermal state.
+
+### Google Antigravity SDK & Conversation Isolation
+- [ ] Uses Google Antigravity SDK (`Agent`, `Conversation`, `LocalAgentConfig`).
+- [ ] Headless internal self-chat executes in complete isolation without leaking to the user's primary transcript.
+- [ ] Zero-latency preemption ($< 50\,\text{ms}$) verified upon user input.
+
+### Memory Consolidation & Hook Delivery
+- [ ] Insights consolidated into `CognitiveMemoryManager` with high fidelity ($F \ge 0.99$).
+- [ ] `scripts/hooks/quanta_subconscious_hook.py` serves consolidated dream insights upon relevant user prompts.
+
+### Code Quality & Performance
+- [ ] $> 90\%$ test coverage across `quanta.cognitive`.
+- [ ] 0 errors on `uv run ruff check quanta/ tests/`.
+- [ ] 0 errors on `uv run mypy quanta/cognitive`.
+
+
 

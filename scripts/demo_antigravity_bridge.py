@@ -51,7 +51,11 @@ def demo_cognitive_memory():
     print("\n→ [Bilinçli Sinaptik Budama (Conscious Synaptic Pruning) Çalıştırılıyor]...")
     pruned = mem.prune_obsolete(fidelity_threshold=0.70, min_salience=0.5)
     for p in pruned:
-        print(f" ✂ [BUDANDI / UNUTULDU]: '{p['key']}' (Son Sadakat: %{p['final_fidelity']*100:.2f}, Neden: {p['reason']})")
+        fid = p["final_fidelity"] * 100
+        print(
+            f" ✂ [BUDANDI / UNUTULDU]: '{p['key']}' "
+            f"(Son Sadakat: %{fid:.2f}, Neden: {p['reason']})"
+        )
 
     remaining = mem.recall_vital_context(top_k=5)
     print(f"\n→ Budama Sonrası Aktif Hafıza ({len(remaining)} engram korundu):")

@@ -12,6 +12,7 @@ Runs silently and automatically on Antigravity lifecycle events (PreInvocation).
 
 from __future__ import annotations
 
+import contextlib
 import json
 import math
 import os
@@ -146,11 +147,14 @@ def main() -> None:
                     for item in cached.get("engrams", []):
                         mem.engrams.append({
                             "key": item["key"],
-                            "content": item["content"],
+                            "content": item.get("content", item.get("description", "")),
                             "salience": float(item.get("salience", 1.0)),
                             "category": item.get("category", "general"),
                             "fidelity": float(item.get("fidelity", 0.9998)),
                             "age": int(item.get("age", 0)),
+                            "tags": item.get("tags", []),
+                            "topic": item.get("topic", ""),
+                            "confidence": float(item.get("confidence", 0.95)),
                         })
             except Exception:
                 pass
@@ -163,6 +167,14 @@ def main() -> None:
             sys.stdout.write(json.dumps({}))
             sys.stdout.flush()
             return
+
+        # Extract user query if present for conversational relevance matching
+        user_query = ""
+        for key_candidate in ("userPrompt", "prompt", "message", "userMessage", "query", "text"):
+            val = payload.get(key_candidate)
+            if isinstance(val, str) and val.strip():
+                user_query = val.strip().lower()
+                break
 
         # If fresh conversation, initialize foundational cognitive anchors
         if len(mem.engrams) == 0:
@@ -192,10 +204,33 @@ def main() -> None:
         # Microglial active synaptic pruning
         pruned = mem.prune_obsolete(fidelity_threshold=0.70, min_salience=0.50)
 
-        # Recall vital engrams via SWR replay
+        # Query Relevance Scoring for Subconscious Dream Engrams:
+        # Boost salience of subconscious dream insights that match user query context
+        for e in mem.engrams:
+            if e.get("category") == "subconscious_dream":
+                topic = e.get("topic", "").lower()
+                tags = [t.lower() for t in e.get("tags", [])]
+                content = e.get("content", "").lower()
+
+                # If query is provided, check lexical relevance
+                if user_query:
+                    is_relevant = (
+                        topic in user_query
+                        or any(t in user_query for t in tags if len(t) > 2)
+                        or any(w in user_query for w in topic.split("_") if len(w) > 3)
+                        or any(w in content for w in user_query.split() if len(w) > 4)
+                    )
+                    if is_relevant:
+                        e["salience"] = max(e["salience"], 3.5)
+                else:
+                    # When no prompt provided (e.g. automated turns / tests),
+                    # protect high-priority dreams
+                    e["salience"] = max(e["salience"], 2.8)
+
+        # Recall vital engrams via SWR replay (top_k=5 to capture rules and dreams)
         vital_anchors = [
-            e for e in mem.recall_vital(top_k=2)
-            if e["salience"] >= 1.5 and e["fidelity"] >= 0.85
+            e for e in mem.recall_vital(top_k=5)
+            if e["salience"] >= 1.5 and e["fidelity"] >= 0.80
         ]
 
         if vital_anchors:
@@ -215,18 +250,27 @@ def main() -> None:
                 ]
             }
 
-        # Persist updated state to disk
+        # Persist updated state to disk atomically
         try:
-            with open(state_file, "w", encoding="utf-8") as sf:
-                state_dict = {
-                    "turn_count": turn_count,
-                    "last_injected_time": now,
-                    "last_step_idx": current_step_idx,
-                    "engrams": mem.engrams,
-                }
+            state_file.parent.mkdir(parents=True, exist_ok=True)
+            temp_path = state_file.with_name(
+                f".tmp_{state_file.name}_{os.getpid()}_{time.time_ns()}"
+            )
+            state_dict = {
+                "turn_count": turn_count,
+                "last_injected_time": now,
+                "last_step_idx": current_step_idx,
+                "engrams": mem.engrams,
+            }
+            with open(temp_path, "w", encoding="utf-8") as sf:
                 json.dump(state_dict, sf, ensure_ascii=False, indent=2)
+                sf.flush()
+                os.fsync(sf.fileno())
+            os.replace(temp_path, state_file)
         except Exception:
-            pass
+            if "temp_path" in locals() and temp_path.exists():
+                with contextlib.suppress(OSError):
+                    temp_path.unlink()
 
     except Exception:
         output_payload = {}

@@ -1,0 +1,23 @@
+{
+  "turn_count": 50,
+  "last_injected_time": 0.0,
+  "last_step_idx": 0,
+  "engrams": [
+    {
+      "key": "insight_concurrent_preemption",
+      "content": "Consolidated biomorphic insight on concurrent_preemption: Resolved dialectic for 'Testing live interrupt latency under concurrent execution' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'concurrent_preemption' accommodating arbiter feedback: Refining parameters for 'Testing live interrupt latency under concurrent execution' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on concurrent_preemption: Resolved dialectic for 'Testing live interrupt latency under concurrent execution' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'concurrent_preemption' accommodating arbiter feedback: Refining parameters for 'Testing live interrupt latency under concurrent execution' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "concurrent_preemption"
+      ],
+      "topic": "concurrent_preemption",
+      "confidence": 0.95
+    }
+  ]
+}

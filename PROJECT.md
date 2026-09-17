@@ -1,105 +1,192 @@
-# Project: CSF / ISF Biophysical Quantum Shielding Framework (`quanta.torch.brain`)
+# Project: Quanta Cognitive Architecture Pillar 3
+# Autonomous Biomorphic Subconscious Mind-Wandering & Anticipatory Prospection Engine
 
 ## Architecture
-The Cerebrospinal Fluid (CSF / Beyin Omurilik Sıvısı - BOS) and Interstitial Fluid (ISF) framework models the macroscopic biophysical cryostat/shield surrounding the brain's quantum computational minicolumns.
-The architecture comprises:
-1. **Biophysical Environment (`CSFShieldedEnvironment`)**:
-   Differentiable PyTorch module modeling the 5 physical shielding mechanisms:
-   - Paramagnetic ion exclusion via BBB/BCSFB ($Fe^{3+}, Cu^{2+}, Mn^{2+} < 0.5\,\mu\text{M}$ vs plasma $25-55\,\mu\text{M}$).
-   - Debye electrostatic screening ($\epsilon_r \approx 78.4, I \approx 0.15\,\text{M}, \lambda_D \approx 0.79\,\text{nm}$).
-   - Hydrodynamic BPP motional narrowing ($\eta \approx 0.8\,\text{mPa}\cdot\text{s}, \tau_R \approx 86\,\text{ps}, T_2 \sim 10^4\,\text{s}$).
-   - Acoustic/phonon damping & buoyant suspension ($1400\,\text{g} \to 50\,\text{g}, 96.5\%$ mass reduction).
-   - Glymphatic clearance & entropic bath reset (astrocytic AQP4 convective flush restoring baseline $\Gamma_0$).
-   - Clinical state simulations: `normal`, `meningitis`, `hydrocephalus`, `lumbar_puncture_recovery`, `sleep_deprived`, `rem_sleep`.
-2. **Shielded Resonant Layer (`CSFShieldedResonantLayer`)**:
-   Drop-in PyTorch neural layer combining continuous-time bipartite biomorphic Hamiltonian resonance ($H_{\text{total}} = H_L + H_R + H_{\text{callosum}}$) with CSF-shielded Lindblad dephasing attenuation factor $\kappa_{\text{CSF}} \le 10^{-3}$ and effective dephasing $\Gamma_{\text{eff}} = \kappa_{\text{CSF}} \Gamma_{\text{bare}}$.
-3. **Interoperability Hooks**:
-   - `BiomorphicResonantBrain`: optional integration of `CSFShieldedEnvironment`.
-   - `NoisyHippocampalBuffer`: attenuation of phase diffusion $\sigma_\phi$ and amplitude noise $\sigma_{\text{noise}}$ by $\sqrt{\kappa_{\text{CSF}}}$ and Ebbinghaus memory decay rate by $\kappa_{\text{CSF}}$.
-   - `QuantumREMSleep`: triggering nocturnal convective glymphatic flush mode resetting environmental entropy.
-4. **Empirical Benchmarking & Figure 9**:
-   - `scripts/benchmark_csf_shielding.py` producing 300 DPI 4-panel publication Figure 9 (`docs/paper/figures/fig9_csf_biophysical_shielding.png`) and telemetry in `docs/paper/benchmark_academic_data.json`.
-5. **Academic Manuscript Integration**:
-   - Section 7 in `docs/paper/biomorphic_quantum_resonance.tex` formalizing Theorem 8, Corollaries 8.1-8.3, and embedding Figure 9.
-6. **Testing & Quality Assurance**:
-   - `tests/test_csf_shielding.py` validating 5 tiers (32+ tests), autograd gradcheck, MPS device support, 0 ruff errors, 0 mypy errors.
+
+The Subconscious Mind-Wandering & Anticipatory Prospection Engine operates as an autonomous, biomorphic background cognitive process that models mammalian default mode network (DMN) daydreaming, thalamocortical sleep spindles, synaptic homeostasis downscaling, and sociological Theory of Mind. It executes strictly within Apple Silicon Efficiency cores (`QOS_CLASS_BACKGROUND`) without consuming foreground interactive CPU/GPU resources or exceeding the ~20W biomorphic thermodynamic budget.
+
+### Subsystem Decomposition & Data Flow:
+
+```
+[ Darwin Host Quiescence ] ──> [ Poisson Spindle Generator ] ──> [ Dream Pulse Trigger ]
+  (Mach host_info, thermal,          (lambda(t), refractory,               │
+   battery, E-core QoS)               ToM urgency modulation)              │
+                                                                           ▼
+[ Conversation Cadence & History ] ──> [ Theory of Mind Analyzer ] ──> [ Speculative Dream Seed ]
+                                                                           │
+                                                                           ▼
+                                                             [ Headless Dialectic Engine ]
+                                                             - Generative Dreamer (DMN)
+                                                             - Evaluative Arbiter (Zeno)
+                                                             - Anti-Rumination Check (cos > 0.95)
+                                                             - Headless Antigravity Conversation
+                                                                           │
+                                                                           ▼
+                                                             [ SWR Memory Consolidation ]
+                                                             - SWR Replay & Synaptic Downscaling
+                                                             - quanta_cognitive_state.json
+                                                             - Preemption Interrupt (<20ms)
+                                                                           │
+                                                                           ▼
+[ User Interactive Turn ] ───────────> [ PreInvocation Hook ] ───────> [ Pre-incubated Insight Delivery ]
+```
+
+---
 
 ## Feature Inventory
+
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
-| 1 | Theory Monograph & Theorem 8 | Dedicated monograph `docs/theory/csf_quantum_shielding.md`, Theorem 8 proof, Corollaries 8.1–8.3, expansion of `quantum_brain_frontiers.md` | M1 | Survey (Spec Miner) |
-| 2 | `CSFShieldedEnvironment` Module | Differentiable PyTorch module in `quanta/torch/brain.py` with physical parameters, analytical $\lambda_D, \tau_R, \kappa_{\text{CSF}}$, clinical condition switching, and autograd/MPS support | M2 | Survey (Code Explorer) |
-| 3 | `CSFShieldedResonantLayer` Module | Continuous-time Hamiltonian graph resonance coupled with shielded Lindblad dephasing attenuation in `quanta/torch/brain.py` | M2 | Survey (Code Explorer) |
-| 4 | Interoperability Hooks & Top-Level Exports | Hooking `CSFShieldedEnvironment` into `BiomorphicResonantBrain`, `NoisyHippocampalBuffer`, and `QuantumREMSleep`; exporting in `quanta/torch/__init__.py` | M2 | Survey (Code Explorer) |
-| 5 | Benchmark Script & Publication Fig 9 | `scripts/benchmark_csf_shielding.py` (< 5s runtime, deterministic seed) generating 300 DPI 4-panel Figure 9 and updating `benchmark_academic_data.json` | M3 | Survey (Bench Explorer) |
-| 6 | Academic LaTeX Manuscript Section 7 | Authoring Section 7 in `docs/paper/biomorphic_quantum_resonance.tex`, embedding Figure 9 with comprehensive caption, and integrating Theorem 8 & medical citations | M4 | Survey (Spec Miner) |
-| 7 | Opaque-Box E2E Test Suite & Test Infra | Comprehensive test suite in `tests/test_csf_shielding.py` covering Tiers 1–4 (>30 test cases) and publishing `TEST_READY.md` | M5 | Survey (Bench Explorer) |
-| 8 | Adversarial Coverage Hardening & Static Analysis | White-box stress-testing (Tier 5), MPS/CPU validation, numerical gradcheck, 0 ruff lint errors, 0 mypy type errors | M5 | Survey (Bench Explorer) |
+| 1 | R1 Comprehensive Theoretical Treatise | Formal mathematical and biophysical foundation in `docs/theory/subconscious_mind_wandering_and_dmn.md` | M0 | Survey 2 & Request |
+| 2 | Darwin Mach Thread QoS Assignment | Native `pthread_set_qos_class_self_np(0x09, 0)` enforcing `QOS_CLASS_BACKGROUND` on Apple Silicon E-cores | M1 | Survey 1 |
+| 3 | Darwin Disk I/O Throttling | Native `setiopolicy_np(IOPOL_TYPE_DISK, IOPOL_SCOPE_PROCESS, IOPOL_THROTTLE)` | M1 | Survey 1 |
+| 4 | Mach CPU Host Statistics | Instantaneous CPU idle tick tracking via `host_statistics64(HOST_CPU_LOAD_INFO)` | M1 | Survey 1 |
+| 5 | Apple Silicon Thermal Telemetry | Thermal pressure monitoring via `notify(3)` / `kIOPlatformThermalNotificationKey` / `NSProcessInfo` | M1 | Survey 1 |
+| 6 | Battery & Power State Telemetry | Power source detection via `IOKit` / `IOPowerSources.h` | M1 | Survey 1 |
+| 7 | Cross-Platform Hardware Fallback | Graceful stubs for Linux (`/proc/stat`, nice 19) and Windows (`GetSystemTimes`, idle priority) | M1 | Survey 1 |
+| 8 | Non-Homogeneous Poisson Rate $\lambda(t)$ | Dynamic rate $\lambda(t) = \lambda_0 \cdot \sigma((t - T_{\text{idle}})/\tau) \cdot (1 - \mathcal{F}_{\text{fatigue}}) \cdot \mathcal{S}_{\text{ToM}}$ | M2 | Survey 2 |
+| 9 | Exponential Inter-Arrival Sampling | Inverse transform stochastic sampling $\Delta t \sim -\ln(U)/\lambda(t)$ with refractory gating | M2 | Survey 2 |
+| 10 | Theory of Mind Latent Needs Extractor | Conversational cadence, hesitation, and epistemic uncertainty analyzer | M2 | Survey 2 |
+| 11 | Speculative Dream Seed Generator | Synthesizes high-utility speculative questions for background deliberation | M2 | Survey 2 |
+| 12 | Headless Antigravity Dialectic Engine | Headless `Agent` + `Conversation` dual-persona deliberation with zero prompt leakage | M3 | Survey 3 |
+| 13 | Dual Personas (DMN Dreamer & Zeno Critic)| Generative exploratory incubator vs. Evaluative prefrontal arbiter with virtual rollouts | M3 | Survey 3 |
+| 14 | Psychiatric Anti-Rumination Guard | Cosine similarity > 0.95 detection triggering synthetic noradrenaline reset | M3 | Survey 2 & Request |
+| 15 | Bounded Execution Budget | Hard turn limit ($\le 5$ turns) and token limit ($\le 2500$ tokens per cycle) | M3 | Request |
+| 16 | SWR Memory Engram Consolidation | Integrates consensus into `CognitiveMemoryManager` (`quanta_cognitive_state.json`) | M4 | Survey 3 |
+| 17 | Instant Preemption Reflex | User turn or hardware interrupt aborts/checkpoints subconscious run in $< 20\,\text{ms}$ | M4 | Survey 1 & 3 |
+| 18 | Background Subconscious Daemon Manager | Daemon lifecycle manager with PID tracking, signal handling, and status logging | M4 | Survey 3 |
+| 19 | CLI Command Suite | `quanta dream start/stop/status/inspect` commands | M4 | Survey 3 & Request |
+| 20 | PreInvocation Subconscious Hook | `scripts/hooks/quanta_subconscious_hook.py` serving pre-incubated insights on user turns | M4 | Survey 3 & Request |
+| 21 | Opaque-Box E2E Test Suite | 4-Tier requirement-driven E2E test suite published with `TEST_READY.md` | Test Track | Dual Track |
+| 22 | Kolmogorov-Smirnov Goodness-of-Fit | Statistical validation of Poisson renewal intervals via Time-Rescaling Theorem | M5 | Survey 2 |
+| 23 | Preemption Latency Benchmarking | Verification of interruption latency $< 50\,\text{ms}$ (target $< 20\,\text{ms}$) | M5 | Survey 1 & 3 |
+| 24 | Package Quality Gates | >90% test coverage across `quanta.cognitive`, 0 ruff lint errors, 0 mypy type errors | M5 | Request |
+
+---
 
 ## Milestones
+
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Theory Monograph & Theorem 8 | `docs/theory/csf_quantum_shielding.md`, `docs/theory/quantum_brain_frontiers.md` | none | DONE |
-| M2 | PyTorch Architecture Implementation | `quanta/torch/brain.py`, `quanta/torch/__init__.py` | M1 | DONE |
-| M3 | Empirical Benchmarking & Publication Fig 9 | `scripts/benchmark_csf_shielding.py`, `docs/paper/figures/fig9_csf_biophysical_shielding.png`, `docs/paper/benchmark_academic_data.json` | M2 | DONE |
-| M4 | Academic Manuscript LaTeX Section 7 | `docs/paper/biomorphic_quantum_resonance.tex` | M1, M3 | DONE |
-| M5 | E2E Testing, Adversarial Hardening & Quality Gate | `tests/test_csf_shielding.py`, ruff, mypy, pytest | M2, M3 | DONE |
+| M0 | R1 Theoretical Treatise | `docs/theory/subconscious_mind_wandering_and_dmn.md` | Survey Complete | DONE |
+| M1 | Darwin Mach QoS & Quiescence Monitor | `quanta/cognitive/darwin_idle.py` | Survey Complete | DONE |
+| M2 | Poisson Trigger & Theory of Mind Analyzer | `quanta/cognitive/poisson_trigger.py`, `quanta/cognitive/tom_analyzer.py` | M0, M1 | DONE |
+| M3 | Headless Dialectics & Mind Wander Engine | `quanta/cognitive/mind_wander.py` | M2 | DONE |
+| M4 | SWR Consolidation, Daemon, CLI & Hook | `quanta/cognitive/consolidation.py`, `quanta/cognitive/daemon.py`, `scripts/hooks/quanta_subconscious_hook.py`, `quanta/cli.py` | M3 | PLANNED |
+| M5 | Final Milestone: 100% E2E Pass & Benchmarks | Pass full E2E suite, empirical benchmarks (KS, latency), >90% coverage, 0 lint/type errors | M0-M4, TEST_READY.md | PLANNED |
+
+---
 
 ## Interface Contracts
-### `CSFShieldedEnvironment`
-- Constructor:
-  ```python
-  CSFShieldedEnvironment(
-      ionic_strength: float = 0.155,       # M
-      dielectric_constant: float = 78.5,   # dimensionless
-      viscosity: float = 0.80,             # mPa*s
-      paramagnetic_concentration: float = 0.40, # uM
-      glymphatic_clearance_rate: float = 0.20,  # 1/h
-      temperature: float = 310.15,         # K (37 C)
-      learnable_params: bool = False,
-      device: Optional[Union[str, torch.device]] = None,
-      dtype: Optional[torch.dtype] = None,
-  )
-  ```
-- Methods:
-  - `compute_debye_length() -> torch.Tensor` ($\lambda_D = \sqrt{\frac{\epsilon_0 \epsilon_r k_B T}{2 N_A e^2 I}}$)
-  - `compute_rotational_correlation_time() -> torch.Tensor` ($\tau_R = \frac{4 \pi \eta r_H^3}{3 k_B T}$)
-  - `compute_attenuation_factor() -> torch.Tensor` ($\kappa_{\text{CSF}} = \kappa_{\text{elec}} \cdot \kappa_{\text{motional}} \cdot \kappa_{\text{para}} \cdot \kappa_{\text{glym}}$)
-  - `apply_shielding(lindblad_gamma: Union[float, torch.Tensor]) -> torch.Tensor` ($\Gamma_{\text{eff}} = \kappa_{\text{CSF}} \Gamma_{\text{bare}}$)
-  - `simulate_clinical_condition(condition_name: str) -> None` (`normal`, `meningitis`, `hydrocephalus`, `lumbar_puncture_recovery`, `sleep_deprived`, `rem_sleep`)
 
-### `CSFShieldedResonantLayer`
-- Constructor:
-  ```python
-  CSFShieldedResonantLayer(
-      n_qubits: int = 4,
-      dim_in: int = 4,
-      dim_out: int = 4,
-      interaction_time: float = 1.0,
-      env: Optional[CSFShieldedEnvironment] = None,
-      bare_dephasing_rate: float = 1.30,
-      device: Optional[Union[str, torch.device]] = None,
-      dtype: Optional[torch.dtype] = None,
-  )
-  ```
-- Forward:
-  `forward(x: torch.Tensor) -> torch.Tensor` where $x \in \mathbb{R}^{B \times \text{dim\_in}}$, returns expectation values $y \in [-1, 1]^{B \times \text{dim\_out}}$ damped by $\exp(-\Gamma_{\text{eff}} t / 2)$.
+### 1. `quanta.cognitive.darwin_idle`
+```python
+def set_background_qos() -> bool:
+    """Enforce QOS_CLASS_BACKGROUND (0x09) and IOPOL_THROTTLE."""
 
-### `NoisyHippocampalBuffer` Integration
-- `attach_csf_environment(env: CSFShieldedEnvironment) -> None`:
-  Attenuates stochastic Lindblad phase diffusion and Gaussian noise by $\sqrt{\kappa_{\text{CSF}}}$ and Ebbinghaus memory decay rate by $\kappa_{\text{CSF}}$.
+def get_cpu_quiescence() -> float:
+    """Return CPU idle ratio in [0.0, 1.0] from host_statistics64."""
 
-### `QuantumREMSleep` Integration
-- `trigger_glymphatic_reset(env: CSFShieldedEnvironment) -> None`:
-  Applies nocturnal convective AQP4 flush during sleep annealing, resetting environmental entropy and purging noise accumulation.
+def get_thermal_state() -> int:
+    """Return Apple Silicon thermal state (0=Nominal, 1=Fair, 2=Serious, 3=Critical)."""
+
+def is_on_battery() -> bool:
+    """Return True if system is running on battery power."""
+
+def is_system_idle(idle_threshold: float = 0.70, max_thermal: int = 1) -> bool:
+    """Check if host is quiet enough for subconscious mind-wandering."""
+```
+
+### 2. `quanta.cognitive.poisson_trigger`
+```python
+class PoissonSpindleTrigger:
+    def __init__(self, lambda_0: float = 0.1, idle_min: float = 15.0, tau: float = 5.0, refractory_sec: float = 10.0): ...
+    def compute_rate(self, current_time: float, last_active_time: float, fatigue: float, tom_urgency: float) -> float: ...
+    def sample_next_interval(self, rate: float) -> float: ...
+    def should_trigger(self, current_time: float, last_active_time: float, last_dream_time: float, fatigue: float, tom_urgency: float) -> bool: ...
+```
+
+### 3. `quanta.cognitive.tom_analyzer`
+```python
+@dataclass
+class DreamSeed:
+    topic: str
+    speculative_question: str
+    urgency: float
+    context_keys: list[str]
+
+class TheoryOfMindAnalyzer:
+    def analyze_conversation(self, messages: list[dict], project_state: dict | None = None) -> tuple[float, list[DreamSeed]]:
+        """Return (tom_urgency, dream_seeds)."""
+```
+
+### 4. `quanta.cognitive.mind_wander`
+```python
+@dataclass
+class DreamInsight:
+    topic: str
+    seed_question: str
+    synthesis: str
+    confidence: float
+    turns_taken: int
+    tokens_used: int
+    anti_rumination_reset_occurred: bool
+
+class MindWanderEngine:
+    def __init__(self, max_turns: int = 5, max_tokens: int = 2500, rumination_threshold: float = 0.95): ...
+    def execute_dream_cycle(self, seed: DreamSeed, preemption_check: Callable[[], bool]) -> DreamInsight | None:
+        """Run headless dialectic with DMN and Zeno personas."""
+```
+
+### 5. `quanta.cognitive.consolidation`
+```python
+class SubconsciousConsolidator:
+    def __init__(self, state_file: Path | str = "quanta_cognitive_state.json"): ...
+    def consolidate_insight(self, insight: DreamInsight) -> bool:
+        """SWR replay into CognitiveMemoryManager engrams with category='subconscious_dream'."""
+```
+
+### 6. `quanta.cognitive.daemon`
+```python
+class SubconsciousDaemon:
+    def start(self) -> None: ...
+    def stop(self) -> None: ...
+    def status(self) -> dict: ...
+    def inspect(self) -> list[dict]: ...
+    def interrupt_immediate(self) -> None: ...
+```
+
+---
 
 ## Code Layout
-- `quanta/torch/brain.py`: Core biophysical classes (`CSFShieldedEnvironment`, `CSFShieldedResonantLayer`, integration methods)
-- `quanta/torch/__init__.py`: Public exports
-- `docs/theory/csf_quantum_shielding.md`: Comprehensive theory monograph
-- `docs/theory/quantum_brain_frontiers.md`: Monograph expansion with Theorem 8
-- `scripts/benchmark_csf_shielding.py`: Publication benchmark & plotting script
-- `docs/paper/figures/fig9_csf_biophysical_shielding.png`: 300 DPI 4-panel publication figure
-- `docs/paper/benchmark_academic_data.json`: Benchmark telemetry data
-- `docs/paper/biomorphic_quantum_resonance.tex`: Academic LaTeX paper Section 7
-- `tests/test_csf_shielding.py`: Test suite across Tiers 1–5
+
+```
+quanta/
+├── __init__.py
+├── cli.py                               # CLI entry points (quanta dream ...)
+├── cognitive/
+│   ├── __init__.py                      # Export all subconscious public APIs
+│   ├── memory.py                        # CognitiveMemoryManager (existing)
+│   ├── arbiter.py                       # QuantumDecisionArbiter (existing)
+│   ├── middleware.py                    # QuantaCognitiveMiddleware (existing)
+│   ├── darwin_idle.py                   # Mach QoS, E-core, thermal, CPU quiescence
+│   ├── poisson_trigger.py               # Stochastic Poisson spindle scheduler
+│   ├── tom_analyzer.py                  # Theory of Mind & Dream Seed extractor
+│   ├── mind_wander.py                   # Isolated headless dialectic & anti-rumination
+│   ├── consolidation.py                 # SWR memory consolidation into state JSON
+│   └── daemon.py                        # Background daemon manager & IPC preemption
+docs/
+└── theory/
+    └── subconscious_mind_wandering_and_dmn.md  # Comprehensive theoretical monograph
+scripts/
+└── hooks/
+    └── quanta_subconscious_hook.py      # PreInvocation subconscious insight delivery hook
+tests/
+├── test_darwin_idle.py                  # Darwin Mach QoS & quiescence tests
+├── test_poisson_trigger.py              # Poisson rate, renewal sampling, KS tests
+├── test_tom_analyzer.py                 # Theory of Mind heuristics tests
+├── test_mind_wander.py                  # Headless dialectic & anti-rumination tests
+├── test_consolidation.py                # SWR memory consolidation & preemption tests
+├── test_subconscious_daemon.py          # Daemon start/stop/status CLI & IPC tests
+└── test_e2e_subconscious.py             # Full end-to-end integration test
+```

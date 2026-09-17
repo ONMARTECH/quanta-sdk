@@ -8,10 +8,9 @@ Addresses 3 Peer-Reviewer & Devil's Advocate Objections:
 
 from __future__ import annotations
 
-import json
 import math
+
 import torch
-import torch.nn.functional as F
 
 from quanta.cognitive.arbiter import QuantumDecisionArbiter
 
@@ -20,7 +19,7 @@ def semantic_text_to_statevector(text: str, vocab: list[str], dim: int = 16) -> 
     """Semantic n-gram / token frequency projection into complex Hilbert space C^dim."""
     tokens = text.lower().replace(",", " ").replace(".", " ").split()
     counts = [tokens.count(w) for w in vocab]
-    
+
     # Map token frequencies to angles theta in [0, 2*pi]
     reals = []
     imags = []
@@ -30,15 +29,17 @@ def semantic_text_to_statevector(text: str, vocab: list[str], dim: int = 16) -> 
         theta = (c1 * 1.618 + c2 * 0.618) % (2 * math.pi)
         reals.append(math.cos(theta))
         imags.append(math.sin(theta))
-        
-    c_vec = torch.complex(torch.tensor(reals, dtype=torch.float32), torch.tensor(imags, dtype=torch.float32))
+
+    real_t = torch.tensor(reals, dtype=torch.float32)
+    imag_t = torch.tensor(imags, dtype=torch.float32)
+    c_vec = torch.complex(real_t, imag_t)
     norm = torch.linalg.norm(c_vec)
     return c_vec / norm if norm > 1e-12 else c_vec
 
 
 def test_adversarial_plasticity_and_anti_zeno():
     """Test 1: Proves the system is NOT rigidly stubborn (anti-thesis defense).
-    
+
     When requirements suddenly invert from 'Ultra-low latency' to 'Zero cost SQL only',
     does Anti-Zeno tunneling allow the arbiter to pivot dynamically?
     """
@@ -56,7 +57,8 @@ def test_adversarial_plasticity_and_anti_zeno():
     p1_winner = res_1["recommended_option"]
     p1_zeno = res_1["zeno_pinning_factor"]
 
-    # Phase 2: Sudden Strategic Pivot (Inversion): 'Only simple SQL, budget is zero, latency doesn't matter'
+    # Phase 2: Sudden Strategic Pivot (Inversion):
+    # 'Only simple SQL, budget is zero, latency doesn't matter'
     # Trigger Anti-Zeno Tunneling (exploration=0.85) to escape the old basin of attraction
     goal_2 = "Ekip sadece standart SQL biliyor, sıfır ek altyapı maliyeti ve gecikme önemsiz"
     res_2 = arbiter.arbitrate(goal=goal_2, options=options, exploration_drive=0.85)
@@ -83,27 +85,29 @@ if __name__ == "__main__":
     print("=" * 80)
     print("HAKEM HEYETİ & ŞEYTANIN AVUKATI SAVUNMA TESTİ (ADVERSARIAL BENCHMARK)")
     print("=" * 80)
-    
+
     res = test_adversarial_plasticity_and_anti_zeno()
-    
+
     print("\n[AŞAMA 1: Orijinal Hedef (Düşük Gecikme & Zeno Kitleme)]")
     print(f" • Kazanan Seçenek:    {res['phase_1_winner']}")
     print(f" • Zeno Kitleme (P):   {res['phase_1_zeno']:.4f} (Hedefe sadık)")
-    
+
     print("\n[AŞAMA 2: Ani Hedef Değişimi & Anti-Zeno Tünellemesi (Yüksek Keşif)]")
-    print(f" • Yeni Hedef:         Ekip sadece SQL biliyor, sıfır bütçe, gecikme önemsiz")
-    print(f" • Anti-Zeno Geri Tepmesi: {res['phase_2_anti_zeno_kickback']:.4f} (Eski karardan tünelleme ile çıkış)")
+    print(" • Yeni Hedef:         Ekip sadece SQL biliyor, sıfır bütçe, gecikme önemsiz")
+    kickback = res["phase_2_anti_zeno_kickback"]
+    print(f" • Anti-Zeno Geri Tepmesi: {kickback:.4f} (Eski karardan tünelleme ile çıkış)")
     print(f" • Geçiş Seçeneği:     {res['phase_2_exploratory_winner']}")
-    
+
     print("\n[AŞAMA 3: Yeni Hedefe Konsolidasyon (Yeni Zeno Kitlemesi)]")
     print(f" • Yeni Kazanan Seçenek: {res['phase_3_consolidated_winner']}")
     print(f" • Yeni Zeno Kitleme:    {res['phase_3_zeno']:.4f}")
-    
+
     print("\n[HAKEM HEYETİ KARARI]:")
     if res["plasticity_confirmed"]:
         print(" ✅ SAVUNMA BAŞARILI: Sistem kör bir inatçılık sergilemiyor.")
         print("    Anti-Zeno tünellemesi sayesinde şartlar değiştiğinde eski kararı terk edip")
-        print(f"    yeni hedefe ({res['phase_3_consolidated_winner']}) dinamik olarak adapte olabiliyor.")
+        winner_p3 = res["phase_3_consolidated_winner"]
+        print(f"    yeni hedefe ({winner_p3}) dinamik olarak adapte olabiliyor.")
     else:
         print(" ❌ SAVUNMA BAŞARISIZ: Sistem eski karara aşırı kilitlendi (Over-pinned).")
     print("=" * 80)
