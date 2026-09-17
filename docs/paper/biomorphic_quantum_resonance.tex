@@ -80,13 +80,14 @@ In Turkish quantum informatics, this holistic mechanism is formulated as:
     \textbf{``Her yerden ayn\i\ anda \i\c{s}\i ldayan kuantum dinamikleri''} \\
     \textit{(Continuous quantum dynamics resonating from every node simultaneously).}
 \end{quote}
+Departing from the discrete gate paradigm, our architecture formalizes continuous-time quantum graph walks~\cite{farhi1998}, where many-body Hamiltonian dynamics govern concurrent, non-sequential state evolution across interconnected cognitive assemblies.
 
 The architecture embeds distinct cognitive modules grounded in biological systems neuroscience:
 \begin{itemize}
-    \item \textbf{Bipartite Cerebral Topology}: An analytical Left hemisphere characterized by 1D linear Ising chain dynamics and local bias fields, coupled to a holistic Right hemisphere characterized by an all-to-all isotropic $XY$ spin-exchange network, linked through a parameterized Corpus Callosum tunneling bridge.
-    \item \textbf{Quad-Neurotransmitter Modulation}: A continuous biochemical signaling layer regulating Dopamine (transverse tunneling field $\Omega_X$), Norepinephrine (arousal time scale $t_{\text{eff}}$), Serotonin (phase coherence stabilization), and Acetylcholine (wake sensory gating versus offline sleep uncoupling).
-    \item \textbf{Hemodynamic BOLD Metabolic Constraint}: A strictly conserved blood-oxygen-level-dependent resource constraint $M_{\text{left}}(x) + M_{\text{right}}(x) \equiv 2.0$, dynamically allocating metabolic energy between analytical categorization and associative intuition.
-    \item \textbf{Quantum REM Sleep}: An offline unitary annealing procedure wherein sensory-gated ($x \equiv 0$) closed-system evolution drives stored memory representations into mutually orthogonal Hilbert subspaces, eliminating catastrophic forgetting ($\mathcal{R} \ge 95\%$).
+    \item \textbf{Bipartite Cerebral Topology}: An analytical Left hemisphere characterized by 1D linear Ising chain dynamics and local bias fields, coupled to a holistic Right hemisphere characterized by an all-to-all isotropic $XY$ spin-exchange network, linked through a parameterized Corpus Callosum tunneling bridge, capturing the seminal split-brain functional lateralization discovered by Sperry~\cite{sperry1968} and Gazzaniga~\cite{gazzaniga2005}.
+    \item \textbf{Quad-Neurotransmitter Modulation}: A continuous biochemical signaling layer regulating Dopamine (transverse tunneling field $\Omega_X$, modeling reward prediction and exploratory switching~\cite{schultz1998}), Norepinephrine (arousal time scale $t_{\text{eff}}$, modeling locus coeruleus adaptive gain control~\cite{astonjones2005}), Serotonin (phase coherence stabilization), and Acetylcholine (wake sensory gating versus offline sleep uncoupling).
+    \item \textbf{Hemodynamic BOLD Metabolic Constraint}: A strictly conserved blood-oxygen-level-dependent resource constraint $M_{\text{left}}(x) + M_{\text{right}}(x) \equiv 2.0$, dynamically allocating metabolic energy between analytical categorization and associative intuition, grounded in functional magnetic resonance BOLD contrast physics~\cite{ogawa1990} and default mode network metabolic homeostasis~\cite{raichle2001}.
+    \item \textbf{Quantum REM Sleep}: An offline unitary annealing procedure wherein sensory-gated ($x \equiv 0$) closed-system evolution drives stored memory representations into mutually orthogonal Hilbert subspaces, protecting engram stability within Decoherence-Free Subspaces (DFS)~\cite{lidar1998} and eliminating catastrophic forgetting ($\mathcal{R} \ge 95\%$).
     \item \textbf{Quantum Zeno \& Anti-Zeno Attention}: A dynamic measurement feedback mechanism balancing attentional focus pinning against dopaminergic exploratory tunneling and constructive phase kickback.
 \end{itemize}
 
@@ -726,7 +727,7 @@ Let $H(x, \theta) = H_{XY}(J) + H_Z(x, h, W) + H_X(\omega)$ be the bipartite Ham
     \begin{equation}
         q \equiv [P(A_Y B_Y) + P(A_N B_N)] - [P(B_Y A_Y) + P(B_N A_N)] \equiv 0
     \end{equation}
-    identically for all inputs $x$, parameters $\theta$, and times $t$, matching empirical cognitive findings (Wang et al., 2014)~\cite{wang2013}.
+    identically for all inputs $x$, parameters $\theta$, and times $t$, matching empirical cognitive findings (Busemeyer \& Bruza, 2012; Wang et al., 2014)~\cite{busemeyer2012,wang2013}.
     \item \textbf{Exponential Parameter Complexity Separation}: Any classical representation learning architecture (MLP, Transformer, SimCLR, Barlow Twins) operating via symmetric vector kernels has $\text{CF}_{\text{classical}} \equiv 0$. To approximate an empirical model $\mathcal{E}$ with $\text{CF} \ge \delta > 0$ across $M$ incompatible contexts with error $\epsilon < \delta / 2$, a classical network requires:
     \begin{equation}
         \mathcal{C}_{\text{classical}} = \Omega\left( 2^M \right) \text{ parameters}
@@ -790,7 +791,7 @@ The computational pipeline of the Biomorphic Quantum Brain is implemented in PyT
 \subsection{Daleckii-Krein Fr\'echet Derivatives with Sinc Parameterization}
 \label{subsec:daleckii_krein}
 
-In continuous quantum neural layers, parameter updates require differentiating the matrix exponential $U(t) = \exp(-i H(\theta) t)$. Standard autograd cannot apply scalar chain rules because $[H(\theta), \frac{\partial H}{\partial \theta}] \neq 0$.
+Whereas discrete variational quantum circuits evaluate gradients via the analytical parameter-shift rule~\cite{mitarai2018,schuld2019}, continuous quantum neural layers require differentiating the matrix exponential $U(t) = \exp(-i H(\theta) t)$. Standard autograd cannot apply scalar chain rules because $[H(\theta), \frac{\partial H}{\partial \theta}] \neq 0$.
 
 Duhamel's integral formula~\cite{wilcox1967} expresses the exact derivative as:
 \begin{equation}
@@ -1105,7 +1106,7 @@ Under environmental scattering with ambient thermal water molecules ($H_2O$, dip
 Furthermore, long-range electrostatic dipole-dipole fluctuations between adjacent protein conformations dephase on timescales of $\tau_{\text{dec}}^{\text{dipole}} \approx 10^{-19} - 10^{-20}\,\text{s}$. Because the fastest physiological events in the central nervous system (axonal action potential propagation and voltage-gated ion channel opening) require $10^{-5} - 10^{-3}\,\text{s}$, bare electronic charges and dipolar conformations dephase $10^{10}$ to $10^{16}$ times faster than any neural spike, invalidating models based on bare electronic or tubulin conformational superpositions.
 
 \paragraph{The Posner Molecule Shield: $^{31}\text{P}$ Nuclear Spins.}
-While Tegmark's calculation is fatal for electronic dipoles, it does not apply to nuclear spins. In Matthew Fisher's (2015)~\cite{fisher2015} biophysical formulation, physical quantum information is stored in phosphorus-31 ($^{31}\text{P}$) nuclear spins encapsulated within amorphous calcium phosphate nanoclusters known as Posner molecules ($\text{Ca}_9(\text{PO}_4)_6$):
+While Tegmark's calculation is fatal for electronic dipoles, it does not apply to nuclear spins. In Matthew Fisher's (2015)~\cite{fisher2015} biophysical formulation, physical quantum information is stored in phosphorus-31 ($^{31}\text{P}$) nuclear spins encapsulated within amorphous calcium phosphate nanoclusters known as Posner molecules ($\text{Ca}_9(\text{PO}_4)_6$, first identified by Posner and Betts~\cite{posner1975}):
 \begin{enumerate}
     \item \textbf{Identical Electric Quadrupole Vanishing ($Q \equiv 0$)}: Naturally occurring $^{40}\text{Ca}$ ($96.9\%$ abundance) and $^{16}\text{O}$ ($99.8\%$ abundance) possess nuclear spin $I = 0$, rendering them completely magnetically and electrically inert. Phosphorus-31 has nuclear spin $I = 1/2$. For any spin-$1/2$ nucleus, the electric quadrupole moment vanishes identically:
     \begin{equation}
@@ -1164,7 +1165,7 @@ Theorem~\ref{thm:contextuality_separation} establishes four definitive mathemati
 \begin{enumerate}
     \item \textbf{Sheaf-Theoretic Contextuality}: Classical representations operate in commutative Euclidean spaces where all observables commute ($[f, g] = 0$). By the Fine-Abramsky-Brandenburger theorem, classical representations are strictly non-contextual ($\text{CF} \equiv 0.0$) and bounded by $|S| \le 2.0$. In \texttt{quanta.torch.brain}, non-commuting Pauli operators ($[\sigma_j^z, \sigma_j^x] \ne 0$) drive the Bell-CHSH correlation parameter to Tsirelson's bound $S \to 2\sqrt{2} \approx 2.8284$ ($\text{CF} = 0.4142$).
     \item \textbf{CSW Exclusivity Graph Lov\'asz Theta Bound}: For any exclusivity graph $G$, classical probability models are upper-bounded by the independence number $\alpha(G)$. In \texttt{quanta.torch.brain}, quantum states saturate the Lov\'asz theta invariant $\vartheta(G) > \alpha(G)$ (e.g., $\vartheta(C_5) = \sqrt{5} \approx 2.236 > 2.0 = \alpha(C_5)$).
-    \item \textbf{Invariance of the Quantum Question Order Equality}: Human cognitive order effects universally satisfy the QQO equality $q \equiv 0$ ($R^2 > 0.99$)~\cite{wang2013}. In \texttt{quanta.torch.brain}, $q \equiv 0$ is a strict geometric invariant of the projection lattice ($T_A \equiv T_B$), holding universally across all parameters without fine-tuning. Classical networks can only approximate $q \approx 0$ by fitting specific training distributions, failing under out-of-distribution transfer.
+    \item \textbf{Invariance of the Quantum Question Order Equality}: Human cognitive order effects universally satisfy the QQO equality $q \equiv 0$ ($R^2 > 0.99$)~\cite{busemeyer2012,wang2013}. In \texttt{quanta.torch.brain}, $q \equiv 0$ is a strict geometric invariant of the projection lattice ($T_A \equiv T_B$), holding universally across all parameters without fine-tuning. Classical networks can only approximate $q \approx 0$ by fitting specific training distributions, failing under out-of-distribution transfer.
     \item \textbf{Exponential Parameter Complexity Separation}: Across $M$ incompatible measurement contexts, classical models require $\Omega(2^M)$ parameters to parameterize the facet-defining Bell inequalities of the correlation polytope. \texttt{quanta.torch.brain} generates all contextual statistics from a single graph Hamiltonian with only $\mathcal{O}(N^2)$ parameters, providing an exponential parameter compression $\frac{\Omega(2^M)}{\mathcal{O}(N^2)} \to \infty$.
     \item \textbf{Single-Step Destructive Phase Cancellation}: Quantum wavepacket superposition evaluates multi-path interference simultaneously, achieving $+98\%$ constructive consensus amplification and destructive conflict nulling ($P_{\text{quantum}} = 0.0003$) in a single continuous unitary step, bypassing classical iterative gradient search.
 \end{enumerate}
@@ -1208,7 +1209,7 @@ The human brain does not maintain a monolithic 100-qubit entangled cat-state; ra
 Entanglement entropy does not scale with brain volume, but with the surface area of modular boundaries!
 
 \paragraph{Matrix Product States (MPS) Compression.}
-Because the state satisfies the Area Law, it factorizes into a Matrix Product State (MPS) or Tensor Train (TT):
+Because the state satisfies the Area Law~\cite{hastings2007}, it factorizes into a Matrix Product State (MPS)~\cite{white1992} or Tensor Train (TT):
 \begin{equation}
     |\psi\rangle = \sum_{s_1, s_2, \dots, s_N} A_1^{s_1} A_2^{s_2} \dots A_N^{s_N} |s_1 s_2 \dots s_N\rangle
 \end{equation}
@@ -1777,6 +1778,71 @@ G.~Lindblad,
 V.~Gorini, A.~Kossakowski, and E.~C.~G.~Sudarshan,
 ``Completely positive dynamical semigroups of N-level systems,''
 \textit{Journal of Mathematical Physics}, vol.~17, no.~5, pp.~821--825, 1976.
+
+\bibitem{sperry1968}
+R.~W.~Sperry,
+``Hemisphere deconnection and unity in conscious awareness,''
+\textit{American Psychologist}, vol.~23, no.~10, pp.~723--733, 1968.
+
+\bibitem{gazzaniga2005}
+M.~S.~Gazzaniga,
+``Forty-five years of split-brain research and still going strong,''
+\textit{Nature Reviews Neuroscience}, vol.~6, no.~8, pp.~653--659, 2005.
+
+\bibitem{schultz1998}
+W.~Schultz,
+``Predictive reward signal of dopamine neurons,''
+\textit{Journal of Neurophysiology}, vol.~80, no.~1, pp.~1--27, 1998.
+
+\bibitem{astonjones2005}
+G.~Aston-Jones and J.~D.~Cohen,
+``An integrative theory of locus coeruleus-norepinephrine function: adaptive gain and optimal performance,''
+\textit{Annual Review of Neuroscience}, vol.~28, pp.~403--450, 2005.
+
+\bibitem{ogawa1990}
+S.~Ogawa, T.~M.~Lee, A.~R.~Kay, and D.~W.~Tank,
+``Brain magnetic resonance imaging with contrast dependent on blood oxygenation,''
+\textit{Proceedings of the National Academy of Sciences}, vol.~87, no.~24, pp.~9868--9872, 1990.
+
+\bibitem{raichle2001}
+M.~E.~Raichle, A.~M.~MacLeod, A.~Z.~Snyder, W.~J.~Powers, D.~A.~Gusnard, and G.~L.~Shulman,
+``A default mode of brain function,''
+\textit{Proceedings of the National Academy of Sciences}, vol.~98, no.~2, pp.~676--682, 2001.
+
+\bibitem{farhi1998}
+E.~Farhi and S.~Gutmann,
+``Quantum computation and decision trees,''
+\textit{Physical Review A}, vol.~58, no.~2, pp.~915--928, 1998.
+
+\bibitem{lidar1998}
+D.~A.~Lidar, I.~L.~Chuang, and K.~B.~Whaley,
+``Decoherence-free subspaces for quantum computation,''
+\textit{Physical Review Letters}, vol.~81, no.~12, pp.~2594--2597, 1998.
+
+\bibitem{mitarai2018}
+K.~Mitarai, M.~Negoro, M.~Kitagawa, and K.~Fujii,
+``Quantum circuit learning,''
+\textit{Physical Review A}, vol.~98, no.~3, p.~032309, 2018.
+
+\bibitem{schuld2019}
+M.~Schuld, V.~Bergholm, C.~Gogolin, J.~Izaac, and N.~Killoran,
+``Evaluating analytic gradients on quantum hardware,''
+\textit{Physical Review A}, vol.~99, no.~3, p.~032331, 2019.
+
+\bibitem{busemeyer2012}
+J.~R.~Busemeyer and P.~D.~Bruza,
+\textit{Quantum Models of Cognition and Decision},
+Cambridge University Press, Cambridge, UK, 2012.
+
+\bibitem{white1992}
+S.~R.~White,
+``Density matrix formulation for quantum renormalization groups,''
+\textit{Physical Review Letters}, vol.~69, no.~19, pp.~2863--2866, 1992.
+
+\bibitem{posner1975}
+A.~S.~Posner and F.~Betts,
+``Synthetic amorphous calcium phosphate and its relation to bone mineral structure,''
+\textit{Accounts of Chemical Research}, vol.~8, no.~8, pp.~273--281, 1975.
 
 \end{thebibliography}
 
