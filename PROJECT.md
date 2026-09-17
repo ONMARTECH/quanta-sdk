@@ -1,107 +1,105 @@
-# Project: Quanta SDK Pillar 2 (`quanta.torch`)
+# Project: CSF / ISF Biophysical Quantum Shielding Framework (`quanta.torch.brain`)
 
 ## Architecture
-Pillar 2 introduces a production-ready, autograd-differentiable PyTorch native quantum extension to Quanta SDK. It unifies standard discrete variational quantum circuits with brain-inspired continuous-time quantum resonance, non-local quantum coherence, and simultaneous non-sequential state evolution grounded in foundational physics (Einstein EPR non-locality, Continuous-Time Quantum Walks) and modern quantum neuroscience (Penrose-Hameroff Orch-OR, Fisher Posner molecules, endogenous biophotons).
-
-```
-                     PyTorch User Application / nn.Sequential
-                                        │
-             ┌──────────────────────────┴──────────────────────────┐
-             ▼                                                     ▼
-  quanta.torch.QuantumLayer                        quanta.torch.ContinuousResonantLayer
-  (Discrete Variational Circuit)                  (Continuous-Time Graph Hamiltonian Walk)
-             │                                                     │
-             ▼                                                     ▼
- _QuantumLayerFunction (autograd)                  _ContinuousResonantFunction (autograd)
-  - Forward: Batch state simulation                 - Forward: exp(-i H(x,θ) t) |ψ0>
-  - Backward: Analytical Parameter-Shift            - Backward: Matrix exp Fréchet / Adjoint ODE
-             │                                                     │
-             └──────────────────────────┬──────────────────────────┘
-                                        ▼
-                            quanta.torch.ops & Backends
-              CPU (StateVector) ── Apple Silicon (MLX / MPS GPU)
-```
+The Cerebrospinal Fluid (CSF / Beyin Omurilik Sıvısı - BOS) and Interstitial Fluid (ISF) framework models the macroscopic biophysical cryostat/shield surrounding the brain's quantum computational minicolumns.
+The architecture comprises:
+1. **Biophysical Environment (`CSFShieldedEnvironment`)**:
+   Differentiable PyTorch module modeling the 5 physical shielding mechanisms:
+   - Paramagnetic ion exclusion via BBB/BCSFB ($Fe^{3+}, Cu^{2+}, Mn^{2+} < 0.5\,\mu\text{M}$ vs plasma $25-55\,\mu\text{M}$).
+   - Debye electrostatic screening ($\epsilon_r \approx 78.4, I \approx 0.15\,\text{M}, \lambda_D \approx 0.79\,\text{nm}$).
+   - Hydrodynamic BPP motional narrowing ($\eta \approx 0.8\,\text{mPa}\cdot\text{s}, \tau_R \approx 86\,\text{ps}, T_2 \sim 10^4\,\text{s}$).
+   - Acoustic/phonon damping & buoyant suspension ($1400\,\text{g} \to 50\,\text{g}, 96.5\%$ mass reduction).
+   - Glymphatic clearance & entropic bath reset (astrocytic AQP4 convective flush restoring baseline $\Gamma_0$).
+   - Clinical state simulations: `normal`, `meningitis`, `hydrocephalus`, `lumbar_puncture_recovery`, `sleep_deprived`, `rem_sleep`.
+2. **Shielded Resonant Layer (`CSFShieldedResonantLayer`)**:
+   Drop-in PyTorch neural layer combining continuous-time bipartite biomorphic Hamiltonian resonance ($H_{\text{total}} = H_L + H_R + H_{\text{callosum}}$) with CSF-shielded Lindblad dephasing attenuation factor $\kappa_{\text{CSF}} \le 10^{-3}$ and effective dephasing $\Gamma_{\text{eff}} = \kappa_{\text{CSF}} \Gamma_{\text{bare}}$.
+3. **Interoperability Hooks**:
+   - `BiomorphicResonantBrain`: optional integration of `CSFShieldedEnvironment`.
+   - `NoisyHippocampalBuffer`: attenuation of phase diffusion $\sigma_\phi$ and amplitude noise $\sigma_{\text{noise}}$ by $\sqrt{\kappa_{\text{CSF}}}$ and Ebbinghaus memory decay rate by $\kappa_{\text{CSF}}$.
+   - `QuantumREMSleep`: triggering nocturnal convective glymphatic flush mode resetting environmental entropy.
+4. **Empirical Benchmarking & Figure 9**:
+   - `scripts/benchmark_csf_shielding.py` producing 300 DPI 4-panel publication Figure 9 (`docs/paper/figures/fig9_csf_biophysical_shielding.png`) and telemetry in `docs/paper/benchmark_academic_data.json`.
+5. **Academic Manuscript Integration**:
+   - Section 7 in `docs/paper/biomorphic_quantum_resonance.tex` formalizing Theorem 8, Corollaries 8.1-8.3, and embedding Figure 9.
+6. **Testing & Quality Assurance**:
+   - `tests/test_csf_shielding.py` validating 5 tiers (32+ tests), autograd gradcheck, MPS device support, 0 ruff errors, 0 mypy errors.
 
 ## Feature Inventory
 | # | Feature | Description | Milestone | Source |
-|---|---|---|---|---|
-| 1 | Interdisciplinary Theoretical Whitepaper | Rigorous whitepaper in `docs/theory/continuous_quantum_neural_dynamics.md` synthesizing EPR, CTQW, open quantum systems, Orch-OR, Posner molecules, biophotons, and holistic resonance. | M1 | R1, spec_miner |
-| 2 | Analytical Gradient Derivations & Proofs | Formal mathematical proofs for discrete parameter-shift rule, Ehrenfest time derivative, Duhamel/Wilcox Fréchet derivative, and Daleckii-Krein matrix spectral formula. | M1 | R1, spec_miner |
-| 3 | Environment Setup & PyTorch Packaging | Add `torch` optional dependency to `pyproject.toml`, fix mypy Python 3.12 compatibility, install PyTorch 2.14 in `.venv`. | M4 | R2, explorer_env |
-| 4 | QuantumLayer Module | `quanta.torch.QuantumLayer(nn.Module)` accepting batch inputs $(B, D_{\text{in}})$, variational weights $\theta$, and returning observable expectations $(B, D_{\text{out}})$. | M2 | R2, explorer_codebase |
-| 5 | Custom PyTorch Autograd Function for QuantumLayer | `_QuantumLayerFunction(torch.autograd.Function)` executing batch forward circuit simulation and exact backward pass via analytical Parameter-Shift Rule for both weights and inputs. | M2 | R2, spec_miner |
-| 6 | Quantum Native Operations & Pauli Utilities | `quanta.torch.ops` implementing Pauli tensor products, batch Hamiltonian construction, expectation value evaluations, and device transfers. | M2 | R2, explorer_codebase |
-| 7 | ContinuousResonantLayer Module | `quanta.torch.ContinuousResonantLayer(nn.Module)` with graph Hamiltonian $H(x, \theta) = \sum J_{jk} (\sigma_j^x \sigma_k^x + \sigma_j^y \sigma_k^y) + \sum (h_j + W_j x_j) \sigma_j^z + \sum \omega_j \sigma_j^x$. | M3 | R3, spec_miner |
-| 8 | Continuous Unitary State Evolution | Unitary matrix exponential state evolution $|\psi(t)\rangle = \exp(-i H(x, \theta) t) |\psi_0\rangle$ with unconditional norm preservation $\sum_i |a_i|^2 = 1.0 \pm 10^{-6}$. | M3 | R3, spec_miner |
-| 9 | Simultaneous Multi-Observable Readout | Concurrent expectation readouts across all qubits ($\langle Z_j \rangle, \langle X_j \rangle$) modeling all-at-once holistic network resonance without sequential collapse. | M3 | R3, R1, spec_miner |
-| 10 | Continuous Autograd Backward Engine | Analytical gradients with respect to coupling $J$, bias $h$, projection $W$, drive $\omega$, and time $t$ via matrix exponential spectral decomposition / adjoint state propagation. | M3 | R3, spec_miner |
-| 11 | Top-Level Quanta Namespace Export | Expose `quanta.torch` conditionally in `quanta/__init__.py` when PyTorch is installed without breaking non-PyTorch environments. | M4 | R2, AC-PKG-01 |
-| 12 | Apple Silicon Metal & MPS Acceleration Bridge | Ensure seamless execution and device transfer across CPU, Apple MPS (`torch.device("mps")`), and Quanta MLX Metal acceleration. | M4 | R2, R4, explorer_env |
-| 13 | E2E Testing Suite (Tiers 1-4) | Systematic 4-tier test suite in `tests/test_torch_layer.py` and `tests/test_torch_continuous.py` covering features, boundary values, pairwise combinations, and real-world learning tasks. | M5 / Test Track | R4, test_infra |
-| 14 | Adversarial Coverage Hardening (Tier 5) | White-box adversarial test suite probing extreme limits, degenerate spectra, zero couplings, and gradient edge cases reaching $\ge 90\%$ coverage. | M5 | R4, AC-QA-01 |
+|---|---------|-------------|-----------|--------|
+| 1 | Theory Monograph & Theorem 8 | Dedicated monograph `docs/theory/csf_quantum_shielding.md`, Theorem 8 proof, Corollaries 8.1–8.3, expansion of `quantum_brain_frontiers.md` | M1 | Survey (Spec Miner) |
+| 2 | `CSFShieldedEnvironment` Module | Differentiable PyTorch module in `quanta/torch/brain.py` with physical parameters, analytical $\lambda_D, \tau_R, \kappa_{\text{CSF}}$, clinical condition switching, and autograd/MPS support | M2 | Survey (Code Explorer) |
+| 3 | `CSFShieldedResonantLayer` Module | Continuous-time Hamiltonian graph resonance coupled with shielded Lindblad dephasing attenuation in `quanta/torch/brain.py` | M2 | Survey (Code Explorer) |
+| 4 | Interoperability Hooks & Top-Level Exports | Hooking `CSFShieldedEnvironment` into `BiomorphicResonantBrain`, `NoisyHippocampalBuffer`, and `QuantumREMSleep`; exporting in `quanta/torch/__init__.py` | M2 | Survey (Code Explorer) |
+| 5 | Benchmark Script & Publication Fig 9 | `scripts/benchmark_csf_shielding.py` (< 5s runtime, deterministic seed) generating 300 DPI 4-panel Figure 9 and updating `benchmark_academic_data.json` | M3 | Survey (Bench Explorer) |
+| 6 | Academic LaTeX Manuscript Section 7 | Authoring Section 7 in `docs/paper/biomorphic_quantum_resonance.tex`, embedding Figure 9 with comprehensive caption, and integrating Theorem 8 & medical citations | M4 | Survey (Spec Miner) |
+| 7 | Opaque-Box E2E Test Suite & Test Infra | Comprehensive test suite in `tests/test_csf_shielding.py` covering Tiers 1–4 (>30 test cases) and publishing `TEST_READY.md` | M5 | Survey (Bench Explorer) |
+| 8 | Adversarial Coverage Hardening & Static Analysis | White-box stress-testing (Tier 5), MPS/CPU validation, numerical gradcheck, 0 ruff lint errors, 0 mypy type errors | M5 | Survey (Bench Explorer) |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Interdisciplinary Theoretical Foundation | `docs/theory/continuous_quantum_neural_dynamics.md` | None | DONE |
-| M2 | PyTorch Native Quantum Layer & Autograd Shift Rule | `quanta/torch/layer.py`, `quanta/torch/ops.py`, `quanta/torch/__init__.py` | M1 | DONE |
-| M3 | Continuous Quantum Resonance & Graph Dynamics | `quanta/torch/continuous.py`, Hamiltonian graph walks, multi-observable readout | M2 | DONE |
-| M4 | Packaging, Top-level Namespace Integration & Metal Acceleration | `quanta/__init__.py`, `pyproject.toml`, Metal/MPS acceleration bridge | M2, M3 | DONE |
-| M5 | E2E Test Suite Pass (Tiers 1-4) & Adversarial Coverage Hardening (Tier 5) | Pass 100% of test suite, 0 ruff errors, 0 mypy errors, $\ge 90\%$ coverage | M1, M2, M3, M4, Test Track | DONE |
+| M1 | Theory Monograph & Theorem 8 | `docs/theory/csf_quantum_shielding.md`, `docs/theory/quantum_brain_frontiers.md` | none | DONE |
+| M2 | PyTorch Architecture Implementation | `quanta/torch/brain.py`, `quanta/torch/__init__.py` | M1 | DONE |
+| M3 | Empirical Benchmarking & Publication Fig 9 | `scripts/benchmark_csf_shielding.py`, `docs/paper/figures/fig9_csf_biophysical_shielding.png`, `docs/paper/benchmark_academic_data.json` | M2 | DONE |
+| M4 | Academic Manuscript LaTeX Section 7 | `docs/paper/biomorphic_quantum_resonance.tex` | M1, M3 | DONE |
+| M5 | E2E Testing, Adversarial Hardening & Quality Gate | `tests/test_csf_shielding.py`, ruff, mypy, pytest | M2, M3 | DONE |
 
 ## Interface Contracts
-### `quanta.torch.QuantumLayer` ↔ PyTorch & Quanta Engine
-```python
-class QuantumLayer(torch.nn.Module):
-    def __init__(
-        self,
-        num_qubits: int,
-        circuit_fn: Callable[..., Any] | CircuitDefinition | str = "hardware_efficient",
-        num_layers: int = 1,
-        observables: list[str] | list[tuple[str, float]] | None = None,
-        diff_method: str = "parameter-shift",
-        device: str | torch.device | None = None,
-    ) -> None: ...
+### `CSFShieldedEnvironment`
+- Constructor:
+  ```python
+  CSFShieldedEnvironment(
+      ionic_strength: float = 0.155,       # M
+      dielectric_constant: float = 78.5,   # dimensionless
+      viscosity: float = 0.80,             # mPa*s
+      paramagnetic_concentration: float = 0.40, # uM
+      glymphatic_clearance_rate: float = 0.20,  # 1/h
+      temperature: float = 310.15,         # K (37 C)
+      learnable_params: bool = False,
+      device: Optional[Union[str, torch.device]] = None,
+      dtype: Optional[torch.dtype] = None,
+  )
+  ```
+- Methods:
+  - `compute_debye_length() -> torch.Tensor` ($\lambda_D = \sqrt{\frac{\epsilon_0 \epsilon_r k_B T}{2 N_A e^2 I}}$)
+  - `compute_rotational_correlation_time() -> torch.Tensor` ($\tau_R = \frac{4 \pi \eta r_H^3}{3 k_B T}$)
+  - `compute_attenuation_factor() -> torch.Tensor` ($\kappa_{\text{CSF}} = \kappa_{\text{elec}} \cdot \kappa_{\text{motional}} \cdot \kappa_{\text{para}} \cdot \kappa_{\text{glym}}$)
+  - `apply_shielding(lindblad_gamma: Union[float, torch.Tensor]) -> torch.Tensor` ($\Gamma_{\text{eff}} = \kappa_{\text{CSF}} \Gamma_{\text{bare}}$)
+  - `simulate_clinical_condition(condition_name: str) -> None` (`normal`, `meningitis`, `hydrocephalus`, `lumbar_puncture_recovery`, `sleep_deprived`, `rem_sleep`)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Input shape:  (B, D_in)
-        # Output shape: (B, D_out)
-        ...
-```
+### `CSFShieldedResonantLayer`
+- Constructor:
+  ```python
+  CSFShieldedResonantLayer(
+      n_qubits: int = 4,
+      dim_in: int = 4,
+      dim_out: int = 4,
+      interaction_time: float = 1.0,
+      env: Optional[CSFShieldedEnvironment] = None,
+      bare_dephasing_rate: float = 1.30,
+      device: Optional[Union[str, torch.device]] = None,
+      dtype: Optional[torch.dtype] = None,
+  )
+  ```
+- Forward:
+  `forward(x: torch.Tensor) -> torch.Tensor` where $x \in \mathbb{R}^{B \times \text{dim\_in}}$, returns expectation values $y \in [-1, 1]^{B \times \text{dim\_out}}$ damped by $\exp(-\Gamma_{\text{eff}} t / 2)$.
 
-### `quanta.torch.ContinuousResonantLayer` ↔ PyTorch & Network Hamiltonian
-```python
-class ContinuousResonantLayer(torch.nn.Module):
-    def __init__(
-        self,
-        num_nodes: int,
-        in_features: int,
-        coupling_graph: torch.Tensor | list[tuple[int, int]] | str = "complete",
-        observable_types: tuple[str, ...] = ("Z", "X"),
-        initial_state: str | torch.Tensor = "zero",
-        learnable_time: bool = True,
-        initial_time: float = 1.0,
-        device: str | torch.device | None = None,
-    ) -> None: ...
+### `NoisyHippocampalBuffer` Integration
+- `attach_csf_environment(env: CSFShieldedEnvironment) -> None`:
+  Attenuates stochastic Lindblad phase diffusion and Gaussian noise by $\sqrt{\kappa_{\text{CSF}}}$ and Ebbinghaus memory decay rate by $\kappa_{\text{CSF}}$.
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Input shape:  (B, in_features)
-        # Output shape: (B, num_nodes * len(observable_types))
-        ...
-```
+### `QuantumREMSleep` Integration
+- `trigger_glymphatic_reset(env: CSFShieldedEnvironment) -> None`:
+  Applies nocturnal convective AQP4 flush during sleep annealing, resetting environmental entropy and purging noise accumulation.
 
 ## Code Layout
-```
-quanta/
-├── torch/
-│   ├── __init__.py                  # Public exports: QuantumLayer, ContinuousResonantLayer
-│   ├── layer.py                     # QuantumLayer(nn.Module) & _QuantumLayerFunction(autograd.Function)
-│   ├── continuous.py                # ContinuousResonantLayer(nn.Module) & _ContinuousResonantFunction
-│   └── ops.py                       # Pauli matrices, Kronecker products, Hamiltonian builder, expectation
-tests/
-├── test_torch_layer.py              # Discrete QuantumLayer tests (Tiers 1-4)
-└── test_torch_continuous.py         # ContinuousResonantLayer tests (Tiers 1-4)
-docs/
-└── theory/
-    └── continuous_quantum_neural_dynamics.md # Interdisciplinary theoretical whitepaper (DONE)
-```
+- `quanta/torch/brain.py`: Core biophysical classes (`CSFShieldedEnvironment`, `CSFShieldedResonantLayer`, integration methods)
+- `quanta/torch/__init__.py`: Public exports
+- `docs/theory/csf_quantum_shielding.md`: Comprehensive theory monograph
+- `docs/theory/quantum_brain_frontiers.md`: Monograph expansion with Theorem 8
+- `scripts/benchmark_csf_shielding.py`: Publication benchmark & plotting script
+- `docs/paper/figures/fig9_csf_biophysical_shielding.png`: 300 DPI 4-panel publication figure
+- `docs/paper/benchmark_academic_data.json`: Benchmark telemetry data
+- `docs/paper/biomorphic_quantum_resonance.tex`: Academic LaTeX paper Section 7
+- `tests/test_csf_shielding.py`: Test suite across Tiers 1–5

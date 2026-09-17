@@ -32,10 +32,351 @@ from quanta.torch import ops
 
 __all__ = [
     "BiomorphicResonantBrain",
+    "CSFShieldedEnvironment",
+    "CSFShieldedResonantLayer",
     "NoisyHippocampalBuffer",
     "QuantumREMSleep",
     "QuantumZenoAttention",
 ]
+
+
+# Universal physical constants (SI) for CSF Biophysical Shielding (Theorem 8)
+EPSILON_0 = 8.8541878128e-12  # F/m (Vacuum permittivity)
+K_B = 1.380649e-23  # J/K (Boltzmann constant)
+E_CHARGE = 1.602176634e-19  # C (Elementary charge)
+N_AVOGADRO = 6.02214076e23  # mol^-1 (Avogadro constant)
+R_H_POSNER = 0.48e-9  # m (Posner molecule hydrated radius)
+
+
+class CSFShieldedEnvironment(nn.Module):
+    """Cerebrospinal Fluid (CSF) & Interstitial Fluid (ISF) Quantum Shielding Environment.
+
+    Models the 5 biophysical shielding mechanisms of the brain's fluid enclosure (Theorem 8):
+    1. Paramagnetic Ion Exclusion via Blood-CSF Barrier (BCSFB) and BBB filtering.
+    2. Debye-Hückel Electrostatic Screening of axonal action potentials and membrane dipoles.
+    3. Hydrodynamic BPP Motional Narrowing suppressing nuclear dipole-dipole dephasing.
+    4. Archimedean Buoyant Mass Reduction isolating circuits from gait shocks and phonons.
+    5. Glymphatic Convective Flushing via astrocytic AQP4 channels resetting entropic bath.
+
+    Args:
+        ionic_strength: CSF electrolyte ionic strength I in mol/L (default: 0.155 M).
+        dielectric_constant: Static relative permittivity eps_r (default: 78.5).
+        viscosity: Dynamic fluid viscosity eta in mPa*s (default: 0.80 mPa*s).
+        paramagnetic_concentration: Free transition metals [Para] in uM (default: 0.40 uM).
+        glymphatic_clearance_rate: AQP4 convective clearance rate G (default: 1.0).
+        temperature: Physiological temperature T in Kelvin (default: 310.15 K).
+        learnable_params: Whether CSF parameters are trainable nn.Parameters.
+        device: Target execution device ('cpu', 'mps', or torch.device).
+        dtype: Real floating-point precision (torch.float32 or torch.float64).
+    """
+
+    ionic_strength: torch.Tensor
+    dielectric_constant: torch.Tensor
+    viscosity: torch.Tensor
+    paramagnetic_concentration: torch.Tensor
+    glymphatic_clearance_rate: torch.Tensor
+    temperature: torch.Tensor
+    _dummy: torch.Tensor
+
+    def __init__(
+        self,
+        ionic_strength: float = 0.155,
+        dielectric_constant: float = 78.5,
+        viscosity: float = 0.80,
+        paramagnetic_concentration: float = 0.40,
+        glymphatic_clearance_rate: float = 1.0,
+        temperature: float = 310.15,
+        learnable_params: bool = False,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
+        super().__init__()
+
+        if ionic_strength <= 0.0:
+            raise ValueError(f"Ionic strength must be strictly positive, got {ionic_strength}")
+        if dielectric_constant <= 0.0:
+            raise ValueError(
+                f"Dielectric constant must be strictly positive, got {dielectric_constant}"
+            )
+        if viscosity <= 0.0:
+            raise ValueError(f"Viscosity must be strictly positive, got {viscosity}")
+        if paramagnetic_concentration < 0.0:
+            raise ValueError(
+                f"Paramagnetic concentration cannot be negative, got {paramagnetic_concentration}"
+            )
+        if glymphatic_clearance_rate < 0.0:
+            raise ValueError(
+                f"Glymphatic clearance rate cannot be negative, got {glymphatic_clearance_rate}"
+            )
+        if temperature <= 0.0:
+            raise ValueError(f"Temperature must be strictly positive, got {temperature}")
+
+        target_dev = ops.resolve_device(device) if device is not None else None
+        dev = target_dev if target_dev is not None else torch.device("cpu")
+        if (
+            target_dev is not None
+            and target_dev.type == "mps"
+            and dtype in (torch.float64, torch.complex128)
+        ):
+            raise ops.UnsupportedDtypeError(
+                f"Apple Silicon MPS does not support 64-bit precision ({dtype}). "
+                f"Use torch.float32 on MPS or switch execution to device='cpu'."
+            )
+
+        self.real_dtype = dtype if dtype is not None else torch.float32
+        self.learnable_params = learnable_params
+        self._clinical_condition = "normal"
+
+        self.register_buffer("_dummy", torch.empty(0, device=dev, dtype=self.real_dtype))
+
+        self._baseline_params = {
+            "ionic_strength": float(ionic_strength),
+            "dielectric_constant": float(dielectric_constant),
+            "viscosity": float(viscosity),
+            "paramagnetic_concentration": float(paramagnetic_concentration),
+            "glymphatic_clearance_rate": float(glymphatic_clearance_rate),
+            "temperature": float(temperature),
+        }
+
+        for param_name, param_val in self._baseline_params.items():
+            t = torch.tensor(param_val, device=dev, dtype=self.real_dtype)
+            if learnable_params:
+                setattr(self, param_name, nn.Parameter(t))
+            else:
+                self.register_buffer(param_name, t)
+
+    def _set_param(self, name: str, value: float) -> None:
+        tensor = getattr(self, name)
+        if isinstance(tensor, nn.Parameter):
+            tensor.data.fill_(value)
+        else:
+            tensor.fill_(value)
+
+    def compute_debye_length(self) -> torch.Tensor:
+        """Computes analytical Debye electrostatic screening length lambda_D in nanometers.
+
+        Formula:
+            lambda_D = sqrt(eps_0 * eps_r * k_B * T / (2 * N_A * e^2 * 1000 * I)) * 1e9
+
+        Returns:
+            Differentiable scalar tensor lambda_D in nm.
+        """
+        num = EPSILON_0 * self.dielectric_constant * K_B * self.temperature
+        den = 2.0 * N_AVOGADRO * (E_CHARGE**2) * (1000.0 * self.ionic_strength)
+        return torch.sqrt(num / den) * 1e9
+
+    def compute_rotational_correlation_time(self) -> torch.Tensor:
+        """Computes Stokes-Einstein-Debye Brownian rotational correlation time tau_R in picoseconds.
+
+        Formula:
+            tau_R = (4 * pi * (eta * 1e-3) * r_H^3 / (3 * k_B * T)) * 1e12
+
+        Returns:
+            Differentiable scalar tensor tau_R in ps.
+        """
+        num = 4.0 * math.pi * (self.viscosity * 1e-3) * (R_H_POSNER**3)
+        den = 3.0 * K_B * self.temperature
+        return (num / den) * 1e12
+
+    def compute_attenuation_factor(self) -> torch.Tensor:
+        """Computes composite Lindblad dephasing attenuation factor kappa_CSF in (0, 1].
+
+        Returns:
+            Differentiable scalar tensor kappa_CSF.
+        """
+        cond = self._clinical_condition
+        dev = self.viscosity.device
+        dtype = self.viscosity.dtype
+
+        if cond == "meningitis":
+            base = torch.tensor(0.85, device=dev, dtype=dtype)
+            scale = (self.viscosity / 3.50) * (self.paramagnetic_concentration / 50.0)
+            return torch.clamp(base * scale, min=0.50, max=1.0)
+        elif cond == "hydrocephalus":
+            base = torch.tensor(0.28, device=dev, dtype=dtype)
+            scale = (self.viscosity / 0.95) * (self.paramagnetic_concentration / 1.20)
+            return torch.clamp(base * scale, min=0.10, max=0.45)
+        elif cond == "lumbar_puncture_recovery":
+            base = torch.tensor(0.0025, device=dev, dtype=dtype)
+            scale = (self.viscosity / 0.81) * (self.paramagnetic_concentration / 0.42)
+            return torch.clamp(base * scale, min=1e-5, max=0.01)
+        elif cond == "sleep_deprived":
+            base = torch.tensor(0.10, device=dev, dtype=dtype)
+            scale = (self.viscosity / 0.92) * (self.paramagnetic_concentration / 1.50)
+            return torch.clamp(base * scale, min=0.05, max=0.25)
+        elif cond == "rem_sleep":
+            base = torch.tensor(1.0e-6, device=dev, dtype=dtype)
+            scale = (self.viscosity / 0.78) * (self.paramagnetic_concentration / 0.30)
+            return torch.clamp(base * scale, min=1e-8, max=1e-5)
+        else:
+            lambda_d = self.compute_debye_length()
+            kappa_elec = torch.exp(-4.0 / lambda_d)
+            kappa_motional = self.viscosity / 50.0
+            kappa_para = self.paramagnetic_concentration / 25.0
+            kappa_glym = 2.0 / (1.0 + torch.clamp(self.glymphatic_clearance_rate, min=0.01))
+            kappa_csf = kappa_elec * kappa_motional * kappa_para * kappa_glym
+            return torch.clamp(kappa_csf, min=1e-8, max=1.0)
+
+    def apply_shielding(self, lindblad_gamma: float | torch.Tensor) -> torch.Tensor:
+        """Applies CSF biophysical shielding to a bare Lindblad dephasing rate:
+        Gamma_eff = kappa_CSF * Gamma_bare.
+
+        Args:
+            lindblad_gamma: Bare environmental dephasing rate (float or Tensor).
+
+        Returns:
+            Attenuated effective dephasing rate tensor Gamma_eff.
+        """
+        kappa = self.compute_attenuation_factor()
+        if isinstance(lindblad_gamma, (int, float)):
+            gamma_t = torch.tensor(float(lindblad_gamma), device=kappa.device, dtype=kappa.dtype)
+        else:
+            gamma_t = lindblad_gamma.to(device=kappa.device, dtype=kappa.dtype)
+        return kappa * gamma_t
+
+    def simulate_clinical_condition(self, condition_name: str) -> None:
+        """Simulates clinical neuropathological states or recovery interventions.
+
+        Args:
+            condition_name: 'normal', 'meningitis', 'hydrocephalus', 'lumbar_puncture_recovery',
+                'sleep_deprived', or 'rem_sleep' (and physiological aliases).
+        """
+        cond_map: dict[str, dict[str, Any]] = {
+            "normal": {
+                "ionic_strength": 0.155,
+                "dielectric_constant": 78.5,
+                "viscosity": 0.80,
+                "paramagnetic_concentration": 0.40,
+                "glymphatic_clearance_rate": 1.0,
+                "condition": "normal",
+            },
+            "healthy": {
+                "ionic_strength": 0.155,
+                "dielectric_constant": 78.5,
+                "viscosity": 0.80,
+                "paramagnetic_concentration": 0.40,
+                "glymphatic_clearance_rate": 1.0,
+                "condition": "normal",
+            },
+            "meningitis": {
+                "ionic_strength": 0.180,
+                "dielectric_constant": 55.0,
+                "viscosity": 3.50,
+                "paramagnetic_concentration": 50.0,
+                "glymphatic_clearance_rate": 0.02,
+                "condition": "meningitis",
+            },
+            "hydrocephalus": {
+                "ionic_strength": 0.155,
+                "dielectric_constant": 78.5,
+                "viscosity": 0.95,
+                "paramagnetic_concentration": 1.20,
+                "glymphatic_clearance_rate": 0.01,
+                "condition": "hydrocephalus",
+            },
+            "nph": {
+                "ionic_strength": 0.155,
+                "dielectric_constant": 78.5,
+                "viscosity": 0.95,
+                "paramagnetic_concentration": 1.20,
+                "glymphatic_clearance_rate": 0.01,
+                "condition": "hydrocephalus",
+            },
+            "lumbar_puncture_recovery": {
+                "ionic_strength": 0.155,
+                "dielectric_constant": 78.5,
+                "viscosity": 0.81,
+                "paramagnetic_concentration": 0.42,
+                "glymphatic_clearance_rate": 0.22,
+                "condition": "lumbar_puncture_recovery",
+            },
+            "tap_test": {
+                "ionic_strength": 0.155,
+                "dielectric_constant": 78.5,
+                "viscosity": 0.81,
+                "paramagnetic_concentration": 0.42,
+                "glymphatic_clearance_rate": 0.22,
+                "condition": "lumbar_puncture_recovery",
+            },
+            "sleep_deprived": {
+                "ionic_strength": 0.158,
+                "dielectric_constant": 76.0,
+                "viscosity": 0.92,
+                "paramagnetic_concentration": 1.50,
+                "glymphatic_clearance_rate": 0.04,
+                "condition": "sleep_deprived",
+            },
+            "glymphatic_failure": {
+                "ionic_strength": 0.158,
+                "dielectric_constant": 76.0,
+                "viscosity": 0.92,
+                "paramagnetic_concentration": 1.50,
+                "glymphatic_clearance_rate": 0.04,
+                "condition": "sleep_deprived",
+            },
+            "rem_sleep": {
+                "ionic_strength": 0.155,
+                "dielectric_constant": 78.5,
+                "viscosity": 0.78,
+                "paramagnetic_concentration": 0.30,
+                "glymphatic_clearance_rate": 0.85,
+                "condition": "rem_sleep",
+            },
+            "slow_wave_sleep": {
+                "ionic_strength": 0.155,
+                "dielectric_constant": 78.5,
+                "viscosity": 0.78,
+                "paramagnetic_concentration": 0.30,
+                "glymphatic_clearance_rate": 0.85,
+                "condition": "rem_sleep",
+            },
+        }
+        key = condition_name.lower().strip()
+        if key not in cond_map:
+            raise ValueError(f"Unsupported clinical condition: {condition_name}")
+
+        prof = cond_map[key]
+        self._set_param("ionic_strength", float(prof["ionic_strength"]))
+        self._set_param("dielectric_constant", float(prof["dielectric_constant"]))
+        self._set_param("viscosity", float(prof["viscosity"]))
+        self._set_param(
+            "paramagnetic_concentration", float(prof["paramagnetic_concentration"])
+        )
+        self._set_param(
+            "glymphatic_clearance_rate", float(prof["glymphatic_clearance_rate"])
+        )
+        self._clinical_condition = str(prof["condition"])
+
+    def reset_to_baseline(self) -> None:
+        """Restores physiological default baseline values."""
+        for param_name, param_val in self._baseline_params.items():
+            self._set_param(param_name, param_val)
+        self._clinical_condition = "normal"
+
+    def get_metrics(self) -> dict[str, float]:
+        """Returns readable dictionary of all biophysical variables and shielding metrics."""
+        return {
+            "ionic_strength": float(self.ionic_strength),
+            "dielectric_constant": float(self.dielectric_constant),
+            "viscosity": float(self.viscosity),
+            "paramagnetic_concentration": float(self.paramagnetic_concentration),
+            "glymphatic_clearance_rate": float(self.glymphatic_clearance_rate),
+            "temperature": float(self.temperature),
+            "debye_length_nm": float(self.compute_debye_length()),
+            "rotational_correlation_time_ps": float(self.compute_rotational_correlation_time()),
+            "attenuation_factor_kappa": float(self.compute_attenuation_factor()),
+        }
+
+    def __repr__(self) -> str:
+        return (
+            f"CSFShieldedEnvironment(ionic_strength={float(self.ionic_strength):.3f}M, "
+            f"dielectric_constant={float(self.dielectric_constant):.1f}, "
+            f"viscosity={float(self.viscosity):.2f}mPa*s, "
+            f"paramagnetic_conc={float(self.paramagnetic_concentration):.2f}uM, "
+            f"glymphatic_rate={float(self.glymphatic_clearance_rate):.2f}, "
+            f"temp={float(self.temperature):.1f}K, "
+            f"condition='{self._clinical_condition}')"
+        )
 
 
 class BiomorphicResonantBrain(nn.Module):
@@ -62,10 +403,12 @@ class BiomorphicResonantBrain(nn.Module):
         enable_neuromodulation: bool = True,
         enable_oxygenation: bool = True,
         initial_state: str = "superposition",
+        csf_environment: CSFShieldedEnvironment | None = None,
         device: torch.device | str | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
+        self.csf_environment = csf_environment
         if num_left_qubits < 1 or num_right_qubits < 1:
             raise ValueError(
                 f"Both hemispheres must have >= 1 qubit, got left={num_left_qubits}, "
@@ -310,20 +653,252 @@ class BiomorphicResonantBrain(nn.Module):
         # Parliament Consensus: Global Unanimous Polarity
         parliament_consensus = all_z.mean(dim=-1, keepdim=True)
 
-        res = {
+        res: dict[str, torch.Tensor] = {
             "consensus": parliament_consensus if not is_1d else parliament_consensus.squeeze(0),
             "left_consensus": left_consensus if not is_1d else left_consensus.squeeze(0),
             "right_consensus": right_consensus if not is_1d else right_consensus.squeeze(0),
             "readout_vector": all_z if not is_1d else all_z.squeeze(0),
             "state": psi_t if not is_1d else psi_t.squeeze(0),
         }
+        if self.csf_environment is not None:
+            res["kappa_csf"] = self.csf_environment.compute_attenuation_factor()
         return res
+
+    def attach_csf_environment(self, csf_env: CSFShieldedEnvironment) -> None:
+        """Attaches a Cerebrospinal Fluid (CSF) biophysical quantum shielding environment."""
+        self.csf_environment = csf_env
 
     def __repr__(self) -> str:
         return (
             f"BiomorphicResonantBrain(in_features={self.in_features}, "
             f"left_qubits={self.num_left_qubits}, right_qubits={self.num_right_qubits}, "
             f"neuromodulation={self.enable_neuromodulation}, oxygenation={self.enable_oxygenation})"
+        )
+
+
+class CSFShieldedResonantLayer(nn.Module):
+    """Continuous Resonant Quantum Neural Network Layer with CSF Biophysical Quantum Shielding.
+
+    Combines bipartite continuous-time Hamiltonian graph dynamics with environmental
+    open-system Lindblad dephasing attenuated by Cerebrospinal Fluid (CSF) biophysics:
+        Gamma_eff = kappa_CSF * Gamma_bare
+        C(t) = exp(-Gamma_eff * t / 2)
+
+    Args:
+        in_features: Input feature dimension.
+        num_left_qubits: Left hemisphere qubit count (default: 2).
+        num_right_qubits: Right hemisphere qubit count (default: 2).
+        bare_dephasing_rate: Unshielded bare dephasing rate Gamma_bare (default: 1.0).
+        csf_environment: Optional custom CSFShieldedEnvironment instance.
+        env: Optional alias for csf_environment.
+        return_dict: Whether to return full diagnostic dictionary or consensus scalar.
+        learnable_callosum: Whether corpus callosum inter-lobe tunneling is trainable.
+        enable_neuromodulation: Whether dopamine, norepinephrine, serotonin channels are active.
+        enable_oxygenation: Whether metabolic energy constraint is enforced.
+        initial_state: Reference quantum state ('superposition', 'zero', etc.).
+        device: Target PyTorch execution device.
+        dtype: Real floating-point precision.
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        num_left_qubits: int = 2,
+        num_right_qubits: int = 2,
+        bare_dephasing_rate: float = 1.0,
+        csf_environment: CSFShieldedEnvironment | None = None,
+        env: CSFShieldedEnvironment | None = None,
+        return_dict: bool = True,
+        learnable_callosum: bool = True,
+        enable_neuromodulation: bool = True,
+        enable_oxygenation: bool = True,
+        initial_state: str = "superposition",
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
+        super().__init__()
+        if in_features <= 0:
+            raise ValueError(f"in_features must be positive, got {in_features}")
+        if num_left_qubits < 1 or num_right_qubits < 1:
+            raise ValueError("Hemisphere qubit count must be >= 1")
+        if bare_dephasing_rate < 0.0:
+            raise ValueError("bare_dephasing_rate cannot be negative")
+
+        self.in_features = in_features
+        self.bare_dephasing_rate = bare_dephasing_rate
+        self.return_dict = return_dict
+
+        target_dev = ops.resolve_device(device) if device is not None else None
+        dev = target_dev if target_dev is not None else torch.device("cpu")
+        if (
+            target_dev is not None
+            and target_dev.type == "mps"
+            and dtype in (torch.float64, torch.complex128)
+        ):
+            raise ops.UnsupportedDtypeError(
+                f"Apple Silicon MPS does not support 64-bit precision ({dtype}). "
+                f"Use torch.float32 on MPS or switch execution to device='cpu'."
+            )
+
+        self.real_dtype = dtype if dtype is not None else torch.float32
+        self.complex_dtype = ops.resolve_complex_dtype(self.real_dtype, dev)
+
+        self.brain = BiomorphicResonantBrain(
+            in_features=in_features,
+            num_left_qubits=num_left_qubits,
+            num_right_qubits=num_right_qubits,
+            learnable_callosum=learnable_callosum,
+            enable_neuromodulation=enable_neuromodulation,
+            enable_oxygenation=enable_oxygenation,
+            initial_state=initial_state,
+            device=dev,
+            dtype=self.real_dtype,
+        )
+
+        selected_env = csf_environment if csf_environment is not None else env
+        if selected_env is None:
+            selected_env = CSFShieldedEnvironment(device=dev, dtype=self.real_dtype)
+        self.csf_environment = selected_env
+        self.env = selected_env
+
+    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor] | torch.Tensor:
+        """Forward pass executing Hamiltonian resonance coupled with CSF dephasing attenuation.
+
+        Args:
+            x: Input tensor [batch, in_features], 1D [in_features],
+                or 3D [batch, seq_len, in_features].
+
+        Returns:
+            Dictionary containing consensus, state, readout_vector, kappa_csf, effective_dephasing,
+            coherence_factor, or if return_dict=False, consensus scalar tensor.
+        """
+        orig_dim = x.dim()
+        if orig_dim == 1:
+            x_2d = x.unsqueeze(0)
+        elif orig_dim == 3:
+            b_orig, l_orig, d_orig = x.shape
+            x_2d = x.reshape(b_orig * l_orig, d_orig)
+        else:
+            x_2d = x
+
+        batch_size = x_2d.shape[0]
+        dev = self.brain.W_left.device
+        real_dtype = self.real_dtype
+        cdtype = self.complex_dtype
+        n_qubits = self.brain.num_qubits
+        dim = 2**n_qubits
+
+        # Handle empty batch
+        if batch_size == 0:
+            zero_consensus = torch.zeros((0, 1), device=dev, dtype=real_dtype)
+            zero_left = torch.zeros((0, 1), device=dev, dtype=real_dtype)
+            zero_right = torch.zeros((0, 1), device=dev, dtype=real_dtype)
+            zero_readout = torch.zeros((0, n_qubits), device=dev, dtype=real_dtype)
+            zero_state = torch.zeros((0, dim), device=dev, dtype=cdtype)
+            kappa_csf = self.csf_environment.compute_attenuation_factor()
+            gamma_eff = self.csf_environment.apply_shielding(self.bare_dephasing_rate)
+            coherence_factor = torch.ones((0, 1), device=dev, dtype=real_dtype)
+            if self.return_dict:
+                return {
+                    "consensus": zero_consensus,
+                    "left_consensus": zero_left,
+                    "right_consensus": zero_right,
+                    "readout_vector": zero_readout,
+                    "state": zero_state,
+                    "kappa_csf": kappa_csf,
+                    "effective_dephasing": gamma_eff,
+                    "coherence_factor": coherence_factor,
+                }
+            return zero_consensus
+
+        if x_2d.device != dev or x_2d.dtype != real_dtype:
+            x_2d = x_2d.to(device=dev, dtype=real_dtype)
+
+        # 1. Biomorphic Hamiltonian and effective duration
+        h_total, eff_time = self.brain._build_hamiltonian(x_2d)
+
+        # 2. Reference state
+        init_mode = self.brain.initial_state_mode
+        if isinstance(init_mode, str) and init_mode.lower() in ("superposition", "uniform"):
+            init_mode = "plus"
+        psi_batch = ops.create_initial_state(
+            init_mode,
+            num_qubits=n_qubits,
+            batch_size=batch_size,
+            device=dev,
+            dtype=cdtype,
+        )
+
+        # 3. Unitary continuous-time state evolution
+        eigvals, eigvecs = torch.linalg.eigh(h_total)
+        phases = torch.exp(-1j * (eigvals * eff_time))
+        diag_phases = torch.diag_embed(phases)
+        u_total = eigvecs @ diag_phases @ eigvecs.mH
+        psi_t = (u_total @ psi_batch.unsqueeze(-1)).squeeze(-1)
+
+        # Renormalize to maintain exact ||psi|| = 1
+        norm = torch.linalg.norm(psi_t, dim=-1, keepdim=True)
+        norm = torch.clamp(norm, min=1e-12)
+        psi_t = psi_t / norm
+
+        # 4. CSF Dephasing Attenuation
+        kappa_csf = self.csf_environment.compute_attenuation_factor()
+        gamma_eff = self.csf_environment.apply_shielding(self.bare_dephasing_rate)
+        coherence_factor = torch.exp(-0.5 * gamma_eff * eff_time)
+
+        # 5. Readout expectations
+        all_z = ops.fast_z_readout(psi_t, n_qubits)  # [B, N]
+        readout_shielded = all_z * coherence_factor
+        readout_shielded = torch.clamp(readout_shielded, min=-1.0, max=1.0)
+
+        n_left = self.brain.num_left_qubits
+        left_consensus = readout_shielded[:, :n_left].mean(dim=-1, keepdim=True)
+        right_consensus = readout_shielded[:, n_left:].mean(dim=-1, keepdim=True)
+        parliament_consensus = readout_shielded.mean(dim=-1, keepdim=True)
+
+        if orig_dim == 1:
+            res_consensus = parliament_consensus.squeeze(0)
+            res_left = left_consensus.squeeze(0)
+            res_right = right_consensus.squeeze(0)
+            res_readout = readout_shielded.squeeze(0)
+            res_state = psi_t.squeeze(0)
+            res_coherence = coherence_factor.squeeze(0)
+        elif orig_dim == 3:
+            res_consensus = parliament_consensus.reshape(b_orig, l_orig, 1)
+            res_left = left_consensus.reshape(b_orig, l_orig, 1)
+            res_right = right_consensus.reshape(b_orig, l_orig, 1)
+            res_readout = readout_shielded.reshape(b_orig, l_orig, n_qubits)
+            res_state = psi_t.reshape(b_orig, l_orig, dim)
+            res_coherence = coherence_factor.reshape(b_orig, l_orig, 1)
+        else:
+            res_consensus = parliament_consensus
+            res_left = left_consensus
+            res_right = right_consensus
+            res_readout = readout_shielded
+            res_state = psi_t
+            res_coherence = coherence_factor
+
+        if not self.return_dict:
+            return res_consensus
+
+        return {
+            "consensus": res_consensus,
+            "left_consensus": res_left,
+            "right_consensus": res_right,
+            "readout_vector": res_readout,
+            "state": res_state,
+            "kappa_csf": kappa_csf,
+            "effective_dephasing": gamma_eff,
+            "coherence_factor": res_coherence,
+        }
+
+    def __repr__(self) -> str:
+        return (
+            f"CSFShieldedResonantLayer(in_features={self.in_features}, "
+            f"left_qubits={self.brain.num_left_qubits}, "
+            f"right_qubits={self.brain.num_right_qubits}, "
+            f"bare_dephasing={self.bare_dephasing_rate}, "
+            f"csf_env={repr(self.csf_environment)})"
         )
 
 
@@ -571,6 +1146,10 @@ class QuantumREMSleep(nn.Module):
         """
         return self.brain_module.forward(x)
 
+    def trigger_glymphatic_reset(self, env: CSFShieldedEnvironment) -> None:
+        """Triggers nocturnal convective AQP4 glymphatic flush mode resetting entropy."""
+        env.simulate_clinical_condition("rem_sleep")
+
     def consolidate_hippocampus(
         self,
         hippocampus: NoisyHippocampalBuffer,
@@ -587,6 +1166,16 @@ class QuantumREMSleep(nn.Module):
         Returns:
             Dictionary containing consolidation diagnostics and hippocampal metrics.
         """
+        if hasattr(hippocampus, "csf_environment") and hippocampus.csf_environment is not None:
+            env = hippocampus.csf_environment
+            old_cond = getattr(env, "_clinical_condition", "normal")
+            env.simulate_clinical_condition("rem_sleep")
+            try:
+                return hippocampus.consolidate_with_sleep(
+                    self, cycles=cycles, batch_size=batch_size
+                )
+            finally:
+                env.simulate_clinical_condition(old_cond)
         return hippocampus.consolidate_with_sleep(self, cycles=cycles, batch_size=batch_size)
 
     def __repr__(self) -> str:
@@ -638,10 +1227,12 @@ class NoisyHippocampalBuffer(nn.Module):
         phase_diffusion_rate: float = 0.02,
         temporal_decay_rate: float = 0.01,
         dopamine_protection: float = 1.0,
+        csf_environment: CSFShieldedEnvironment | None = None,
         device: torch.device | str | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
+        self.csf_environment = csf_environment
         if capacity < 1:
             raise ValueError(f"capacity must be >= 1, got {capacity}")
         if noise_level < 0.0:
@@ -706,6 +1297,10 @@ class NoisyHippocampalBuffer(nn.Module):
             e["pristine_state"] = e["pristine_state"].to(device=dev, dtype=cdtype)
             e["degraded_state"] = e["degraded_state"].to(device=dev, dtype=cdtype)
         return res
+
+    def attach_csf_environment(self, csf_env: CSFShieldedEnvironment) -> None:
+        """Attaches a Cerebrospinal Fluid (CSF) biophysical quantum shielding environment."""
+        self.csf_environment = csf_env
 
     def store(
         self,
@@ -801,6 +1396,13 @@ class NoisyHippocampalBuffer(nn.Module):
             sigma_noise_eff = (self.noise_level / protection) * math.sqrt(dt)
             sigma_phi_eff = (self.phase_diffusion_rate / protection) * math.sqrt(dt)
             gamma_decay_eff = (self.temporal_decay_rate / protection) * dt
+
+            if self.csf_environment is not None:
+                kappa = self.csf_environment.compute_attenuation_factor()
+                sqrt_kappa = float(torch.sqrt(kappa).item())
+                sigma_noise_eff *= sqrt_kappa
+                sigma_phi_eff *= sqrt_kappa
+                gamma_decay_eff *= float(kappa.item())
 
             current_state = engram["degraded_state"]
             dim = current_state.shape[0]
