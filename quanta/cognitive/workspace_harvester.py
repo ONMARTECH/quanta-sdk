@@ -34,9 +34,20 @@ class ProjectContext:
     path: Path
     has_git: bool = False
     latest_commit: str = ""
+    latest_commits: list[str] = field(default_factory=list)
     description: str = ""
     domain: str = "general"
+    tech_stack: list[str] = field(default_factory=list)
+    summary: str = ""
+    challenges: list[str] = field(default_factory=list)
     topics: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        """Sync latest_commit and latest_commits for backward compatibility."""
+        if self.latest_commit and not self.latest_commits:
+            self.latest_commits = [self.latest_commit]
+        elif self.latest_commits and not self.latest_commit:
+            self.latest_commit = self.latest_commits[0]
 
 
 class WorkspaceContextHarvester:
@@ -96,17 +107,24 @@ class WorkspaceContextHarvester:
         ],
         "app-my-network-planner": [
             {
-                "topic": "network_topology_routing",
+                "topic": "personal_crm_graph_clustering",
                 "question": (
-                    "Can quantum Hamiltonian graph walks optimize multi-hop latency "
-                    "in telecom network planning?"
+                    "How can spectral graph analysis partition professional contact "
+                    "circles to detect isolated high-value relationships?"
                 ),
             },
             {
-                "topic": "traffic_matrix_clustering",
+                "topic": "ambient_touchpoint_timing",
                 "question": (
-                    "How can spectral clustering partition high-throughput "
-                    "cellular mesh networks to minimize packet loss?"
+                    "Can biomorphic Poisson spindle dynamics optimize ambient post-call "
+                    "nudge timing without causing notification fatigue?"
+                ),
+            },
+            {
+                "topic": "dual_native_sync_integrity",
+                "question": (
+                    "How to guarantee atomic bi-directional sync parity between Android "
+                    "Room SQLCipher and iOS SwiftData SQLite without conflict loops?"
                 ),
             },
         ],
@@ -223,14 +241,115 @@ class WorkspaceContextHarvester:
         self._cached_projects: list[ProjectContext] = []
         self._last_scan_time: float = 0.0
 
+    def _inspect_project(self, p: Path) -> ProjectContext:
+        """Deeply inspect a workspace project directory for files, stack, and architecture."""
+        git_dir = p / ".git"
+        has_git = git_dir.exists()
+        latest_commits: list[str] = []
+
+        if has_git:
+            try:
+                out = subprocess.check_output(
+                    ["git", "-C", str(p), "log", "-n", "3", "--pretty=format:%s"],
+                    stderr=subprocess.DEVNULL,
+                    timeout=1.0,
+                )
+                latest_commits = [
+                    line.strip()
+                    for line in out.decode("utf-8", errors="replace").splitlines()
+                    if line.strip()
+                ]
+            except Exception:
+                pass
+
+        desc = ""
+        tech_stack: list[str] = []
+        summary = ""
+
+        # 1. Tech stack detection
+        if (p / "android").is_dir() or list(p.glob("*.gradle*")):
+            tech_stack.append("Android (Kotlin, Compose, Room)")
+        if (p / "ios").is_dir() or list(p.glob("*.swift")):
+            tech_stack.append("iOS (Swift, SwiftData, SwiftUI)")
+
+        pkg_json = p / "package.json"
+        if pkg_json.exists():
+            try:
+                with open(pkg_json, encoding="utf-8") as f:
+                    data = json.load(f)
+                    desc = str(data.get("description", desc))
+                    deps = {**data.get("dependencies", {}), **data.get("devDependencies", {})}
+                    for k in deps:
+                        if "genkit" in k:
+                            tech_stack.append("Firebase Genkit")
+                        elif "react" in k and "React" not in tech_stack:
+                            tech_stack.append("React")
+                        elif "next" in k and "Next.js" not in tech_stack:
+                            tech_stack.append("Next.js")
+                        elif "d3" in k and "D3.js" not in tech_stack:
+                            tech_stack.append("D3.js")
+                        elif "firebase" in k and "Firebase" not in tech_stack:
+                            tech_stack.append("Firebase")
+            except Exception:
+                pass
+
+        pyproject = p / "pyproject.toml"
+        if pyproject.exists():
+            tech_stack.append("Python")
+            try:
+                with open(pyproject, encoding="utf-8") as f:
+                    content = f.read()
+                    for line in content.splitlines():
+                        if line.strip().startswith("description ="):
+                            desc = line.split("=", 1)[1].strip(" '\"\n")
+                        if "torch" in line:
+                            tech_stack.append("PyTorch")
+                        if "mcp" in line:
+                            tech_stack.append("MCP")
+                        if "bigquery" in line:
+                            tech_stack.append("BigQuery")
+            except Exception:
+                pass
+
+        if (p / "Cargo.toml").exists():
+            tech_stack.append("Rust")
+
+        # 2. Deep document inspection (PROJECT.md, README.md, ORIGINAL_REQUEST.md)
+        for doc_name in ("PROJECT.md", "README.md", "ORIGINAL_REQUEST.md"):
+            doc_path = p / doc_name
+            if doc_path.exists():
+                try:
+                    with open(doc_path, encoding="utf-8") as f:
+                        lines = [f.readline() for _ in range(60)]
+                        doc_text = "".join(lines).strip()
+                        if doc_text:
+                            summary = doc_text[:1200]
+                            break
+                except Exception:
+                    pass
+
+        if not desc and summary:
+            first_line = summary.split("\n", 1)[0].replace("#", "").strip()
+            desc = first_line[:120]
+
+        return ProjectContext(
+            name=p.name,
+            path=p,
+            has_git=has_git,
+            latest_commits=latest_commits,
+            description=desc,
+            tech_stack=list(dict.fromkeys(tech_stack)),
+            summary=summary,
+        )
+
     def scan_workspace_projects(self, force: bool = False) -> list[ProjectContext]:
-        """Scan the projects directory for active workspaces and git commit metadata.
+        """Scan the projects directory for active workspaces and deep metadata.
 
         Args:
             force: When True, bypasses cache and rescans filesystem.
 
         Returns:
-            list[ProjectContext]: Discovered project snapshots.
+            list[ProjectContext]: Discovered project snapshots with deep context.
         """
         if self._cached_projects and not force:
             return self._cached_projects
@@ -249,51 +368,7 @@ class WorkspaceContextHarvester:
             if not p.is_dir() or p.name.startswith("."):
                 continue
 
-            git_dir = p / ".git"
-            has_git = git_dir.exists()
-            latest_commit = ""
-
-            if has_git:
-                try:
-                    out = subprocess.check_output(
-                        ["git", "-C", str(p), "log", "-n", "1", "--pretty=format:%s"],
-                        stderr=subprocess.DEVNULL,
-                        timeout=1.0,
-                    )
-                    latest_commit = out.decode("utf-8", errors="replace").strip()
-                except Exception:
-                    pass
-
-            desc = ""
-            pkg_json = p / "package.json"
-            pyproject = p / "pyproject.toml"
-
-            if pkg_json.exists():
-                try:
-                    with open(pkg_json, encoding="utf-8") as f:
-                        data = json.load(f)
-                        desc = str(data.get("description", ""))
-                except Exception:
-                    pass
-            elif pyproject.exists():
-                try:
-                    with open(pyproject, encoding="utf-8") as f:
-                        for line in f:
-                            if line.strip().startswith("description ="):
-                                desc = line.split("=", 1)[1].strip(" '\"\n")
-                                break
-                except Exception:
-                    pass
-
-            projects.append(
-                ProjectContext(
-                    name=p.name,
-                    path=p,
-                    has_git=has_git,
-                    latest_commit=latest_commit,
-                    description=desc,
-                )
-            )
+            projects.append(self._inspect_project(p))
 
         self._cached_projects = projects
         return projects
@@ -322,16 +397,19 @@ class WorkspaceContextHarvester:
         """Synthesize candidate DreamSeeds across discovered projects and domains.
 
         Returns:
-            list[DreamSeed]: Candidate seeds labeled with project context.
+            list[DreamSeed]: Candidate seeds labeled with rich project context.
         """
         projects = self.scan_workspace_projects()
-        project_names = {p.name: p for p in projects}
+        project_map = {p.name: p for p in projects}
         seeds: list[DreamSeed] = []
 
-        # 1. Seeds from known project blueprints
+        # 1. Seeds from known project blueprints enriched with live inspected data
         for proj_name, blueprint_list in self.KNOWN_PROJECT_SEEDS.items():
-            # Match against active projects or include if relevant
-            p_ctx = project_names.get(proj_name)
+            p_ctx = project_map.get(proj_name)
+            p_path = str(p_ctx.path) if p_ctx else ""
+            p_sum = p_ctx.summary if p_ctx else ""
+            p_stack = p_ctx.tech_stack if p_ctx else []
+
             for item in blueprint_list:
                 topic = item["topic"]
                 question = item["question"]
@@ -343,30 +421,53 @@ class WorkspaceContextHarvester:
                         speculative_question=question,
                         urgency=urgency,
                         context_keys=[proj_name, topic, "workspace_harvested"],
+                        project_path=p_path,
+                        project_summary=p_sum,
+                        tech_stack=p_stack,
                     )
                 )
 
-        # 2. Dynamic seeds derived from live git commits in other projects
+        # 2. Dynamic seeds derived from live git commits and documents in other discovered projects
         for p in projects:
-            if p.has_git and p.latest_commit and p.name not in self.KNOWN_PROJECT_SEEDS:
-                # Synthesize a speculative seed from the commit message
-                commit_clean = p.latest_commit.replace('"', "").replace("'", "")
-                # Truncate clean message
-                if len(commit_clean) > 80:
-                    commit_clean = commit_clean[:77] + "..."
-                topic_name = f"{p.name.lower().replace(' ', '_').replace('-', '_')}_evolution"
-                question = (
-                    f"In project '{p.name}', how does '{commit_clean}' impact downstream "
-                    f"architecture and system invariants?"
-                )
-                seeds.append(
-                    DreamSeed(
-                        topic=topic_name,
-                        speculative_question=question,
-                        urgency=2.2,
-                        context_keys=[p.name, topic_name, "live_git_commit"],
+            if p.name not in self.KNOWN_PROJECT_SEEDS:
+                # Synthesize speculative seeds from git commits or docs
+                if p.has_git and p.latest_commit:
+                    commit_clean = p.latest_commit.replace('"', "").replace("'", "")
+                    if len(commit_clean) > 80:
+                        commit_clean = commit_clean[:77] + "..."
+                    topic_name = f"{p.name.lower().replace(' ', '_').replace('-', '_')}_evolution"
+                    question = (
+                        f"In project '{p.name}', how does '{commit_clean}' impact downstream "
+                        f"architecture and system invariants?"
                     )
-                )
+                    seeds.append(
+                        DreamSeed(
+                            topic=topic_name,
+                            speculative_question=question,
+                            urgency=2.2,
+                            context_keys=[p.name, topic_name, "live_git_commit"],
+                            project_path=str(p.path),
+                            project_summary=p.summary,
+                            tech_stack=p.tech_stack,
+                        )
+                    )
+                elif p.summary:
+                    topic_name = f"{p.name.lower().replace(' ', '_').replace('-', '_')}_architecture"
+                    question = (
+                        f"In project '{p.name}', what are the key architectural bottlenecks "
+                        f"and scalability patterns for its tech stack: {', '.join(p.tech_stack) or 'general'}?"
+                    )
+                    seeds.append(
+                        DreamSeed(
+                            topic=topic_name,
+                            speculative_question=question,
+                            urgency=1.8,
+                            context_keys=[p.name, topic_name, "document_mined"],
+                            project_path=str(p.path),
+                            project_summary=p.summary,
+                            tech_stack=p.tech_stack,
+                        )
+                    )
 
         return seeds
 

@@ -47,5 +47,7 @@ site/
 *20gb*.json
 
 # Multi-agent swarm traces
-.agents/
+# Subconscious Mind-Wandering Daemon
+quanta_dream.log
+*.pid
 

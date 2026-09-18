@@ -96,6 +96,7 @@ class SubconsciousDaemon:
         self.wander_engine = MindWanderEngine(
             max_turns=max_turns,
             max_tokens=max_tokens,
+            use_agy_cli=True,
         )
         self.consolidator = SubconsciousConsolidator(state_file=self.state_file)
         self.workspace_harvester = WorkspaceContextHarvester(state_file=self.state_file)
@@ -275,6 +276,52 @@ class SubconsciousDaemon:
 
         self._is_running = False
 
+    def _persist_rfc_to_project(self, seed: DreamSeed, insight: DreamInsight) -> Path | None:
+        """Persist consensual RFC document directly into the target project's docs directory."""
+        proj_dir: Path | None = None
+        if seed.project_path:
+            p = Path(seed.project_path)
+            if p.exists() and p.is_dir():
+                proj_dir = p
+
+        if proj_dir is None:
+            proj_name = seed.context_keys[0] if seed.context_keys else ""
+            candidate = self.workspace_harvester.projects_dir / proj_name
+            if candidate.exists() and candidate.is_dir():
+                proj_dir = candidate
+
+        # Fallback to local working directory if target is quanta or unspecified
+        if proj_dir is None:
+            proj_dir = Path.cwd()
+
+        docs_dir = proj_dir / "docs"
+        try:
+            docs_dir.mkdir(parents=True, exist_ok=True)
+            topic_slug = seed.topic.upper().replace("-", "_").replace(" ", "_")
+            rfc_path = docs_dir / f"RFC_{topic_slug}.md"
+
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+            content = (
+                f"---\n"
+                f"rfc_id: RFC_{topic_slug}\n"
+                f"project: {proj_dir.name}\n"
+                f"topic: {seed.topic}\n"
+                f"confidence: {insight.confidence:.2f}\n"
+                f"created_at: '{timestamp}'\n"
+                f"generated_by: Quanta Subconscious Mind-Wandering Daemon\n"
+                f"engine: Antigravity Agent Engine (DMN-Zeno Dialectic)\n"
+                f"---\n\n"
+                f"{insight.synthesis}\n"
+            )
+
+            rfc_path.write_text(content, encoding="utf-8")
+            if self._foreground:
+                print(f"📄 [RFC Kaydedildi]: {rfc_path}", flush=True)
+            return rfc_path
+        except Exception as e:
+            logger.warning("Failed to persist RFC to project %s: %s", proj_dir, e)
+            return None
+
     def run_single_cycle(self, seed: DreamSeed | None = None) -> DreamInsight | None:
         """Execute a single atomic dream cycle and consolidate any generated insight.
 
@@ -322,6 +369,8 @@ class SubconsciousDaemon:
             self._last_dream_time = time.time()
             self.consolidator.consolidate_insight(insight)
             self._consolidated_count += 1
+            # Persist RFC to target project docs/ directory
+            self._persist_rfc_to_project(seed, insight)
             if self._foreground:
                 conf = insight.confidence * 100.0
                 print(f"💡 [Uzlaşı Sağlandı - Güven: %{conf:.1f}]:", flush=True)

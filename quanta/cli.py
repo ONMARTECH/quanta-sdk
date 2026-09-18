@@ -15,6 +15,7 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 from quanta.cognitive.daemon import SubconsciousDaemon
@@ -182,6 +183,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output insights in raw JSON format",
     )
 
+    # `quanta dream service`
+    service_parser = dream_subparsers.add_parser(
+        "service",
+        help="Manage persistent background macOS LaunchAgent service",
+    )
+    service_subparsers = service_parser.add_subparsers(
+        dest="service_action",
+        help="Service action to perform",
+    )
+    service_subparsers.add_parser("install", help="Install and load macOS LaunchAgent service")
+    service_subparsers.add_parser("uninstall", help="Unload and delete macOS LaunchAgent service")
+    service_subparsers.add_parser("status", help="Check status of the LaunchAgent service")
+    service_subparsers.add_parser("start", help="Start the LaunchAgent service")
+    service_subparsers.add_parser("stop", help="Stop the LaunchAgent service")
+    service_subparsers.add_parser("logs", help="Tail background dream logs")
+
     return parser
 
 
@@ -271,9 +288,120 @@ def handle_dream(args: argparse.Namespace) -> int:
             print(_format_insights_list(insights))
         return 0
 
+    elif action == "service":
+        return handle_service(args)
+
     else:
-        print("Usage: quanta dream {start,stop,status,inspect} [options]")
+        print("Usage: quanta dream {start,stop,status,inspect,service} [options]")
         return 0
+
+
+LAUNCHAGENT_LABEL = "com.quanta.mindwander"
+LAUNCHAGENT_PLIST = Path.home() / "Library" / "LaunchAgents" / f"{LAUNCHAGENT_LABEL}.plist"
+DEFAULT_LOG_FILE = Path("/Users/aes/Antigravity Projects/Alfa/quanta/quanta_dream.log")
+PYTHON_EXEC = Path("/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/python")
+WORKSPACE_DIR = Path("/Users/aes/Antigravity Projects/Alfa/quanta")
+
+
+def handle_service(args: argparse.Namespace) -> int:
+    """Manages the background macOS LaunchAgent service for autonomous mind-wandering."""
+    action = getattr(args, "service_action", "status")
+
+    if action == "install":
+        LAUNCHAGENT_PLIST.parent.mkdir(parents=True, exist_ok=True)
+        plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{LAUNCHAGENT_LABEL}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{PYTHON_EXEC}</string>
+        <string>-m</string>
+        <string>quanta.cli</string>
+        <string>dream</string>
+        <string>start</string>
+        <string>--foreground</string>
+        <string>--idle-min</string>
+        <string>15.0</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>{WORKSPACE_DIR}</string>
+    <key>StandardOutPath</key>
+    <string>{DEFAULT_LOG_FILE}</string>
+    <key>StandardErrorPath</key>
+    <string>{DEFAULT_LOG_FILE}</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>LowPriorityIO</key>
+    <true/>
+    <key>Nice</key>
+    <integer>20</integer>
+</dict>
+</plist>
+"""
+        LAUNCHAGENT_PLIST.write_text(plist_content, encoding="utf-8")
+        subprocess.run(["launchctl", "unload", str(LAUNCHAGENT_PLIST)], capture_output=True)
+        res = subprocess.run(["launchctl", "load", str(LAUNCHAGENT_PLIST)], capture_output=True, text=True)
+        if res.returncode == 0:
+            print("🚀 [Servis Kuruldu]: Quanta Subconscious Mind-Wandering LaunchAgent aktif!")
+            print(f"   📁 Plist: {LAUNCHAGENT_PLIST}")
+            print(f"   📋 Log:   {DEFAULT_LOG_FILE}")
+            print("   🌙 Bilgisayar boştayken otomatik rüya görecek ve projeleri zenginleştirecektir.")
+            return 0
+        else:
+            print(f"⚠️ Servis yüklenirken hata: {res.stderr}")
+            return 1
+
+    elif action == "uninstall":
+        subprocess.run(["launchctl", "unload", str(LAUNCHAGENT_PLIST)], capture_output=True)
+        if LAUNCHAGENT_PLIST.exists():
+            LAUNCHAGENT_PLIST.unlink()
+        print("🛑 [Servis Kaldırıldı]: LaunchAgent servisi durduruldu ve silindi.")
+        return 0
+
+    elif action == "start":
+        subprocess.run(["launchctl", "start", LAUNCHAGENT_LABEL], capture_output=True)
+        print(f"▶️ [Servis Başlatıldı]: {LAUNCHAGENT_LABEL}")
+        return 0
+
+    elif action == "stop":
+        subprocess.run(["launchctl", "stop", LAUNCHAGENT_LABEL], capture_output=True)
+        print(f"⏹️ [Servis Durduruldu]: {LAUNCHAGENT_LABEL}")
+        return 0
+
+    elif action == "logs":
+        if DEFAULT_LOG_FILE.exists():
+            lines = DEFAULT_LOG_FILE.read_text(encoding="utf-8", errors="replace").splitlines()
+            print("\n".join(lines[-40:]))
+        else:
+            print("Log dosyası henüz oluşmadı.")
+        return 0
+
+    elif action == "status":
+        res = subprocess.run(["launchctl", "list"], capture_output=True, text=True)
+        is_loaded = LAUNCHAGENT_LABEL in res.stdout
+        print("=" * 60)
+        print("   QUANTA SUBCONSCIOUS LAUNCHAGENT SERVICE STATUS")
+        print("=" * 60)
+        print(f"  Service Label:       {LAUNCHAGENT_LABEL}")
+        print(f"  Loaded in launchd:   {'Evet (Aktif)' if is_loaded else 'Hayır'}")
+        print(f"  Plist File:          {LAUNCHAGENT_PLIST} ({'Var' if LAUNCHAGENT_PLIST.exists() else 'Yok'})")
+        print(f"  Log File:            {DEFAULT_LOG_FILE}")
+        if DEFAULT_LOG_FILE.exists():
+            print("\n  Son Log Çıktıları:")
+            lines = DEFAULT_LOG_FILE.read_text(encoding="utf-8", errors="replace").splitlines()
+            for line in lines[-8:]:
+                print(f"    {line}")
+        print("=" * 60)
+        return 0
+
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -7,7 +7,7 @@ to compute sociological urgency S_ToM in [0.2, 5.0] and synthesize high-utility 
 from __future__ import annotations
 
 import contextlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -20,12 +20,18 @@ class DreamSeed:
         speculative_question: Dialectical prompt for DMN/Zeno deliberation.
         urgency: Sociological urgency multiplier S_ToM associated with this seed.
         context_keys: Subsystem context keys or module paths for working memory retrieval.
+        project_path: Optional filesystem path to the target workspace project.
+        project_summary: Optional summarized architecture / problem context.
+        tech_stack: Optional list of identified tools and frameworks.
     """
 
     topic: str
     speculative_question: str
     urgency: float
     context_keys: list[str]
+    project_path: str = ""
+    project_summary: str = ""
+    tech_stack: list[str] = field(default_factory=list)
 
 
 class TheoryOfMindAnalyzer:

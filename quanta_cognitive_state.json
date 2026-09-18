@@ -1,5 +1,5 @@
 {
-  "turn_count": 161,
+  "turn_count": 658,
   "last_injected_time": 0.0,
   "last_step_idx": 0,
   "engrams": [
@@ -52,9 +52,9 @@
       "confidence": 0.95
     },
     {
-      "key": "insight_amazon___scrape_evolution",
-      "content": "Consolidated biomorphic insight on amazon___scrape_evolution: Resolved dialectic for 'In project 'Amazon - Scrape', how does 'feat(jollytur): hotel price scraper - 5076 prices from 12 regions' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'amazon___scrape_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'Amazon - Scrape', how does 'feat(jollytur): hotel price scraper - 5076 prices from 12 regions' impact downstream architecture and system invariants?' within bounded execution envelopes.",
-      "description": "Consolidated biomorphic insight on amazon___scrape_evolution: Resolved dialectic for 'In project 'Amazon - Scrape', how does 'feat(jollytur): hotel price scraper - 5076 prices from 12 regions' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'amazon___scrape_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'Amazon - Scrape', how does 'feat(jollytur): hotel price scraper - 5076 prices from 12 regions' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "key": "insight_golden_record_survivorship",
+      "content": "Consolidated biomorphic insight on golden_record_survivorship: Resolved dialectic for 'How to maintain immutable audit lineage for Golden Record survivorship rules across distributed pipelines?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'golden_record_survivorship' accommodating arbiter feedback: Refining parameters for 'How to maintain immutable audit lineage for Golden Record survivorship rules across distributed pipelines?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on golden_record_survivorship: Resolved dialectic for 'How to maintain immutable audit lineage for Golden Record survivorship rules across distributed pipelines?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'golden_record_survivorship' accommodating arbiter feedback: Refining parameters for 'How to maintain immutable audit lineage for Golden Record survivorship rules across distributed pipelines?' within bounded execution envelopes.",
       "salience": 2.76,
       "category": "subconscious_dream",
       "fidelity": 1.0,
@@ -62,9 +62,265 @@
       "tags": [
         "subconscious",
         "dream",
-        "amazon___scrape_evolution"
+        "golden_record_survivorship"
       ],
-      "topic": "amazon___scrape_evolution",
+      "topic": "golden_record_survivorship",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_d3_viz_caching",
+      "content": "Consolidated biomorphic insight on d3_viz_caching: Resolved dialectic for 'Can D3 custom visual components pre-render cached SVG frames to improve perceived report latency?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'd3_viz_caching' accommodating arbiter feedback: Refining parameters for 'Can D3 custom visual components pre-render cached SVG frames to improve perceived report latency?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on d3_viz_caching: Resolved dialectic for 'Can D3 custom visual components pre-render cached SVG frames to improve perceived report latency?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'd3_viz_caching' accommodating arbiter feedback: Refining parameters for 'Can D3 custom visual components pre-render cached SVG frames to improve perceived report latency?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "d3_viz_caching"
+      ],
+      "topic": "d3_viz_caching",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_metabase_sql_templates",
+      "content": "Consolidated biomorphic insight on metabase_sql_templates: Resolved dialectic for 'How can native SQL template-tag date filters be verified against dialect AST before runtime?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'metabase_sql_templates' accommodating arbiter feedback: Refining parameters for 'How can native SQL template-tag date filters be verified against dialect AST before runtime?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on metabase_sql_templates: Resolved dialectic for 'How can native SQL template-tag date filters be verified against dialect AST before runtime?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'metabase_sql_templates' accommodating arbiter feedback: Refining parameters for 'How can native SQL template-tag date filters be verified against dialect AST before runtime?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "metabase_sql_templates"
+      ],
+      "topic": "metabase_sql_templates",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_landauer_efficiency",
+      "content": "Consolidated biomorphic insight on landauer_efficiency: Resolved dialectic for 'Does zero entropy production dS=0 hold during unitary deliberation before projective consensus collapse?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'landauer_efficiency' accommodating arbiter feedback: Refining parameters for 'Does zero entropy production dS=0 hold during unitary deliberation before projective consensus collapse?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on landauer_efficiency: Resolved dialectic for 'Does zero entropy production dS=0 hold during unitary deliberation before projective consensus collapse?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'landauer_efficiency' accommodating arbiter feedback: Refining parameters for 'Does zero entropy production dS=0 hold during unitary deliberation before projective consensus collapse?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "landauer_efficiency"
+      ],
+      "topic": "landauer_efficiency",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_data_lineage_mapping",
+      "content": "Consolidated biomorphic insight on data_lineage_mapping: Resolved dialectic for 'How can Mermaid data lineage be automatically generated from complex multi-source Data Studio dashboards?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'data_lineage_mapping' accommodating arbiter feedback: Refining parameters for 'How can Mermaid data lineage be automatically generated from complex multi-source Data Studio dashboards?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on data_lineage_mapping: Resolved dialectic for 'How can Mermaid data lineage be automatically generated from complex multi-source Data Studio dashboards?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'data_lineage_mapping' accommodating arbiter feedback: Refining parameters for 'How can Mermaid data lineage be automatically generated from complex multi-source Data Studio dashboards?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "data_lineage_mapping"
+      ],
+      "topic": "data_lineage_mapping",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_metabase_color_palettes",
+      "content": "Consolidated biomorphic insight on metabase_color_palettes: Resolved dialectic for 'Can dbt meta brand color palettes be dynamically projected onto Metabase chart cards without re-renders?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'metabase_color_palettes' accommodating arbiter feedback: Refining parameters for 'Can dbt meta brand color palettes be dynamically projected onto Metabase chart cards without re-renders?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on metabase_color_palettes: Resolved dialectic for 'Can dbt meta brand color palettes be dynamically projected onto Metabase chart cards without re-renders?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'metabase_color_palettes' accommodating arbiter feedback: Refining parameters for 'Can dbt meta brand color palettes be dynamically projected onto Metabase chart cards without re-renders?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "metabase_color_palettes"
+      ],
+      "topic": "metabase_color_palettes",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_anti_rumination_reset",
+      "content": "Consolidated biomorphic insight on anti_rumination_reset: Resolved dialectic for 'How can synthetic noradrenaline phase shifts kick the Default Mode Network out of cognitive loops?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'anti_rumination_reset' accommodating arbiter feedback: Refining parameters for 'How can synthetic noradrenaline phase shifts kick the Default Mode Network out of cognitive loops?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on anti_rumination_reset: Resolved dialectic for 'How can synthetic noradrenaline phase shifts kick the Default Mode Network out of cognitive loops?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'anti_rumination_reset' accommodating arbiter feedback: Refining parameters for 'How can synthetic noradrenaline phase shifts kick the Default Mode Network out of cognitive loops?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "anti_rumination_reset"
+      ],
+      "topic": "anti_rumination_reset",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_quantum_rem_sleep",
+      "content": "Consolidated biomorphic insight on quantum_rem_sleep: Resolved dialectic for 'How does uncoupled Hamiltonian sleep annealing orthogonalize memory subspaces to prevent catastrophic forgetting?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'quantum_rem_sleep' accommodating arbiter feedback: Refining parameters for 'How does uncoupled Hamiltonian sleep annealing orthogonalize memory subspaces to prevent catastrophic forgetting?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on quantum_rem_sleep: Resolved dialectic for 'How does uncoupled Hamiltonian sleep annealing orthogonalize memory subspaces to prevent catastrophic forgetting?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'quantum_rem_sleep' accommodating arbiter feedback: Refining parameters for 'How does uncoupled Hamiltonian sleep annealing orthogonalize memory subspaces to prevent catastrophic forgetting?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "quantum_rem_sleep"
+      ],
+      "topic": "quantum_rem_sleep",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_darwin_qos_optimization",
+      "content": "Consolidated biomorphic insight on darwin_qos_optimization: Resolved dialectic for 'How to guarantee zero thread contention on Apple Silicon Efficiency cores during background subconscious deliberation?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'darwin_qos_optimization' accommodating arbiter feedback: Refining parameters for 'How to guarantee zero thread contention on Apple Silicon Efficiency cores during background subconscious deliberation?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on darwin_qos_optimization: Resolved dialectic for 'How to guarantee zero thread contention on Apple Silicon Efficiency cores during background subconscious deliberation?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'darwin_qos_optimization' accommodating arbiter feedback: Refining parameters for 'How to guarantee zero thread contention on Apple Silicon Efficiency cores during background subconscious deliberation?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "darwin_qos_optimization"
+      ],
+      "topic": "darwin_qos_optimization",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_gcp_mcp_project_evolution",
+      "content": "Consolidated biomorphic insight on gcp_mcp_project_evolution: Resolved dialectic for 'In project 'gcp-mcp-project', how does 'fix: Switch to Container Registry due to org restrictions' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'gcp_mcp_project_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'gcp-mcp-project', how does 'fix: Switch to Container Registry due to org restrictions' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on gcp_mcp_project_evolution: Resolved dialectic for 'In project 'gcp-mcp-project', how does 'fix: Switch to Container Registry due to org restrictions' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'gcp_mcp_project_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'gcp-mcp-project', how does 'fix: Switch to Container Registry due to org restrictions' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "gcp_mcp_project_evolution"
+      ],
+      "topic": "gcp_mcp_project_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_hukukport_evolution",
+      "content": "Consolidated biomorphic insight on hukukport_evolution: Resolved dialectic for 'In project 'hukukport', how does 'fix: consolidate DB schema - VARCHAR→UUID, restore FK and relationships' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'hukukport_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'hukukport', how does 'fix: consolidate DB schema - VARCHAR→UUID, restore FK and relationships' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on hukukport_evolution: Resolved dialectic for 'In project 'hukukport', how does 'fix: consolidate DB schema - VARCHAR→UUID, restore FK and relationships' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'hukukport_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'hukukport', how does 'fix: consolidate DB schema - VARCHAR→UUID, restore FK and relationships' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "hukukport_evolution"
+      ],
+      "topic": "hukukport_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_legalport_gh_evolution",
+      "content": "Consolidated biomorphic insight on legalport_gh_evolution: Resolved dialectic for 'In project 'legalport-gh', how does 'Bucket oluşturuldu, tekrar deploy' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'legalport_gh_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'legalport-gh', how does 'Bucket oluşturuldu, tekrar deploy' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on legalport_gh_evolution: Resolved dialectic for 'In project 'legalport-gh', how does 'Bucket oluşturuldu, tekrar deploy' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'legalport_gh_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'legalport-gh', how does 'Bucket oluşturuldu, tekrar deploy' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "legalport_gh_evolution"
+      ],
+      "topic": "legalport_gh_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_looker_schema_drift",
+      "content": "Consolidated biomorphic insight on looker_schema_drift: Resolved dialectic for 'How to detect calculated field blast radius and schema drift in Looker Studio reports before deployment?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'looker_schema_drift' accommodating arbiter feedback: Refining parameters for 'How to detect calculated field blast radius and schema drift in Looker Studio reports before deployment?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on looker_schema_drift: Resolved dialectic for 'How to detect calculated field blast radius and schema drift in Looker Studio reports before deployment?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'looker_schema_drift' accommodating arbiter feedback: Refining parameters for 'How to detect calculated field blast radius and schema drift in Looker Studio reports before deployment?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "looker_schema_drift"
+      ],
+      "topic": "looker_schema_drift",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_mcp_meiro_cdp_evolution",
+      "content": "Consolidated biomorphic insight on mcp_meiro_cdp_evolution: Resolved dialectic for 'In project 'mcp-meiro-cdp', how does 'Initial commit: Meiro CDP MCP Server' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'mcp_meiro_cdp_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'mcp-meiro-cdp', how does 'Initial commit: Meiro CDP MCP Server' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on mcp_meiro_cdp_evolution: Resolved dialectic for 'In project 'mcp-meiro-cdp', how does 'Initial commit: Meiro CDP MCP Server' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'mcp_meiro_cdp_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'mcp-meiro-cdp', how does 'Initial commit: Meiro CDP MCP Server' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "mcp_meiro_cdp_evolution"
+      ],
+      "topic": "mcp_meiro_cdp_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_metabase_caching",
+      "content": "Consolidated biomorphic insight on metabase_caching: Resolved dialectic for 'How can Metabase MCP pre-cache semantic schema lineage during background idle cycles?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'metabase_caching' accommodating arbiter feedback: Refining parameters for 'How can Metabase MCP pre-cache semantic schema lineage during background idle cycles?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on metabase_caching: Resolved dialectic for 'How can Metabase MCP pre-cache semantic schema lineage during background idle cycles?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'metabase_caching' accommodating arbiter feedback: Refining parameters for 'How can Metabase MCP pre-cache semantic schema lineage during background idle cycles?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "metabase_caching"
+      ],
+      "topic": "metabase_caching",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_onmartech_web_evolution",
+      "content": "Consolidated biomorphic insight on onmartech_web_evolution: Resolved dialectic for 'In project 'onmartech-web', how does 'docs(blog): add Metabase AI Assistant evolution article in TR, EN, AR' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'onmartech_web_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'onmartech-web', how does 'docs(blog): add Metabase AI Assistant evolution article in TR, EN, AR' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on onmartech_web_evolution: Resolved dialectic for 'In project 'onmartech-web', how does 'docs(blog): add Metabase AI Assistant evolution article in TR, EN, AR' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'onmartech_web_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'onmartech-web', how does 'docs(blog): add Metabase AI Assistant evolution article in TR, EN, AR' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "onmartech_web_evolution"
+      ],
+      "topic": "onmartech_web_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_continuous_resonance",
+      "content": "Consolidated biomorphic insight on continuous_resonance: Resolved dialectic for 'Can continuous-time quantum resonance layers maintain unitary norm stability on Apple Silicon Metal MPS?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'continuous_resonance' accommodating arbiter feedback: Refining parameters for 'Can continuous-time quantum resonance layers maintain unitary norm stability on Apple Silicon Metal MPS?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on continuous_resonance: Resolved dialectic for 'Can continuous-time quantum resonance layers maintain unitary norm stability on Apple Silicon Metal MPS?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'continuous_resonance' accommodating arbiter feedback: Refining parameters for 'Can continuous-time quantum resonance layers maintain unitary norm stability on Apple Silicon Metal MPS?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "continuous_resonance"
+      ],
+      "topic": "continuous_resonance",
       "confidence": 0.95
     },
     {
@@ -82,6 +338,201 @@
       ],
       "topic": "commentshub_evolution",
       "confidence": 0.95
+    },
+    {
+      "key": "insight_redis_prompt_freshness",
+      "content": "Consolidated biomorphic insight on redis_prompt_freshness: Resolved dialectic for 'How to optimize multi-tiered Redis caching and prompt freshness validation without cache thundering?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'redis_prompt_freshness' accommodating arbiter feedback: Refining parameters for 'How to optimize multi-tiered Redis caching and prompt freshness validation without cache thundering?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on redis_prompt_freshness: Resolved dialectic for 'How to optimize multi-tiered Redis caching and prompt freshness validation without cache thundering?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'redis_prompt_freshness' accommodating arbiter feedback: Refining parameters for 'How to optimize multi-tiered Redis caching and prompt freshness validation without cache thundering?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "redis_prompt_freshness"
+      ],
+      "topic": "redis_prompt_freshness",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_mastertech_evolution",
+      "content": "Consolidated biomorphic insight on mastertech_evolution: Resolved dialectic for 'In project 'MasterTech', how does 'Phase 6c: low priority MDM features' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'mastertech_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'MasterTech', how does 'Phase 6c: low priority MDM features' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on mastertech_evolution: Resolved dialectic for 'In project 'MasterTech', how does 'Phase 6c: low priority MDM features' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'mastertech_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'MasterTech', how does 'Phase 6c: low priority MDM features' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "mastertech_evolution"
+      ],
+      "topic": "mastertech_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_qarezmi_evolution",
+      "content": "Consolidated biomorphic insight on qarezmi_evolution: Resolved dialectic for 'In project 'Qarezmi', how does 'docs: post-work checklist — ROADMAP Faz 3, context.md update' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'qarezmi_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'Qarezmi', how does 'docs: post-work checklist — ROADMAP Faz 3, context.md update' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on qarezmi_evolution: Resolved dialectic for 'In project 'Qarezmi', how does 'docs: post-work checklist — ROADMAP Faz 3, context.md update' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'qarezmi_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'Qarezmi', how does 'docs: post-work checklist — ROADMAP Faz 3, context.md update' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "qarezmi_evolution"
+      ],
+      "topic": "qarezmi_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_ai_platform_evolution",
+      "content": "Consolidated biomorphic insight on ai_platform_evolution: Resolved dialectic for 'In project 'ai-platform', how does 'Merge pull request #19 from enessari/codex/rename-getallusers-to-listusers' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'ai_platform_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'ai-platform', how does 'Merge pull request #19 from enessari/codex/rename-getallusers-to-listusers' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on ai_platform_evolution: Resolved dialectic for 'In project 'ai-platform', how does 'Merge pull request #19 from enessari/codex/rename-getallusers-to-listusers' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'ai_platform_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'ai-platform', how does 'Merge pull request #19 from enessari/codex/rename-getallusers-to-listusers' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "ai_platform_evolution"
+      ],
+      "topic": "ai_platform_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_antigravity_skills_evolution",
+      "content": "Consolidated biomorphic insight on antigravity_skills_evolution: Resolved dialectic for 'In project 'antigravity-skills', how does 'chore(sync): auto-sync skills from upstream sources [skip ci]' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'antigravity_skills_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'antigravity-skills', how does 'chore(sync): auto-sync skills from upstream sources [skip ci]' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on antigravity_skills_evolution: Resolved dialectic for 'In project 'antigravity-skills', how does 'chore(sync): auto-sync skills from upstream sources [skip ci]' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'antigravity_skills_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'antigravity-skills', how does 'chore(sync): auto-sync skills from upstream sources [skip ci]' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "antigravity_skills_evolution"
+      ],
+      "topic": "antigravity_skills_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_bigquery_cost_guardrails",
+      "content": "Consolidated biomorphic insight on bigquery_cost_guardrails: Resolved dialectic for 'Can pre-flight dry-run AST cost estimation prevent runaway cloud query expenditures in automated workflows?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'bigquery_cost_guardrails' accommodating arbiter feedback: Refining parameters for 'Can pre-flight dry-run AST cost estimation prevent runaway cloud query expenditures in automated workflows?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on bigquery_cost_guardrails: Resolved dialectic for 'Can pre-flight dry-run AST cost estimation prevent runaway cloud query expenditures in automated workflows?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'bigquery_cost_guardrails' accommodating arbiter feedback: Refining parameters for 'Can pre-flight dry-run AST cost estimation prevent runaway cloud query expenditures in automated workflows?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "bigquery_cost_guardrails"
+      ],
+      "topic": "bigquery_cost_guardrails",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_caip_evolution",
+      "content": "Consolidated biomorphic insight on caip_evolution: Resolved dialectic for 'In project 'caip', how does 'Convert backend from TypeScript to JavaScript' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'caip_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'caip', how does 'Convert backend from TypeScript to JavaScript' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on caip_evolution: Resolved dialectic for 'In project 'caip', how does 'Convert backend from TypeScript to JavaScript' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'caip_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'caip', how does 'Convert backend from TypeScript to JavaScript' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "caip_evolution"
+      ],
+      "topic": "caip_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_cdp_realtime_stewardship",
+      "content": "Consolidated biomorphic insight on cdp_realtime_stewardship: Resolved dialectic for 'How can streaming change-data-capture (CDC) pipelines reconcile customer identity graphs without locking?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'cdp_realtime_stewardship' accommodating arbiter feedback: Refining parameters for 'How can streaming change-data-capture (CDC) pipelines reconcile customer identity graphs without locking?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on cdp_realtime_stewardship: Resolved dialectic for 'How can streaming change-data-capture (CDC) pipelines reconcile customer identity graphs without locking?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'cdp_realtime_stewardship' accommodating arbiter feedback: Refining parameters for 'How can streaming change-data-capture (CDC) pipelines reconcile customer identity graphs without locking?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "cdp_realtime_stewardship"
+      ],
+      "topic": "cdp_realtime_stewardship",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_dagster_mcp_server_evolution",
+      "content": "Consolidated biomorphic insight on dagster_mcp_server_evolution: Resolved dialectic for 'In project 'dagster-mcp-server', how does 'feat: enhance list_runs and get_run_status with progress_pct, remaining steps...' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'dagster_mcp_server_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'dagster-mcp-server', how does 'feat: enhance list_runs and get_run_status with progress_pct, remaining steps...' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on dagster_mcp_server_evolution: Resolved dialectic for 'In project 'dagster-mcp-server', how does 'feat: enhance list_runs and get_run_status with progress_pct, remaining steps...' impact downstream architecture and system invariants?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'dagster_mcp_server_evolution' accommodating arbiter feedback: Refining parameters for 'In project 'dagster-mcp-server', how does 'feat: enhance list_runs and get_run_status with progress_pct, remaining steps...' impact downstream architecture and system invariants?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "dagster_mcp_server_evolution"
+      ],
+      "topic": "dagster_mcp_server_evolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_mdm_entity_resolution",
+      "content": "Consolidated biomorphic insight on mdm_entity_resolution: Resolved dialectic for 'How can biomorphic consensus arbitration resolve conflicting customer identity records across disparate sources?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'mdm_entity_resolution' accommodating arbiter feedback: Refining parameters for 'How can biomorphic consensus arbitration resolve conflicting customer identity records across disparate sources?' within bounded execution envelopes.",
+      "description": "Consolidated biomorphic insight on mdm_entity_resolution: Resolved dialectic for 'How can biomorphic consensus arbitration resolve conflicting customer identity records across disparate sources?' via DMN-Zeno consensus. Final state: [DMN Dreamer | T=0.85]: Synthesizing revised thesis for 'mdm_entity_resolution' accommodating arbiter feedback: Refining parameters for 'How can biomorphic consensus arbitration resolve conflicting customer identity records across disparate sources?' within bounded execution envelopes.",
+      "salience": 2.76,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "mdm_entity_resolution"
+      ],
+      "topic": "mdm_entity_resolution",
+      "confidence": 0.95
+    },
+    {
+      "key": "insight_spectral_relationship_clustering",
+      "content": "NetPlanner Dual-Native RFC: Unsupervised Spectral Community Detection (L_sym = I - D^-1/2 A D^-1/2) computed in Firebase Genkit weekly flow, mapping contacts into organic clusters without client CPU/battery strain. Exponential health decay S(t) = S_0 * 2^(-dt/14) presented via Jetpack Glance and WidgetKit passive widgets, bypassing Google Play call-log scrutiny and eliminating notification fatigue.",
+      "description": "NetPlanner Dual-Native RFC: Unsupervised Spectral Community Detection (L_sym = I - D^-1/2 A D^-1/2) computed in Firebase Genkit weekly flow, mapping contacts into organic clusters without client CPU/battery strain. Exponential health decay S(t) = S_0 * 2^(-dt/14) presented via Jetpack Glance and WidgetKit passive widgets, bypassing Google Play call-log scrutiny and eliminating notification fatigue.",
+      "salience": 4.85,
+      "category": "architecture_rfc",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "netplanner",
+        "crm",
+        "spectral_clustering",
+        "genkit",
+        "swiftdata",
+        "room"
+      ],
+      "topic": "spectral_relationship_clustering",
+      "confidence": 0.98
+    },
+    {
+      "key": "insight_amazon___scrape_evolution",
+      "content": "# RFC: AMAZON___SCRAPE_EVOLUTION\n\n**Document ID:** RFC-2026-04-01-AMZ-JLY  \n**Status:** PROPOSED / ARCHITECTURAL SYNTHESIS  \n**Author:** Autonomous Cognitive Engine (Quanta SDK Subconscious Core)  \n**Target Subsystems:** `/Users/aes/Antigravity Projects/Amazon - Scrape` (`jollytur`, `src/scrapers`, `src/db`, `src/analysis`)  \n**Topic:** Architectural Evolution Post-`feat(jollytur): hotel price scraper - 5076 prices from 12 regions`\n\n---\n\n## 1. Executive Summary\n\nThe commit `1374a09` (`feat(jollytur): hotel price scraper - 5076 prices from 12 regions`) marks a fundamental inflection point for the repository. Originally architected as a specialized Amazon Cross-Market FBA Arbitrage pipeline (Playwright-based, ASIN-keyed, physical goods logistics), the system has expanded into high-throughput travel/hospitality price tracking (`httpx`-based, multi-dimensional room-night yield capture).\n\nThis RFC analyzes the architectural blast radius of capturing 5,000+ price points per batch across 12 regions and establishes a dual-track architecture:\n1. **Domain & Schema Decoupling:** Enforcing strict schema boundaries (`public` for Amazon E-Commerce vs `jollytur` for Travel Yield Intelligence) while unifying common infrastructure (proxies, notification dispatchers, DB pools).\n2. **Ingestion Engine Modernization:** Eliminating synchronous DB cursor bottlenecks (`psycopg2` blocking inside `asyncio`) in favor of asynchronous bulk ingestion (`asyncpg` / `execute_values`).\n3. **Temporal Partitioning & Indexing:** Preparing the PostgreSQL storage layer for a 100x volume surge ($1.5\\text{M}+$ price snapshots/month) with range-partitioned tables and date-window composite indices.\n\n---\n\n## 2. Dialectical Deliberation (Internal Biomorphic Synthesis)\n\n```\n       ┌────────────────────────────────────────────────────────┐\n       │   GENERATIVE DREAMER (DMN, T=0.85)                     │\n       │   • Polymorphic Universal Arbitrage Schema             │\n       │   • Cross-vertical Unified Entity Graph (ASIN ↔ Hotel) │\n       │   • Dynamic Real-Time Scraping Mesh                    │\n       └───────────────────────────┬────────────────────────────┘\n                                   │\n                           [Dialectic Tension]\n                                   │\n       ┌───────────────────────────┴────────────────────────────┐\n       │   EVALUATIVE ARBITER (Zeno Critic, T=0.20)             │\n       │   • Reject polymorphic \"God Object\" schemas            │\n       │   • Enforce bounded contexts & schema-level isolation  │\n       │   • Fix sync I/O in async loop; add time partitioning  │\n       └───────────────────────────┬────────────────────────────┘\n                                   │\n                           [Synthesized RFC]\n                                   ▼\n          Decoupled Multi-Domain Engine with Shared Ingestion Fabric\n```\n\n### 2.1 The Generative Dreamer's Vision (DMN Exploration)\n* **Unified Asset Abstraction:** Treat Amazon ASINs and Jollytur Hotel IDs as uniform `TrackableEntities` with generalized `ObservationVectors` (price, availability, seller/provider, margin).\n* **Cross-Vertical Arbitrage:** Expand from physical goods arbitrage to travel package dynamic pricing, comparing Jollytur prices against Booking.com, ETS, and Google Hotels.\n* **Autonomous Scheduling Mesh:** Self-adjusting scraping intervals driven by regional demand spikes (e.g., automated surge scraping for Antalya during high season).\n\n### 2.2 The Evaluative Arbiter's Stress-Testing (Zeno Critic Constraints)\n* **Domain Impedance Mismatch:** Physical e-commerce is 1D (Product $\\times$ Currency $\\times$ BuyBox), whereas hotel reservations are 4D (Hotel $\\times$ Check-in/Out $\\times$ Occupancy $\\times$ Board Type). Merging them into a single polymorphic table causes index degradation and schema bloat.\n* **Async Event Loop Blocking:** [scraper.py](file:///Users/aes/Antigravity%20Projects/Amazon%20-%20Scrape/jollytur/scraper.py#L340-L362) executes synchronous `psycopg2` commits inside an `asyncio` loop, stalling network coroutines during batch persistence.\n* **Volume Scalability:** 5,076 prices across 12 regions is just 1 run with 5 date windows. Running 4 runs daily across 15 date windows yields $\\sim 300\\text{k}$ rows/day ($9\\text{M}$ rows/month), demanding partitioned storage.\n\n---\n\n## 3. System Invariants & Architectural Impact\n\n| Dimension | Amazon Arbitrage (`src/`) | Jollytur Tracker (`jollytur/`) | System Invariant Resolution |\n| :--- | :--- | :--- | :--- |\n| **Primary Key Entity** | `asin` (VARCHAR 10) | `jolly_hotel_id` (VARCHAR 50) | Keep isolated schemas (`public.products` vs `jollytur.hotels`). |\n| **Price Dimensionality** | Point-in-time scalar (`price_local`, `price_usd`) | Interval vector (`checkin`, `checkout`, `nights`, `board_type`, `ppn`) | Distinct snapshot schemas; do not force uniform tables. |\n| **Scraping Engine** | Browser-heavy (Playwright + 18 stealth patches) | Lightweight HTTP API (`httpx` + JSON/HTML partials) | Separate worker pools; share only proxy and network utilities. |\n| **Database I/O** | Sequential single-item upserts | Batch multi-page bulk inserts | Transition `jollytur` to async bulk pipeline. |\n| **Execution Cadence** | Hourly/Daily ASIN price check | Multi-window batch runs (Weekends, Midweek, High-season) | Introduce decoupled CLI runners and cron orchestrations. |\n\n---\n\n## 4. Target Data Structures & Schema Design\n\n### 4.1 Schema Partitioning & Indices (`jollytur.price_snapshots`)\nTo sustain multi-million row growth without sequential scan penalties:\n\n```sql\n-- Partitioned Price Snapshots by Scrape Month\nCREATE TABLE IF NOT EXISTS jollytur.price_snapshots_v2 (\n    id BIGSERIAL,\n    hotel_id INTEGER NOT NULL REFERENCES jollytur.hotels(id) ON DELETE CASCADE,\n    checkin_date DATE NOT NULL,\n    checkout_date DATE NOT NULL,\n    nights SMALLINT NOT NULL,\n    adults SMALLINT NOT NULL DEFAULT 2,\n    rooms SMALLINT NOT NULL DEFAULT 1,\n    board_type VARCHAR(100),\n    original_price DECIMAL(12,2),\n    discounted_price DECIMAL(12,2) NOT NULL,\n    price_per_night DECIMAL(12,2) NOT NULL,\n    discount_pct DECIMAL(5,2),\n    currency VARCHAR(10) NOT NULL DEFAULT 'TL',\n    scraped_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    source_page VARCHAR(200),\n    PRIMARY KEY (id, scraped_at)\n) PARTITION BY RANGE (scraped_at);\n\n-- Monthly partitions\nCREATE TABLE IF NOT EXISTS jollytur.price_snapshots_2026_04\n    PARTITION OF jollytur.price_snapshots_v2\n    FOR VALUES FROM ('2026-04-01') TO ('2026-05-01');\n\nCREATE TABLE IF NOT EXISTS jollytur.price_snapshots_2026_05\n    PARTITION OF jollytur.price_snapshots_v2\n    FOR VALUES FROM ('2026-05-01') TO ('2026-06-01');\n\n-- High-performance composite indexes\nCREATE INDEX idx_jolly_lookup ON jollytur.price_snapshots_v2 (hotel_id, checkin_date, checkout_date);\nCREATE INDEX idx_jolly_analytics ON jollytur.price_snapshots_v2 (scraped_at DESC, price_per_night);\n```\n\n---\n\n## 5. Ingestion Pipeline & Execution Modernization\n\n### 5.1 Asynchronous Bulk Ingestion Engine\nReplace the blocking row-by-row `psycopg2` loop with batch staging:\n\n```python\nfrom dataclasses import dataclass\nfrom datetime import date\nfrom typing import List, Optional\nimport asyncpg\n\n@dataclass(slots=True)\nclass HotelSnapshot:\n    jolly_hotel_id: str\n    name: str\n    slug: str\n    region: str\n    sub_region: str\n    review_score: Optional[float]\n    review_count: int\n    board_type: str\n    image_url: str\n    checkin_date: date\n    checkout_date: date\n    nights: int\n    original_price: Optional[float]\n    discounted_price: float\n    price_per_night: float\n    discount_pct: Optional[float]\n    currency: str\n    source_page: str\n\nclass AsyncJollyPersistence:\n    def __init__(self, pool: asyncpg.Pool):\n        self.pool = pool\n\n    async def batch_upsert_hotels_and_prices(self, items: List[HotelSnapshot]):\n        if not items:\n            return\n\n        hotel_records = [\n            (\n                it.jolly_hotel_id, it.name, it.slug, it.region, it.sub_region,\n                it.review_score, it.review_count, it.board_type, it.image_url\n            )\n            for it in items\n        ]\n\n        async with self.pool.acquire() as conn:\n            async with conn.transaction():\n                # 1. Bulk Upsert Hotels\n                await conn.executemany(\"\"\"\n                    INSERT INTO jollytur.hotels (\n                        jolly_hotel_id, name, slug, region, sub_region,\n                        review_score, review_count, board_type, image_url\n                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n                    ON CONFLICT (jolly_hotel_id) DO UPDATE SET\n                        name = EXCLUDED.name,\n                        review_score = EXCLUDED.review_score,\n                        review_count = EXCLUDED.review_count,\n                        board_type = EXCLUDED.board_type,\n                        image_url = EXCLUDED.image_url,\n                        updated_at = NOW();\n                \"\"\", hotel_records)\n\n                # 2. Resolve IDs & Insert Snapshots in Single Query\n                price_records = [\n                    (\n                        it.jolly_hotel_id, it.checkin_date, it.checkout_date,\n                        it.nights, it.original_price, it.discounted_price,\n                        it.price_per_night, it.discount_pct, it.currency, it.source_page\n                    )\n                    for it in items if it.discounted_price > 0\n                ]\n\n                await conn.executemany(\"\"\"\n                    INSERT INTO jollytur.price_snapshots (\n                        hotel_id, checkin_date, checkout_date, nights,\n                        original_price, discounted_price, price_per_night,\n                        discount_pct, currency, source_page\n                    )\n                    SELECT h.id, $2, $3, $4, $5, $6, $7, $8, $9, $10\n                    FROM jollytur.hotels h WHERE h.jolly_hotel_id = $1;\n                \"\"\", price_records)\n```\n\n---\n\n## 6. Offline Caching, Sync & Edge Cases\n\n```\n┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐\n│ Jollytur API    │ ----> │ Memory Cache    │ ----> │ PostgreSQL      │\n│ (GetPartials)   │       │ (Seen HotelIDs) │       │ (jollytur.*)    │\n└─────────────────┘       └─────────────────┘       └─────────────────┘\n         │                         │                         │\n         ▼                         ▼                         ▼\n   429 / WAF Block            3 Stale Pages            Partition Pruning\n   -> Backoff & Jitter        -> Stop Region           -> High-speed Views\n```\n\n### 6.1 Resilience Bounds & Failure Handling\n1. **Session & Form Parameter Expiry:** `hotelOtherValues` anti-tamper tokens expire every 15 minutes. The scraper must automatically detect `403` or empty payloads, re-acquire session cookies via `_get_session_params()`, and retry with exponential jitter ($2^n \\times \\text{rand}(0.5, 1.5)$).\n2. **Infinite Pagination Guard:** Stale page counter ($N \\ge 3$ consecutive pages without new hotel IDs) terminates the region run cleanly to prevent zombie scraping loops.\n3. **Price Inversion Check:** Enforce constraint: `discounted_price <= original_price`. Flag anomalous reversals (where promotional price exceeds base price) for diagnostic inspection.\n\n---\n\n## 7. Actionable Implementation Roadmap\n\n```mermaid\nflowchart LR\n    A[\"Phase 1: DB & Async Migration\"] --> B[\"Phase 2: Multi-Window Scheduler\"]\n    B --> C[\"Phase 3: Hotel Analytics & Reporting\"]\n    C --> D[\"Phase 4: Multi-Provider Expansion\"]\n```\n\n* **Phase 1 (Immediate):**\n  * Transition [jollytur/scraper.py](file:///Users/aes/Antigravity%20Projects/Amazon%20-%20Scrape/jollytur/scraper.py) from blocking `psycopg2` calls to `asyncpg` connection pooling.\n  * Apply `jollytur.price_snapshots` monthly table partitioning.\n* **Phase 2 (Scheduling & CLI):**\n  * Create `run_jolly.py` entrypoint alongside `run_tr.py` and `run_us.py`.\n  * Add automatic date generation covering: (1) Upcoming 2 weekends, (2) Next month 5-night midweek, (3) Summer peak 7-night windows.\n* **Phase 3 (Reporting & Dashboards):**\n  * Build `jollytur/report.py` to generate markdown and CSV summaries of cheapest regional deals, high-discount alerts ($>40\\%$), and price trends over time.\n\n---\n\n> [!TIP]\n> To execute a full multi-region scrape or verify database connectivity, use the dedicated CLI runners or test with a single target region first: `python -m jollytur.scraper --region bodrum`.",
+      "description": "# RFC: AMAZON___SCRAPE_EVOLUTION\n\n**Document ID:** RFC-2026-04-01-AMZ-JLY  \n**Status:** PROPOSED / ARCHITECTURAL SYNTHESIS  \n**Author:** Autonomous Cognitive Engine (Quanta SDK Subconscious Core)  \n**Target Subsystems:** `/Users/aes/Antigravity Projects/Amazon - Scrape` (`jollytur`, `src/scrapers`, `src/db`, `src/analysis`)  \n**Topic:** Architectural Evolution Post-`feat(jollytur): hotel price scraper - 5076 prices from 12 regions`\n\n---\n\n## 1. Executive Summary\n\nThe commit `1374a09` (`feat(jollytur): hotel price scraper - 5076 prices from 12 regions`) marks a fundamental inflection point for the repository. Originally architected as a specialized Amazon Cross-Market FBA Arbitrage pipeline (Playwright-based, ASIN-keyed, physical goods logistics), the system has expanded into high-throughput travel/hospitality price tracking (`httpx`-based, multi-dimensional room-night yield capture).\n\nThis RFC analyzes the architectural blast radius of capturing 5,000+ price points per batch across 12 regions and establishes a dual-track architecture:\n1. **Domain & Schema Decoupling:** Enforcing strict schema boundaries (`public` for Amazon E-Commerce vs `jollytur` for Travel Yield Intelligence) while unifying common infrastructure (proxies, notification dispatchers, DB pools).\n2. **Ingestion Engine Modernization:** Eliminating synchronous DB cursor bottlenecks (`psycopg2` blocking inside `asyncio`) in favor of asynchronous bulk ingestion (`asyncpg` / `execute_values`).\n3. **Temporal Partitioning & Indexing:** Preparing the PostgreSQL storage layer for a 100x volume surge ($1.5\\text{M}+$ price snapshots/month) with range-partitioned tables and date-window composite indices.\n\n---\n\n## 2. Dialectical Deliberation (Internal Biomorphic Synthesis)\n\n```\n       ┌────────────────────────────────────────────────────────┐\n       │   GENERATIVE DREAMER (DMN, T=0.85)                     │\n       │   • Polymorphic Universal Arbitrage Schema             │\n       │   • Cross-vertical Unified Entity Graph (ASIN ↔ Hotel) │\n       │   • Dynamic Real-Time Scraping Mesh                    │\n       └───────────────────────────┬────────────────────────────┘\n                                   │\n                           [Dialectic Tension]\n                                   │\n       ┌───────────────────────────┴────────────────────────────┐\n       │   EVALUATIVE ARBITER (Zeno Critic, T=0.20)             │\n       │   • Reject polymorphic \"God Object\" schemas            │\n       │   • Enforce bounded contexts & schema-level isolation  │\n       │   • Fix sync I/O in async loop; add time partitioning  │\n       └───────────────────────────┬────────────────────────────┘\n                                   │\n                           [Synthesized RFC]\n                                   ▼\n          Decoupled Multi-Domain Engine with Shared Ingestion Fabric\n```\n\n### 2.1 The Generative Dreamer's Vision (DMN Exploration)\n* **Unified Asset Abstraction:** Treat Amazon ASINs and Jollytur Hotel IDs as uniform `TrackableEntities` with generalized `ObservationVectors` (price, availability, seller/provider, margin).\n* **Cross-Vertical Arbitrage:** Expand from physical goods arbitrage to travel package dynamic pricing, comparing Jollytur prices against Booking.com, ETS, and Google Hotels.\n* **Autonomous Scheduling Mesh:** Self-adjusting scraping intervals driven by regional demand spikes (e.g., automated surge scraping for Antalya during high season).\n\n### 2.2 The Evaluative Arbiter's Stress-Testing (Zeno Critic Constraints)\n* **Domain Impedance Mismatch:** Physical e-commerce is 1D (Product $\\times$ Currency $\\times$ BuyBox), whereas hotel reservations are 4D (Hotel $\\times$ Check-in/Out $\\times$ Occupancy $\\times$ Board Type). Merging them into a single polymorphic table causes index degradation and schema bloat.\n* **Async Event Loop Blocking:** [scraper.py](file:///Users/aes/Antigravity%20Projects/Amazon%20-%20Scrape/jollytur/scraper.py#L340-L362) executes synchronous `psycopg2` commits inside an `asyncio` loop, stalling network coroutines during batch persistence.\n* **Volume Scalability:** 5,076 prices across 12 regions is just 1 run with 5 date windows. Running 4 runs daily across 15 date windows yields $\\sim 300\\text{k}$ rows/day ($9\\text{M}$ rows/month), demanding partitioned storage.\n\n---\n\n## 3. System Invariants & Architectural Impact\n\n| Dimension | Amazon Arbitrage (`src/`) | Jollytur Tracker (`jollytur/`) | System Invariant Resolution |\n| :--- | :--- | :--- | :--- |\n| **Primary Key Entity** | `asin` (VARCHAR 10) | `jolly_hotel_id` (VARCHAR 50) | Keep isolated schemas (`public.products` vs `jollytur.hotels`). |\n| **Price Dimensionality** | Point-in-time scalar (`price_local`, `price_usd`) | Interval vector (`checkin`, `checkout`, `nights`, `board_type`, `ppn`) | Distinct snapshot schemas; do not force uniform tables. |\n| **Scraping Engine** | Browser-heavy (Playwright + 18 stealth patches) | Lightweight HTTP API (`httpx` + JSON/HTML partials) | Separate worker pools; share only proxy and network utilities. |\n| **Database I/O** | Sequential single-item upserts | Batch multi-page bulk inserts | Transition `jollytur` to async bulk pipeline. |\n| **Execution Cadence** | Hourly/Daily ASIN price check | Multi-window batch runs (Weekends, Midweek, High-season) | Introduce decoupled CLI runners and cron orchestrations. |\n\n---\n\n## 4. Target Data Structures & Schema Design\n\n### 4.1 Schema Partitioning & Indices (`jollytur.price_snapshots`)\nTo sustain multi-million row growth without sequential scan penalties:\n\n```sql\n-- Partitioned Price Snapshots by Scrape Month\nCREATE TABLE IF NOT EXISTS jollytur.price_snapshots_v2 (\n    id BIGSERIAL,\n    hotel_id INTEGER NOT NULL REFERENCES jollytur.hotels(id) ON DELETE CASCADE,\n    checkin_date DATE NOT NULL,\n    checkout_date DATE NOT NULL,\n    nights SMALLINT NOT NULL,\n    adults SMALLINT NOT NULL DEFAULT 2,\n    rooms SMALLINT NOT NULL DEFAULT 1,\n    board_type VARCHAR(100),\n    original_price DECIMAL(12,2),\n    discounted_price DECIMAL(12,2) NOT NULL,\n    price_per_night DECIMAL(12,2) NOT NULL,\n    discount_pct DECIMAL(5,2),\n    currency VARCHAR(10) NOT NULL DEFAULT 'TL',\n    scraped_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    source_page VARCHAR(200),\n    PRIMARY KEY (id, scraped_at)\n) PARTITION BY RANGE (scraped_at);\n\n-- Monthly partitions\nCREATE TABLE IF NOT EXISTS jollytur.price_snapshots_2026_04\n    PARTITION OF jollytur.price_snapshots_v2\n    FOR VALUES FROM ('2026-04-01') TO ('2026-05-01');\n\nCREATE TABLE IF NOT EXISTS jollytur.price_snapshots_2026_05\n    PARTITION OF jollytur.price_snapshots_v2\n    FOR VALUES FROM ('2026-05-01') TO ('2026-06-01');\n\n-- High-performance composite indexes\nCREATE INDEX idx_jolly_lookup ON jollytur.price_snapshots_v2 (hotel_id, checkin_date, checkout_date);\nCREATE INDEX idx_jolly_analytics ON jollytur.price_snapshots_v2 (scraped_at DESC, price_per_night);\n```\n\n---\n\n## 5. Ingestion Pipeline & Execution Modernization\n\n### 5.1 Asynchronous Bulk Ingestion Engine\nReplace the blocking row-by-row `psycopg2` loop with batch staging:\n\n```python\nfrom dataclasses import dataclass\nfrom datetime import date\nfrom typing import List, Optional\nimport asyncpg\n\n@dataclass(slots=True)\nclass HotelSnapshot:\n    jolly_hotel_id: str\n    name: str\n    slug: str\n    region: str\n    sub_region: str\n    review_score: Optional[float]\n    review_count: int\n    board_type: str\n    image_url: str\n    checkin_date: date\n    checkout_date: date\n    nights: int\n    original_price: Optional[float]\n    discounted_price: float\n    price_per_night: float\n    discount_pct: Optional[float]\n    currency: str\n    source_page: str\n\nclass AsyncJollyPersistence:\n    def __init__(self, pool: asyncpg.Pool):\n        self.pool = pool\n\n    async def batch_upsert_hotels_and_prices(self, items: List[HotelSnapshot]):\n        if not items:\n            return\n\n        hotel_records = [\n            (\n                it.jolly_hotel_id, it.name, it.slug, it.region, it.sub_region,\n                it.review_score, it.review_count, it.board_type, it.image_url\n            )\n            for it in items\n        ]\n\n        async with self.pool.acquire() as conn:\n            async with conn.transaction():\n                # 1. Bulk Upsert Hotels\n                await conn.executemany(\"\"\"\n                    INSERT INTO jollytur.hotels (\n                        jolly_hotel_id, name, slug, region, sub_region,\n                        review_score, review_count, board_type, image_url\n                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n                    ON CONFLICT (jolly_hotel_id) DO UPDATE SET\n                        name = EXCLUDED.name,\n                        review_score = EXCLUDED.review_score,\n                        review_count = EXCLUDED.review_count,\n                        board_type = EXCLUDED.board_type,\n                        image_url = EXCLUDED.image_url,\n                        updated_at = NOW();\n                \"\"\", hotel_records)\n\n                # 2. Resolve IDs & Insert Snapshots in Single Query\n                price_records = [\n                    (\n                        it.jolly_hotel_id, it.checkin_date, it.checkout_date,\n                        it.nights, it.original_price, it.discounted_price,\n                        it.price_per_night, it.discount_pct, it.currency, it.source_page\n                    )\n                    for it in items if it.discounted_price > 0\n                ]\n\n                await conn.executemany(\"\"\"\n                    INSERT INTO jollytur.price_snapshots (\n                        hotel_id, checkin_date, checkout_date, nights,\n                        original_price, discounted_price, price_per_night,\n                        discount_pct, currency, source_page\n                    )\n                    SELECT h.id, $2, $3, $4, $5, $6, $7, $8, $9, $10\n                    FROM jollytur.hotels h WHERE h.jolly_hotel_id = $1;\n                \"\"\", price_records)\n```\n\n---\n\n## 6. Offline Caching, Sync & Edge Cases\n\n```\n┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐\n│ Jollytur API    │ ----> │ Memory Cache    │ ----> │ PostgreSQL      │\n│ (GetPartials)   │       │ (Seen HotelIDs) │       │ (jollytur.*)    │\n└─────────────────┘       └─────────────────┘       └─────────────────┘\n         │                         │                         │\n         ▼                         ▼                         ▼\n   429 / WAF Block            3 Stale Pages            Partition Pruning\n   -> Backoff & Jitter        -> Stop Region           -> High-speed Views\n```\n\n### 6.1 Resilience Bounds & Failure Handling\n1. **Session & Form Parameter Expiry:** `hotelOtherValues` anti-tamper tokens expire every 15 minutes. The scraper must automatically detect `403` or empty payloads, re-acquire session cookies via `_get_session_params()`, and retry with exponential jitter ($2^n \\times \\text{rand}(0.5, 1.5)$).\n2. **Infinite Pagination Guard:** Stale page counter ($N \\ge 3$ consecutive pages without new hotel IDs) terminates the region run cleanly to prevent zombie scraping loops.\n3. **Price Inversion Check:** Enforce constraint: `discounted_price <= original_price`. Flag anomalous reversals (where promotional price exceeds base price) for diagnostic inspection.\n\n---\n\n## 7. Actionable Implementation Roadmap\n\n```mermaid\nflowchart LR\n    A[\"Phase 1: DB & Async Migration\"] --> B[\"Phase 2: Multi-Window Scheduler\"]\n    B --> C[\"Phase 3: Hotel Analytics & Reporting\"]\n    C --> D[\"Phase 4: Multi-Provider Expansion\"]\n```\n\n* **Phase 1 (Immediate):**\n  * Transition [jollytur/scraper.py](file:///Users/aes/Antigravity%20Projects/Amazon%20-%20Scrape/jollytur/scraper.py) from blocking `psycopg2` calls to `asyncpg` connection pooling.\n  * Apply `jollytur.price_snapshots` monthly table partitioning.\n* **Phase 2 (Scheduling & CLI):**\n  * Create `run_jolly.py` entrypoint alongside `run_tr.py` and `run_us.py`.\n  * Add automatic date generation covering: (1) Upcoming 2 weekends, (2) Next month 5-night midweek, (3) Summer peak 7-night windows.\n* **Phase 3 (Reporting & Dashboards):**\n  * Build `jollytur/report.py` to generate markdown and CSV summaries of cheapest regional deals, high-discount alerts ($>40\\%$), and price trends over time.\n\n---\n\n> [!TIP]\n> To execute a full multi-region scrape or verify database connectivity, use the dedicated CLI runners or test with a single target region first: `python -m jollytur.scraper --region bodrum`.",
+      "salience": 2.784,
+      "category": "subconscious_dream",
+      "fidelity": 1.0,
+      "age": 0,
+      "tags": [
+        "subconscious",
+        "dream",
+        "amazon___scrape_evolution"
+      ],
+      "topic": "amazon___scrape_evolution",
+      "confidence": 0.98
     }
   ]
 }

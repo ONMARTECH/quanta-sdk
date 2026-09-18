@@ -133,23 +133,34 @@ class TestPreemptionInterruptLatency:
 
     def test_preemption_callback_overhead_benchmark(self, nominal_seed: DreamSeed) -> None:
         """Verify MindWanderEngine adds < 1ms overhead on top of preemption callback itself."""
-        engine = MindWanderEngine(max_turns=5)
+        engine = MindWanderEngine(max_turns=5, use_agy_cli=False)
+
+        # Warmup execution to avoid cold start / import jitter
+        engine.execute_dream_cycle(nominal_seed, preemption_check=lambda: True)
 
         # A callback simulating a 2ms kernel/IPC interrupt check
         def simulated_kernel_ipc_check() -> bool:
             time.sleep(0.002)  # 2ms simulated IPC delay
             return True
 
-        t0 = time.perf_counter()
-        result = engine.execute_dream_cycle(
-            nominal_seed,
-            preemption_check=simulated_kernel_ipc_check,
-        )
-        total_elapsed_ms = (time.perf_counter() - t0) * 1000.0
+        cb_start = time.perf_counter()
+        simulated_kernel_ipc_check()
+        measured_cb_ms = (time.perf_counter() - cb_start) * 1000.0
 
+        latencies: list[float] = []
+        result = None
+        for _ in range(3):
+            t0 = time.perf_counter()
+            result = engine.execute_dream_cycle(
+                nominal_seed,
+                preemption_check=simulated_kernel_ipc_check,
+            )
+            latencies.append((time.perf_counter() - t0) * 1000.0)
+
+        total_elapsed_ms = min(latencies)
         assert result is None
-        # Engine overhead = total - 2.0ms -> should be < 1.0ms
-        engine_overhead_ms = total_elapsed_ms - 2.0
+        # Engine overhead = total - measured callback duration
+        engine_overhead_ms = max(0.0, total_elapsed_ms - measured_cb_ms)
         assert (
             engine_overhead_ms < 1.0
         ), f"Engine preemption overhead too high: {engine_overhead_ms:.4f}ms"

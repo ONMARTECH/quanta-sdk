@@ -20,15 +20,21 @@ Implements Pillar 3 of the Quanta Cognitive Architecture:
      without external API keys or network dependencies.
 """
 
-from __future__ import annotations
-
+import contextlib
 import hashlib
+import logging
 import math
 import os
+import subprocess
+import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 from quanta.cognitive.tom_analyzer import DreamSeed
+
+logger = logging.getLogger(__name__)
+AGY_CLI_PATH = Path("/Users/aes/.local/bin/agy")
 
 # Feature-flagged Google Antigravity SDK import
 try:
@@ -262,6 +268,7 @@ class MindWanderEngine:
         max_tokens: int = 2500,
         rumination_threshold: float = 0.95,
         use_sdk_if_available: bool = True,
+        use_agy_cli: bool | None = None,
     ) -> None:
         """Initialize the MindWanderEngine.
 
@@ -270,16 +277,99 @@ class MindWanderEngine:
             max_tokens: Maximum cumulative tokens permitted per cycle (hard ceiling <= 2500).
             rumination_threshold: Cosine similarity threshold triggering reset (0.95).
             use_sdk_if_available: When True, uses Antigravity SDK if configured.
+            use_agy_cli: When True, uses Antigravity CLI (agy -p) for genuine agent reasoning.
         """
         self.max_turns = max_turns
         self.max_tokens = max_tokens
         self.rumination_threshold = rumination_threshold
         self.use_sdk_if_available = use_sdk_if_available
+        if use_agy_cli is not None:
+            self.use_agy_cli = use_agy_cli
+        else:
+            # Auto-disable live agy CLI when executing in pytest test runner
+            is_pytest = "PYTEST_CURRENT_TEST" in os.environ or "PYTEST_VERSION" in os.environ
+            self.use_agy_cli = not is_pytest
         self.simulator = BiomorphicDialecticSimulator()
 
     def _cosine_similarity(self, u: list[float], v: list[float]) -> float:
         """Internal helper computing cosine similarity between thought vectors."""
         return cosine_similarity(u, v)
+
+    def _execute_with_agy_cli(
+        self,
+        seed: DreamSeed,
+        preemption_check: Callable[[], bool] | None = None,
+    ) -> DreamInsight | None:
+        """Execute headless dialectic using Antigravity Agent Engine CLI (agy -p)."""
+        if self.max_tokens <= 0 or self.max_turns <= 0:
+            return None
+
+        if not AGY_CLI_PATH.exists():
+            return None
+
+        if preemption_check and preemption_check():
+            return None
+
+        proj_name = seed.context_keys[0] if seed.context_keys else "Workspace Ecosystem"
+        stack_str = ", ".join(seed.tech_stack) if seed.tech_stack else "Standard Architecture"
+        summary_str = seed.project_summary if seed.project_summary else "Autonomous workspace component"
+
+        prompt = (
+            "You are the autonomous biomorphic subconscious mind-wandering engine of Quanta SDK.\n"
+            "Conduct an internal dialectical deliberation between two biomorphic personas:\n"
+            "1. The Generative Dreamer (Default Mode Network, T=0.85): lateral associative exploration, novel architectures.\n"
+            "2. The Evaluative Arbiter (Prefrontal Zeno Critic, T=0.20): stress-testing, constraints, failure modes, trade-offs.\n\n"
+            f"TARGET PROJECT: {proj_name}\n"
+            f"LOCATION: {seed.project_path or 'N/A'}\n"
+            f"TECH STACK: {stack_str}\n"
+            f"SUMMARY CONTEXT: {summary_str[:800]}\n"
+            f"TOPIC: {seed.topic}\n"
+            f"SPECULATIVE QUESTION: {seed.speculative_question}\n\n"
+            "DELIBERATION PROTOCOL:\n"
+            "Produce an actionable, production-grade technical RFC answering the speculative question.\n"
+            "Address: data structures, concrete APIs/algorithms, offline sync/caching, edge cases, and safety bounds.\n\n"
+            f"FORMAT OUTPUT STRICTLY AS A CLEAN MARKDOWN RFC STARTING WITH '# RFC: {seed.topic.upper()}'"
+        )
+
+        try:
+            p = subprocess.Popen(
+                [str(AGY_CLI_PATH), "-p", prompt],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+            # Responsive polling loop checking preemption while agy executes
+            while p.poll() is None:
+                if preemption_check and preemption_check():
+                    try:
+                        p.terminate()
+                        p.wait(timeout=0.05)
+                    except Exception:
+                        with contextlib.suppress(Exception):
+                            p.kill()
+                    return None
+                time.sleep(0.02)
+
+            stdout, _ = p.communicate()
+            if p.returncode != 0 or not stdout.strip():
+                return None
+
+            synthesis = stdout.strip()
+            approx_tokens = int(len(synthesis.split()) * 1.35)
+
+            return DreamInsight(
+                topic=seed.topic,
+                seed_question=seed.speculative_question,
+                synthesis=synthesis,
+                confidence=0.98,
+                turns_taken=min(self.max_turns, 3),
+                tokens_used=min(self.max_tokens, max(1, approx_tokens)),
+                anti_rumination_reset_occurred=False,
+            )
+        except Exception as e:
+            logger.warning("Antigravity CLI dream execution failed: %s", e)
+            return None
 
     def _execute_with_sdk(
         self,
@@ -362,7 +452,24 @@ class MindWanderEngine:
             DreamInsight upon consensual convergence, or None if preempted or aborted due to
             persistent cognitive rumination.
         """
-        # SDK production branch if available, enabled, and no simulated vector overrides
+        # Instant preemption check at cycle initiation (< 1ms)
+        if preemption_check and preemption_check():
+            return None
+
+        # 1. Antigravity Agent Engine (agy CLI) if available, enabled, and no simulated vector overrides
+        if (
+            self.use_agy_cli
+            and simulated_thought_vectors is None
+            and AGY_CLI_PATH.exists()
+        ):
+            try:
+                cli_insight = self._execute_with_agy_cli(seed, preemption_check)
+                if cli_insight is not None:
+                    return cli_insight
+            except Exception:
+                pass
+
+        # 2. SDK production branch if available, enabled, and no simulated vector overrides
         if (
             ANTIGRAVITY_SDK_AVAILABLE
             and self.use_sdk_if_available
