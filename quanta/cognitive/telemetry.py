@@ -89,6 +89,9 @@ def record_decision_telemetry(
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
             f.flush()
+
+        with contextlib.suppress(Exception):
+            generate_dashboard_html(telemetry_file=log_file)
     except Exception:
         pass
 
@@ -290,6 +293,29 @@ def generate_dashboard_html(
         .winner-cell {{ color: #58a6ff; }}
         .num {{ font-variant-numeric: tabular-nums; font-weight: 600; }}
         .empty {{ text-align: center; color: #8b949e; padding: 24px; }}
+        @keyframes pulse {{
+            0% {{ transform: scale(0.95); box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7); }}
+            70% {{ transform: scale(1); box-shadow: 0 0 0 6px rgba(63, 185, 80, 0); }}
+            100% {{ transform: scale(0.95); box-shadow: 0 0 0 0 rgba(63, 185, 80, 0); }}
+        }}
+        .pulse-dot {{
+            width: 9px; height: 9px; background: #3fb950; border-radius: 50%;
+            display: inline-block; animation: pulse 2s infinite;
+        }}
+        .live-controls {{
+            display: flex; align-items: center; gap: 10px;
+        }}
+        .refresh-btn {{
+            background: #21262d; border: 1px solid var(--border); color: var(--text);
+            padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;
+            font-weight: 500; transition: all 0.2s;
+        }}
+        .refresh-btn:hover {{ background: #30363d; color: var(--heading); }}
+        .refresh-btn.paused {{ border-color: var(--accent-amber); color: var(--accent-amber); }}
+        .interval-select {{
+            background: #21262d; border: 1px solid var(--border); color: var(--text);
+            padding: 3px 6px; border-radius: 6px; font-size: 12px; cursor: pointer;
+        }}
     </style>
 </head>
 <body>
@@ -298,7 +324,19 @@ def generate_dashboard_html(
             <span>⚛️ Quanta Bilişsel Hakem & Telemetri Kokpiti</span>
             <span class="live-badge">Canlı 6-Qubit Çift Motor</span>
         </h1>
-        <div class="mono">Oluşturuldu: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</div>
+        <div class="live-controls">
+            <span class="pulse-dot"></span>
+            <span class="mono">Yenileme: <b id="countdown">3</b>s</span>
+            <select id="interval-select" class="interval-select" title="Yenileme Aralığı">
+                <option value="2">2 sn</option>
+                <option value="3" selected>3 sn</option>
+                <option value="5">5 sn</option>
+                <option value="10">10 sn</option>
+            </select>
+            <button id="pause-btn" class="refresh-btn">Durdur</button>
+            <span class="mono" style="margin-left: 6px; color: #6e7681;">|</span>
+            <span class="mono" style="font-size: 11px; margin-left: 6px;">Oluşturuldu: {datetime.now().strftime("%H:%M:%S")}</span>
+        </div>
     </div>
 
     <div class="kpi-grid">
@@ -351,6 +389,48 @@ def generate_dashboard_html(
             </tbody>
         </table>
     </div>
+
+    <script>
+        let intervalSec = parseInt(localStorage.getItem('quanta_monitor_interval') || '3', 10);
+        let isPaused = localStorage.getItem('quanta_monitor_paused') === 'true';
+        let remaining = intervalSec;
+
+        const countdownEl = document.getElementById('countdown');
+        const pauseBtn = document.getElementById('pause-btn');
+        const selectEl = document.getElementById('interval-select');
+
+        if (selectEl) {{
+            selectEl.value = intervalSec;
+            selectEl.addEventListener('change', (e) => {{
+                intervalSec = parseInt(e.target.value, 10);
+                localStorage.setItem('quanta_monitor_interval', intervalSec);
+                remaining = intervalSec;
+                if (countdownEl) countdownEl.innerText = remaining;
+            }});
+        }}
+
+        if (pauseBtn) {{
+            if (isPaused) {{
+                pauseBtn.innerText = 'Devam Et';
+                pauseBtn.classList.add('paused');
+            }}
+            pauseBtn.addEventListener('click', () => {{
+                isPaused = !isPaused;
+                localStorage.setItem('quanta_monitor_paused', isPaused);
+                pauseBtn.innerText = isPaused ? 'Devam Et' : 'Durdur';
+                pauseBtn.classList.toggle('paused', isPaused);
+            }});
+        }}
+
+        setInterval(() => {{
+            if (isPaused) return;
+            remaining--;
+            if (countdownEl) countdownEl.innerText = remaining;
+            if (remaining <= 0) {{
+                window.location.reload();
+            }}
+        }}, 1000);
+    </script>
 </body>
 </html>
 """

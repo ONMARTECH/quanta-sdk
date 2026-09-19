@@ -10,6 +10,7 @@ Supports autonomous biomorphic subconscious mind-wandering daemon commands:
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import json
 import os
 import subprocess
@@ -223,6 +224,16 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         help="Target output file path for the HTML dashboard (default: ~/.gemini/antigravity/telemetry/dashboard.html)",
+    )
+    monitor_parser.add_argument(
+        "--watch",
+        "-w",
+        nargs="?",
+        const=2,
+        type=int,
+        default=None,
+        metavar="SEC",
+        help="Live watch mode: continuously refresh output every SEC seconds (default: 2)",
     )
 
     return parser
@@ -438,8 +449,17 @@ def handle_monitor(args: argparse.Namespace) -> int:
         read_telemetry_events,
     )
 
-    if getattr(args, "dashboard", False):
-        custom_out = Path(args.output).resolve() if getattr(args, "output", None) else None
+    watch_interval = getattr(args, "watch", None)
+    custom_out = Path(args.output).resolve() if getattr(args, "output", None) else None
+
+    # Single-shot JSON export
+    if getattr(args, "json", False) and watch_interval is None:
+        summary = get_telemetry_summary()
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
+        return 0
+
+    # Single-shot Dashboard export (without watch)
+    if getattr(args, "dashboard", False) and watch_interval is None:
         path = generate_dashboard_html(output_path=custom_out)
         print("=" * 70)
         print("   ⚛️ QUANTA BİLİŞSEL DOKPİTİ: İNTERAKTİF HTML DASHBOARD")
@@ -450,42 +470,62 @@ def handle_monitor(args: argparse.Namespace) -> int:
         print("=" * 70)
         return 0
 
-    if getattr(args, "json", False):
+    def _render_once(is_live: bool = False, interval: int = 2) -> None:
+        if getattr(args, "dashboard", False):
+            generate_dashboard_html(output_path=custom_out)
+
         summary = get_telemetry_summary()
-        print(json.dumps(summary, indent=2, ensure_ascii=False))
-        return 0
+        events = read_telemetry_events(event_type="decision", limit=args.limit)
 
-    summary = get_telemetry_summary()
-    events = read_telemetry_events(event_type="decision", limit=args.limit)
-
-    print("=" * 86)
-    print("             ⚛️ QUANTA BİLİŞSEL HAKEM & TELEMETRİ KOKPİTİ")
-    print("=" * 86)
-    print(f"  Toplam Karar:           {summary['total_decisions']}")
-    print(f"  Ortalama Gecikme:       {summary['avg_decision_latency_ms']:.2f} ms")
-    print(f"  Ortalama Karar Güveni:  %{summary['avg_confidence_pct']:.1f}")
-    print(f"  Bilinçaltı Kanca Adımı: {summary['total_hook_steps']}")
-    projects_str = ", ".join(summary["active_workspaces"]) if summary["active_workspaces"] else "N/A"
-    print(f"  İzlenen Projeler:       {projects_str}")
-    print("-" * 86)
-
-    if not events:
-        print("  Henüz kaydedilmiş hakem kararı bulunmuyor.")
-    else:
-        header = f"{'Zaman (UTC)':<20} {'Proje / Workspace':<24} {'Kazanan Karar':<25} {'Güven':<8} {'Gecikme':<8}"
-        print(header)
+        now_str = datetime.now().strftime("%H:%M:%S")
+        print("=" * 86)
+        if is_live:
+            print(f"   ⚛️ QUANTA BİLİŞSEL HAKEM KOKPİTİ [CANLI İZLEME: {interval}s | Son Güncelleme: {now_str}]")
+        else:
+            print("             ⚛️ QUANTA BİLİŞSEL HAKEM & TELEMETRİ KOKPİTİ")
+        print("=" * 86)
+        print(f"  Toplam Karar:           {summary['total_decisions']}")
+        print(f"  Ortalama Gecikme:       {summary['avg_decision_latency_ms']:.2f} ms")
+        print(f"  Ortalama Karar Güveni:  %{summary['avg_confidence_pct']:.1f}")
+        print(f"  Bilinçaltı Kanca Adımı: {summary['total_hook_steps']}")
+        projects_str = ", ".join(summary["active_workspaces"]) if summary["active_workspaces"] else "N/A"
+        print(f"  İzlenen Projeler:       {projects_str}")
         print("-" * 86)
-        for ev in reversed(events):
-            t_str = ev.get("iso_time", "")[:19]
-            ws = ev.get("workspace", "General")[:22]
-            winner = ev.get("winner", "")[:24]
-            conf = f"%{ev.get('confidence', 0.0) * 100:.1f}"
-            lat = f"{ev.get('latency_ms', 0.0):.2f}ms"
-            print(f"{t_str:<20} {ws:<24} {winner:<25} {conf:<8} {lat:<8}")
-            goal = ev.get("goal", "")
-            if goal:
-                print(f"  └─ Hedef: {goal[:75]}")
-    print("=" * 86)
+
+        if not events:
+            print("  Henüz kaydedilmiş hakem kararı bulunmuyor.")
+        else:
+            header = f"{'Zaman (UTC)':<20} {'Proje / Workspace':<24} {'Kazanan Karar':<25} {'Güven':<8} {'Gecikme':<8}"
+            print(header)
+            print("-" * 86)
+            for ev in reversed(events):
+                t_str = ev.get("iso_time", "")[:19]
+                ws = ev.get("workspace", "General")[:22]
+                winner = ev.get("winner", "")[:24]
+                conf = f"%{ev.get('confidence', 0.0) * 100:.1f}"
+                lat = f"{ev.get('latency_ms', 0.0):.2f}ms"
+                print(f"{t_str:<20} {ws:<24} {winner:<25} {conf:<8} {lat:<8}")
+                goal = ev.get("goal", "")
+                if goal:
+                    print(f"  └─ Hedef: {goal[:75]}")
+        print("=" * 86)
+        if is_live:
+            print(f"  [Canlı Mod Aktif: Her {interval} sn'de bir yenilenir | Çıkmak için Ctrl+C]")
+
+    if watch_interval is not None:
+        interval = max(1, int(watch_interval))
+        try:
+            while True:
+                # Clear terminal screen
+                sys.stdout.write("\033[2J\033[H")
+                sys.stdout.flush()
+                _render_once(is_live=True, interval=interval)
+                time.sleep(interval)
+        except KeyboardInterrupt:
+            print("\n  Canlı izleme durduruldu.\n")
+            return 0
+
+    _render_once(is_live=False)
     return 0
 
 
