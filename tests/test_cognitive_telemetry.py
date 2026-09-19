@@ -144,3 +144,27 @@ class TestCognitiveTelemetry:
         captured_dash = capsys.readouterr()
         assert "İNTERAKTİF HTML DASHBOARD" in captured_dash.out
         assert html_out.exists()
+
+    def test_cli_arbitrate_command(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+        telemetry_file = tmp_path / "telemetry.jsonl"
+        monkeypatch.setattr("quanta.cognitive.telemetry.DEFAULT_TELEMETRY_DIR", tmp_path)
+        monkeypatch.setattr("quanta.cognitive.telemetry.DEFAULT_TELEMETRY_FILE", telemetry_file)
+
+        from quanta.cli import main
+
+        code = main([
+            "arbitrate",
+            "--goal", "Test Architecture",
+            "--options", "Option Alpha; Option Beta",
+            "--workspace", "TestWS",
+        ])
+        assert code == 0
+        captured = capsys.readouterr()
+        assert "QUANTA BİLİŞSEL KARAR HAKEMİ" in captured.out
+        assert "Kazanan Seçenek:" in captured.out
+
+        # Verify telemetry was recorded
+        assert telemetry_file.exists()
+        summary = get_telemetry_summary(telemetry_file=telemetry_file)
+        assert summary["total_decisions"] == 1
+        assert summary["recent_decisions"][0]["workspace"] == "TestWS"

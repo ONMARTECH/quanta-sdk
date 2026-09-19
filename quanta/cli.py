@@ -236,6 +236,44 @@ def build_parser() -> argparse.ArgumentParser:
         help="Live watch mode: continuously refresh output every SEC seconds (default: 2)",
     )
 
+    # `quanta arbitrate ...`
+    arbitrate_parser = subparsers.add_parser(
+        "arbitrate",
+        help="Execute 6-qubit Quantum Decision Arbitration between architectural choices",
+    )
+    arbitrate_parser.add_argument(
+        "--goal",
+        "-g",
+        type=str,
+        required=True,
+        help="Goal or architectural objective to optimize for",
+    )
+    arbitrate_parser.add_argument(
+        "--options",
+        "-opt",
+        type=str,
+        required=True,
+        help="Semicolon or comma separated list of candidate options/architectures",
+    )
+    arbitrate_parser.add_argument(
+        "--criteria",
+        "-c",
+        type=str,
+        default=None,
+        help="Optional criteria or hard constraints to enforce",
+    )
+    arbitrate_parser.add_argument(
+        "--workspace",
+        type=str,
+        default=None,
+        help="Explicit project/workspace name",
+    )
+    arbitrate_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output raw arbitration JSON result",
+    )
+
     return parser
 
 
@@ -544,6 +582,60 @@ def handle_monitor(args: argparse.Namespace) -> int:
     return 0
 
 
+def handle_arbitrate(args: argparse.Namespace) -> int:
+    """Executes 6-qubit Quantum Decision Arbitration and records telemetry."""
+    from quanta.cognitive.arbiter import QuantumDecisionArbiter
+    from quanta.cognitive.telemetry import detect_workspace
+
+    goal = args.goal
+    raw_opts = args.options
+    if ";" in raw_opts:
+        options = [o.strip() for o in raw_opts.split(";") if o.strip()]
+    else:
+        options = [o.strip() for o in raw_opts.split(",") if o.strip()]
+
+    if len(options) < 2:
+        print("Hata: Arbitrasyon için en az 2 seçenek belirtilmelidir.")
+        return 1
+
+    criteria = [c.strip() for c in args.criteria.split(";")] if args.criteria else None
+    workspace = detect_workspace(args.workspace)
+
+    arbiter = QuantumDecisionArbiter()
+    result = arbiter.arbitrate(
+        options=options,
+        goal=goal,
+        criteria=criteria,
+        workspace=workspace,
+        log_telemetry=True,
+    )
+
+    if getattr(args, "json", False):
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0
+
+    winner = result["recommended_option"]
+    conf = result["confidence"] * 100.0
+    print("=" * 70)
+    print("       ⚛️ QUANTA BİLİŞSEL KARAR HAKEMİ (6-QUBIT ZENO ARBITRATION)")
+    print("=" * 70)
+    print(f"  Proje / Workspace: {workspace}")
+    print(f"  Karar Hedefi:      {goal}")
+    print(f"  Kazanan Seçenek:   {winner}")
+    print(f"  Karar Güveni:      %{conf:.1f}")
+    print(f"  Dinamik Rejim:     {result['regime']}")
+    print(f"  Gecikme:           {result['latency_ms']:.2f} ms")
+    if result.get("ranked_options"):
+        print("-" * 70)
+        print("  Sıralama ve Olasılık Dağılımı:")
+        for idx, r in enumerate(result["ranked_options"], start=1):
+            star = " ★" if r["option"] == winner else ""
+            score_pct = r.get("probability", r.get("score", 0.0)) * 100.0
+            print(f"    {idx}. {r['option']:<35} (P={score_pct:.1f}%){star}")
+    print("=" * 70)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main CLI entry point for the Quanta SDK."""
     if argv is None:
@@ -559,6 +651,8 @@ def main(argv: list[str] | None = None) -> int:
         return handle_dream(args)
     elif args.subcommand == "monitor":
         return handle_monitor(args)
+    elif args.subcommand == "arbitrate":
+        return handle_arbitrate(args)
 
     parser.print_help()
     return 0

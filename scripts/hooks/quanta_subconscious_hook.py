@@ -16,6 +16,7 @@ import contextlib
 import json
 import math
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -157,6 +158,133 @@ def extract_last_user_query(transcript_path: str | Path | None) -> str:
     return ""
 
 
+def extract_decision_from_turn(content: str, thinking: str = "") -> str:
+    """Intelligently extracts the decisive conclusion, recommendation, or solution from a turn."""
+    content = content.strip()
+    if not content:
+        return ""
+
+    # Priority 1: Explicit decision/solution/recommendation headings
+    m = re.search(
+        r'(?:^|\n)#{1,4}\s*(?:[0-9.]+\s*)?(?:Çözüm|Karar|Sonuç|Öneri|Plan|Strateji|Solution|Decision|Recommendation|Resolution)[:\s]*(.*?)(?:\n|$)',
+        content,
+        re.IGNORECASE,
+    )
+    if m and len(m.group(1).strip()) > 3:
+        return m.group(1).strip()
+
+    # Priority 2: Bold decision lead lines (* **Çözüm:** ..., **Karar:** ...)
+    m2 = re.search(
+        r'\*\*(?:Çözüm|Karar|Sonuç|Öneri|Plan|Solution|Decision|Recommendation)[:\s]*(.*?)\*\*',
+        content,
+        re.IGNORECASE,
+    )
+    if m2 and len(m2.group(1).strip()) > 3:
+        return m2.group(1).strip()
+
+    # Priority 3: First markdown header
+    m3 = re.search(r'(?:^|\n)#{1,4}\s*(?:[0-9.]+\s*)?(.*?)(?:\n|$)', content)
+    if m3:
+        h = m3.group(1).strip()
+        if len(h) > 5 and not h.startswith("http"):
+            return h
+
+    # Priority 4: First substantive sentence
+    for line in content.splitlines():
+        line = line.strip('*#- \t')
+        if len(line) > 15 and not line.startswith("http"):
+            return line[:100]
+
+    return content[:80]
+
+
+def extract_unrecorded_decisions(
+    transcript_path: str | Path | None,
+    last_recorded_step: int,
+) -> tuple[list[dict], int]:
+    """Scans transcript for completed MODEL PLANNER_RESPONSE steps after last_recorded_step.
+    Returns (list_of_decisions, new_last_recorded_step).
+    """
+    if not transcript_path:
+        return [], last_recorded_step
+    p = Path(transcript_path)
+    if not p.exists():
+        if p.name == "transcript_full.jsonl":
+            p = p.with_name("transcript.jsonl")
+        if not p.exists():
+            return [], last_recorded_step
+
+    decisions: list[dict] = []
+    max_step = last_recorded_step
+
+    try:
+        with open(p, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            seek_pos = max(0, size - 262144)
+            f.seek(seek_pos)
+            chunk = f.read().decode("utf-8", errors="replace")
+
+        lines = chunk.splitlines()
+        parsed_entries = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                parsed_entries.append(json.loads(line))
+            except Exception:
+                pass
+
+        if last_recorded_step == 0 and len(parsed_entries) > 0:
+            candidates = [
+                e for e in parsed_entries
+                if e.get("source") == "MODEL" and e.get("type") == "PLANNER_RESPONSE" and e.get("content")
+            ]
+            if candidates:
+                last_recorded_step = max(0, candidates[-1].get("step_index", 0) - 1)
+                max_step = last_recorded_step
+
+        current_user_request = ""
+        for entry in parsed_entries:
+            src = entry.get("source")
+            etype = entry.get("type")
+            step = entry.get("step_index", 0)
+
+            if src == "USER_EXPLICIT" and etype == "USER_INPUT":
+                c = entry.get("content", "")
+                if "<USER_REQUEST>" in c:
+                    req = c.split("<USER_REQUEST>")[1].split("</USER_REQUEST>")[0].strip()
+                    lines_req = [l.strip() for l in req.splitlines() if l.strip()]
+                    current_user_request = lines_req[0][:120] if lines_req else ""
+                else:
+                    lines_c = [l.strip() for l in c.splitlines() if l.strip()]
+                    current_user_request = lines_c[0][:120] if lines_c else ""
+
+            elif src == "MODEL" and etype == "PLANNER_RESPONSE":
+                content = entry.get("content", "").strip()
+                tool_calls = entry.get("tool_calls", [])
+                is_substantive = len(content) > 80 and not tool_calls
+                if not is_substantive and ("Çözüm" in content or "Karar" in content or "###" in content):
+                    is_substantive = True
+
+                if step > last_recorded_step and is_substantive:
+                    decision_text = extract_decision_from_turn(content, entry.get("thinking", ""))
+                    if decision_text:
+                        decisions.append({
+                            "step_index": step,
+                            "goal": current_user_request or "Kullanıcı Görevi / Analiz",
+                            "winner": decision_text,
+                            "confidence": 0.95,
+                            "regime": "Bilişsel Çözüm",
+                        })
+                    max_step = max(max_step, step)
+    except Exception:
+        pass
+
+    return decisions, max_step
+
+
 def main() -> None:
     output_payload: dict = {}
     try:
@@ -181,6 +309,7 @@ def main() -> None:
         turn_count = 0
         last_injected_time = 0.0
         last_step_idx = -1
+        last_recorded_decision_step = 0
         current_step_idx = payload.get("stepIdx", payload.get("initialNumSteps", 0))
 
         if state_file.exists():
@@ -190,6 +319,7 @@ def main() -> None:
                     turn_count = cached.get("turn_count", 0)
                     last_injected_time = cached.get("last_injected_time", 0.0)
                     last_step_idx = cached.get("last_step_idx", -1)
+                    last_recorded_decision_step = cached.get("last_recorded_decision_step", 0)
                     for item in cached.get("engrams", []):
                         mem.engrams.append({
                             "key": item["key"],
@@ -205,7 +335,62 @@ def main() -> None:
             except Exception:
                 pass
 
-        # 1. DEBOUNCE / RE-ENTRANCY CHECK:
+        # Check workspace and project context
+        workspace_paths = payload.get("workspacePaths", [])
+        transcript_path = payload.get("transcriptPath")
+        from quanta.cognitive.telemetry import (
+            detect_workspace,
+            record_decision_telemetry,
+            record_hook_telemetry,
+        )
+        real_workspace = detect_workspace(paths=workspace_paths)
+
+        # 1. EXTRACT & RECORD COMPLETED DECISIONS
+        # Check transcript for newly completed decisions from model planner responses
+        unrecorded_decisions, new_last_dec_step = extract_unrecorded_decisions(
+            transcript_path, last_recorded_decision_step
+        )
+        if unrecorded_decisions:
+            for dec in unrecorded_decisions:
+                record_decision_telemetry(
+                    goal=dec["goal"],
+                    options=[],
+                    winner=dec["winner"],
+                    confidence=dec.get("confidence", 0.95),
+                    zeno_pinning_factor=0.92,
+                    anti_zeno_kickback=0.08,
+                    regime=dec.get("regime", "Bilişsel Çözüm"),
+                    latency_ms=15.0,
+                    workspace=real_workspace,
+                )
+            last_recorded_decision_step = new_last_dec_step
+
+        # If this is a Stop lifecycle event, persist state and return immediately
+        if payload.get("terminationReason") is not None:
+            try:
+                state_file.parent.mkdir(parents=True, exist_ok=True)
+                temp_path = state_file.with_name(
+                    f".tmp_{state_file.name}_{os.getpid()}_{time.time_ns()}"
+                )
+                state_dict = {
+                    "turn_count": turn_count,
+                    "last_injected_time": now,
+                    "last_step_idx": current_step_idx,
+                    "last_recorded_decision_step": last_recorded_decision_step,
+                    "engrams": mem.engrams,
+                }
+                with open(temp_path, "w", encoding="utf-8") as sf:
+                    json.dump(state_dict, sf, ensure_ascii=False, indent=2)
+                    sf.flush()
+                    os.fsync(sf.fileno())
+                os.replace(temp_path, state_file)
+            except Exception:
+                pass
+            sys.stdout.write(json.dumps({}))
+            sys.stdout.flush()
+            return
+
+        # 2. DEBOUNCE / RE-ENTRANCY CHECK FOR PRE-INVOCATION:
         # If called within 2.0 seconds or for same step, return empty
         is_recent = (now - last_injected_time) < 2.0
         is_same_step = (current_step_idx == last_step_idx) and (last_step_idx != -1)
@@ -221,12 +406,6 @@ def main() -> None:
             if isinstance(val, str) and val.strip():
                 user_query = val.strip().lower()
                 break
-
-        # Check workspace and project context
-        workspace_paths = payload.get("workspacePaths", [])
-        transcript_path = payload.get("transcriptPath")
-        from quanta.cognitive.telemetry import detect_workspace, record_hook_telemetry
-        real_workspace = detect_workspace(paths=workspace_paths)
 
         last_query = extract_last_user_query(transcript_path)
         if not user_query and last_query:
@@ -355,6 +534,7 @@ def main() -> None:
                 "turn_count": turn_count,
                 "last_injected_time": now,
                 "last_step_idx": current_step_idx,
+                "last_recorded_decision_step": last_recorded_decision_step,
                 "engrams": mem.engrams,
             }
             with open(temp_path, "w", encoding="utf-8") as sf:

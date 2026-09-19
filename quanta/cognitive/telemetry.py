@@ -287,11 +287,12 @@ def generate_dashboard_html(
     rows_html = []
     for d in recent_decisions:
         regime = d.get("regime", "")
-        regime_badge = (
-            '<span class="badge badge-zeno">Zeno Pinning</span>'
-            if "Zeno" in regime
-            else '<span class="badge badge-anti">Anti-Zeno</span>'
-        )
+        if "Zeno" in regime:
+            regime_badge = '<span class="badge badge-zeno">Zeno Pinning</span>'
+        elif "Bilişsel" in regime or "Agent" in regime:
+            regime_badge = '<span class="badge badge-solution">Bilişsel Çözüm</span>'
+        else:
+            regime_badge = '<span class="badge badge-anti">Anti-Zeno</span>'
         conf = d.get("confidence", 0.0) * 100.0
         lat = d.get("latency_ms", 0.0)
         ws = d.get("workspace", "General")
@@ -362,6 +363,7 @@ def generate_dashboard_html(
         .project-pill {{ background: rgba(88, 166, 255, 0.12); color: var(--accent); border: 1px solid rgba(88, 166, 255, 0.3); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }}
         .badge {{ padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; display: inline-block; }}
         .badge-zeno {{ background: rgba(63, 185, 80, 0.15); color: var(--accent-green); border: 1px solid rgba(63, 185, 80, 0.3); }}
+        .badge-solution {{ background: rgba(88, 166, 255, 0.15); color: var(--accent); border: 1px solid rgba(88, 166, 255, 0.3); }}
         .badge-anti {{ background: rgba(188, 140, 255, 0.15); color: var(--accent-purple); border: 1px solid rgba(188, 140, 255, 0.3); }}
         .winner-cell {{ color: #58a6ff; }}
         .num {{ font-variant-numeric: tabular-nums; font-weight: 600; }}
