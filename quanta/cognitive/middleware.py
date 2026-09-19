@@ -117,15 +117,22 @@ class QuantaCognitiveMiddleware:
     def arbitrate_decision(
         self,
         goal: str,
-        options: list[str],
+        options: list[str] | list[dict[str, Any]],
+        criteria: list[str] | None = None,
         exploration_drive: float | None = None,
     ) -> dict[str, Any]:
         """Runs subconscious Quantum Zeno decision arbitration between competing paths.
 
+        Supports arbitrary N options, structured impacts/risks, and criteria.
         Returns recommended option, confidence, and Zeno pinning metrics.
         """
         exp = exploration_drive if exploration_drive is not None else self.default_exploration
-        return self.arbiter.arbitrate(goal=goal, options=options, exploration_drive=exp)
+        return self.arbiter.arbitrate(
+            goal=goal,
+            options=options,
+            criteria=criteria,
+            exploration_drive=exp,
+        )
 
     def get_telemetry(self) -> dict[str, Any]:
         """Returns diagnostic telemetry of the subconscious engine."""

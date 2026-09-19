@@ -492,6 +492,21 @@ def handle_monitor(args: argparse.Namespace) -> int:
         print(f"  İzlenen Projeler:       {projects_str}")
         print("-" * 86)
 
+        active_sessions = summary.get("active_sessions", [])
+        if active_sessions:
+            print("  ⚡ CANLIDA AKTİF ÇALIŞAN PROJELER & SORULAN İSTEKLER:")
+            print(f"  {'Proje / Workspace':<25} {'Son Aktivite':<13} {'Durum':<10} {'Son İstek / Yapılan İş':<34}")
+            print("  " + "-" * 82)
+            for s in active_sessions[:5]:
+                ws = s.get("workspace", "General")[:23]
+                sec = s.get("seconds_ago", 0)
+                sec_str = f"{sec}s önce" if sec < 60 else f"{sec // 60}dk önce"
+                status = "🟢 CANLI" if s.get("is_live") else "⚪ BOŞTA"
+                query = s.get("last_query") or s.get("winner") or "İşlem yürütülüyor"
+                query_str = query[:32]
+                print(f"  {ws:<25} {sec_str:<13} {status:<10} {query_str:<34}")
+            print("-" * 86)
+
         if not events:
             print("  Henüz kaydedilmiş hakem kararı bulunmuyor.")
         else:

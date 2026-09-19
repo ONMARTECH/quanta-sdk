@@ -29,21 +29,32 @@ def get_telemetry_file() -> Path:
     return DEFAULT_TELEMETRY_FILE
 
 
-def detect_workspace(explicit: str | None = None) -> str:
-    """Intelligently detects current workspace/project name."""
+def detect_workspace(
+    explicit: str | None = None,
+    paths: list[str] | None = None,
+) -> str:
+    """Intelligently detects current workspace/project name from explicit name, paths list, or cwd."""
     if explicit and explicit.strip():
         return explicit.strip()
 
-    cwd = os.getcwd()
-    antigravity_marker = "/Antigravity Projects/"
-    if antigravity_marker in cwd:
-        rel = cwd.split(antigravity_marker)[1].strip("/")
-        parts = rel.split("/")
-        if len(parts) >= 2 and parts[0] in ("Alfa", "Turna Works"):
-            return f"{parts[0]}/{parts[1]}"
-        return parts[0] if parts else "Antigravity Workspace"
+    candidate_paths: list[str] = []
+    if paths:
+        candidate_paths.extend(str(p) for p in paths if p)
+    candidate_paths.append(os.getcwd())
 
-    name = Path(cwd).name
+    antigravity_marker = "/Antigravity Projects/"
+    for p_str in candidate_paths:
+        if antigravity_marker in p_str:
+            rel = p_str.split(antigravity_marker)[1].strip("/")
+            parts = rel.split("/")
+            if len(parts) >= 2 and parts[0] in ("Alfa", "Turna Works"):
+                return f"{parts[0]}/{parts[1]}"
+            return parts[0] if parts else "Antigravity Workspace"
+        p = Path(p_str)
+        if p.name and p.name not in ("config", "antigravity", "brain", "logs", "tmp", ""):
+            return p.name
+
+    name = Path(os.getcwd()).name
     return name if name else "General Workspace"
 
 
@@ -104,6 +115,7 @@ def record_hook_telemetry(
     pruned_count: int,
     latency_ms: float,
     workspace: str | None = None,
+    last_user_query: str = "",
     telemetry_file: Path | None = None,
 ) -> None:
     """Appends a subconscious hook step telemetry record to the persistent ledger."""
@@ -120,6 +132,7 @@ def record_hook_telemetry(
             "conversation_id": conversation_id,
             "step_idx": step_idx,
             "turn_count": turn_count,
+            "last_user_query": last_user_query[:140] if last_user_query else "",
             "rules_replayed": rules_replayed,
             "pruned_count": pruned_count,
             "latency_ms": round(float(latency_ms), 2),
@@ -128,6 +141,9 @@ def record_hook_telemetry(
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
             f.flush()
+
+        with contextlib.suppress(Exception):
+            generate_dashboard_html(telemetry_file=log_file)
     except Exception:
         pass
 
@@ -188,12 +204,36 @@ def get_telemetry_summary(telemetry_file: Path | None = None) -> dict[str, Any]:
         reg = d.get("regime", "Unknown")
         regimes[reg] = regimes.get(reg, 0) + 1
 
+    now_ts = time.time()
+    sessions: dict[str, dict[str, Any]] = {}
+    for e in reversed(all_events):
+        conv_id = e.get("conversation_id") or e.get("workspace", "unknown")
+        if conv_id not in sessions:
+            ev_time = e.get("timestamp", now_ts)
+            sec_ago = max(0, int(now_ts - ev_time))
+            query = e.get("last_user_query") or e.get("goal") or ""
+            sessions[conv_id] = {
+                "workspace": e.get("workspace", "General"),
+                "conversation_id": conv_id,
+                "last_active_time": e.get("iso_time", ""),
+                "seconds_ago": sec_ago,
+                "is_live": sec_ago <= 300,
+                "last_query": query,
+                "last_event_type": e.get("event_type", ""),
+                "step_idx": e.get("step_idx", 0),
+                "winner": e.get("winner", ""),
+            }
+
+    active_sessions = list(sessions.values())
+    active_sessions.sort(key=lambda s: s["seconds_ago"])
+
     return {
         "total_decisions": total_decisions,
         "total_hook_steps": total_hook_steps,
         "avg_decision_latency_ms": round(avg_latency, 2),
         "avg_confidence_pct": round(avg_confidence * 100.0, 1),
         "active_workspaces": workspaces,
+        "active_sessions": active_sessions,
         "regime_distribution": regimes,
         "recent_decisions": decisions[-10:],
     }
@@ -210,6 +250,39 @@ def generate_dashboard_html(
 
     target_path = output_path or (DEFAULT_TELEMETRY_DIR / "dashboard.html")
     target_path.parent.mkdir(parents=True, exist_ok=True)
+
+    active_sessions = summary.get("active_sessions", [])
+    session_rows = []
+    for s in active_sessions[:6]:
+        ws = s.get("workspace", "General")
+        sec = s.get("seconds_ago", 0)
+        time_text = f"{sec} sn önce" if sec < 60 else f"{sec // 60} dk önce"
+        is_live = s.get("is_live", False)
+        status_badge = (
+            '<span class="badge-live"><span class="pulse-dot"></span> CANLI AKTİF</span>'
+            if is_live
+            else '<span class="badge-idle">BEKLEMEDE</span>'
+        )
+        query = s.get("last_query") or s.get("winner") or "İşlem yürütülüyor"
+        step = s.get("step_idx", 0)
+        step_text = f"Adım #{step}" if step else "Hakem Kararı"
+
+        session_rows.append(
+            f"""
+            <tr>
+                <td><span class="project-pill">{ws}</span></td>
+                <td style="color: var(--heading); font-weight: 500;">{query[:75]}{'...' if len(query)>75 else ''}</td>
+                <td class="mono">{time_text}</td>
+                <td class="mono" style="font-size: 11px;">{step_text}</td>
+                <td>{status_badge}</td>
+            </tr>
+            """
+        )
+    sessions_joined = (
+        "\n".join(session_rows)
+        if session_rows
+        else '<tr><td colspan="5" class="empty">Henüz aktif proje oturumu kaydedilmedi.</td></tr>'
+    )
 
     rows_html = []
     for d in recent_decisions:
@@ -316,6 +389,8 @@ def generate_dashboard_html(
             background: #21262d; border: 1px solid var(--border); color: var(--text);
             padding: 3px 6px; border-radius: 6px; font-size: 12px; cursor: pointer;
         }}
+        .badge-live {{ background: rgba(63, 185, 80, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }}
+        .badge-idle {{ background: rgba(110, 118, 129, 0.15); color: #8b949e; border: 1px solid rgba(110, 118, 129, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }}
     </style>
 </head>
 <body>
@@ -360,6 +435,27 @@ def generate_dashboard_html(
             <div class="kpi-value">{summary.get("total_hook_steps", 0)}</div>
             <div class="kpi-sub">SWR Replay & CSF Korumalı</div>
         </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            <span>⚡ Canlıda Aktif Çalışan Projeler & Son İstekler</span>
+            <span class="mono" style="font-size:12px;">Soran Projeler ve Bilişsel Kanca Durumu</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Proje / Workspace</th>
+                    <th>Son Sorulan İstek / Ne Yapılıyor?</th>
+                    <th>Son Aktivite</th>
+                    <th>Döngü Adımı</th>
+                    <th>Canlı Durum</th>
+                </tr>
+            </thead>
+            <tbody>
+                {sessions_joined}
+            </tbody>
+        </table>
     </div>
 
     <div class="section">

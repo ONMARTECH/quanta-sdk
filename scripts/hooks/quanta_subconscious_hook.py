@@ -20,6 +20,11 @@ import sys
 import time
 from pathlib import Path
 
+# Ensure quanta package is importable regardless of caller's cwd or interpreter
+QUANTA_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(QUANTA_ROOT) not in sys.path:
+    sys.path.insert(0, str(QUANTA_ROOT))
+
 # Biophysical constants (calibrated to Theorem 4 and Theorem 8)
 KAPPA_CSF = 1.0 / 6250.0  # CSF quantum dephasing attenuation
 GAMMA_0 = 0.05            # Bare Lindblad dephasing rate
@@ -111,6 +116,47 @@ class FastBiomorphicMemory:
         return scored[:top_k]
 
 
+def extract_last_user_query(transcript_path: str | Path | None) -> str:
+    """Fast, fail-safe extraction of the latest user prompt from the transcript."""
+    if not transcript_path:
+        return ""
+    p = Path(transcript_path)
+    if not p.exists():
+        if p.name == "transcript_full.jsonl":
+            p = p.with_name("transcript.jsonl")
+        if not p.exists():
+            return ""
+
+    try:
+        with open(p, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            seek_pos = max(0, size - 131072)
+            f.seek(seek_pos)
+            chunk = f.read().decode("utf-8", errors="replace")
+
+        lines = chunk.splitlines()
+        for line in reversed(lines):
+            line = line.strip()
+            if not line:
+                continue
+            if '"USER_INPUT"' in line:
+                try:
+                    entry = json.loads(line)
+                    content = entry.get("content", "")
+                    if "<USER_REQUEST>" in content:
+                        req = content.split("<USER_REQUEST>")[1].split("</USER_REQUEST>")[0].strip()
+                        lines_req = [l.strip() for l in req.splitlines() if l.strip()]
+                        return lines_req[0][:120] if lines_req else ""
+                    lines_c = [l.strip() for l in content.splitlines() if l.strip()]
+                    return lines_c[0][:120] if lines_c else ""
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return ""
+
+
 def main() -> None:
     output_payload: dict = {}
     try:
@@ -177,9 +223,17 @@ def main() -> None:
                 break
 
         # Check workspace and project context
-        workspace_hint = str(payload.get("workspaceDirectory", "")).lower()
+        workspace_paths = payload.get("workspacePaths", [])
+        transcript_path = payload.get("transcriptPath")
+        from quanta.cognitive.telemetry import detect_workspace, record_hook_telemetry
+        real_workspace = detect_workspace(paths=workspace_paths)
+
+        last_query = extract_last_user_query(transcript_path)
+        if not user_query and last_query:
+            user_query = last_query.lower()
+
         cwd_hint = os.getcwd().lower()
-        is_turna = any("turna" in h or "meiro" in h or "dengage" in h for h in (workspace_hint, cwd_hint, artifact_dir.lower(), user_query))
+        is_turna = any("turna" in h or "meiro" in h or "dengage" in h for h in (real_workspace.lower(), cwd_hint, artifact_dir.lower(), user_query))
 
         # If fresh conversation, initialize foundational cognitive anchors
         if len(mem.engrams) == 0:
@@ -276,25 +330,18 @@ def main() -> None:
 
         # Centralized non-blocking telemetry logging
         try:
-            telemetry_dir = Path.home() / ".gemini" / "antigravity" / "telemetry"
-            telemetry_dir.mkdir(parents=True, exist_ok=True)
-            telemetry_file = telemetry_dir / "quanta_cognitive_telemetry.jsonl"
             hook_latency_ms = (time.time() - now) * 1000.0
             replayed_keys = [v["key"] for v in vital_anchors] if vital_anchors else []
-            hook_entry = {
-                "event_type": "hook_step",
-                "timestamp": now,
-                "iso_time": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(now)),
-                "workspace": Path(workspace_hint or os.getcwd()).name or "General",
-                "conversation_id": conversation_id,
-                "step_idx": current_step_idx,
-                "turn_count": turn_count,
-                "rules_replayed": replayed_keys,
-                "pruned_count": len(pruned),
-                "latency_ms": round(hook_latency_ms, 2),
-            }
-            with open(telemetry_file, "a", encoding="utf-8") as tf:
-                tf.write(json.dumps(hook_entry, ensure_ascii=False) + "\n")
+            record_hook_telemetry(
+                conversation_id=conversation_id,
+                step_idx=current_step_idx,
+                turn_count=turn_count,
+                rules_replayed=replayed_keys,
+                pruned_count=len(pruned),
+                latency_ms=hook_latency_ms,
+                workspace=real_workspace,
+                last_user_query=last_query or user_query,
+            )
         except Exception:
             pass
 
