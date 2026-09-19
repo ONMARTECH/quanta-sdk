@@ -11,7 +11,7 @@ import torch
 from quanta.torch.brain import CSFShieldedEnvironment, NoisyHippocampalBuffer
 
 
-def text_to_statevector(text: str, dim: int = 16) -> torch.Tensor:
+def text_to_statevector(text: str, dim: int = 64) -> torch.Tensor:
     """Deterministically transforms text into a normalized complex statevector in C^dim.
 
     Combines Quantum Natural Language Processing (QNLP) token phasor superposition
@@ -79,7 +79,7 @@ class CognitiveMemoryManager:
     def __init__(
         self,
         capacity: int = 64,
-        dim: int = 16,
+        dim: int = 64,
         enable_csf_shielding: bool = True,
         auto_prune: bool = False,
         prune_threshold: float = 0.70,

@@ -24,7 +24,7 @@ from pathlib import Path
 KAPPA_CSF = 1.0 / 6250.0  # CSF quantum dephasing attenuation
 GAMMA_0 = 0.05            # Bare Lindblad dephasing rate
 LAMBDA_DOPAMINE = 1.5     # Dopaminergic protection gain factor
-DEFAULT_DIM = 16          # Effective minicolumn state space
+DEFAULT_DIM = 64          # Effective 6-qubit minicolumn state space (was 16)
 
 
 def format_fidelity(fid: float) -> str:
@@ -176,6 +176,11 @@ def main() -> None:
                 user_query = val.strip().lower()
                 break
 
+        # Check workspace and project context
+        workspace_hint = str(payload.get("workspaceDirectory", "")).lower()
+        cwd_hint = os.getcwd().lower()
+        is_turna = any("turna" in h or "meiro" in h or "dengage" in h for h in (workspace_hint, cwd_hint, artifact_dir.lower(), user_query))
+
         # If fresh conversation, initialize foundational cognitive anchors
         if len(mem.engrams) == 0:
             mem.record(
@@ -196,6 +201,25 @@ def main() -> None:
                 salience=2.5,
                 category="constraint",
             )
+            mem.record(
+                key="native_first_rule",
+                content=(
+                    "Platform veya servis işlemlerinde daima native API/CLI aracını öncelikli kullan; "
+                    "yetersiz kalırsa doğrudan ikincil sistemlere geçmeden önce kullanıcıya sor."
+                ),
+                salience=2.8,
+                category="constraint",
+            )
+            if is_turna:
+                mem.record(
+                    key="turna_api_hierarchy_rule",
+                    content=(
+                        "Turna projelerinde Dengage için Dengage API, Meiro için Meiro API/mpcli, "
+                        "BigQuery için BQ kullan. Yetersiz kalırsa önce kullanıcıya sor."
+                    ),
+                    salience=3.2,
+                    category="constraint",
+                )
 
         # Advance biological decay step
         turn_count += 1
@@ -249,6 +273,30 @@ def main() -> None:
                     }
                 ]
             }
+
+        # Centralized non-blocking telemetry logging
+        try:
+            telemetry_dir = Path.home() / ".gemini" / "antigravity" / "telemetry"
+            telemetry_dir.mkdir(parents=True, exist_ok=True)
+            telemetry_file = telemetry_dir / "quanta_cognitive_telemetry.jsonl"
+            hook_latency_ms = (time.time() - now) * 1000.0
+            replayed_keys = [v["key"] for v in vital_anchors] if vital_anchors else []
+            hook_entry = {
+                "event_type": "hook_step",
+                "timestamp": now,
+                "iso_time": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(now)),
+                "workspace": Path(workspace_hint or os.getcwd()).name or "General",
+                "conversation_id": conversation_id,
+                "step_idx": current_step_idx,
+                "turn_count": turn_count,
+                "rules_replayed": replayed_keys,
+                "pruned_count": len(pruned),
+                "latency_ms": round(hook_latency_ms, 2),
+            }
+            with open(telemetry_file, "a", encoding="utf-8") as tf:
+                tf.write(json.dumps(hook_entry, ensure_ascii=False) + "\n")
+        except Exception:
+            pass
 
         # Persist updated state to disk atomically
         try:

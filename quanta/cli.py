@@ -196,8 +196,34 @@ def build_parser() -> argparse.ArgumentParser:
     service_subparsers.add_parser("uninstall", help="Unload and delete macOS LaunchAgent service")
     service_subparsers.add_parser("status", help="Check status of the LaunchAgent service")
     service_subparsers.add_parser("start", help="Start the LaunchAgent service")
-    service_subparsers.add_parser("stop", help="Stop the LaunchAgent service")
-    service_subparsers.add_parser("logs", help="Tail background dream logs")
+    # `quanta monitor ...`
+    monitor_parser = subparsers.add_parser(
+        "monitor",
+        help="Real-time telemetry and decision monitoring for Quanta Cognitive Arbiter",
+    )
+    monitor_parser.add_argument(
+        "--limit",
+        type=int,
+        default=15,
+        help="Number of recent decisions to display (default: 15)",
+    )
+    monitor_parser.add_argument(
+        "--dashboard",
+        action="store_true",
+        help="Generate and output standalone interactive HTML telemetry dashboard",
+    )
+    monitor_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output telemetry summary in raw JSON format",
+    )
+    monitor_parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        default=None,
+        help="Target output file path for the HTML dashboard (default: ~/.gemini/antigravity/telemetry/dashboard.html)",
+    )
 
     return parser
 
@@ -404,6 +430,65 @@ def handle_service(args: argparse.Namespace) -> int:
     return 0
 
 
+def handle_monitor(args: argparse.Namespace) -> int:
+    """Displays real-time cognitive arbiter decisions, latency, and telemetry audit."""
+    from quanta.cognitive.telemetry import (
+        generate_dashboard_html,
+        get_telemetry_summary,
+        read_telemetry_events,
+    )
+
+    if getattr(args, "dashboard", False):
+        custom_out = Path(args.output).resolve() if getattr(args, "output", None) else None
+        path = generate_dashboard_html(output_path=custom_out)
+        print("=" * 70)
+        print("   ⚛️ QUANTA BİLİŞSEL DOKPİTİ: İNTERAKTİF HTML DASHBOARD")
+        print("=" * 70)
+        print(f"  Dosya Yolu: {path}")
+        print(f"  Tarayıcıda Açmak İçin:")
+        print(f"    open \"{path}\"")
+        print("=" * 70)
+        return 0
+
+    if getattr(args, "json", False):
+        summary = get_telemetry_summary()
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
+        return 0
+
+    summary = get_telemetry_summary()
+    events = read_telemetry_events(event_type="decision", limit=args.limit)
+
+    print("=" * 86)
+    print("             ⚛️ QUANTA BİLİŞSEL HAKEM & TELEMETRİ KOKPİTİ")
+    print("=" * 86)
+    print(f"  Toplam Karar:           {summary['total_decisions']}")
+    print(f"  Ortalama Gecikme:       {summary['avg_decision_latency_ms']:.2f} ms")
+    print(f"  Ortalama Karar Güveni:  %{summary['avg_confidence_pct']:.1f}")
+    print(f"  Bilinçaltı Kanca Adımı: {summary['total_hook_steps']}")
+    projects_str = ", ".join(summary["active_workspaces"]) if summary["active_workspaces"] else "N/A"
+    print(f"  İzlenen Projeler:       {projects_str}")
+    print("-" * 86)
+
+    if not events:
+        print("  Henüz kaydedilmiş hakem kararı bulunmuyor.")
+    else:
+        header = f"{'Zaman (UTC)':<20} {'Proje / Workspace':<24} {'Kazanan Karar':<25} {'Güven':<8} {'Gecikme':<8}"
+        print(header)
+        print("-" * 86)
+        for ev in reversed(events):
+            t_str = ev.get("iso_time", "")[:19]
+            ws = ev.get("workspace", "General")[:22]
+            winner = ev.get("winner", "")[:24]
+            conf = f"%{ev.get('confidence', 0.0) * 100:.1f}"
+            lat = f"{ev.get('latency_ms', 0.0):.2f}ms"
+            print(f"{t_str:<20} {ws:<24} {winner:<25} {conf:<8} {lat:<8}")
+            goal = ev.get("goal", "")
+            if goal:
+                print(f"  └─ Hedef: {goal[:75]}")
+    print("=" * 86)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main CLI entry point for the Quanta SDK."""
     if argv is None:
@@ -417,6 +502,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.subcommand == "dream":
         return handle_dream(args)
+    elif args.subcommand == "monitor":
+        return handle_monitor(args)
 
     parser.print_help()
     return 0

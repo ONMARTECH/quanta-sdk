@@ -165,3 +165,21 @@ class TestQuantumDecisionArbiter:
         # High exploration -> Anti-Zeno tunneling
         res_tunnel = arb.arbitrate(goal, options, exploration_drive=0.9)
         assert res_tunnel["anti_zeno_kickback"] > 0.0
+
+    def test_6qubit_default_arbitration(self) -> None:
+        """Verifies the upgraded 6-qubit (dim=64, 4-head attention) default configuration."""
+        arb = QuantumDecisionArbiter()
+        assert arb.dim == 64
+        assert arb.zeno_attention.num_heads == 4
+        assert arb.zeno_attention.head_dim == 16
+
+        goal = "High availability with zero downtime schema migrations"
+        options = [
+            "Blue-Green database deployment with dual-write proxy",
+            "Direct in-place table rewrite during peak production hours",
+            "Truncate and recreate schema on live cluster",
+        ]
+        res = arb.arbitrate(goal, options, exploration_drive=0.2)
+        assert res["recommended_option"] == options[0]
+        assert res["confidence"] > 0.35
+        assert len(res["ranked_options"]) == 3

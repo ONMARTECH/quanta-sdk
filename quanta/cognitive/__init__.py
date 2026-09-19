@@ -11,6 +11,7 @@ from quanta.cognitive import (
     middleware,
     mind_wander,
     poisson_trigger,
+    telemetry,
     tom_analyzer,
     workspace_harvester,
 )
@@ -58,6 +59,7 @@ __all__ = [
     "mind_wander",
     "poisson_trigger",
     "set_background_qos",
+    "telemetry",
     "text_to_statevector",
     "tom_analyzer",
     "workspace_harvester",

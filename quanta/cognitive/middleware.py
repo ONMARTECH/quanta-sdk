@@ -26,7 +26,7 @@ class QuantaCognitiveMiddleware:
     def __init__(
         self,
         capacity: int = 64,
-        dim: int = 16,
+        dim: int = 64,
         enable_csf_shielding: bool = True,
         auto_prune: bool = True,
         fidelity_threshold: float = 0.70,
@@ -47,7 +47,8 @@ class QuantaCognitiveMiddleware:
             dim=dim,
             enable_csf_shielding=enable_csf_shielding,
         )
-        self.arbiter = QuantumDecisionArbiter(dim=dim, num_heads=2, seed=seed)
+        num_heads = 4 if dim % 4 == 0 else 2
+        self.arbiter = QuantumDecisionArbiter(dim=dim, num_heads=num_heads, seed=seed)
         self.turn_count = 0
 
     def record_constraint(

@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import torch
 import torch.nn.functional as F
 
 from quanta.cognitive.memory import text_to_statevector
+from quanta.cognitive.telemetry import record_decision_telemetry
 from quanta.torch.brain import QuantumZenoAttention
 
 
 class QuantumDecisionArbiter:
-    """Quantum-inspired decision arbiter for Antigravity AI agents.
+    """Quantum-inspired 6-qubit decision arbiter (dim=64, 4-head attention) for Antigravity AI agents.
 
     Employs Quantum Zeno Attention to balance attentional focus pinning
     (Zeno effect: sticking firmly to established goals) and divergent
@@ -21,8 +23,8 @@ class QuantumDecisionArbiter:
 
     def __init__(
         self,
-        dim: int = 16,
-        num_heads: int = 2,
+        dim: int = 64,
+        num_heads: int = 4,
         seed: int | None = 42,
         device: torch.device | str | None = "cpu",
     ) -> None:
@@ -43,6 +45,8 @@ class QuantumDecisionArbiter:
         goal: str,
         options: list[str],
         exploration_drive: float = 0.2,
+        workspace: str | None = None,
+        log_telemetry: bool = True,
     ) -> dict[str, Any]:
         """Evaluates decision options against a goal using Zeno/Anti-Zeno attention.
 
@@ -52,12 +56,16 @@ class QuantumDecisionArbiter:
             exploration_drive: Float in [0.0, 1.0].
                 Lower values (0.0 - 0.3) -> High Zeno pinning (conservative, goal-aligned).
                 Higher values (0.7 - 1.0) -> Anti-Zeno tunneling (divergent, exploratory).
+            workspace: Optional explicit workspace name for multi-project telemetry audit.
+            log_telemetry: When True, logs decision telemetry to central ledger.
 
         Returns:
-            Dictionary containing recommended option, scores, and quantum attention diagnostics.
+            Dictionary containing recommended option, scores, latency, and quantum attention diagnostics.
         """
         if not options:
             raise ValueError("Must provide at least one option to arbitrate.")
+
+        t_start = time.perf_counter()
 
         goal_c = text_to_statevector(goal, dim=self.dim)
         goal_vec = goal_c.real
@@ -95,14 +103,33 @@ class QuantumDecisionArbiter:
 
         ranking.sort(key=lambda item: float(item["score"]), reverse=True)
         recommended = ranking[0]
+        regime = (
+            "Zeno Pinning (Target Focus)"
+            if zeno_pin >= 0.5
+            else "Anti-Zeno Tunneling (Exploration)"
+        )
+        latency_ms = (time.perf_counter() - t_start) * 1000.0
+
+        if log_telemetry:
+            record_decision_telemetry(
+                goal=goal,
+                options=options,
+                winner=recommended["option"],
+                confidence=recommended["score"],
+                zeno_pinning_factor=zeno_pin,
+                anti_zeno_kickback=explore_mag,
+                regime=regime,
+                latency_ms=latency_ms,
+                ranking=ranking,
+                workspace=workspace,
+            )
 
         return {
             "recommended_option": recommended["option"],
             "confidence": recommended["score"],
             "zeno_pinning_factor": round(zeno_pin, 4),
             "anti_zeno_kickback": round(explore_mag, 4),
-            "regime": "Zeno Pinning (Target Focus)"
-            if zeno_pin >= 0.5
-            else "Anti-Zeno Tunneling (Exploration)",
+            "latency_ms": round(latency_ms, 2),
+            "regime": regime,
             "ranked_options": ranking,
         }
