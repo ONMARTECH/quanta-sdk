@@ -183,3 +183,50 @@ class TestQuantumDecisionArbiter:
         assert res["recommended_option"] == options[0]
         assert res["confidence"] > 0.35
         assert len(res["ranked_options"]) == 3
+
+    def test_multi_option_with_criteria_and_effects(self) -> None:
+        """Verifies multi-candidate (N=5) structured impact analysis with criteria."""
+        arb = QuantumDecisionArbiter(dim=64, num_heads=4)
+
+        goal = "Select cache storage architecture for high throughput user sessions"
+        criteria = [
+            "P99 latency under 5 milliseconds",
+            "Zero data loss across cluster failover",
+            "Minimal infrastructure maintenance cost",
+        ]
+        options = [
+            {
+                "name": "Redis Sentinel",
+                "impact": "Low sub-millisecond latency, automatic failover",
+                "risk": "Moderate memory cost",
+            },
+            {
+                "name": "Local In-Memory",
+                "impact": "Zero network latency, free",
+                "risk": "Data lost on server restart, no shared state",
+            },
+            {
+                "name": "PostgreSQL Table",
+                "impact": "ACID compliance, persistent",
+                "risk": "High database connection pool contention under load",
+            },
+            {
+                "name": "Cloudflare KV",
+                "impact": "Global edge deployment",
+                "risk": "Eventual consistency write latency",
+            },
+            {
+                "name": "Disk Flat File",
+                "impact": "Simple filesystem writes",
+                "risk": "Extremely slow IO blocking under concurrency",
+            },
+        ]
+
+        res = arb.arbitrate(goal=goal, options=options, criteria=criteria, log_telemetry=False)
+
+        assert len(res["ranked_options"]) == 5
+        assert res["latency_ms"] < 50.0
+        assert "recommended_option" in res
+        assert "recommended_details" in res
+        assert any(r["option"] == "Redis Sentinel" for r in res["ranked_options"])
+
