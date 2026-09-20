@@ -59,11 +59,13 @@ class FastBiomorphicMemory:
         salience: float = 1.0,
         category: str = "general",
     ) -> None:
+        sal = float(salience) if isinstance(salience, (int, float)) and not isinstance(salience, bool) and math.isfinite(salience) else 1.0
+        sal = max(0.01, sal)
         # Check if key exists; update if so
         for e in self.engrams:
             if e["key"] == key:
                 e["content"] = content
-                e["salience"] = max(e["salience"], salience)
+                e["salience"] = max(e["salience"], sal)
                 e["category"] = category
                 e["fidelity"] = 0.9998
                 return
@@ -77,7 +79,7 @@ class FastBiomorphicMemory:
         self.engrams.append({
             "key": key,
             "content": content,
-            "salience": float(salience),
+            "salience": float(sal),
             "category": category,
             "fidelity": 0.9998,
             "age": 0,
@@ -88,9 +90,11 @@ class FastBiomorphicMemory:
         for e in self.engrams:
             e["age"] += 1
             # Calibrated Lindblad-Ebbinghaus dephasing with CSF shielding
-            eff_gamma = (GAMMA_0 * KAPPA_CSF) / (1.0 + LAMBDA_DOPAMINE * e["salience"])
+            sal = max(0.0, float(e.get("salience", 1.0)))
+            eff_gamma = (GAMMA_0 * KAPPA_CSF) / max(0.01, 1.0 + LAMBDA_DOPAMINE * sal)
             decay = math.exp(-eff_gamma * dt)
-            e["fidelity"] = dim_factor + (e["fidelity"] - dim_factor) * decay
+            raw_fid = dim_factor + (float(e.get("fidelity", 0.9998)) - dim_factor) * decay
+            e["fidelity"] = max(dim_factor, min(0.9998, raw_fid))
 
     def prune_obsolete(
         self,
@@ -115,6 +119,12 @@ class FastBiomorphicMemory:
             reverse=True,
         )
         return scored[:top_k]
+
+    def consolidate(self, keys: list[str], boost: float = 0.005) -> None:
+        """Sharp-Wave Ripple consolidation: restores fidelity of replayed vital memories towards pristine state."""
+        for e in self.engrams:
+            if e["key"] in keys:
+                e["fidelity"] = min(0.9998, e["fidelity"] + boost)
 
 
 def extract_last_user_query(transcript_path: str | Path | None) -> str:
@@ -318,6 +328,31 @@ def extract_unrecorded_decisions(
     return decisions, max_step
 
 
+def _save_state_atomically(state_file: Path, state_dict: dict, safe_conv_id: str) -> None:
+    """Atomically writes state to state_file, falling back to /tmp if unwriteable, with guaranteed cleanup."""
+    candidates = [state_file]
+    fallback = Path(f"/tmp/quanta_cognitive_{safe_conv_id}.json")
+    if fallback != state_file:
+        candidates.append(fallback)
+
+    for target in candidates:
+        temp_path = None
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            temp_path = target.with_name(f".tmp_{target.name}_{os.getpid()}_{time.time_ns()}")
+            with open(temp_path, "w", encoding="utf-8") as sf:
+                json.dump(state_dict, sf, ensure_ascii=False, indent=2)
+                sf.flush()
+                os.fsync(sf.fileno())
+            os.replace(temp_path, target)
+            break
+        except Exception:
+            if temp_path is not None and temp_path.exists():
+                with contextlib.suppress(OSError):
+                    temp_path.unlink()
+            continue
+
+
 def main() -> None:
     output_payload: dict = {}
     try:
@@ -328,14 +363,16 @@ def main() -> None:
             return
 
         payload = json.loads(raw_input)
-        conversation_id = payload.get("conversationId", "default")
+        raw_conv_id = str(payload.get("conversationId", "default") or "default")
+        safe_conv_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', raw_conv_id)
+        conversation_id = safe_conv_id
         artifact_dir = payload.get("artifactDirectoryPath", "")
 
         # State storage path
         if artifact_dir and os.path.exists(artifact_dir):
             state_file = Path(artifact_dir) / "quanta_cognitive_state.json"
         else:
-            state_file = Path(f"/tmp/quanta_cognitive_{conversation_id}.json")
+            state_file = Path(f"/tmp/quanta_cognitive_{safe_conv_id}.json")
 
         now = time.time()
         mem = FastBiomorphicMemory(capacity=32)
@@ -347,12 +384,13 @@ def main() -> None:
 
         if state_file.exists():
             try:
-                with open(state_file, encoding="utf-8") as sf:
+                with open(state_file, encoding="utf-8", errors="replace") as sf:
                     cached = json.load(sf)
                     turn_count = cached.get("turn_count", 0)
                     last_injected_time = cached.get("last_injected_time", 0.0)
                     last_step_idx = cached.get("last_step_idx", -1)
                     last_recorded_decision_step = cached.get("last_recorded_decision_step", 0)
+                    mem.total_pruned_count = int(cached.get("total_pruned_count", 0))
                     for item in cached.get("engrams", []):
                         mem.engrams.append({
                             "key": item["key"],
@@ -401,25 +439,16 @@ def main() -> None:
 
         # If this is a Stop lifecycle event, persist state and return immediately
         if payload.get("terminationReason") is not None:
-            try:
-                state_file.parent.mkdir(parents=True, exist_ok=True)
-                temp_path = state_file.with_name(
-                    f".tmp_{state_file.name}_{os.getpid()}_{time.time_ns()}"
-                )
-                state_dict = {
-                    "turn_count": turn_count,
-                    "last_injected_time": now,
-                    "last_step_idx": current_step_idx,
-                    "last_recorded_decision_step": last_recorded_decision_step,
-                    "engrams": mem.engrams,
-                }
-                with open(temp_path, "w", encoding="utf-8") as sf:
-                    json.dump(state_dict, sf, ensure_ascii=False, indent=2)
-                    sf.flush()
-                    os.fsync(sf.fileno())
-                os.replace(temp_path, state_file)
-            except Exception:
-                pass
+            state_dict = {
+                "turn_count": turn_count,
+                "last_injected_time": now,
+                "last_step_idx": current_step_idx,
+                "last_recorded_decision_step": last_recorded_decision_step,
+                "engrams": mem.engrams,
+                "total_pruned_count": mem.total_pruned_count,
+                "kappa_csf": KAPPA_CSF,
+            }
+            _save_state_atomically(state_file, state_dict, safe_conv_id)
             sys.stdout.write(json.dumps({}))
             sys.stdout.flush()
             return
@@ -540,46 +569,49 @@ def main() -> None:
                     }
                 ]
             }
+            mem.consolidate([v["key"] for v in vital_anchors])
 
         # Centralized non-blocking telemetry logging
         try:
             hook_latency_ms = (time.time() - now) * 1000.0
-            replayed_keys = [v["key"] for v in vital_anchors] if vital_anchors else []
+            replayed_rules = [
+                {
+                    "rule": v["key"],
+                    "key": v["key"],
+                    "fidelity": round(float(v["fidelity"]), 6),
+                    "salience": round(float(v.get("salience", 1.0)), 2),
+                    "category": v.get("category", "constraint"),
+                }
+                for v in vital_anchors
+            ] if vital_anchors else []
             record_hook_telemetry(
                 conversation_id=conversation_id,
                 step_idx=current_step_idx,
                 turn_count=turn_count,
-                rules_replayed=replayed_keys,
+                rules_replayed=replayed_rules,
                 pruned_count=len(pruned),
                 latency_ms=hook_latency_ms,
                 workspace=real_workspace,
                 last_user_query=last_query or user_query,
+                kappa_csf=KAPPA_CSF,
+                pruned_keys=pruned,
+                total_pruned_count=mem.total_pruned_count,
+                active_engrams_count=len(mem.engrams),
             )
         except Exception:
             pass
 
         # Persist updated state to disk atomically
-        try:
-            state_file.parent.mkdir(parents=True, exist_ok=True)
-            temp_path = state_file.with_name(
-                f".tmp_{state_file.name}_{os.getpid()}_{time.time_ns()}"
-            )
-            state_dict = {
-                "turn_count": turn_count,
-                "last_injected_time": now,
-                "last_step_idx": current_step_idx,
-                "last_recorded_decision_step": last_recorded_decision_step,
-                "engrams": mem.engrams,
-            }
-            with open(temp_path, "w", encoding="utf-8") as sf:
-                json.dump(state_dict, sf, ensure_ascii=False, indent=2)
-                sf.flush()
-                os.fsync(sf.fileno())
-            os.replace(temp_path, state_file)
-        except Exception:
-            if "temp_path" in locals() and temp_path.exists():
-                with contextlib.suppress(OSError):
-                    temp_path.unlink()
+        state_dict = {
+            "turn_count": turn_count,
+            "last_injected_time": now,
+            "last_step_idx": current_step_idx,
+            "last_recorded_decision_step": last_recorded_decision_step,
+            "engrams": mem.engrams,
+            "total_pruned_count": mem.total_pruned_count,
+            "kappa_csf": KAPPA_CSF,
+        }
+        _save_state_atomically(state_file, state_dict, safe_conv_id)
 
     except Exception:
         output_payload = {}

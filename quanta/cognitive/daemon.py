@@ -354,9 +354,9 @@ class SubconsciousDaemon:
             if self._preemption_event.is_set() or self._stop_event.is_set():
                 return True
             # Real-time physical user input check (< 20ms preemption reflex).
-            # Fires if the system was idle when dream initiated (start_user_idle >= 1.0s)
-            # and the user subsequently generated physical HID input (uidle < 1.0s).
-            if start_user_idle is not None and start_user_idle >= 1.0:
+            # Fires if running as autonomous daemon (self._is_running) and system was idle
+            # when dream initiated (start_user_idle >= 1.0s) and user subsequently generated physical HID input.
+            if self._is_running and start_user_idle is not None and start_user_idle >= 1.0:
                 uidle = get_user_idle_seconds()
                 if uidle is not None and uidle < 1.0:
                     self._preemption_event.set()

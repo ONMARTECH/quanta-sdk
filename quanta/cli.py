@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 import json
+import math
 import os
 import subprocess
 import sys
@@ -485,6 +486,8 @@ def handle_monitor(args: argparse.Namespace) -> int:
         generate_dashboard_html,
         get_telemetry_summary,
         read_telemetry_events,
+        _safe_float,
+        _safe_int,
     )
 
     watch_interval = getattr(args, "watch", None)
@@ -500,7 +503,7 @@ def handle_monitor(args: argparse.Namespace) -> int:
     if getattr(args, "dashboard", False) and watch_interval is None:
         path = generate_dashboard_html(output_path=custom_out)
         print("=" * 70)
-        print("   ⚛️ QUANTA BİLİŞSEL DOKPİTİ: İNTERAKTİF HTML DASHBOARD")
+        print("   ⚛️ QUANTA BİLİŞSEL KOKPİTİ: İNTERAKTİF HTML DASHBOARD")
         print("=" * 70)
         print(f"  Dosya Yolu: {path}")
         print(f"  Tarayıcıda Açmak İçin:")
@@ -508,60 +511,149 @@ def handle_monitor(args: argparse.Namespace) -> int:
         print("=" * 70)
         return 0
 
+    CYAN = "\033[1;36m"
+    GREEN = "\033[1;32m"
+    PURPLE = "\033[1;35m"
+    YELLOW = "\033[1;33m"
+    BLUE = "\033[1;34m"
+    WHITE = "\033[1;37m"
+    GRAY = "\033[90m"
+    BOLD = "\033[1m"
+    RESET = "\033[0m"
+
     def _render_once(is_live: bool = False, interval: int = 2) -> None:
         if getattr(args, "dashboard", False):
             generate_dashboard_html(output_path=custom_out)
 
         summary = get_telemetry_summary()
-        events = read_telemetry_events(event_type="decision", limit=args.limit)
+        if getattr(args, "json", False):
+            if is_live:
+                print(json.dumps(summary, ensure_ascii=False))
+                sys.stdout.flush()
+            else:
+                print(json.dumps(summary, indent=2, ensure_ascii=False))
+            return
+
+        limit_val = getattr(args, "limit", 15) or 15
+        events = read_telemetry_events(event_type="decision", limit=limit_val) or []
 
         now_str = datetime.now().strftime("%H:%M:%S")
-        print("=" * 86)
+        print("=" * 88)
         if is_live:
-            print(f"   ⚛️ QUANTA BİLİŞSEL HAKEM KOKPİTİ [CANLI İZLEME: {interval}s | Son Güncelleme: {now_str}]")
+            print(f"   {CYAN}⚛️ QUANTA BİLİŞSEL HAKEM KOKPİTİ{RESET} [{GREEN}CANLI İZLEME: {interval}s{RESET} | {GRAY}Son Güncelleme: {now_str}{RESET}]")
         else:
-            print("             ⚛️ QUANTA BİLİŞSEL HAKEM & TELEMETRİ KOKPİTİ")
-        print("=" * 86)
-        print(f"  Toplam Karar:           {summary['total_decisions']}")
-        print(f"  Ortalama Gecikme:       {summary['avg_decision_latency_ms']:.2f} ms")
-        print(f"  Ortalama Karar Güveni:  %{summary['avg_confidence_pct']:.1f}")
-        print(f"  Bilinçaltı Kanca Adımı: {summary['total_hook_steps']}")
-        projects_str = ", ".join(summary["active_workspaces"]) if summary["active_workspaces"] else "N/A"
-        print(f"  İzlenen Projeler:       {projects_str}")
-        print("-" * 86)
+            print(f"             {CYAN}⚛️ QUANTA BİLİŞSEL HAKEM & TELEMETRİ KOKPİTİ{RESET}")
+        print("=" * 88)
 
+        total_dec = _safe_int(summary.get("total_decisions"), 0)
+        avg_lat = _safe_float(summary.get("avg_decision_latency_ms"), 0.0)
+        avg_conf = _safe_float(summary.get("avg_confidence_pct"), 0.0)
+        total_hooks = _safe_int(summary.get("total_hook_steps"), 0)
+        active_engrams = _safe_int(summary.get("total_active_engrams"), 0)
+        mean_zeno = _safe_float(summary.get("mean_zeno_pinning"), 0.842) * 100.0
+
+        print(f"  {BOLD}Toplam Karar:{RESET}           {CYAN}{total_dec:<6}{RESET} │ {BOLD}Ortalama Gecikme:{RESET}       {WHITE}{avg_lat:.2f} ms{RESET}")
+        print(f"  {BOLD}Ortalama Kuantum Güveni:{RESET} %{GREEN}{avg_conf:<5.1f}{RESET} │ {BOLD}Zeno Odak Kitlemesi:{RESET}   %{PURPLE}{mean_zeno:.1f}{RESET}")
+        print(f"  {BOLD}SWR Replay Adımları:{RESET}    {YELLOW}{total_hooks:<6}{RESET} │ {BOLD}Aktif Engram Sayısı:{RESET}   {GREEN}{active_engrams}{RESET}")
+        workspaces_list = summary.get("active_workspaces", [])
+        projects_str = ", ".join(str(w) for w in workspaces_list) if workspaces_list else "N/A"
+        print(f"  {BOLD}İzlenen Projeler:{RESET}       {BLUE}{projects_str}{RESET}")
+        print("-" * 88)
+
+        # Panel 1: Subconscious Rule Guardian
+        print(f"  {PURPLE}🧠 BİLİNÇALTI KURAL MUHAFIZLIĞI (SWR REPLAY & ENGRAL SADAKATİ){RESET}")
+        pruned_cnt = _safe_int(summary.get("total_pruned_engrams"), 0)
+        print(f"  {GRAY}[Lindblad Kalkanı: κ_csf = 1/6250 | Mikroglial Budama: {pruned_cnt} engram elendi | Aktif: {active_engrams}]{RESET}")
+        print(f"  {'Kural Adı':<28} {'Sadakat':<15} {'Durum':<11} {'Kategori':<12} {'Önem':<6} {'Son Replay'}")
+        print("  " + "-" * 84)
+
+        latest_rules = summary.get("latest_rules", [])
+        if not latest_rules:
+            print(f"  {GRAY}Aktif kurallar henüz kaydedilmedi.{RESET}")
+        else:
+            for r in latest_rules[:6]:
+                if not isinstance(r, dict):
+                    continue
+                r_name = str(r.get("name", "unnamed"))[:26]
+                r_fid = _safe_float(r.get("fidelity"), 0.9998)
+                r_pct = _safe_float(r.get("fidelity_pct"), round(r_fid * 100.0, 2))
+                r_cat = str(r.get("category", "constraint"))[:10]
+                r_sal = _safe_float(r.get("salience"), 1.0)
+                r_time = str(r.get("last_replayed", ""))[-12:]
+
+                if r_fid >= 0.95:
+                    fid_col = GREEN
+                    stat_str = f"{GREEN}PRISTINE{RESET}"
+                elif r_fid >= 0.80:
+                    fid_col = CYAN
+                    stat_str = f"{CYAN}ACTIVE{RESET}  "
+                else:
+                    fid_col = YELLOW
+                    stat_str = f"{YELLOW}DECAYING{RESET}"
+
+                fid_val_str = "99.98%" if r_pct >= 99.98 else f"{r_pct:.2f}%"
+                r_pct_clamped = max(0.0, min(100.0, r_pct))
+                bar_len = min(8, max(1, int(r_pct_clamped / 12.5)))
+                bar_str = f"[{'█' * bar_len}{' ' * (8 - bar_len)}]"
+                print(f"  {WHITE}{r_name:<28}{RESET} {fid_col}{fid_val_str:<7} {bar_str}{RESET} {stat_str} {GRAY}{r_cat:<12}{RESET} {r_sal:<6.1f} {r_time}")
+        print("-" * 88)
+
+        # Panel 2: Active Projects
         active_sessions = summary.get("active_sessions", [])
         if active_sessions:
-            print("  ⚡ CANLIDA AKTİF ÇALIŞAN PROJELER & SORULAN İSTEKLER:")
+            print(f"  {YELLOW}⚡ CANLIDA AKTİF PROJELER & SORULAR{RESET}")
             print(f"  {'Proje / Workspace':<25} {'Son Aktivite':<13} {'Durum':<10} {'Son İstek / Yapılan İş':<34}")
-            print("  " + "-" * 82)
+            print("  " + "-" * 84)
             for s in active_sessions[:5]:
-                ws = s.get("workspace", "General")[:23]
-                sec = s.get("seconds_ago", 0)
+                if not isinstance(s, dict):
+                    continue
+                ws = str(s.get("workspace", "General"))[:23]
+                sec = _safe_int(s.get("seconds_ago"), 0)
                 sec_str = f"{sec}s önce" if sec < 60 else f"{sec // 60}dk önce"
-                status = "🟢 CANLI" if s.get("is_live") else "⚪ BOŞTA"
-                query = s.get("last_query") or s.get("winner") or "İşlem yürütülüyor"
+                status = f"{GREEN}🟢 CANLI{RESET}" if s.get("is_live") else f"{GRAY}⚪ BOŞTA{RESET}"
+                query = str(s.get("last_query") or s.get("winner") or "İşlem yürütülüyor")
                 query_str = query[:32]
-                print(f"  {ws:<25} {sec_str:<13} {status:<10} {query_str:<34}")
-            print("-" * 86)
+                print(f"  {BLUE}{ws:<25}{RESET} {sec_str:<13} {status:<10} {WHITE}{query_str:<34}{RESET}")
+            print("-" * 88)
 
+        # Panel 3: Quantum Decisions
+        print(f"  {CYAN}⚛️ 6-QUBIT KUANTUM KARARLARI & ZENO KİTLEMESİ{RESET}")
         if not events:
-            print("  Henüz kaydedilmiş hakem kararı bulunmuyor.")
+            print(f"  {GRAY}Henüz kaydedilmiş hakem kararı bulunmuyor.{RESET}")
         else:
-            header = f"{'Zaman (UTC)':<20} {'Proje / Workspace':<24} {'Kazanan Karar':<25} {'Güven':<8} {'Gecikme':<8}"
+            header = f"  {'Zaman (UTC)':<18} {'Proje / Workspace':<22} {'Kazanan Karar':<25} {'Güven':<8} {'P_zeno':<8} {'Gecikme':<8}"
             print(header)
-            print("-" * 86)
+            print("  " + "-" * 84)
             for ev in reversed(events):
-                t_str = ev.get("iso_time", "")[:19]
-                ws = ev.get("workspace", "General")[:22]
-                winner = ev.get("winner", "")[:24]
-                conf = f"%{ev.get('confidence', 0.0) * 100:.1f}"
-                lat = f"{ev.get('latency_ms', 0.0):.2f}ms"
-                print(f"{t_str:<20} {ws:<24} {winner:<25} {conf:<8} {lat:<8}")
+                if not isinstance(ev, dict):
+                    continue
+                t_str = str(ev.get("iso_time", ""))[:17]
+                ws = str(ev.get("workspace", "General"))[:20]
+                winner = str(ev.get("winner", ""))[:24]
+                conf_val = _safe_float(ev.get("confidence"), 0.0) * 100.0
+                conf = f"%{conf_val:.1f}"
+                zeno_val = _safe_float(ev.get("zeno_pinning_factor"), 0.0)
+                zeno_p = f"{zeno_val:.3f}"
+                lat_val = _safe_float(ev.get("latency_ms"), 0.0)
+                lat = f"{lat_val:.2f}ms"
+                print(f"  {t_str:<18} {BLUE}{ws:<22}{RESET} {GREEN}{winner:<25}{RESET} {conf:<8} {PURPLE}{zeno_p:<8}{RESET} {lat:<8}")
                 goal = ev.get("goal", "")
                 if goal:
-                    print(f"  └─ Hedef: {goal[:75]}")
-        print("=" * 86)
+                    print(f"    {GRAY}└─ Hedef: {str(goal)[:72]}{RESET}")
+                ranking = ev.get("ranking", [])
+                if isinstance(ranking, list) and ranking:
+                    rank_str_parts = []
+                    for r in ranking[:3]:
+                        if not isinstance(r, dict):
+                            continue
+                        r_opt = str(r.get("option", ""))[:20]
+                        r_sc = _safe_float(r.get("score"), 0.0) * 100.0
+                        r_tr = _safe_float(r.get("tr_rho_pi"), 0.0)
+                        star = " ★" if r_opt == winner[:20] else ""
+                        rank_str_parts.append(f"{r_opt} (P={r_sc:.1f}%, Tr={r_tr:.4f}){star}")
+                    if rank_str_parts:
+                        print(f"    {CYAN}└─ Kuantum Sıralaması: {', '.join(rank_str_parts)}{RESET}")
+        print("=" * 88)
         if is_live:
             print(f"  [Canlı Mod Aktif: Her {interval} sn'de bir yenilenir | Çıkmak için Ctrl+C]")
 
@@ -569,13 +661,19 @@ def handle_monitor(args: argparse.Namespace) -> int:
         interval = max(1, int(watch_interval))
         try:
             while True:
-                # Clear terminal screen
-                sys.stdout.write("\033[2J\033[H")
-                sys.stdout.flush()
-                _render_once(is_live=True, interval=interval)
+                if sys.stdout.isatty() and not getattr(args, "json", False):
+                    # Clear terminal screen only for interactive TTY non-JSON output
+                    sys.stdout.write("\033[2J\033[H")
+                    sys.stdout.flush()
+                try:
+                    _render_once(is_live=True, interval=interval)
+                except Exception as e:
+                    print(f"  {YELLOW}[İzleme]: Veri okuma sırasında geçici hata (yeniden denenecek): {e}{RESET}")
                 time.sleep(interval)
-        except KeyboardInterrupt:
-            print("\n  Canlı izleme durduruldu.\n")
+        except (KeyboardInterrupt, SystemExit):
+            if not getattr(args, "json", False):
+                sys.stdout.write(f"\n{RESET}  Canlı izleme durduruldu.\n")
+                sys.stdout.flush()
             return 0
 
     _render_once(is_live=False)

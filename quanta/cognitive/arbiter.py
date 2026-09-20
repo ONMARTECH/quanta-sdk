@@ -103,14 +103,19 @@ class QuantumDecisionArbiter:
         dopamine_val = max(0.01, 1.0 - exploration_drive)
         dopamine_tensor = torch.tensor(dopamine_val, dtype=torch.float32)
 
+        t_pt_start = time.perf_counter()
         with torch.no_grad():
             res = self.zeno_attention(x, dopamine=dopamine_tensor, return_diagnostics=True)
+        pytorch_latency_ms = (time.perf_counter() - t_pt_start) * 1000.0
 
         out_tensor = res["output"]  # [num_options, dim]
         zeno_pin = float(torch.mean(res["P_zeno"]).item())
         explore_mag = float(torch.norm(res["h_explore"]).item())
+        anti_zeno_tunneling = max(0.0, 1.0 - zeno_pin)
 
+        # 6-Qubit Hilbert space projective measurement: Tr(\rho \Pi_i) = |<psi_goal | u_i>|^2
         alignments = F.cosine_similarity(out_tensor, goal_vec.unsqueeze(0), dim=-1)
+        tr_rho_pi_tensor = torch.clamp(alignments, min=-1.0, max=1.0).pow(2)
         probs = F.softmax(alignments * (1.0 + zeno_pin), dim=-1).tolist()
 
         ranking: list[dict[str, Any]] = []
@@ -118,6 +123,8 @@ class QuantumDecisionArbiter:
             item: dict[str, Any] = {
                 "option": name,
                 "score": round(float(probs[i]), 4),
+                "probability": round(float(probs[i]), 4),
+                "tr_rho_pi": round(float(tr_rho_pi_tensor[i].item()), 6),
                 "raw_alignment": round(float(alignments[i].item()), 4),
             }
             if details is not None:
@@ -147,6 +154,9 @@ class QuantumDecisionArbiter:
                 latency_ms=latency_ms,
                 ranking=ranking,
                 workspace=workspace,
+                tr_rho_pi={r["option"]: r["tr_rho_pi"] for r in ranking},
+                anti_zeno_tunneling_rate=anti_zeno_tunneling,
+                pytorch_latency_ms=pytorch_latency_ms,
             )
 
         result: dict[str, Any] = {
@@ -154,7 +164,10 @@ class QuantumDecisionArbiter:
             "confidence": recommended["score"],
             "zeno_pinning_factor": round(zeno_pin, 4),
             "anti_zeno_kickback": round(explore_mag, 4),
+            "anti_zeno_tunneling_rate": round(anti_zeno_tunneling, 4),
+            "tr_rho_pi": {r["option"]: r["tr_rho_pi"] for r in ranking},
             "latency_ms": round(latency_ms, 2),
+            "pytorch_latency_ms": round(pytorch_latency_ms, 2),
             "regime": regime,
             "ranked_options": ranking,
         }
