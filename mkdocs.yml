@@ -73,10 +73,9 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - "2026 Research & Audit":
+  - "2026 Research & Publications":
     - "Scientific Audit (Sept 2026)": scientific_audit_september_2026.md
-    - "Roadmap 2026-2027": quantum_roadmap_2026.md
-    - "Continuous Resonance RFC": RFC_CONTINUOUS_RESONANCE.md
+    - "Strategic Roadmap (2026-2028)": quantum_roadmap_2026.md
   - Getting Started:
     - Installation: getting-started/install.md
     - Quick Start: getting-started/quickstart.md
@@ -105,9 +104,15 @@ nav:
     - Simulator:
       - Statevector: api/simulator/statevector.md
       - Noise: api/simulator/noise.md
+      - "Matrix Product States (MPS)": api/simulator/mps.md
+      - "Apple Silicon Metal / MLX": api/simulator/mlx.md
+      - "Lindblad Master Equation": api/simulator/lindblad.md
     - QEC:
-      - Decoder: api/qec/decoder.md
+      - "Decoder & Edmonds Blossom": api/qec/decoder.md
       - Surface Code: api/qec/surface_code.md
+      - "qLDPC & BP-OSD": api/qec/qldpc.md
+      - "Magic State Distillation": api/qec/distillation.md
+    - PyTorch QML: api/torch.md
     - Export:
       - QASM Export: api/export/qasm.md
       - QASM Import: api/export/qasm_import.md
@@ -120,6 +125,8 @@ nav:
     - MCP Server: api/mcp_server.md
   - Cookbook:
     - Bell State: cookbook/bell-state.md
+    - "FTQC & qLDPC Decoding": cookbook/ftqc-decoding.md
+    - "PyTorch Hybrid QML": cookbook/torch-qml.md
     - Option Pricing: cookbook/option-pricing.md
     - Classification: cookbook/quantum-classification.md
   - Migration:
