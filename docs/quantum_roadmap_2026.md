@@ -1,10 +1,9 @@
 # Quanta SDK: September 2026 Competitive Positioning Matrix & Multi-Year Strategic Roadmap (2026 – 2028)
 **Lead Author & Chief Architect**: Abdullah Enes SARI (<info@onmartech.com>) — ONMARTECH  
 **Co-Author & Strategic Planning**: Quanta Quantum Research Group & Antigravity Agentic AI Board  
+**Publication**: ONMARTECH Strategic Whitepaper Series (v1.2.0 Edition)  
 **Date**: September 2026  
-**Target Codebase**: Quanta SDK (`quanta-sdk`)  
 **Scope**: Competitive Benchmark Analysis vs. September 2026 Quantum Frontier & Actionable Multi-Year Roadmap (Q4 2026 – 2028)  
-**Status**: APPROVED FOR STRATEGIC EXECUTION  
 
 ---
 

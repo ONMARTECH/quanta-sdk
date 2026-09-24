@@ -1,19 +1,18 @@
 # Quanta SDK: Comprehensive Scientific Audit & Theoretical Physics Inspection Report
 **Lead Author & Principal Architect**: Abdullah Enes SARI (<info@onmartech.com>) — ONMARTECH  
 **Co-Author & Peer Inspection**: Quanta Quantum Research Group & Antigravity Agentic AI Board  
+**Publication**: ONMARTECH Quantum Computing Technical Whitepaper Series (v1.2.0 Release)  
 **Date**: September 2026  
-**Target Codebase**: Quanta SDK (`quanta-sdk`)  
-**Evaluation Standard**: September 2026 Quantum Computing State of the Art (Google Willow, IBM Heron/Condor, Harvard/QuEra, qLDPC Gross Codes, Daleckii-Krein Autograd, FTQC Standards)  
-**Status**: APPROVED & CERTIFIED (Academic Hard Audit)
+**Scope**: Fault-Tolerant Quantum Computing (FTQC), Google Willow 3D QEC, Gross [[144, 12, 12]] qLDPC, Daleckii-Krein Autograd, and Hardware Acceleration Limits  
 
 ---
 
 ## 1. Executive Summary
 
-This report delivers an exhaustive, ground-up academic inspection and engineering audit of the Quanta SDK architecture as of September 2026. Quanta SDK was originally architected as a lightweight, zero-dependency, Apple Silicon native quantum computing framework for Python and NumPy. Over successive engineering milestones (M1–M3), the framework underwent a profound theoretical overhaul to elevate its foundations to the rigorous standards of modern theoretical physics and fault-tolerant quantum computing (FTQC).
+This report delivers an exhaustive, ground-up academic inspection and engineering audit of the Quanta SDK architecture as of September 2026. Quanta SDK was originally architected as a lightweight, zero-dependency, Apple Silicon native quantum computing framework for Python and NumPy. In the v1.2.0 production release, the framework underwent a profound theoretical overhaul to elevate its foundations to the rigorous standards of modern theoretical physics and fault-tolerant quantum computing (FTQC).
 
 ### Key Findings of the Audit:
-1. **Resolution of Fatal Anti-Hermitian Hamiltonian Bug**: Prior to Milestone M1, Hamiltonian time evolution in `quanta/layer3/hamiltonian.py` was mathematically broken. The evaluation of $\exp(-i H dt)$ projected the generator onto its symmetric Hermitian component via $\frac{1}{2}(A + A^\dagger)$. Because $A = -i H dt$ is purely anti-Hermitian for any physical Hamiltonian $H = H^\dagger$, $\frac{1}{2}(A + A^\dagger) \equiv 0$, collapsing all eigenvalues to zero and causing the operator to evaluate to the identity matrix ($U \equiv I$) regardless of time duration $dt$ or energy scale. This has been resolved through exact spectral eigendecomposition $V e^{-i \Lambda t} V^\dagger$ and higher-order Trotter-Suzuki/Magnus integrators, achieving machine-precision unitarity $\|U^\dagger U - I\|_\infty < 10^{-14}$.
+1. **Resolution of Fatal Anti-Hermitian Hamiltonian Bug**: In legacy versions prior to v1.2.0, Hamiltonian time evolution in `quanta/layer3/hamiltonian.py` was mathematically broken. The evaluation of $\exp(-i H dt)$ projected the generator onto its symmetric Hermitian component via $\frac{1}{2}(A + A^\dagger)$. Because $A = -i H dt$ is purely anti-Hermitian for any physical Hamiltonian $H = H^\dagger$, $\frac{1}{2}(A + A^\dagger) \equiv 0$, collapsing all eigenvalues to zero and causing the operator to evaluate to the identity matrix ($U \equiv I$) regardless of time duration $dt$ or energy scale. This has been resolved through exact spectral eigendecomposition $V e^{-i \Lambda t} V^\dagger$ and higher-order Trotter-Suzuki/Magnus integrators, achieving machine-precision unitarity $\|U^\dagger U - I\|_\infty < 10^{-14}$.
 2. **Machine-Precision CPTP & Unmasking of External Channel Defects**: Strict Completely Positive Trace-Preserving (CPTP) verification in `quanta/simulator/density_matrix.py` enforces Kraus completeness $\sum_k K_k^\dagger K_k = I$ to within $10^{-12}$. This audit discovered that strict CPTP enforcement immediately caught a critical typo in `quanta/mcp_server.py:478`, where the Pauli $Z$ operator was defined with $Z_{00}=0$ instead of $1$, causing the depolarizing channel completeness to fail by $\Delta = 1.25 \times 10^{-2}$.
 3. **Continuous Resonance & Exact Autograd**: Continuous-variable unitary evolution in `quanta/torch/ops.py` was standardized on `complex128`, eliminating single-precision Padé approximation norm drift ($> 1.3 \times 10^{-6} \to < 10^{-15}$). The Daleckii-Krein spectral Fréchet derivative was analytically unified with central finite differences and the parameter-shift rule.
 4. **Decoupling from Greedy Matching to Edmonds Blossom MWPM**: In surface code decoding (`quanta/qec/decoder.py`), the previous heuristic greedy matching algorithm was proven to suffer catastrophic failure modes (e.g. an empirical defect graph weight of $11.9$ vs. the true optimal $4.0$). It was replaced with Edmonds' Blossom Minimum Weight Perfect Matching (MWPM) paired with an exact virtual boundary node replication mechanism, guaranteeing correct parity-independent boundary pairing for both even and odd defect counts.
@@ -47,7 +46,7 @@ $$\langle \psi(t) | \psi(t) \rangle = \langle \psi(0) | \hat{U}^\dagger(t) \hat{
 ### 2.2 Resolution of Hamiltonian `_matrix_exp` Anti-Hermitian Flaw
 
 #### Mathematical Origin of the Historical Defect:
-Prior to Milestone M1, `quanta/layer3/hamiltonian.py:227-235` contained a critical mathematical error in its internal matrix exponential helper `_matrix_exp(A)`:
+In legacy versions prior to v1.2.0, `quanta/layer3/hamiltonian.py:227-235` contained a critical mathematical error in its internal matrix exponential helper `_matrix_exp(A)`:
 ```python
 # DEFECTIVE ORIGINAL IMPLEMENTATION:
 def _matrix_exp(A: np.ndarray) -> np.ndarray:
@@ -369,7 +368,7 @@ where each $A^{[k] i_k}$ is a matrix of dimension $\chi_{k-1} \times \chi_k$. Th
 #### Singular Value Renormalization:
 In `quanta/simulator/mps.py`, applying a two-qubit gate across bond $(k, k+1)$ increases the bond dimension. To keep simulation tractable, the bond is truncated back to $\chi_{\text{max}}$ via Singular Value Decomposition:
 $$\Theta = U \cdot \text{diag}(S_1, \dots, S_{\text{full}}) \cdot V^\dagger \xrightarrow{\text{truncate}} U[:, :\chi] \cdot \text{diag}(S_1, \dots, S_\chi) \cdot V^\dagger[:\chi, :]$$
-Prior to Milestone M3, discarding singular values $(S_{\chi+1}, \dots)$ caused the state norm $\sum_{k=1}^\chi S_k^2 < 1.0$ to continuously collapse under successive truncations. 
+In standard truncation without renormalization, discarding singular values $(S_{\chi+1}, \dots)$ causes the state norm $\sum_{k=1}^\chi S_k^2 < 1.0$ to continuously collapse under successive truncations. 
 
 Quanta SDK introduced **SVD Truncation Renormalization**:
 $$S_{\text{kept}} \leftarrow \frac{S_{\text{kept}}}{\sqrt{\sum_{k=1}^\chi S_k^2}}$$
