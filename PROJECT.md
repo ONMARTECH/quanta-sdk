@@ -1,108 +1,98 @@
-# Project: Quanta SDK Comprehensive Scientific & Engineering Audit
+# Project: Interdisciplinary Biomorphic Memory & Multi-Perspective Cognitive Panel
 
 ## Architecture
-Quanta SDK is a high-performance, standalone, zero-external-lock-in quantum computing framework for Apple Silicon and Python/NumPy.
-- **Core Layer**: Analytical unitary gates, circuit DAGs, machine-precision unitarity verification.
-- **Simulation Layer**: Statevector (NumPy CPU & MLX Metal GPU), Matrix Product States (MPS tensor networks), Stabilizer / Pauli frame (Aaronson-Gottesman), Density Matrix & Lindblad open system master equation.
-- **QEC / FTQC Layer**: Planar Surface Code, Color Code, Bivariate Bicycle qLDPC ([[144, 12, 12]]), Edmonds Blossom MWPM / Union-Find decoders, Willow 3D spacetime syndrome extraction, Magic State Distillation.
-- **Continuous / QML Layer**: `quanta.torch` Daleckii-Krein matrix exponential autograd, Dynamical Lie Algebras ($\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$), Barren Plateau analytical bounds.
-- **Dynamic Circuits / Export**: OpenQASM 3.0 parsing with mid-circuit measurement and classical feedforward conditional branches.
+Quanta SDK Cognitive Architecture enhancement integrating biomorphic quantum-inspired memory, fuzzy-trace cognitive consolidation, and interdisciplinary decision evaluation:
+- **Biomorphic Memory Kinetics**: `FastBiomorphicMemory` (stdlib) and `CognitiveMemoryManager` (PyTorch) with Lindblad-Ebbinghaus dephasing, CSF dielectric attenuation ($\kappa_{\text{CSF}} = 1.6 \times 10^{-4}$), and calibrated biological time scaling ($\Delta t = 0.2$ for tool executions).
+- **Fuzzy-Trace Cognitive Consolidation**: Brainerd & Reyna Fuzzy-Trace Theory (FTT) dividing memory into dephasing verbatim traces and persistent semantic gist traces. Pre-pruning synthesis before 70% threshold crystallizes actionable architectural/strategic resolutions into `category="semantic_gist"`, $S \ge 1.8$, $F=0.9998$, `is_core_anchor=True`.
+- **Interdisciplinary Cognitive Panel**: Multi-criteria evaluation panel spanning Neurobiology (synaptic homeostasis, metabolic energy, sleep-wake consolidation), Psychiatry (anti-rumination bounds, cognitive flexibility vs perseveration, threat appraisal), and Sociology & Human Alignment (social framing, user cognitive fatigue reduction, collective intelligence coordination).
+- **Quantum Decision Arbitration**: 6-qubit Hilbert space decision DAG traversal (`QuantumDecisionArbiter`) integrating 4D consequence vectors with CognitivePanelScore penalties and dynamic Zeno pinning.
 
 ## Feature Inventory
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
-| 1 | Exact Hamiltonian Evolution | Fix `_matrix_exp` Hermitian projection bug in `quanta/layer3/hamiltonian.py`; implement exact spectral decomposition $V e^{-i \Lambda t} V^\dagger$ and Suzuki-Trotter 2nd/4th order integrators | M1 | Survey R1 |
-| 2 | Machine-Precision Unitarity | Enforce two-sided $\|U^\dagger U - I\|_\infty < 10^{-12}$ in `custom_gate.py` and Hilbert-Schmidt fidelity with $|phase|=1$ check in `equivalence.py` | M1 | Survey R1 |
-| 3 | Open Quantum Systems & CPTP | Enforce Kraus completeness $\sum K_k^\dagger K_k = I$, trace preservation $\text{Tr}(\rho)=1$, and positive semi-definiteness $\rho \ge 0$ in `quanta/simulator/density_matrix.py` | M1 | Survey R1 |
-| 4 | Lindblad Master Equation Solver | Implement differential Lindblad master equation solver ($\dot{\rho} = -i[H,\rho] + \sum \mathcal{D}[L_k]\rho$) with Liouvillian superoperator in `quanta/simulator/lindblad.py` | M1 | Survey R1 |
-| 5 | Daleckii-Krein Precision Fix | Standardize `quanta/torch/ops.py` on `complex128` continuous evolution and fix `test_ops_unitary_evolution_norm` | M1 | Survey R1 |
-| 6 | Dynamical Lie Algebras & Barren Plateaus | Implement DLA closure engine $\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$ and analytical barren plateau mapping in `quanta/qml/lie_algebra.py` | M1 | Survey R1 |
-| 7 | Edmonds Blossom MWPM Decoder | Replace greedy matching in `quanta/qec/decoder.py` with standalone Edmonds Blossom MWPM (`networkx.min_weight_matching`) and fix boundary node replication on even defect counts | M2 | Survey R2 |
-| 8 | Physical Data Qubit Correction Chains | Reconstruct shortest-path Pauli correction chains on primal/dual lattices in `quanta/qec/decoder.py` rather than returning syndrome indices | M2 | Survey R2 |
-| 9 | Surface Code Decoder Integration | Refactor `quanta/qec/surface_code.py` to invoke decoders and verify homology cancellation $H \cdot (e \oplus c) = 0$ without ground-truth cheating | M2 | Survey R2 |
-| 10 | Willow Spacetime 3D Syndrome Decoding | Implement 3D spacetime defect graph with phenomenological measurement error noise and eliminate all synthetic mock objects in `DynamicSurfaceCodeResult` | M2 | Survey R2 |
-| 11 | qLDPC Bivariate Bicycle Codes | Implement Gross [[144, 12, 12]] bivariate bicycle codes and BP-OSD decoding in `quanta/qec/qldpc.py` | M2 | Survey R2 |
-| 12 | Magic State Distillation & Surgery | Implement executable 15-to-1 Bravyi-Kitaev and CCZ distillation circuits and lattice surgery patch models in `quanta/qec/distillation.py` | M2 | Survey R2 |
-| 13 | MPS Singular Value Renormalization | Fix MPS state norm collapse on SVD truncation in `quanta/simulator/mps.py` and implement `entanglement_entropy(cut)` | M3 | Survey R3 |
-| 14 | Apple Silicon MLX GPU Optimization | Eliminate synchronous host-device copies in `apply_phase()` / `apply_noise()` and optimize tensor transposition memory bandwidth in `quanta/simulator/mlx.py` | M3 | Survey R3 |
-| 15 | Stabilizer / Clifford Fast Engine | Vectorize Aaronson-Gottesman tableau operations and implement `SimulatorBackend` interface `.apply()` in `quanta/simulator/pauli_frame.py` | M3 | Survey R3 |
-| 16 | Dynamic Circuits & OpenQASM 3.0 | Add mid-circuit measurement and classical feedforward condition handling in `Instruction`, `DAGCircuit`, `quanta/export/qasm_import.py`, and `quanta/runner.py` | M3 | Survey R3 |
-| 17 | Comprehensive Scientific Audit Report | Compile authoritative September 2026 academic and engineering audit report in `docs/scientific_audit_september_2026.md` | M4 | Survey R4 |
-| 18 | Sept 2026 Ecosystem Matrix & Roadmap | Compile competitive positioning matrix vs Willow/Heron/QuEra and actionable roadmap in `docs/quantum_roadmap_2026.md` | M4 | Survey R4 |
-| 19 | Dual Track Opaque-Box E2E Test Suite | Design and verify independent 4-tier E2E test suite in `tests/e2e/` covering all 18 features with `TEST_READY.md` | E2E | Survey Track |
-| 20 | Zero Regression Final Pass | Execute complete test suite with 100% pass rate on all new tests and 0 regressions on existing 1611+ tests | M5 | Acceptance |
+| 1 | Calibrated Micro-Step Tool Dephasing | Scale sub-turn tool dephasing to $\Delta t = 0.2$ in `quanta_subconscious_hook.py` and `FastBiomorphicMemory`, preserving transient decisions across $\ge 20$ tool steps | M1 | Survey R1 |
+| 2 | Proportional Biological Age Evolution | Update `FastBiomorphicMemory.step(dt)` to advance age proportionally by `dt` instead of rigid integer increments | M1 | Survey R1 |
+| 3 | PreInvocation Sub-Turn Decoupling | Decouple intermediate tool continuation sub-turns from user conversational turns in `quanta_subconscious_hook.py` | M1 | Survey R1 |
+| 4 | Fuzzy-Trace Actionable Resolution Classifier | Deterministic heuristic classifying architectural/strategic resolutions and filtering procedural tool noise | M2 | Survey R2 |
+| 5 | Semantic Gist Distillation Engine | Distill actionable resolutions into compact semantic gists (`category="semantic_gist"`, $S \ge 1.8$, $F=0.9998$, `is_core_anchor=True`) before 70% eviction | M2 | Survey R2 |
+| 6 | Gist Integration in CognitiveMemoryManager | Add `record_semantic_gist`, `recall_semantic_gists`, and pre-pruning consolidation in `quanta/cognitive/memory.py` | M2 | Survey R2 |
+| 7 | Gist Integration in FastBiomorphicMemory | Add `record_semantic_gist`, `recall_semantic_gists`, and pre-pruning consolidation in `scripts/hooks/quanta_subconscious_hook.py` | M2 | Survey R2 |
+| 8 | SWR Replay Gist Logging | Display active semantic gists (`🧠 Özüt`) and crystallization events (`✨ Kristalleşen Özüt`) in SWR Replay hook messages | M2 | Survey R2 |
+| 9 | Atomic State Mirror Persistence | Ensure `quanta_cognitive_state.json` atomic POSIX writers preserve `"semantic_gist"` records across workspace mirrors | M2 | Survey R2 |
+| 10 | Neurobiological Evaluation Module | Dataclass evaluating synaptic saturation (SHY), metabolic energy budgeting, and sleep-wake consolidation affinity | M3 | Survey R3 |
+| 11 | Psychiatric Evaluation Module | Dataclass evaluating anti-rumination risk, perseveration penalty vs cognitive flexibility, and threat appraisal | M3 | Survey R3 |
+| 12 | Sociological Evaluation Module | Dataclass evaluating social context framing, user cognitive fatigue reduction, and collective coordination | M3 | Survey R3 |
+| 13 | Extended ConsequenceVector | Incorporate `cognitive_panel: CognitivePanelScore` into `ConsequenceVector` with backwards-compatible `panel_weight` parameter | M3 | Survey R3 |
+| 14 | TheoryOfMind Interdisciplinary Lens | Add `evaluate_cognitive_panel()`, `analyze_interdisciplinary()`, and interdisciplinary DreamSeeds to `TheoryOfMindAnalyzer` | M3 | Survey R3 |
+| 15 | QuantumDecisionArbiter Integration | Integrate panel penalties into DAG rollout microglial pruning and multi-branch decision arbitration | M3 | Survey R3 |
+| 16 | Comprehensive Interdisciplinary Test Suite | Implement comprehensive tests in `tests/test_cognitive_interdisciplinary.py` across 6 test classes | M4 | Survey R4 |
+| 17 | Code Quality & Regression Invariants | Enforce Ruff (0 errors), Mypy (0 errors on target modules), Google-style docstrings (100-char limit), and 100% pass on 559+ tests | M4 | Survey R4 |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Theoretical Physics & Math Rigor | Features 1, 2, 3, 4, 5, 6 | None | DONE |
-| M2 | Real-Time QEC & 2026 FTQC Standards | Features 7, 8, 9, 10, 11, 12 | None | DONE |
-| M3 | Hardware Acceleration & Simulators | Features 13, 14, 15, 16 | None | DONE |
-| M4 | Gap Analysis Report & 2026 Roadmap | Features 17, 18 | M1, M2, M3 | DONE |
-| M5 | Final E2E Integration & Verification | Feature 20 | M1, M2, M3, M4, E2E | DONE |
-| E2E | Opaque-Box E2E Testing Track | Feature 19 (Tiers 1-4 tests) | Parallel to M1-M3 | DONE |
+| M1 | Calibrated Biological Time & Calmed Decay Kinetics | Features 1, 2, 3 | None | IN_PROGRESS |
+| M2 | Fuzzy-Trace Semantic Gist Extraction & Consolidation | Features 4, 5, 6, 7, 8, 9 | M1 | PLANNED |
+| M3 | Multi-Disciplinary Cognitive Evaluation Panel | Features 10, 11, 12, 13, 14, 15 | None | PLANNED |
+| M4 | Architectural Invariants, Quality Verification & Tests | Features 16, 17 | M1, M2, M3 | PLANNED |
 
 ## Interface Contracts
 
-### M1: Hamiltonian Evolution & Open Systems
-- `_matrix_exp(A: np.ndarray) -> np.ndarray`: For $A = -i H t$ with Hermitian $H$, $U = V \exp(-i \Lambda t) V^\dagger$. Unitarity $\|U^\dagger U - I\| < 10^{-12}$.
-- `quanta/simulator/lindblad.py`:
-  - `LindbladMasterEquation(H: np.ndarray, jump_ops: list[np.ndarray])`
-  - `evolve(rho_0: np.ndarray, t_span: tuple[float, float], steps: int = 100) -> tuple[np.ndarray, list[np.ndarray]]`
-  - Superoperator Liouvillian $\mathcal{L} = -i(I \otimes H - H^T \otimes I) + \sum_k \left( \overline{L_k} \otimes L_k - \frac{1}{2} I \otimes L_k^\dagger L_k - \frac{1}{2} L_k^T \overline{L_k} \otimes I \right)$.
-  - Trace preservation $|\text{Tr}(\rho(t)) - 1.0| < 10^{-12}$ and CPTP $\sum_k K_k^\dagger K_k = I$.
-- `quanta/qml/lie_algebra.py`:
-  - `dynamical_lie_algebra(generators: list[np.ndarray], tol: float = 1e-10) -> list[np.ndarray]`: Computes orthonormal Lie basis $\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$ using commutator closure $[A, B] = AB - BA$.
-  - `barren_plateau_bound(dla_dim: int, n_qubits: int) -> float`: Returns gradient variance bound $\text{Var}[\partial_\theta \langle O \rangle] \sim O(1/\dim(\mathfrak{g}))$.
+### M1: Memory Kinetics Contract
+- `FastBiomorphicMemory.step(self, dt: float = 1.0) -> None`:
+  `e["age"] += dt` for all engrams; Lindblad decay factor `math.exp(-eff_gamma * dt)`.
+- `handle_post_tool_use(...) -> None`:
+  Invokes `mem.step(dt=0.2)` on tool execution. `turn_count` is NOT incremented.
+- `main()` in `scripts/hooks/quanta_subconscious_hook.py`:
+  If non-debounced user conversational turn: `turn_count += 1`, `mem.step(dt=1.0)`. If continuation sub-turn after tool: do not double-step.
+- Transient retention invariant: $S = 0.5$ engrams maintain $F \ge 0.885$ after 20 tool steps ($\Delta t_{\text{total}} = 4.0$).
 
-### M2: QEC, Decoders & FTQC
-- `quanta/qec/decoder.py`:
-  - `MWPMDecoder.decode(syndrome: np.ndarray, code_distance: int) -> CorrectionResult`:
-    Uses `networkx.min_weight_matching` for minimum-weight perfect matching on all defect nodes with virtual boundary node pairing on both even and odd defect counts. Returns physical data qubit Pauli correction operators $C \in \{I, X, Y, Z\}^{\otimes n}$.
-- `quanta/qec/surface_code.py`:
-  - `SurfaceCode.simulate_error_correction(...) -> SurfaceCodeResult`: Passes extracted syndrome $s = H_Z e_X$ to `MWPMDecoder`, applies correction $c$, verifies homology $H_Z (e_X \oplus c_X) = 0$.
-  - `SurfaceCode.simulate_dynamic(...) -> DynamicSurfaceCodeResult`: Genuine 3D spacetime decoding with time-like edge weights $\ln((1-p_m)/p_m)$. Zero mock objects in result.
-- `quanta/qec/qldpc.py`:
-  - `BivariateBicycleCode(l: int, m: int, A_poly: list, B_poly: list)`: Implements Gross $[[144, 12, 12]]$ code over $\mathbb{F}_2[x,y]/\langle x^\ell-1, y^m-1\rangle$.
-  - `BPOSDDecoder(parity_check_matrix: np.ndarray, max_bp_iter: int = 30, osd_order: int = 10)`: Native BP-OSD decoder.
-- `quanta/qec/distillation.py`:
-  - `BravyiKitaev15to1Factory()`: Produces $|T\rangle = \frac{1}{\sqrt{2}}(|0\rangle + e^{i\pi/4}|1\rangle)$ with output error rate $\epsilon_{out} \le 35 p^3$.
-  - `CCZFactory()`: Produces $|CCZ\rangle$ states for transversal non-Clifford gate synthesis.
+### M2: Fuzzy-Trace Semantic Gist Contract
+- `is_actionable_resolution(content: str, key: str = "") -> bool`:
+  Returns True if `len(content) >= 20`, does not match procedural tool noise, and contains strategic/architectural keywords.
+- `distill_semantic_gist(content: str, key: str = "") -> tuple[str, str]`:
+  Strips preambles/parentheticals, produces `(gist_key, distilled_content)` with `gist_key` starting with `"gist_"`.
+- `record_semantic_gist(key: str, content: str, salience: float = 1.85, is_core_anchor: bool = True) -> Any`:
+  Records engram with `category="semantic_gist"`, $S \ge 1.80$, `is_core_anchor=True`, $F=0.9998$.
+- `prune_obsolete(...)`:
+  When transient engram decays below $F < 0.70$ and is actionable, crystallizes gist into core memory before detail eviction.
+- SWR Replay message:
+  Includes `🧠 Özüt: ...` for active gists and `✨ Kristalleşen Özüt: X karar` when new gists crystallize.
 
-### M3: MPS, MLX GPU & OpenQASM 3.0
-- `quanta/simulator/mps.py`:
-  - `MPSSimulator.entanglement_entropy(bipartition_cut: int) -> float`: Calculates von Neumann entanglement entropy $S = -\sum_k S_k^2 \ln(S_k^2)$.
-  - Truncation re-normalization: $S_{\text{kept}} \leftarrow S_{\text{kept}} / \sqrt{\sum S_{\text{kept}}^2}$ ensuring $\|\psi\| \equiv 1.0$.
-- `quanta/simulator/pauli_frame.py`:
-  - `PauliFrameSimulator(num_qubits: int)` implements `apply(gate_name: str, qubits: tuple[int, ...]) -> None` conforming to `SimulatorBackend`.
-- `quanta/export/qasm_import.py` & `quanta/runner.py`:
-  - Supports OpenQASM 3.0 mid-circuit measurement `c[0] = measure q[0]` and conditional feedforward `if (c[0] == 1) { ... }`.
+### M3: Cognitive Panel Contract
+- `NeurobiologicalEvaluation(synaptic_saturation: float, energy_expenditure: float, sleep_consolidation_affinity: float)`:
+  `aggregate_cost(weights=(0.40, 0.35, 0.25)) -> float` in $[0.0, 1.0]$.
+- `PsychiatricEvaluation(rumination_risk: float, perseveration_penalty: float, threat_distortion: float)`:
+  `aggregate_cost(weights=(0.40, 0.35, 0.25)) -> float` in $[0.0, 1.0]$.
+- `SociologicalEvaluation(social_misalignment: float, user_fatigue_impact: float, coordination_friction: float)`:
+  `aggregate_cost(weights=(0.35, 0.40, 0.25)) -> float` in $[0.0, 1.0]$.
+- `CognitivePanelScore(neurobiology, psychiatry, sociology)`:
+  `aggregate_penalty(discipline_weights=(0.30, 0.35, 0.35)) -> float` in $[0.0, 1.0]$.
+- `ConsequenceVector`:
+  `weighted_cost(weights=(0.25, 0.35, 0.25, 0.15), panel_weight=0.0) -> float`.
+  When `panel_weight == 0.0`, returns exact 4D cost. When `panel_weight > 0.0`, interpolates $(1 - w_p) C_{\text{4D}} + w_p C_{\text{panel}}$.
+- `TheoryOfMindAnalyzer`:
+  `evaluate_cognitive_panel(messages, project_state=None, context=None) -> CognitivePanelScore`.
+  `analyze_interdisciplinary(messages, project_state=None) -> tuple[float, list[DreamSeed], CognitivePanelScore]`.
+
+### M4: Verification Contract
+- `tests/test_cognitive_interdisciplinary.py` contains 6 test classes:
+  1. `TestNeurobiologicalEvaluation`
+  2. `TestPsychiatricEvaluation`
+  3. `TestSociologicalEvaluation`
+  4. `TestMultiCriteriaCognitivePanel`
+  5. `TestInterdisciplinaryArbitration`
+  6. `TestInterdisciplinaryInvariantsAndRegressions`
+- Verification commands:
+  - `.venv/bin/ruff check quanta/ scripts/hooks/` $\to$ 0 errors
+  - `.venv/bin/mypy quanta/cognitive/arbiter.py quanta/cognitive/tom_analyzer.py quanta/cognitive/memory.py --ignore-missing-imports` $\to$ 0 errors
+  - `.venv/bin/pytest tests/test_cognitive_interdisciplinary.py` $\to$ 100% pass
+  - `.venv/bin/pytest tests/test_cognitive_*.py tests/test_subconscious_*.py` $\to$ 100% pass (0 regressions on existing 559+ tests).
 
 ## Code Layout
-- `quanta/core/`: Analytical gate matrices, custom gates, circuit equivalence.
-- `quanta/layer3/`: Hamiltonian evolution, matrix exponential, time evolution integrators.
-- `quanta/simulator/`:
-  - `mps.py`: Matrix Product State simulator.
-  - `mlx.py`: Apple Silicon Metal/MLX simulator.
-  - `pauli_frame.py`: Stabilizer/Clifford simulator.
-  - `density_matrix.py`: Density matrix simulator.
-  - `lindblad.py`: Lindblad master equation solver.
-- `quanta/qec/`:
-  - `decoder.py`: Edmonds Blossom MWPM and Union-Find decoders.
-  - `surface_code.py`: Surface code and Willow 3D dynamic syndrome extraction.
-  - `qldpc.py`: Bivariate Bicycle codes and BP-OSD.
-  - `distillation.py`: Magic state distillation factories.
-- `quanta/qml/`:
-  - `lie_algebra.py`: Dynamical Lie Algebras and Barren Plateau bounds.
-- `quanta/torch/`:
-  - `ops.py`: Daleckii-Krein matrix exponential autograd.
-- `quanta/export/`:
-  - `qasm_import.py`: OpenQASM 3.0 importer.
-- `docs/`:
-  - `scientific_audit_september_2026.md`: Comprehensive Scientific Audit Report.
-  - `quantum_roadmap_2026.md`: Competitive Ecosystem Matrix & Roadmap.
-- `tests/`:
-  - `test_theoretical_physics_m1.py`: M1 unit and analytical tests.
-  - `test_qec_ftqc_m2.py`: M2 unit and benchmark tests.
-  - `test_hardware_simulators_m3.py`: M3 unit and performance tests.
-  - `e2e/`: Opaque-box E2E test suite (Tiers 1-4).
+- `scripts/hooks/quanta_subconscious_hook.py`: Runtime hook for Antigravity, `FastBiomorphicMemory`, SWR Replay, micro-step scaling, and gist crystallization.
+- `quanta/cognitive/memory.py`: PyTorch `CognitiveMemoryManager`, Lindblad phase diffusion, fuzzy-trace semantic gist extraction, and synaptic pruning.
+- `quanta/cognitive/arbiter.py`: `QuantumDecisionArbiter`, `ConsequenceVector`, `CognitivePanelScore`, `NeurobiologicalEvaluation`, `PsychiatricEvaluation`, `SociologicalEvaluation`.
+- `quanta/cognitive/tom_analyzer.py`: `TheoryOfMindAnalyzer`, interdisciplinary evaluation, conversational cadence and fatigue analysis.
+- `quanta/cognitive/consolidation.py`: `SubconsciousConsolidator` (SHY downscaling and microglial sleep consolidation).
+- `tests/test_cognitive_interdisciplinary.py`: Comprehensive test suite for all interdisciplinary and fuzzy-trace functionality.

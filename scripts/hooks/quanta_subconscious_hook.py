@@ -59,7 +59,7 @@ class PrunedEngram(dict):
             )
         return super().__eq__(other)
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # type: ignore[override]
         return hash(self.get("key") or self.get("id") or self.get("rule_name"))
 
     def __str__(self) -> str:
@@ -157,10 +157,208 @@ class FastBiomorphicMemory:
             is_core_anchor=False,
         )
 
+    def record_inhibitor(
+        self,
+        key: str,
+        content: str,
+        v_inh: float = 0.50,
+        salience: float = 1.50,
+        context_tags: dict[str, Any] | None = None,
+        category: str = "inhibitor",
+    ) -> None:
+        """Records an adaptive negative engram representing an anti-pattern or failed action."""
+        sal = (
+            float(salience)
+            if isinstance(salience, (int, float))
+            and not isinstance(salience, bool)
+            and math.isfinite(salience)
+            else 1.50
+        )
+        sal = max(0.01, min(3.5, sal))
+        v_val = (
+            float(v_inh)
+            if isinstance(v_inh, (int, float))
+            and not isinstance(v_inh, bool)
+            and math.isfinite(v_inh)
+            else 0.50
+        )
+        v_val = max(0.05, min(0.9998, v_val))
+        core_flag = bool(sal >= 2.0)
+        tags = dict(context_tags) if context_tags else {}
+
+        # If key exists, update in-place
+        for e in self.engrams:
+            if e["key"] == key:
+                e["content"] = content
+                e["salience"] = sal
+                e["category"] = category
+                e["fidelity"] = 0.9998
+                e["v_inh"] = v_val
+                e["is_core_anchor"] = core_flag
+                e["context_tags"] = tags
+                e.setdefault("consecutive_failures", 1)
+                e.setdefault("consecutive_successes", 0)
+                e.setdefault("context_divergence", [])
+                return
+
+        # Capacity management: evict lowest scoring non-core engram if full
+        if len(self.engrams) >= self.capacity:
+            candidates = [
+                (idx, e)
+                for idx, e in enumerate(self.engrams)
+                if not (e.get("is_core_anchor", False) or float(e.get("salience", 0.0)) >= 2.0)
+            ]
+            if candidates:
+                candidates.sort(
+                    key=lambda item: float(item[1]["salience"]) * float(item[1]["fidelity"])
+                )
+                evict_idx = candidates[0][0]
+                self.engrams.pop(evict_idx)
+                self.total_pruned_count += 1
+
+        self.engrams.append({
+            "key": key,
+            "content": content,
+            "salience": float(sal),
+            "category": category,
+            "fidelity": 0.9998,
+            "age": 0,
+            "is_core_anchor": core_flag,
+            "v_inh": float(v_val),
+            "context_tags": tags,
+            "consecutive_failures": 1,
+            "consecutive_successes": 0,
+            "context_divergence": [],
+        })
+
+    def potentiate_inhibitor(
+        self,
+        key: str,
+        context_tags: dict[str, Any] | None = None,
+        boost: float = 0.25,
+    ) -> float:
+        """Long-Term Potentiation (LTP): Deepens inhibition weight V_inh upon repeated failure."""
+        target = None
+        for e in self.engrams:
+            if e["key"] == key:
+                target = e
+                break
+
+        if target is None:
+            self.record_inhibitor(
+                key=key,
+                content=f"Inhibitory pattern for {key}",
+                v_inh=0.50,
+                salience=1.50,
+                context_tags=context_tags,
+            )
+            for e in self.engrams:
+                if e["key"] == key:
+                    target = e
+                    break
+
+        if target is None:
+            return 0.50
+
+        k_fail = int(target.get("consecutive_failures", 0)) + 1
+        target["consecutive_failures"] = k_fail
+        target["consecutive_successes"] = 0
+
+        if context_tags:
+            target.setdefault("context_tags", {}).update(context_tags)
+
+        # Asymptotic potentiation: V_inh <- min(0.9998, V_inh + boost * (0.9998 - V_inh))
+        curr_v = float(target.get("v_inh", 0.50))
+        new_v = min(0.9998, curr_v + float(boost) * (0.9998 - curr_v))
+        target["v_inh"] = new_v
+
+        # Salience scaling (threat awakening): S <- min(3.5, S + 0.35 * (1 + 0.1 * k_fail))
+        curr_sal = float(target.get("salience", 1.50))
+        new_sal = min(3.5, curr_sal + 0.35 * (1.0 + 0.1 * k_fail))
+        target["salience"] = new_sal
+
+        # Critical threshold crossing: core anchor promotion
+        if new_sal >= 2.0:
+            target["is_core_anchor"] = True
+
+        target["fidelity"] = 0.9998
+        return new_v
+
+    def depress_inhibitor(
+        self,
+        key: str,
+        context_tags: dict[str, Any] | None = None,
+        decay: float = 0.30,
+    ) -> float:
+        """Long-Term Depression (LTD): Relaxes V_inh and documents context divergence on success."""
+        target = None
+        for e in self.engrams:
+            if e["key"] == key:
+                target = e
+                break
+
+        if target is None:
+            return 0.0
+
+        target["consecutive_successes"] = int(target.get("consecutive_successes", 0)) + 1
+        target["consecutive_failures"] = 0
+
+        # Context divergence calculation: Delta C = {tag: (old, new) | old != new}
+        if context_tags:
+            existing_tags = target.setdefault("context_tags", {})
+            diff = {}
+            for k in set(existing_tags.keys()) | set(context_tags.keys()):
+                old_val = existing_tags.get(k)
+                new_val = context_tags.get(k)
+                if old_val != new_val:
+                    diff[k] = (old_val, new_val)
+            if diff:
+                target.setdefault("context_divergence", []).append(diff)
+            existing_tags.update(context_tags)
+
+        # Synaptic weight relaxation (multiplicative decay): V_inh <- max(0.05, V_inh * (1 - decay))
+        curr_v = float(target.get("v_inh", 0.50))
+        new_v = max(0.05, curr_v * (1.0 - float(decay)))
+        target["v_inh"] = new_v
+
+        # Salience relaxation
+        curr_sal = float(target.get("salience", 1.50))
+        new_sal = max(0.20, curr_sal - 0.35)
+        target["salience"] = new_sal
+
+        # Demote core anchor if salience falls below threshold
+        if new_sal < 2.0:
+            target["is_core_anchor"] = False
+
+        return new_v
+
+    def recall_inhibitors(
+        self,
+        top_k: int = 3,
+        min_v_inh: float = 0.20,
+    ) -> list[dict]:
+        """Recalls active inhibitors ranked by (V_inh * salience)."""
+        active = [
+            e
+            for e in self.engrams
+            if e.get("category") in ("inhibitor", "anti_pattern")
+            and float(e.get("v_inh", 0.50)) >= min_v_inh
+        ]
+        active.sort(
+            key=lambda item: float(item.get("v_inh", 0.50)) * float(item.get("salience", 1.0)),
+            reverse=True,
+        )
+        return active[:top_k]
+
     def step(self, dt: float = 1.0) -> None:
         dim_factor = 1.0 / DEFAULT_DIM
         for e in self.engrams:
             e["age"] += 1
+            # Unreinforced inhibitor synaptic weight decay
+            if e.get("category") in ("inhibitor", "anti_pattern"):
+                v_curr = float(e.get("v_inh", 0.50))
+                e["v_inh"] = max(0.05, v_curr * math.exp(-0.02 * dt))
+
             # Calibrated Lindblad-Ebbinghaus dephasing with biomorphic CSF shielding
             sal = max(0.0, float(e.get("salience", 1.0)))
             is_core = bool(e.get("is_core_anchor", False)) or sal >= 2.0
@@ -193,8 +391,12 @@ class FastBiomorphicMemory:
                 continue
 
             is_transient = e.get("is_core_anchor") is False and float(e.get("salience", 1.0)) <= 0.8
+            is_inhibitor = e.get("category") in ("inhibitor", "anti_pattern")
+            v_inh = float(e.get("v_inh", 0.50))
             fid = float(e.get("fidelity", 1.0))
             sal = float(e.get("salience", 1.0))
+
+            depotentiated = is_inhibitor and (v_inh < 0.20 and sal <= 0.50)
             decayed = (
                 (sal <= min_salience or is_transient)
                 and fid < fidelity_threshold
@@ -202,8 +404,10 @@ class FastBiomorphicMemory:
             age_val = float(e.get("age", 0))
             aged = (max_age is not None and age_val > max_age)
 
-            if decayed or aged:
-                if decayed and aged:
+            if decayed or aged or depotentiated:
+                if depotentiated:
+                    reason = f"depotentiated_inhibitor ({v_inh:.3f} < 0.20, salience {sal:.2f} <= 0.50)"
+                elif decayed and aged:
                     reason = (
                         f"fidelity_and_age ({fid:.3f} < {fidelity_threshold:.3f}, "
                         f"age {age_val:.0f} > {max_age})"
@@ -607,6 +811,222 @@ def refresh_memory_from_state(mem: FastBiomorphicMemory, state_file: Path) -> di
         return {}
 
 
+def extract_context_tags(
+    tool_name: str,
+    tool_args: dict[str, Any] | None = None,
+    error_msg: str | None = None,
+) -> dict[str, Any]:
+    """Extracts contextual tags from tool execution parameters for cognitive LTP/LTD.
+
+    Args:
+        tool_name: The name of the tool executed (e.g. 'run_command').
+        tool_args: Dictionary of arguments passed to the tool.
+        error_msg: Error string if the tool failed, or None.
+
+    Returns:
+        Dictionary containing tags: tool, os, runtime, command, target, error_type.
+    """
+    args = tool_args if isinstance(tool_args, dict) else {}
+    tags: dict[str, Any] = {
+        "tool": tool_name,
+        "os": sys.platform,
+    }
+
+    cmd = args.get("CommandLine") or args.get("command") or args.get("cmd")
+    if cmd:
+        cmd_str = str(cmd)
+        tags["command"] = cmd_str
+        cmd_lower = cmd_str.lower()
+        if "python" in cmd_lower:
+            tags["runtime"] = "python3"
+        elif "cargo" in cmd_lower:
+            tags["runtime"] = "cargo"
+        elif "npm" in cmd_lower or "node" in cmd_lower:
+            tags["runtime"] = "node"
+        elif "zsh" in cmd_lower or "bash" in cmd_lower or "sh" in cmd_lower:
+            tags["runtime"] = "shell"
+        else:
+            tags["runtime"] = "shell"
+        tokens = cmd_str.split()
+        if len(tokens) > 1 and "target" not in tags:
+            tags["target"] = tokens[1]
+    else:
+        if tool_name in ("run_command", "bash", "execute_command"):
+            tags["runtime"] = "shell"
+        elif "python" in tool_name:
+            tags["runtime"] = "python3"
+        else:
+            tags["runtime"] = "native"
+
+    for target_key in (
+        "TargetFile", "AbsolutePath", "SearchPath", "DirectoryPath",
+        "Path", "file_path", "target", "path", "query", "Query"
+    ):
+        if target_key in args and args[target_key]:
+            tags["target"] = str(args[target_key])
+            break
+
+    if error_msg:
+        err_lower = str(error_msg).lower()
+        if "syntax" in err_lower or "matches found" in err_lower:
+            tags["error_type"] = "syntax_error"
+        elif "permission" in err_lower or "denied" in err_lower:
+            tags["error_type"] = "permission_error"
+        elif "timeout" in err_lower or "timed out" in err_lower:
+            tags["error_type"] = "timeout_error"
+        elif "not found" in err_lower or "no such file" in err_lower:
+            tags["error_type"] = "not_found"
+        elif "exit" in err_lower or "status" in err_lower:
+            tags["error_type"] = "nonzero_exit"
+        else:
+            tags["error_type"] = "tool_error"
+
+    return tags
+
+
+def handle_post_tool_use(
+    payload: dict[str, Any],
+    cached: dict[str, Any] | Path | str | None = None,
+    state_file: Path | str | None = None,
+    workspace_state_file: Path | str | None = None,
+    safe_conv_id: str | None = None,
+) -> dict[str, Any]:
+    """Dedicated ultra-fast (< 25ms) handler for Antigravity PostToolUse events.
+
+    Decouples PostToolUse from PreInvocation, updates plastic negative engrams
+    (LTP on error, LTD on success), atomically persists state, and returns {}.
+    """
+    try:
+        if isinstance(cached, (str, Path)):
+            state_file = Path(cached)
+            cached = None
+
+        if safe_conv_id is None:
+            raw_conv_id = str(payload.get("conversationId", "default") or "default")
+            safe_conv_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', raw_conv_id)
+
+        if state_file is None:
+            artifact_dir = payload.get("artifactDirectoryPath", "")
+            if artifact_dir and os.path.exists(artifact_dir):
+                state_file = Path(artifact_dir) / "quanta_cognitive_state.json"
+            else:
+                state_file = Path(f"/tmp/quanta_cognitive_{safe_conv_id}.json")
+        else:
+            state_file = Path(state_file)
+
+        if workspace_state_file is None:
+            workspace_paths = payload.get("workspacePaths", [])
+            if workspace_paths and isinstance(workspace_paths, list):
+                for wp in workspace_paths:
+                    if wp:
+                        p = Path(wp) / "quanta_cognitive_state.json"
+                        if p.exists():
+                            workspace_state_file = p
+                            break
+            if workspace_state_file is None:
+                workspace_state_file = QUANTA_ROOT / "quanta_cognitive_state.json"
+        else:
+            workspace_state_file = Path(workspace_state_file)
+
+        if not isinstance(cached, dict):
+            cached_dict: dict[str, Any] = {}
+            if state_file.exists():
+                try:
+                    with open(state_file, encoding="utf-8", errors="replace") as sf:
+                        loaded = json.load(sf)
+                        if isinstance(loaded, dict):
+                            cached_dict = loaded
+                except Exception:
+                    cached_dict = {}
+        else:
+            cached_dict = dict(cached)
+
+        mem = FastBiomorphicMemory(capacity=128)
+        raw_engrams = cached_dict.get("engrams", [])
+        if isinstance(raw_engrams, list):
+            for item in raw_engrams:
+                if isinstance(item, dict) and "key" in item:
+                    mem.engrams.append(copy.deepcopy(item))
+
+        tc = payload.get("toolCall")
+        if not isinstance(tc, dict):
+            tc = {}
+        tool_name = str(tc.get("name") or payload.get("toolName") or "unknown_tool")
+        tool_args = tc.get("args") or payload.get("toolArgs") or {}
+        if not isinstance(tool_args, dict):
+            tool_args = {}
+
+        error_msg = payload.get("error")
+        tool_output = payload.get("result", payload.get("output"))
+        step_val = payload.get("stepIdx", cached_dict.get("last_verified_step", 0))
+
+        is_failure = bool(error_msg)
+        if not is_failure and isinstance(tool_output, dict):
+            exit_code = tool_output.get("exit_code", tool_output.get("exitCode", 0))
+            if exit_code not in (0, None):
+                is_failure = True
+                if not error_msg:
+                    error_msg = f"Non-zero exit code: {exit_code}"
+            elif tool_output.get("error"):
+                is_failure = True
+                if not error_msg:
+                    error_msg = str(tool_output.get("error"))
+
+        ctx = extract_context_tags(
+            tool_name, tool_args, str(error_msg) if is_failure and error_msg else None
+        )
+
+        has_tool = bool(tc or payload.get("toolName") or tool_name != "unknown_tool")
+        has_error = bool(error_msg or is_failure)
+
+        if has_tool or has_error:
+            matching = [
+                e for e in mem.engrams
+                if isinstance(e, dict)
+                and e.get("category") in ("inhibitor", "anti_pattern")
+                and (
+                    (e.get("context_tags") or {}).get("tool") == tool_name
+                    or e.get("key") == f"inh_{tool_name}"
+                    or str(e.get("key", "")).startswith(f"inh_{tool_name}")
+                )
+            ]
+            if is_failure:
+                if matching:
+                    for inh in matching:
+                        mem.potentiate_inhibitor(inh["key"], context_tags=ctx)
+                else:
+                    inh_key = f"inh_{tool_name}"
+                    desc = f"Tool failure in {tool_name}"
+                    if error_msg:
+                        desc += f": {str(error_msg)[:120]}"
+                    mem.record_inhibitor(
+                        key=inh_key,
+                        content=desc,
+                        v_inh=0.60,
+                        salience=1.80,
+                        context_tags=ctx,
+                    )
+            else:
+                for inh in matching:
+                    mem.depress_inhibitor(inh["key"], context_tags=ctx)
+
+        state_dict = dict(cached_dict)
+        state_dict["engrams"] = mem.engrams
+        state_dict["last_verified_step"] = step_val
+
+        _save_mirrored_state_atomically(
+            primary_path=state_file,
+            mirror_path=workspace_state_file,
+            state_dict=state_dict,
+            conv_id=safe_conv_id,
+            is_test_env=is_hermetic_test_env(payload),
+        )
+    except Exception:
+        pass
+
+    return {}
+
+
 def main() -> None:
     output_payload: dict = {}
     try:
@@ -640,6 +1060,25 @@ def main() -> None:
                         break
         if workspace_state_file is None:
             workspace_state_file = QUANTA_ROOT / "quanta_cognitive_state.json"
+
+        # Early PostToolUse Fast Path Decoupling (< 25ms, strictly output {})
+        is_post_tool = bool(
+            payload.get("event") == "PostToolUse"
+            or payload.get("toolCall")
+            or payload.get("error")
+        )
+        if is_post_tool and payload.get("terminationReason") is None:
+            with contextlib.suppress(Exception):
+                handle_post_tool_use(
+                    payload=payload,
+                    cached=None,
+                    state_file=state_file,
+                    workspace_state_file=workspace_state_file,
+                    safe_conv_id=safe_conv_id,
+                )
+            sys.stdout.write(json.dumps({}))
+            sys.stdout.flush()
+            return
 
         now = time.time()
         mem = FastBiomorphicMemory(capacity=128)
@@ -676,7 +1115,7 @@ def main() -> None:
                         is_core_raw = item.get("is_core_anchor")
                         is_core = (sal_val >= 2.0) if is_core_raw is None else bool(is_core_raw)
 
-                        mem.engrams.append({
+                        e_dict = {
                             "key": item["key"],
                             "content": item.get("content", item.get("description", "")),
                             "salience": sal_val,
@@ -692,7 +1131,14 @@ def main() -> None:
                             "last_outcome": item.get("last_outcome", "NEUTRAL"),
                             "drift_status": item.get("drift_status", "STABLE"),
                             "is_core_anchor": is_core,
-                        })
+                        }
+                        if "v_inh" in item:
+                            e_dict["v_inh"] = float(item["v_inh"])
+                        if "context_tags" in item:
+                            e_dict["context_tags"] = item["context_tags"]
+                        if "context_divergence" in item:
+                            e_dict["context_divergence"] = item["context_divergence"]
+                        mem.engrams.append(e_dict)
             except Exception:
                 pass
 
@@ -753,6 +1199,12 @@ def main() -> None:
                                         "drift_status": item.get("drift_status", "STABLE"),
                                         "is_core_anchor": is_core,
                                     }
+                                    if "v_inh" in item:
+                                        hydrated["v_inh"] = float(item["v_inh"])
+                                    if "context_tags" in item:
+                                        hydrated["context_tags"] = item["context_tags"]
+                                    if "context_divergence" in item:
+                                        hydrated["context_divergence"] = item["context_divergence"]
                                     if "description" in item:
                                         hydrated["description"] = item["description"]
                                     mem.engrams.append(hydrated)
@@ -814,7 +1266,7 @@ def main() -> None:
                         opts.append("Mevcut Durumu Koru")
 
                     dilemma_text = dec.get("goal") or f"Mimari Karar: {dec['winner']}"
-                    hyps = [
+                    hyps: list[dict[str, Any] | str] = [
                         {"id": f"d{i+1}", "label": opt_name, "ket": f"|d{i+1}>"}
                         for i, opt_name in enumerate(opts[:3])
                     ]
@@ -869,52 +1321,19 @@ def main() -> None:
             last_recorded_decision_step = new_last_dec_step
 
         # 1b. EXTRACT & VERIFY ACTION OUTCOMES (CLOSED-LOOP FEEDBACK ENGINE)
+        # Retrospective transcript verification across previous turn's executed steps
         try:
-            from quanta.cognitive.feedback import (
-                CognitiveFeedbackLoop,
-                OutcomeVerifier,
-            )
-            # Direct event evaluation if toolCall or error payload is provided
-            is_post_tool = (
-                payload.get("toolCall")
-                or payload.get("error")
-                or payload.get("event") == "PostToolUse"
-            )
-            if is_post_tool:
-                tc = payload.get("toolCall", {})
-                t_name = tc.get("name", payload.get("toolName", "tool"))
-                t_args = tc.get("args", payload.get("toolArgs", {}))
-                t_err = payload.get("error")
-                t_out = payload.get("result", payload.get("output"))
-                step_val = payload.get("stepIdx", current_step_idx)
-
-                verifier = OutcomeVerifier(dim=64)
-                outcome = verifier.evaluate_tool_result(
-                    tool_name=t_name,
-                    tool_args=t_args,
-                    tool_output=t_out,
-                    error=t_err,
-                    active_rules=mem.engrams,
-                    step_idx=step_val,
+            if transcript_path:
+                from quanta.cognitive.feedback import (
+                    CognitiveFeedbackLoop,
+                    OutcomeVerifier,
                 )
-                feedback_loop = CognitiveFeedbackLoop(verifier=verifier)
-                feedback_loop.process_outcomes(
-                    outcomes=[outcome],
-                    state_path=state_file,
-                    workspace=real_workspace,
-                )
-                last_verified_step = max(last_verified_step, step_val)
-                refreshed = refresh_memory_from_state(mem, state_file)
-                if refreshed:
-                    cached.update(refreshed)
-
-            # Retrospective transcript verification across previous turn's executed steps
-            elif transcript_path:
                 verifier = OutcomeVerifier(dim=64)
+                active_rules_list: list[str | dict[str, Any]] = list(mem.engrams)
                 unverified_outcomes = verifier.extract_outcomes_from_transcript(
                     transcript_path=transcript_path,
                     last_step_idx=last_verified_step,
-                    active_rules=mem.engrams,
+                    active_rules=active_rules_list,
                 )
                 if unverified_outcomes:
                     feedback_loop = CognitiveFeedbackLoop(verifier=verifier)
@@ -1041,12 +1460,12 @@ def main() -> None:
         # Microglial active synaptic pruning
         pruned = mem.prune_obsolete(fidelity_threshold=0.70, min_salience=0.50, turn=turn_count)
         if pruned:
-            for p in pruned:
-                p_dict = dict(p) if isinstance(p, dict) else {
+            for item_p in pruned:
+                p_dict = dict(item_p) if isinstance(item_p, dict) else {
                     "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "rule_name": str(p),
-                    "id": str(p),
-                    "key": str(p),
+                    "rule_name": str(item_p),
+                    "id": str(item_p),
+                    "key": str(item_p),
                     "reason": "microglial_clearance",
                     "decayed_salience": 0.25,
                     "turn_pruned": turn_count,
@@ -1090,6 +1509,7 @@ def main() -> None:
             e for e in mem.engrams
             if (e.get("is_core_anchor", False) or float(e.get("salience", 0.0)) >= 2.0)
             and float(e.get("fidelity", 0.0)) >= 0.80
+            and e.get("category") not in ("inhibitor", "anti_pattern")
         ]
         # Sort core anchors by salience descending
         core_anchors.sort(key=lambda x: float(x.get("salience", 0.0)), reverse=True)
@@ -1103,6 +1523,7 @@ def main() -> None:
             e for e in mem.engrams
             if not (e.get("is_core_anchor", False) or float(e.get("salience", 0.0)) >= 2.0)
             and float(e.get("fidelity", 0.0)) >= 0.70
+            and e.get("category") not in ("inhibitor", "anti_pattern")
         ]
         # Sort transient decisions by fidelity * salience descending
         transient_decisions.sort(
@@ -1111,7 +1532,9 @@ def main() -> None:
         )
         selected_transient = transient_decisions[:4]
 
-        vital_anchors = selected_core + selected_transient
+        active_inhibitors = mem.recall_inhibitors(top_k=3, min_v_inh=0.20)
+
+        vital_anchors = selected_core + selected_transient + active_inhibitors
 
         if vital_anchors:
             core_items = []
@@ -1124,11 +1547,19 @@ def main() -> None:
                 fid_str = format_fidelity(t["fidelity"])
                 transient_items.append(f"{t['key']} ({fid_str})")
 
+            inhibitor_items = []
+            for inh in active_inhibitors:
+                v_val = float(inh.get("v_inh", 0.50))
+                fid_str = format_fidelity(float(inh.get("fidelity", 0.9998)))
+                inhibitor_items.append(f"{inh['key']} (V_inh={v_val:.2f}, {fid_str})")
+
             lines = ["[Quanta Bilişsel Çıpa | SWR Replay]:"]
             if core_items:
                 lines.append(f"  🔒 Çekirdek: {', '.join(core_items)}")
             if transient_items:
                 lines.append(f"  ⚡ Geçici: {', '.join(transient_items)}")
+            if inhibitor_items:
+                lines.append(f"  🚫 İnhibitör / Anti-Pattern: {', '.join(inhibitor_items)}")
             if pruned:
                 prune_word = "engram"
                 lines.append(f"  ✂️ Budandı: {len(pruned)} {prune_word}")
@@ -1167,7 +1598,7 @@ def main() -> None:
                 workspace=real_workspace,
                 last_user_query=last_query or user_query,
                 kappa_csf=KAPPA_CSF,
-                pruned_keys=pruned,
+                pruned_keys=[str(item_p) for item_p in pruned],
                 total_pruned_count=mem.total_pruned_count,
                 active_engrams_count=len(mem.engrams),
             )

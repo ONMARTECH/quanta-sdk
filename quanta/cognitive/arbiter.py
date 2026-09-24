@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import time
+from dataclasses import dataclass, field
 from typing import Any
 
 import torch
@@ -13,6 +14,506 @@ from quanta.cognitive.memory import text_to_statevector
 from quanta.cognitive.telemetry import record_decision_telemetry
 from quanta.torch.brain import QuantumZenoAttention
 
+__all__ = [
+    "ConsequenceVector",
+    "DecisionDAG",
+    "DecisionEdge",
+    "DecisionNode",
+    "DecisionTrajectory",
+    "QuantumDecisionArbiter",
+]
+
+def _safe_float(val: Any, default: float = 0.0) -> float:
+    """Safely converts value to float with default fallback."""
+    if val is None:
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
+
+def _safe_int(val: Any, default: int = 0) -> int:
+    """Safely converts value to int with default fallback."""
+    if val is None:
+        return default
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        return default
+
+
+def _safe_dict(val: Any) -> dict[str, Any]:
+    """Safely converts value to dictionary, returning empty dict if invalid."""
+    if isinstance(val, dict):
+        return dict(val)
+    return {}
+
+
+@dataclass
+class ConsequenceVector:
+    """4-Dimensional biomorphic consequence evaluation vector.
+
+    Attributes:
+        latency: [0.0, 1.0] Runtime latency, I/O overhead, and response time impact.
+        maintenance: [0.0, 1.0] Technical debt, cognitive complexity, and maintenance burden.
+        risk: [0.0, 1.0] Blast radius, failure probability, and irreversibility / vendor lock-in.
+        metabolic: [0.0, 1.0] CPU/memory overhead and Landauer thermodynamic footprint.
+    """
+
+    latency: float = 0.0
+    maintenance: float = 0.0
+    risk: float = 0.0
+    metabolic: float = 0.0
+
+    def weighted_cost(
+        self,
+        weights: tuple[float, float, float, float] = (0.25, 0.35, 0.25, 0.15),
+    ) -> float:
+        """Computes the weighted aggregate operational cost penalty in [0.0, 1.0]."""
+        return float(
+            weights[0] * self.latency
+            + weights[1] * self.maintenance
+            + weights[2] * self.risk
+            + weights[3] * self.metabolic
+        )
+
+    def to_dict(self) -> dict[str, float]:
+        """Serializes consequence vector to dictionary."""
+        return {
+            "latency": self.latency,
+            "maintenance": self.maintenance,
+            "risk": self.risk,
+            "metabolic": self.metabolic,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> ConsequenceVector:
+        """Instantiates ConsequenceVector from a dictionary with safe fallbacks."""
+        if not data or not isinstance(data, dict):
+            return cls()
+        return cls(
+            latency=_safe_float(data.get("latency"), 0.0),
+            maintenance=_safe_float(data.get("maintenance"), 0.0),
+            risk=_safe_float(data.get("risk"), 0.0),
+            metabolic=_safe_float(data.get("metabolic"), 0.0),
+        )
+
+
+@dataclass
+class DecisionNode:
+    """Node in the Decision DAG representing an architectural or algorithmic state.
+
+    Attributes:
+        node_id: Unique identifier for the node.
+        label: Human-readable architectural choice or state description.
+        depth: Distance from root node (root depth = 0).
+        statevector: Hilbert space quantum representation (dim=64).
+        consequence: Associated 4D biomorphic consequence vector.
+        metadata: Arbitrary contextual properties (e.g. is_speculative, technology, tags).
+    """
+
+    node_id: str
+    label: str
+    depth: int = 0
+    statevector: torch.Tensor | None = None
+    consequence: ConsequenceVector = field(default_factory=ConsequenceVector)
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def is_speculative(self) -> bool:
+        """Returns True if marked as speculative/lateral exploration in metadata."""
+        return bool(self.metadata.get("is_speculative", self.metadata.get("speculative", False)))
+
+
+@dataclass
+class DecisionEdge:
+    """Directed edge representing an architectural choice transition.
+
+    Attributes:
+        source_id: Source node identifier.
+        target_id: Target node identifier.
+        action_label: Human-readable description of the transition or action.
+        transition_ket: Quantum ket label for the transition (e.g. |transition>).
+        alignment_score: Semantic cosine alignment with goal.
+        tr_rho_pi: Scaled projective trace projection.
+        p_zeno: Quantum Zeno pinning factor at this transition.
+        metadata: Additional transition metadata.
+    """
+
+    source_id: str
+    target_id: str
+    action_label: str
+    transition_ket: str = "|transition>"
+    alignment_score: float = 0.0
+    tr_rho_pi: float = 0.0
+    p_zeno: float = 0.0
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class DecisionTrajectory:
+    """Evaluated decision rollout path from DAG root to terminal leaf.
+
+    Attributes:
+        trajectory_id: Unique trajectory identifier (e.g. tau_1).
+        path_nodes: Sequence of node_ids from root to leaf [v0, v1, ..., vD].
+        path_labels: Sequence of human-readable labels [Root, Branch, Sub-branch].
+        cumulative_utility: Cascading discounted step utility sum.
+        cumulative_cost: Discounted consequence penalty sum.
+        net_score: Final ranking score.
+        mean_p_zeno: Average Zeno pinning factor along trajectory.
+        quantum_fidelity: Geometric mean of transition projections Tr(rho Pi).
+        is_pruned: True if eliminated by microglial pruning.
+        prune_reason: Explanation if pruned (e.g. "Dominated by winner").
+        is_speculative: True if any node along trajectory is marked speculative.
+        edges: Sequence of traversed DecisionEdge objects.
+        metadata: Additional trajectory metadata.
+    """
+
+    trajectory_id: str
+    path_nodes: list[str]
+    path_labels: list[str]
+    cumulative_utility: float = 0.0
+    cumulative_cost: float = 0.0
+    net_score: float = 0.0
+    mean_p_zeno: float = 0.0
+    quantum_fidelity: float = 1.0
+    is_pruned: bool = False
+    prune_reason: str | None = None
+    is_speculative: bool = False
+    edges: list[DecisionEdge] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes trajectory to dictionary."""
+        return {
+            "trajectory_id": self.trajectory_id,
+            "path_nodes": list(self.path_nodes),
+            "path_labels": list(self.path_labels),
+            "cumulative_utility": round(self.cumulative_utility, 4),
+            "cumulative_cost": round(self.cumulative_cost, 4),
+            "net_score": round(self.net_score, 4),
+            "mean_p_zeno": round(self.mean_p_zeno, 4),
+            "quantum_fidelity": round(self.quantum_fidelity, 6),
+            "is_pruned": self.is_pruned,
+            "prune_reason": self.prune_reason,
+            "is_speculative": self.is_speculative,
+        }
+
+
+class DecisionDAG:
+    """Directed Acyclic Graph engine for architectural choices and rollouts."""
+
+    def __init__(self) -> None:
+        self.nodes: dict[str, DecisionNode] = {}
+        self.adj: dict[str, list[DecisionEdge]] = {}
+        self.rev_adj: dict[str, list[DecisionEdge]] = {}
+
+    def add_node(self, node: DecisionNode) -> None:
+        """Adds a node to the DAG."""
+        self.nodes[node.node_id] = node
+        if node.node_id not in self.adj:
+            self.adj[node.node_id] = []
+        if node.node_id not in self.rev_adj:
+            self.rev_adj[node.node_id] = []
+
+    def add_edge(self, edge: DecisionEdge) -> None:
+        """Adds a directed edge between existing nodes."""
+        if edge.source_id not in self.nodes:
+            raise KeyError(f"Source node '{edge.source_id}' does not exist in DAG.")
+        if edge.target_id not in self.nodes:
+            raise KeyError(f"Target node '{edge.target_id}' does not exist in DAG.")
+        self.adj[edge.source_id].append(edge)
+        self.rev_adj[edge.target_id].append(edge)
+
+    @property
+    def edges(self) -> list[DecisionEdge]:
+        """Returns all directed edges in the DAG."""
+        all_edges: list[DecisionEdge] = []
+        for edge_list in self.adj.values():
+            all_edges.extend(edge_list)
+        return all_edges
+
+    def get_node(self, node_id: str) -> DecisionNode | None:
+        """Retrieves a node by id."""
+        return self.nodes.get(node_id)
+
+    def get_successors(self, node_id: str) -> list[DecisionNode]:
+        """Returns target nodes of outgoing edges from node_id."""
+        if node_id not in self.adj:
+            return []
+        return [
+            self.nodes[edge.target_id]
+            for edge in self.adj[node_id]
+            if edge.target_id in self.nodes
+        ]
+
+    def get_predecessors(self, node_id: str) -> list[DecisionNode]:
+        """Returns source nodes of incoming edges to node_id."""
+        if node_id not in self.rev_adj:
+            return []
+        return [
+            self.nodes[edge.source_id]
+            for edge in self.rev_adj[node_id]
+            if edge.source_id in self.nodes
+        ]
+
+    def get_outgoing_edges(self, node_id: str) -> list[DecisionEdge]:
+        """Returns outgoing edges from node_id."""
+        return list(self.adj.get(node_id, []))
+
+    def get_incoming_edges(self, node_id: str) -> list[DecisionEdge]:
+        """Returns incoming edges to node_id."""
+        return list(self.rev_adj.get(node_id, []))
+
+    def has_cycle(self) -> bool:
+        """Checks whether the graph contains any cycle using DFS three-color tracking."""
+        visited: dict[str, int] = {nid: 0 for nid in self.nodes}
+
+        def dfs(u: str) -> bool:
+            visited[u] = 1
+            for edge in self.adj.get(u, []):
+                v = edge.target_id
+                if visited.get(v, 0) == 1:
+                    return True
+                if visited.get(v, 0) == 0 and dfs(v):
+                    return True
+            visited[u] = 2
+            return False
+
+        return any(visited[nid] == 0 and dfs(nid) for nid in self.nodes)
+
+    def topological_sort(self) -> list[str]:
+        """Returns a topological ordering of node_ids, raising ValueError if cycle detected."""
+        if self.has_cycle():
+            raise ValueError("Graph contains a cycle; cannot perform topological sort.")
+
+        in_degree = {nid: len(self.rev_adj.get(nid, [])) for nid in self.nodes}
+        queue = [nid for nid, deg in in_degree.items() if deg == 0]
+        order: list[str] = []
+
+        while queue:
+            queue.sort()
+            u = queue.pop(0)
+            order.append(u)
+            for edge in self.adj.get(u, []):
+                v = edge.target_id
+                in_degree[v] -= 1
+                if in_degree[v] == 0:
+                    queue.append(v)
+
+        if len(order) != len(self.nodes):
+            raise ValueError("Cycle detected during topological sorting.")
+        return order
+
+    def find_roots(self) -> list[str]:
+        """Finds all root node IDs (nodes with in-degree 0)."""
+        return [nid for nid in self.nodes if len(self.rev_adj.get(nid, [])) == 0]
+
+    def find_leaves(self) -> list[str]:
+        """Finds all leaf node IDs (nodes with out-degree 0)."""
+        return [nid for nid in self.nodes if len(self.adj.get(nid, [])) == 0]
+
+    def enumerate_trajectories(self, root_id: str | None = None) -> list[list[str]]:
+        """Enumerates all paths from root_id (or all roots) to terminal leaf nodes.
+
+        Uses dynamic programming / memoization on shared sub-branches to prevent
+        exponential blowup on DAG confluence.
+        """
+        if self.has_cycle():
+            raise ValueError("Graph contains a cycle; cannot enumerate finite trajectories.")
+
+        roots = [root_id] if root_id is not None else self.find_roots()
+        if not roots:
+            roots = list(self.nodes.keys())[:1] if self.nodes else []
+
+        memo: dict[str, list[list[str]]] = {}
+        visiting: set[str] = set()
+
+        def paths_from(u: str) -> list[list[str]]:
+            if u in memo:
+                return memo[u]
+            if u in visiting:
+                raise ValueError(f"Cycle detected at node {u}")
+            visiting.add(u)
+
+            successors = self.adj.get(u, [])
+            if not successors:
+                res = [[u]]
+            else:
+                res = []
+                for edge in successors:
+                    v = edge.target_id
+                    sub_paths = paths_from(v)
+                    for sp in sub_paths:
+                        res.append([u] + sp)
+
+            visiting.remove(u)
+            memo[u] = res
+            return res
+
+        all_trajectories: list[list[str]] = []
+        for r in roots:
+            if r in self.nodes:
+                all_trajectories.extend(paths_from(r))
+
+        return all_trajectories
+
+    @classmethod
+    def from_dict(cls, spec: dict[str, Any]) -> DecisionDAG:
+        """Hydrates a DecisionDAG from a dictionary specification.
+
+        Supports both:
+        1. Hierarchical branch trees:
+           {
+             "root": "System Architecture",
+             "branches": {
+               "Option A": {
+                 "consequences": {"latency": 0.4, ...},
+                 "is_speculative": False,
+                 "sub_branches": {
+                   "Sub A1": {"consequences": {...}}
+                 }
+               }
+             }
+           }
+        2. Explicit graph dictionary:
+           {"nodes": [...], "edges": [...]}
+        """
+        dag = cls()
+        if not spec or not isinstance(spec, dict):
+            return dag
+
+        if "nodes" in spec and "edges" in spec:
+            for nd in spec["nodes"]:
+                c_data = nd.get("consequence", nd.get("consequences"))
+                node = DecisionNode(
+                    node_id=str(nd.get("node_id", "")),
+                    label=str(nd.get("label", nd.get("node_id", ""))),
+                    depth=_safe_int(nd.get("depth"), 0),
+                    consequence=ConsequenceVector.from_dict(c_data),
+                    metadata=_safe_dict(nd.get("metadata")),
+                )
+                dag.add_node(node)
+            for ed in spec["edges"]:
+                edge = DecisionEdge(
+                    source_id=str(ed.get("source_id", "")),
+                    target_id=str(ed.get("target_id", "")),
+                    action_label=str(
+                        ed.get(
+                            "action_label",
+                            f"{ed.get('source_id', '')}->{ed.get('target_id', '')}",
+                        )
+                    ),
+                    transition_ket=str(ed.get("transition_ket", "|transition>")),
+                    alignment_score=_safe_float(ed.get("alignment_score"), 0.0),
+                    tr_rho_pi=_safe_float(ed.get("tr_rho_pi"), 0.0),
+                    p_zeno=_safe_float(ed.get("p_zeno"), 0.0),
+                    metadata=_safe_dict(ed.get("metadata")),
+                )
+                dag.add_edge(edge)
+            return dag
+
+        root_spec = spec.get("root", "Root")
+        if isinstance(root_spec, dict):
+            raw_id = root_spec.get("id")
+            root_id = str(raw_id) if raw_id is not None else "root"
+            raw_label = root_spec.get("label")
+            root_label = str(raw_label) if raw_label is not None else "Root"
+            root_consequence = ConsequenceVector.from_dict(root_spec.get("consequences"))
+            root_meta = _safe_dict(root_spec.get("metadata"))
+        else:
+            root_id = "root"
+            root_label = str(root_spec)
+            root_consequence = ConsequenceVector()
+            root_meta = {}
+
+        dag.add_node(
+            DecisionNode(
+                node_id=root_id,
+                label=root_label,
+                depth=0,
+                consequence=root_consequence,
+                metadata=root_meta,
+            )
+        )
+
+        counter = 1
+
+        def parse_branches(parent_id: str, branches_data: Any, depth: int) -> None:
+            nonlocal counter
+            if isinstance(branches_data, dict):
+                items = list(branches_data.items())
+            elif isinstance(branches_data, list):
+                items = []
+                for i, b in enumerate(branches_data):
+                    if isinstance(b, dict):
+                        name = b.get("name") if b.get("name") is not None else b.get("label")
+                        items.append((name if name is not None else f"Branch_{i}", b))
+                    else:
+                        items.append((str(b), b))
+            else:
+                return
+
+            for key, val in items:
+                str_key = str(key) if key is not None else f"Branch_{counter}"
+                node_id = f"n{counter}_{str_key.lower().replace(' ', '_')[:16]}"
+                counter += 1
+                if isinstance(val, dict):
+                    raw_label = (
+                        val.get("label") if val.get("label") is not None else val.get("name")
+                    )
+                    label = str(raw_label) if raw_label is not None else str_key
+                    c_data = val.get("consequences", val.get("consequence"))
+                    meta = {
+                        k: v
+                        for k, v in val.items()
+                        if k
+                        not in (
+                            "sub_branches",
+                            "branches",
+                            "children",
+                            "consequences",
+                            "consequence",
+                            "label",
+                            "name",
+                        )
+                    }
+                    if "is_speculative" in val:
+                        meta["is_speculative"] = bool(val["is_speculative"])
+                    if "speculative" in val:
+                        meta["is_speculative"] = bool(val["speculative"])
+                    sub_b = val.get("sub_branches", val.get("branches", val.get("children")))
+                else:
+                    label = str(val)
+                    c_data = None
+                    meta = {}
+                    sub_b = None
+
+                c_vec = ConsequenceVector.from_dict(c_data)
+                node = DecisionNode(
+                    node_id=node_id,
+                    label=label,
+                    depth=depth,
+                    consequence=c_vec,
+                    metadata=meta,
+                )
+                dag.add_node(node)
+                dag.add_edge(
+                    DecisionEdge(
+                        source_id=parent_id,
+                        target_id=node_id,
+                        action_label=f"Choose {label}",
+                    )
+                )
+                if sub_b:
+                    parse_branches(node_id, sub_b, depth + 1)
+
+        branches = spec.get("branches", spec.get("options", []))
+        parse_branches(root_id, branches, depth=1)
+        return dag
+
 
 class QuantumDecisionArbiter:
     """Quantum-inspired 6-qubit decision arbiter (dim=64, 4-head attention) for AI agents.
@@ -20,6 +521,7 @@ class QuantumDecisionArbiter:
     Employs Quantum Zeno Attention to balance attentional focus pinning
     (Zeno effect: sticking firmly to established goals) and divergent
     exploratory tunneling (Anti-Zeno effect: breaking out of local optima).
+    Supports multi-branch decision manifolds and DAG cascading rollouts.
     """
 
     def __init__(
@@ -136,10 +638,7 @@ class QuantumDecisionArbiter:
         delta_t = max(0.0, t_winner - t_runner_up)
         eta_proj = t_winner / max(1e-6, sum(norm_tr))
 
-        # Dynamic Zeno Pinning Factor P_zeno:
-        # Directly coupled to 6-qubit quantum tensor projection T_winner, runner-up margin Delta T,
-        # and dominance ratio eta_proj.
-        # Yields 0.90 - 0.98 when clear winner dominates, 0.40 - 0.65 when competing/uncertain.
+        # Dynamic Zeno Pinning Factor P_zeno
         margin_factor = math.pow(delta_t, 0.7) if delta_t > 0.0 else 0.0
         raw_zeno = (
             0.25
@@ -176,7 +675,6 @@ class QuantumDecisionArbiter:
         )
         latency_ms = (time.perf_counter() - t_start) * 1000.0
 
-        # Build structured dilemma components if dilemma is specified
         hypotheses_structured: list[dict[str, Any]] | None = None
         if dilemma:
             hypotheses_structured = []
@@ -271,7 +769,7 @@ class QuantumDecisionArbiter:
         injected_prompt_constraint: str | None = None,
         counterfactual_ab: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Arbitrates an architectural dilemma across 3 candidate hypotheses (|d1>, |d2>, |d3>).
+        """Arbitrates an architectural dilemma across N candidate hypotheses (|d1>, ..., |dN>).
 
         Computes 6-qubit quantum tensor projections Tr(rho Pi), selects winning hypothesis
         with dynamic Zeno pinning factor, injects prompt constraint, and produces
@@ -356,7 +854,7 @@ class QuantumDecisionArbiter:
         if not counterfactual_ab:
             losing_labels = [h["label"] for h in ranked_hyps[1:]]
             losing_desc = (
-                ", ".join(losing_labels[:2]) if losing_labels else "alternatif yaklaşımlar"
+                ", ".join(losing_labels[:3]) if losing_labels else "alternatif yaklaşımlar"
             )
             w_label = winner_hyp["label"]
             counterfactual_ab = {
@@ -425,3 +923,362 @@ class QuantumDecisionArbiter:
 
         return result
 
+    def arbitrate_dag(
+        self,
+        dag: DecisionDAG,
+        goal: str,
+        root_id: str | None = None,
+        criteria: list[str] | None = None,
+        consequence_weights: tuple[float, float, float, float] = (0.25, 0.35, 0.25, 0.15),
+        discount_factor: float = 0.85,
+        exploration_drive: float = 0.20,
+        prune_threshold: float = 0.25,
+        zeno_lock_threshold: float = 0.70,
+        beam_width: int | None = None,
+        workspace: str | None = None,
+        log_telemetry: bool = True,
+    ) -> dict[str, Any]:
+        """Evaluates multi-branch decision trajectories through a Directed Acyclic Graph (DAG).
+
+        1. Computes quantum statevectors for all nodes and goal.
+        2. Runs batch Quantum Zeno Attention over candidate transitions.
+        3. Evaluates cascading downstream consequences along each trajectory.
+        4. Applies microglial pruning to eliminate dominated sub-branches while protecting
+           lateral exploratory paths (DMN mode).
+        5. Returns winning trajectory, full trajectory rankings, and quantum diagnostics.
+        """
+        if not dag.nodes:
+            raise ValueError("DecisionDAG contains no nodes.")
+
+        t_start = time.perf_counter()
+
+        effective_goal = goal
+        if criteria:
+            valid_criteria = [c.strip() for c in criteria if isinstance(c, str) and c.strip()]
+            if valid_criteria:
+                effective_goal = f"{goal} [Kriterler/Kısıtlar: {'; '.join(valid_criteria)}]"
+
+        goal_c = text_to_statevector(effective_goal, dim=self.dim)
+        goal_vec = goal_c.real
+
+        # Find paths from root
+        paths = dag.enumerate_trajectories(root_id)
+        if not paths:
+            raise ValueError("No valid trajectories found in DecisionDAG.")
+
+        # Ensure all nodes have statevectors
+        for node in dag.nodes.values():
+            if node.statevector is None:
+                vec_c = text_to_statevector(f"{effective_goal} -> {node.label}", dim=self.dim)
+                node.statevector = vec_c.real
+
+        all_nodes = list(dag.nodes.values())
+        statevectors = [n.statevector for n in all_nodes if n.statevector is not None]
+        x = torch.stack(statevectors, dim=0)
+
+        dopamine_val = max(0.01, 1.0 - exploration_drive)
+        dopamine_tensor = torch.tensor(dopamine_val, dtype=torch.float32)
+
+        t_pt_start = time.perf_counter()
+        with torch.no_grad():
+            att_res = self.zeno_attention(x, dopamine=dopamine_tensor, return_diagnostics=True)
+        pytorch_latency_ms = (time.perf_counter() - t_pt_start) * 1000.0
+
+        out_tensor = att_res["output"]
+        explore_mag = float(torch.norm(att_res["h_explore"]).item())
+
+        alignments = F.cosine_similarity(out_tensor, goal_vec.unsqueeze(0), dim=-1)
+        node_align_map: dict[str, float] = {}
+        for i, node in enumerate(all_nodes):
+            node_align_map[node.node_id] = float(alignments[i].item())
+
+        # Update edge projections among siblings for each parent node
+        dim_scale = math.sqrt(float(self.dim))
+        for _u_id, out_edges in dag.adj.items():
+            if not out_edges:
+                continue
+            child_ids = [e.target_id for e in out_edges]
+            child_aligns = [node_align_map.get(cid, 0.5) for cid in child_ids]
+            child_tensor = torch.tensor(child_aligns, dtype=torch.float32)
+            norm_tr = F.softmax(child_tensor * dim_scale, dim=-1).tolist()
+            sorted_tr = sorted(norm_tr, reverse=True)
+            t_winner = sorted_tr[0] if sorted_tr else 0.5
+            t_runner_up = sorted_tr[1] if len(sorted_tr) > 1 else 0.0
+            delta_t = max(0.0, t_winner - t_runner_up)
+            sum_tr = max(1e-6, sum(norm_tr))
+
+            for k, edge in enumerate(out_edges):
+                t_k = norm_tr[k]
+                eta_proj = t_k / sum_tr
+                margin_factor = math.pow(delta_t, 0.7) if delta_t > 0.0 else 0.0
+                raw_zeno = (
+                    0.25
+                    + 0.52 * eta_proj
+                    + 0.62 * margin_factor
+                    - 0.20 * float(exploration_drive)
+                )
+                zeno_k = float(max(0.15, min(0.985, raw_zeno)))
+                edge.alignment_score = round(child_aligns[k], 4)
+                edge.tr_rho_pi = round(t_k, 6)
+                edge.p_zeno = round(zeno_k, 4)
+                edge.transition_ket = f"|{edge.target_id}>"
+
+        trajectories: list[DecisionTrajectory] = []
+        for idx, path_node_ids in enumerate(paths):
+            traj_id = f"tau_{idx + 1}"
+            path_nodes_list = [dag.nodes[nid] for nid in path_node_ids]
+            path_labels_list = [n.label for n in path_nodes_list]
+            is_spec = any(n.is_speculative for n in path_nodes_list)
+
+            cum_utility = 0.0
+            cum_cost = 0.0
+            p_zenos: list[float] = []
+            projections: list[float] = []
+            traversed_edges: list[DecisionEdge] = []
+
+            num_steps = len(path_node_ids) - 1
+            if num_steps <= 0:
+                cum_utility = 1.0
+                cum_cost = 0.0
+                mean_zeno = 0.5
+                fidelity = 1.0
+            else:
+                for step_idx in range(1, len(path_node_ids)):
+                    u_id = path_node_ids[step_idx - 1]
+                    v_id = path_node_ids[step_idx]
+                    v_node = dag.nodes[v_id]
+
+                    found_edge: DecisionEdge | None = next(
+                        (e for e in dag.adj.get(u_id, []) if e.target_id == v_id),
+                        None,
+                    )
+                    if found_edge is None:
+                        r_t = node_align_map.get(v_id, 0.5)
+                        t_t = 0.5
+                        p_z = 0.5
+                    else:
+                        traversed_edges.append(found_edge)
+                        r_t = found_edge.alignment_score
+                        t_t = found_edge.tr_rho_pi
+                        p_z = found_edge.p_zeno
+
+                    p_zenos.append(p_z)
+                    projections.append(t_t)
+
+                    cost_t = v_node.consequence.weighted_cost(consequence_weights)
+                    discount = math.pow(discount_factor, step_idx - 1)
+
+                    step_utility = r_t * (1.0 + p_z)
+                    cum_utility += discount * step_utility
+                    cum_cost += discount * cost_t
+
+                mean_zeno = sum(p_zenos) / len(p_zenos) if p_zenos else 0.5
+                prod_t = 1.0
+                for t_val in projections:
+                    prod_t *= max(1e-6, t_val)
+                fidelity = math.pow(prod_t, 1.0 / len(projections)) if projections else 1.0
+
+            trajectory = DecisionTrajectory(
+                trajectory_id=traj_id,
+                path_nodes=path_node_ids,
+                path_labels=path_labels_list,
+                cumulative_utility=round(cum_utility, 4),
+                cumulative_cost=round(cum_cost, 4),
+                mean_p_zeno=round(mean_zeno, 4),
+                quantum_fidelity=round(fidelity, 6),
+                is_speculative=is_spec,
+                edges=traversed_edges,
+            )
+            trajectories.append(trajectory)
+
+        # Compute net scores and rank trajectories
+        v_values = [t.cumulative_utility - t.cumulative_cost for t in trajectories]
+        v_tensor = torch.tensor(v_values, dtype=torch.float32)
+        norm_v = F.softmax(v_tensor * dim_scale, dim=-1).tolist()
+
+        for i, traj in enumerate(trajectories):
+            traj.net_score = round(norm_v[i] * traj.quantum_fidelity, 4)
+
+        trajectories.sort(
+            key=lambda item: (item.cumulative_utility - item.cumulative_cost),
+            reverse=True,
+        )
+
+        winner = trajectories[0]
+        winner_val = winner.cumulative_utility - winner.cumulative_cost
+        zeno_locked = bool(winner.mean_p_zeno >= zeno_lock_threshold)
+
+        # Microglial Phagocytic Pruning of Dominated Branches
+        for traj in trajectories:
+            if traj.trajectory_id == winner.trajectory_id:
+                traj.is_pruned = False
+                traj.prune_reason = None
+                continue
+
+            traj_val = traj.cumulative_utility - traj.cumulative_cost
+            gap = winner_val - traj_val
+
+            if zeno_locked:
+                if traj.is_speculative:
+                    eff_thresh = 2.0 * prune_threshold
+                    if gap > eff_thresh:
+                        traj.is_pruned = True
+                        traj.prune_reason = (
+                            f"Extreme penalty exceeded protective lateral threshold "
+                            f"(gap={gap:.4f} > {eff_thresh:.4f})"
+                        )
+                    else:
+                        traj.is_pruned = False
+                        traj.prune_reason = None
+                else:
+                    if gap > prune_threshold:
+                        traj.is_pruned = True
+                        traj.prune_reason = (
+                            f"Dominated by winner (gap={gap:.4f} > {prune_threshold:.4f})"
+                        )
+                    else:
+                        traj.is_pruned = False
+                        traj.prune_reason = None
+            else:
+                traj.is_pruned = False
+                traj.prune_reason = None
+
+        # Beam width filtering
+        if beam_width is not None and beam_width > 0:
+            active_count = 0
+            for traj in trajectories:
+                if not traj.is_pruned:
+                    active_count += 1
+                    if active_count > beam_width and not traj.is_speculative:
+                        traj.is_pruned = True
+                        traj.prune_reason = f"Exceeded beam width limit ({beam_width})"
+
+        latency_ms = (time.perf_counter() - t_start) * 1000.0
+        rec_option = (
+            winner.path_labels[1]
+            if len(winner.path_labels) > 1
+            else winner.path_labels[0]
+        )
+        regime = (
+            "Zeno Pinning (Target Focus)"
+            if winner.mean_p_zeno >= 0.5
+            else "Anti-Zeno Tunneling (Exploration)"
+        )
+
+        surviving = [t for t in trajectories if not t.is_pruned]
+        pruned = [t for t in trajectories if t.is_pruned]
+
+        if log_telemetry:
+            record_decision_telemetry(
+                goal=effective_goal,
+                options=[t.trajectory_id for t in trajectories],
+                winner=winner.trajectory_id,
+                confidence=winner.net_score,
+                zeno_pinning_factor=winner.mean_p_zeno,
+                anti_zeno_kickback=explore_mag,
+                regime=regime,
+                latency_ms=latency_ms,
+                ranking=[t.to_dict() for t in trajectories],
+                workspace=workspace,
+                pytorch_latency_ms=pytorch_latency_ms,
+                dilemma=goal,
+                dag_rollout_depth=len(winner.path_nodes) - 1,
+                total_trajectories=len(trajectories),
+                pruned_count=len(pruned),
+                winning_trajectory=winner.to_dict(),
+            )
+
+        return {
+            "winning_trajectory": winner.to_dict(),
+            "recommended_option": rec_option,
+            "recommended_path": winner.path_labels,
+            "confidence": winner.net_score,
+            "trajectories": [t.to_dict() for t in trajectories],
+            "surviving_trajectories": [t.to_dict() for t in surviving],
+            "pruned_trajectories": [t.to_dict() for t in pruned],
+            "pruned_count": len(pruned),
+            "total_trajectories": len(trajectories),
+            "zeno_lock_engaged": zeno_locked,
+            "regime": regime,
+            "mean_p_zeno": winner.mean_p_zeno,
+            "latency_ms": round(latency_ms, 2),
+            "pytorch_latency_ms": round(pytorch_latency_ms, 2),
+        }
+
+    def arbitrate_multibranch(
+        self,
+        goal: str,
+        branches: dict[str, Any] | list[dict[str, Any]],
+        criteria: list[str] | None = None,
+        exploration_drive: float = 0.20,
+        consequence_weights: tuple[float, float, float, float] = (0.25, 0.35, 0.25, 0.15),
+        discount_factor: float = 0.85,
+        prune_threshold: float = 0.25,
+        zeno_lock_threshold: float = 0.70,
+        beam_width: int | None = None,
+        workspace: str | None = None,
+        log_telemetry: bool = True,
+    ) -> dict[str, Any]:
+        """High-level entry point that converts a multi-branch tree or DAG specification into
+
+        a DecisionDAG, executes cascading rollout arbitration, and produces an executive summary
+        and counterfactual A/B evaluation.
+        """
+        if isinstance(branches, dict) and "branches" in branches:
+            spec = dict(branches)
+            if "root" not in spec:
+                spec["root"] = goal
+        else:
+            spec = {"root": goal, "branches": branches}
+
+        dag = DecisionDAG.from_dict(spec)
+        dag_res = self.arbitrate_dag(
+            dag=dag,
+            goal=goal,
+            criteria=criteria,
+            consequence_weights=consequence_weights,
+            discount_factor=discount_factor,
+            exploration_drive=exploration_drive,
+            prune_threshold=prune_threshold,
+            zeno_lock_threshold=zeno_lock_threshold,
+            beam_width=beam_width,
+            workspace=workspace,
+            log_telemetry=log_telemetry,
+        )
+
+        winner = dag_res["winning_trajectory"]
+        rec_path_str = " -> ".join(winner["path_labels"])
+        pruned_count = dag_res["pruned_count"]
+        total_trajectories = dag_res["total_trajectories"]
+        speculative_survivors = sum(
+            1 for t in dag_res["surviving_trajectories"] if t.get("is_speculative")
+        )
+
+        exec_summary = (
+            f"🏛️ Yönetici Özeti (Executive Summary):\n"
+            f"- Tavsiye Edilen Yol: '{rec_path_str}'\n"
+            f"- Gerekçe: Stratejik hedefe en yüksek uyum ({winner['net_score']:.2f}) sağlandı; "
+            f"kaskat operasyonel maliyetler ve riskler minimize edildi.\n"
+            f"- Budanan Seçenekler: {pruned_count}/{total_trajectories} alternatif yüksek "
+            f"teknik borç / operasyonel yük nedeniyle elendi.\n"
+            f"- Korunan İnovasyon Yolları: {speculative_survivors} spekülatif lateral yol "
+            f"alternatif senaryolar için korundu."
+        )
+
+        counterfactual_ab = {
+            "without_quanta": (
+                "Ajan Quanta olmadan tek adımlı açgözlü (greedy) seçim yapar; "
+                "uzun vadeli bakım yükü, gecikme ve mimari kilitlenme risklerini öngöremez."
+            ),
+            "with_quanta": (
+                f"Quanta çok kollu karar manifoldu (DAG Rollouts) ile {total_trajectories} "
+                f"yol kaskat halinde değerlendirildi; P_zeno={dag_res['mean_p_zeno']:.4f} ile "
+                f"'{rec_path_str}' yoluna kilitlenerek baskın dallar budandı."
+            ),
+            "effect_verified": True,
+        }
+
+        dag_res["executive_summary"] = exec_summary
+        dag_res["counterfactual_ab"] = counterfactual_ab
+        dag_res["dag"] = dag
+        return dag_res

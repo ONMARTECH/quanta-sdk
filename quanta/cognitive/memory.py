@@ -10,6 +10,19 @@ import torch
 
 from quanta.torch.brain import CSFShieldedEnvironment, NoisyHippocampalBuffer
 
+# Plasticity & Cognitive Immunity Invariant Constants
+V_INH_MIN: float = 0.05
+V_INH_MAX: float = 0.9998
+V_INH_DEFAULT: float = 0.50
+SALIENCE_INH_DEFAULT: float = 1.50
+SALIENCE_MAX: float = 3.5
+SALIENCE_FLOOR: float = 0.20
+ETA_LTP: float = 0.25
+DELTA_S_LTP: float = 0.35
+LAMBDA_LTD: float = 0.30
+DELTA_S_LTD: float = 0.35
+GAMMA_INH: float = 0.02
+
 
 def text_to_statevector(text: str, dim: int = 64) -> torch.Tensor:
     """Deterministically transforms text into a normalized complex statevector in C^dim.
@@ -194,6 +207,245 @@ class CognitiveMemoryManager:
             is_core_anchor=is_core_anchor,
         )
 
+    def record_inhibitor(
+        self,
+        key: str,
+        content: str,
+        v_inh: float = V_INH_DEFAULT,
+        salience: float = SALIENCE_INH_DEFAULT,
+        context_tags: dict[str, Any] | None = None,
+        category: str = "inhibitor",
+    ) -> int:
+        """Records an adaptive negative engram representing an anti-pattern or failed action.
+
+        Args:
+            key: Unique inhibitor identifier (e.g. 'inh_run_command_zsh_glob').
+            content: Detailed description of failure mode, syntax violation, or anti-pattern.
+            v_inh: Dynamic synaptic inhibitory weight in [0.05, 0.9998] (default: 0.50).
+            salience: Noradrenergic threat salience clamped to [0.01, 3.5] (default: 1.50).
+            context_tags: Contextual metadata (runtime, tool, library, os, error_type).
+            category: Semantic category ('inhibitor' or 'anti_pattern', default: 'inhibitor').
+
+        Returns:
+            Buffer index of the stored inhibitory engram.
+        """
+        self.forget(key)
+
+        clamped_v_inh = max(V_INH_MIN, min(V_INH_MAX, float(v_inh)))
+        clamped_sal = max(0.01, min(SALIENCE_MAX, float(salience)))
+        is_core = bool(clamped_sal >= 2.0)
+        tags = dict(context_tags) if context_tags else {}
+
+        state = text_to_statevector(f"{key}:{content}", dim=self.dim)
+        metadata = {
+            "key": key,
+            "content": content,
+            "category": category,
+            "v_inh": clamped_v_inh,
+            "salience": clamped_sal,
+            "is_core_anchor": is_core,
+            "context_tags": tags,
+            "consecutive_failures": 1,
+            "consecutive_successes": 0,
+            "context_divergence": [],
+        }
+
+        if len(self.buffer.buffer) >= self.buffer.capacity:
+            self._evict_least_salient()
+
+        return self.buffer._store_single(state, dopamine_tag=clamped_sal, metadata=metadata)
+
+    def potentiate_inhibitor(
+        self,
+        key: str,
+        context_tags: dict[str, Any] | None = None,
+        boost: float = ETA_LTP,
+    ) -> float:
+        """Long-Term Potentiation (LTP): Deepens inhibition weight V_inh upon repeated failure.
+
+        Asymptotically deepens synaptic weight:
+            V_inh <- min(0.9998, V_inh + boost * (0.9998 - V_inh))
+        Increases threat salience and promotes to core anchor if salience >= 2.0.
+
+        Args:
+            key: Unique inhibitor identifier.
+            context_tags: Optional execution context tags to update or verify.
+            boost: Asymptotic learning rate eta_ltp (default: 0.25).
+
+        Returns:
+            Updated inhibitory synaptic weight V_inh in [0.05, 0.9998].
+        """
+        target_engram = None
+        for engram in self.buffer.buffer:
+            meta = engram.get("metadata") or {}
+            if meta.get("key") == key:
+                target_engram = engram
+                break
+
+        if target_engram is None:
+            self.record_inhibitor(
+                key=key,
+                content=f"Inhibitory pattern for {key}",
+                v_inh=V_INH_DEFAULT,
+                salience=SALIENCE_INH_DEFAULT,
+                context_tags=context_tags,
+            )
+            for engram in self.buffer.buffer:
+                meta = engram.get("metadata") or {}
+                if meta.get("key") == key:
+                    target_engram = engram
+                    break
+
+        if target_engram is None:
+            return V_INH_DEFAULT
+
+        meta = target_engram.setdefault("metadata", {})
+        k_fail = int(meta.get("consecutive_failures", 0)) + 1
+        meta["consecutive_failures"] = k_fail
+        meta["consecutive_successes"] = 0
+
+        if context_tags:
+            existing_tags = meta.setdefault("context_tags", {})
+            existing_tags.update(context_tags)
+
+        # Asymptotic potentiation: V_inh <- min(0.9998, V_inh + boost * (0.9998 - V_inh))
+        curr_v = float(meta.get("v_inh", V_INH_DEFAULT))
+        new_v = min(V_INH_MAX, curr_v + float(boost) * (V_INH_MAX - curr_v))
+        meta["v_inh"] = new_v
+
+        # Salience scaling (threat awakening): S <- min(3.5, S + 0.35 * (1 + 0.1 * k_fail))
+        curr_sal = float(target_engram["dopamine_tag"])
+        new_sal = min(SALIENCE_MAX, curr_sal + DELTA_S_LTP * (1.0 + 0.1 * k_fail))
+        target_engram["dopamine_tag"] = new_sal
+        meta["salience"] = new_sal
+
+        # Critical threshold crossing: core anchor promotion
+        if new_sal >= 2.0:
+            meta["is_core_anchor"] = True
+
+        # Fidelity consolidation: refresh degraded state representation to pristine
+        target_engram["degraded_state"] = target_engram["pristine_state"].clone()
+        target_engram["age"] = 0.0
+
+        return new_v
+
+    def depress_inhibitor(
+        self,
+        key: str,
+        context_tags: dict[str, Any] | None = None,
+        decay: float = LAMBDA_LTD,
+    ) -> float:
+        """Long-Term Depression (LTD): Relaxes V_inh and documents context divergence on success.
+
+        Relaxes synaptic weight exponentially:
+            V_inh <- max(0.05, V_inh * (1 - decay))
+        Decreases salience and demotes from core anchor if salience falls below 2.0.
+
+        Args:
+            key: Unique inhibitor identifier.
+            context_tags: The successful execution context tags to compute divergence against.
+            decay: Multiplicative relaxation rate lambda_ltd (default: 0.30).
+
+        Returns:
+            Updated inhibitory synaptic weight V_inh in [0.05, 0.9998].
+        """
+        target_engram = None
+        for engram in self.buffer.buffer:
+            meta = engram.get("metadata") or {}
+            if meta.get("key") == key:
+                target_engram = engram
+                break
+
+        if target_engram is None:
+            return 0.0
+
+        meta = target_engram.setdefault("metadata", {})
+        meta["consecutive_successes"] = int(meta.get("consecutive_successes", 0)) + 1
+        meta["consecutive_failures"] = 0
+
+        # Context divergence calculation: Delta C = {tag: (old, new) | old != new}
+        if context_tags:
+            existing_tags = meta.setdefault("context_tags", {})
+            diff = {}
+            for k in set(existing_tags.keys()) | set(context_tags.keys()):
+                old_val = existing_tags.get(k)
+                new_val = context_tags.get(k)
+                if old_val != new_val:
+                    diff[k] = (old_val, new_val)
+            if diff:
+                meta.setdefault("context_divergence", []).append(diff)
+            existing_tags.update(context_tags)
+
+        # Synaptic weight relaxation (multiplicative decay): V_inh <- max(0.05, V_inh * (1 - decay))
+        curr_v = float(meta.get("v_inh", V_INH_DEFAULT))
+        new_v = max(V_INH_MIN, curr_v * (1.0 - float(decay)))
+        meta["v_inh"] = new_v
+
+        # Salience relaxation
+        curr_sal = float(target_engram["dopamine_tag"])
+        new_sal = max(SALIENCE_FLOOR, curr_sal - DELTA_S_LTD)
+        target_engram["dopamine_tag"] = new_sal
+        meta["salience"] = new_sal
+
+        # Demote core anchor if salience falls below threshold
+        if new_sal < 2.0:
+            meta["is_core_anchor"] = False
+
+        return new_v
+
+    def recall_inhibitors(
+        self,
+        top_k: int = 3,
+        min_v_inh: float = 0.20,
+    ) -> list[dict[str, Any]]:
+        """Recalls active inhibitors ranked by (V_inh * salience).
+
+        Args:
+            top_k: Maximum number of active inhibitors to return.
+            min_v_inh: Minimum inhibition weight threshold for activation (default: 0.20).
+
+        Returns:
+            List of active inhibitor dictionaries sorted descending by inhibition potency.
+        """
+        if not self.buffer.buffer:
+            return []
+
+        active_inhibitors = []
+        for engram in self.buffer.buffer:
+            meta = engram.get("metadata") or {}
+            cat = meta.get("category", "")
+            if cat not in ("inhibitor", "anti_pattern"):
+                continue
+
+            v_inh = float(meta.get("v_inh", V_INH_DEFAULT))
+            if v_inh < min_v_inh:
+                continue
+
+            psi_0 = engram["pristine_state"]
+            psi_t = engram["degraded_state"]
+            overlap = torch.vdot(psi_0, psi_t)
+            fid = float((torch.abs(overlap) ** 2).item())
+            sal = float(engram["dopamine_tag"])
+
+            active_inhibitors.append(
+                {
+                    "key": meta.get("key", ""),
+                    "content": meta.get("content", ""),
+                    "category": cat,
+                    "v_inh": round(v_inh, 4),
+                    "salience": round(sal, 2),
+                    "fidelity": round(fid, 5),
+                    "context_tags": dict(meta.get("context_tags", {})),
+                    "consecutive_failures": int(meta.get("consecutive_failures", 0)),
+                    "consecutive_successes": int(meta.get("consecutive_successes", 0)),
+                    "context_divergence": list(meta.get("context_divergence", [])),
+                    "is_core_anchor": bool(meta.get("is_core_anchor", False) or sal >= 2.0),
+                }
+            )
+
+        active_inhibitors.sort(key=lambda x: x["v_inh"] * x["salience"], reverse=True)
+        return active_inhibitors[:top_k]
+
     def forget(self, key: str) -> bool:
         """Explicitly and consciously forgets a memory by key (conscious invalidation).
 
@@ -257,9 +509,15 @@ class CognitiveMemoryManager:
             should_prune = False
             reason = ""
             is_transient = meta.get("is_core_anchor") is False and d_tag <= 0.8
+            is_inhibitor = meta.get("category") in ("inhibitor", "anti_pattern")
+            v_inh = float(meta.get("v_inh", V_INH_DEFAULT))
 
+            # Condition 0: Depotentiated inhibitor clearance (V_inh < 0.20 and salience <= 0.50)
+            if is_inhibitor and v_inh < 0.20 and d_tag <= 0.50:
+                should_prune = True
+                reason = f"depotentiated_inhibitor ({v_inh:.3f} < 0.20, salience {d_tag:.2f} <= 0.50)"
             # Condition A: Decayed below threshold for low-salience or transient decisions
-            if fid < fidelity_threshold and (d_tag <= min_salience or is_transient):
+            elif fid < fidelity_threshold and (d_tag <= min_salience or is_transient):
                 should_prune = True
                 reason = f"fidelity_decayed ({fid:.3f} < {fidelity_threshold})"
             # Condition B: Low-salience scratchpad or transient items exceeding maximum turn age
@@ -354,6 +612,12 @@ class CognitiveMemoryManager:
         rdtype = self.buffer.current_real_dtype
 
         for engram in self.buffer.buffer:
+            meta = engram.get("metadata") or {}
+            # Unreinforced inhibitor decay: V_inh <- max(0.05, V_inh * exp(-0.02 * dt))
+            if meta.get("category") in ("inhibitor", "anti_pattern"):
+                v_curr = float(meta.get("v_inh", V_INH_DEFAULT))
+                meta["v_inh"] = max(V_INH_MIN, v_curr * math.exp(-GAMMA_INH * dt))
+
             d_tag = float(engram["dopamine_tag"])
             # Active forgetting dynamics:
             # Low dopamine (D <= 0.4) experiences natural dephasing and thermal bath drift.

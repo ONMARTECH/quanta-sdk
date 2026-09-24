@@ -1,0 +1,54 @@
+% TikZ Figure: Quanta SDK Architectural Stack
+% 5 Core Scientific Paradigms
+\begin{tikzpicture}[
+    scale=0.92, every node/.style={transform shape},
+    box/.style={rectangle, draw=black!70, rounded corners=3pt, thick, align=center, inner sep=6pt},
+    layer1/.style={box, fill=blue!10, draw=blue!60},
+    layer2/.style={box, fill=teal!10, draw=teal!60},
+    layer3/.style={box, fill=orange!10, draw=orange!60},
+    layer4/.style={box, fill=purple!10, draw=purple!60},
+    layer5/.style={box, fill=green!10, draw=green!60},
+    arrow/.style={->, >=stealth, thick, draw=black!70}
+]
+
+% Layer 5: Certified Mathematical Rigor
+\node[layer5, minimum width=8.2cm, minimum height=1.0cm] (l5) at (0, 6.2) {
+    \textbf{Paradigm 5: Certified Mathematical Rigor \& Conservation Invariants}\\
+    \small Spectral Unitarity $\|U^\dagger U - I\| < 10^{-14}$ \quad$\cdot$\quad CPTP Trace $|\operatorname{Tr}(\rho)-1| < 10^{-12}$ \quad$\cdot$\quad 2,076 Passing Tests
+};
+
+% Layer 4: 2026 Dual-Track FTQC Engine
+\node[layer4, minimum width=8.2cm, minimum height=1.3cm] (l4) at (0, 4.6) {
+    \textbf{Paradigm 4: 2026 FTQC Dual-Track Fault-Tolerance Engine}\\
+    \small \textbf{Track A:} Rotated $[[d^2, 1, d]]$ Surface Code + Blossom MWPM + Willow 3D Defect Graph\\
+    \small \textbf{Track B:} Gross $[[144, 12, 12]]$ Bivariate Bicycle qLDPC ($12\times$ Savings) + Min-Sum BP-OSD\\
+    \small \textbf{Universality:} 15-to-1 Bravyi-Kitaev Magic Distillation ($\epsilon_{\text{out}} \le 35 p^3$) + Lattice Surgery
+};
+
+% Layer 3: Continuous Hilbert Gradients
+\node[layer3, minimum width=8.2cm, minimum height=1.2cm] (l3) at (0, 3.0) {
+    \textbf{Paradigm 3: Continuous Hilbert Gradients \& Daleckii-Krein Autograd}\\
+    \small Exact Spectral Fréchet Derivative $M_{ab}(t) = -it e^{-i\frac{\lambda_a+\lambda_b}{2}t} \operatorname{sinc}\left(\frac{(\lambda_a-\lambda_b)t}{2\pi}\right)$ ($10^{-16}$ Machine Prec.)\\
+    \small Ehrenfest Time Derivative $\frac{d}{dt}\langle O \rangle$ \quad$\cdot$\quad Dynamic Lie Algebra Bound $\operatorname{Var}[\partial_\theta \langle O \rangle] \le 1/\dim(\mathfrak{g})$
+};
+
+% Layer 2: Apple Silicon Metal / MLX & SIMD Simulation
+\node[layer2, minimum width=8.2cm, minimum height=1.2cm] (l2) at (0, 1.4) {
+    \textbf{Paradigm 2: Apple Silicon Metal / MLX Acceleration \& High-Performance Simulation}\\
+    \small Zero-Copy Unified Memory Tensor Engine ($52.1\times$ Peak GPU Speedup, Zero PCIe Latency)\\
+    \small SIMD Binary Tableau Simulator ($>3.1\times 10^6$ gates/s) \quad$\cdot$\quad Norm-Preserving MPS (250q GHZ in 2.7 ms)
+};
+
+% Layer 1: Zero-Dependency First-Principles Core
+\node[layer1, minimum width=8.2cm, minimum height=1.0cm] (l1) at (0, -0.1) {
+    \textbf{Paradigm 1: Local-First Zero-Dependency First-Principles Core}\\
+    \small Standalone Python/NumPy \quad$\cdot$\quad $O(2^n)$ Multidimensional Tensor Contractions \quad$\cdot$\quad Zero C++/LLVM Lock-in
+};
+
+% Inter-layer connecting arrows
+\draw[arrow] (l1) -- (l2);
+\draw[arrow] (l2) -- (l3);
+\draw[arrow] (l3) -- (l4);
+\draw[arrow] (l4) -- (l5);
+
+\end{tikzpicture}

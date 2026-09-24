@@ -1,0 +1,32 @@
+% TikZ Figure: Daleckii-Krein Continuous Hilbert Autograd Engine
+\begin{tikzpicture}[
+    scale=0.90, every node/.style={transform shape},
+    block/.style={rectangle, draw=black!70, rounded corners=3pt, thick, align=center, inner sep=6pt},
+    fwd/.style={block, fill=blue!12, draw=blue!70},
+    bwd/.style={block, fill=red!12, draw=red!70},
+    spec/.style={block, fill=purple!15, draw=purple!80},
+    arr/.style={->, >=stealth, thick, draw=black!70}
+]
+
+% Forward Path
+\node[font=\bfseries] at (-2.5, 3.2) {Forward Quantum Evolution};
+\node[fwd] (input) at (-2.5, 2.2) {\textbf{Input Feature \& Hamiltonian}\\$H(x, \theta) = H_{XY}(J) + H_Z(x, h, W) + H_X(\omega)$};
+\node[spec] (eigh) at (-2.5, 0.6) {\textbf{Spectral Decomposition}\\$H = V \Lambda V^\dagger, \quad \xi_0 = V^\dagger |\psi_0\rangle$};
+\node[fwd] (evolve) at (-2.5, -1.0) {\textbf{Eigenbasis Evolution \& Projection}\\$\psi_t = V (\exp(-i\Lambda t) \odot \xi_0), \quad \langle O_m \rangle = \langle \psi_t | O_m | \psi_t \rangle$};
+
+\draw[arr] (input) -- (eigh);
+\draw[arr] (eigh) -- (evolve);
+
+% Backward Path
+\node[font=\bfseries] at (3.2, 3.2) {Exact Autograd Backward Pass};
+\node[bwd] (cotangent) at (3.2, 2.2) {\textbf{Vector-Only Cotangent Contraction}\\$|w\rangle = \sum_m \bar{Y}_m O_m |\psi_t\rangle \quad (O(B \cdot 2^N)\text{ mem})$};
+\node[spec] (dk_kernel) at (3.2, 0.6) {\textbf{Daleckii-Krein Fréchet Kernel}\\$M_{ab}(t) = -it e^{-i\frac{\lambda_a+\lambda_b}{2}t} \operatorname{sinc}\left(\frac{(\lambda_a-\lambda_b)t}{2\pi}\right)$};
+\node[bwd] (grads) at (3.2, -1.0) {\textbf{Hermitian Parameter Projections}\\$\nabla_\theta = \operatorname{Tr}(S \cdot \frac{\partial H}{\partial \theta}), \quad \frac{d}{dt}\langle O \rangle = 2\operatorname{Im}\langle w|H|\psi_t\rangle$};
+
+\draw[arr] (cotangent) -- (dk_kernel);
+\draw[arr] (dk_kernel) -- (grads);
+
+% Cross connection
+\draw[arr, dashed, draw=purple!80] (evolve.east) -- ++(0.5, 0) |- (cotangent.west);
+
+\end{tikzpicture}

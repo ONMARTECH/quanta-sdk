@@ -655,3 +655,376 @@ class TestTier4RealWorldMultiTurnSimulation:
             assert "temp_scratch_port" not in disk_keys
             assert "temp_cache_strategy" not in disk_keys
             assert disk_data["total_pruned_count"] >= 2
+
+
+# ============================================================================
+# Tier 5: Plastic Cognitive Immunity & LTP/LTD Tests
+# ============================================================================
+
+class TestTier5PlasticCognitiveImmunity:
+    """Tier 5: Plastic negative engrams, dynamic synaptic weights, asymptotic LTP, and LTD."""
+
+    def test_inhibitor_recording_and_schema_validation_torch(self) -> None:
+        """Validates negative engram schema and clamping in CognitiveMemoryManager."""
+        mem = CognitiveMemoryManager(capacity=16, enable_csf_shielding=True)
+        idx = mem.record_inhibitor(
+            key="inh_zsh_glob",
+            content="Dynamic route paths must be single-quoted in shell commands",
+            v_inh=0.60,
+            salience=1.80,
+            context_tags={"tool": "run_command", "shell": "zsh", "error_type": "glob_error"},
+        )
+        assert idx >= 0
+        assert len(mem.buffer.buffer) == 1
+        engram = mem.buffer.buffer[0]
+        meta = engram.get("metadata", {})
+        assert meta["key"] == "inh_zsh_glob"
+        assert meta["category"] == "inhibitor"
+        assert meta["v_inh"] == 0.60
+        assert meta["salience"] == 1.80
+        assert meta["is_core_anchor"] is False
+        assert meta["consecutive_failures"] == 1
+        assert meta["consecutive_successes"] == 0
+        assert meta["context_divergence"] == []
+        assert meta["context_tags"]["shell"] == "zsh"
+
+        # Test boundary clamping for v_inh (< 0.05 -> 0.05, > 0.9998 -> 0.9998)
+        mem.record_inhibitor("inh_low", "Low weight", v_inh=0.001)
+        eng_low = next(e for e in mem.buffer.buffer if e["metadata"]["key"] == "inh_low")
+        assert eng_low["metadata"]["v_inh"] == 0.05
+
+        mem.record_inhibitor("inh_high", "High weight", v_inh=1.50)
+        eng_high = next(e for e in mem.buffer.buffer if e["metadata"]["key"] == "inh_high")
+        assert eng_high["metadata"]["v_inh"] == 0.9998
+
+    def test_inhibitor_recording_and_schema_validation_fast(self) -> None:
+        """Validates negative engram schema in FastBiomorphicMemory."""
+        mem = FastBiomorphicMemory(capacity=16)
+        mem.record_inhibitor(
+            key="inh_sandbox",
+            content="Network operations require BypassSandbox: true",
+            v_inh=0.65,
+            salience=1.70,
+            context_tags={"tool": "run_command", "runtime": "shell"},
+        )
+        assert len(mem.engrams) == 1
+        e = mem.engrams[0]
+        assert e["key"] == "inh_sandbox"
+        assert e["category"] == "inhibitor"
+        assert e["v_inh"] == 0.65
+        assert e["salience"] == 1.70
+        assert e["fidelity"] == 0.9998
+        assert e["is_core_anchor"] is False
+        assert e["context_tags"]["runtime"] == "shell"
+
+        # Update in-place without duplicating
+        mem.record_inhibitor(
+            key="inh_sandbox",
+            content="Updated content for network sandbox bypass",
+            v_inh=0.75,
+            salience=1.90,
+        )
+        assert len(mem.engrams) == 1
+        assert mem.engrams[0]["v_inh"] == 0.75
+        assert mem.engrams[0]["salience"] == 1.90
+
+    def test_asymptotic_ltp_on_consecutive_failures_torch(self) -> None:
+        """Validates asymptotic LTP deepening and salience awakening in CognitiveMemoryManager."""
+        mem = CognitiveMemoryManager(capacity=16, enable_csf_shielding=True)
+        mem.record_inhibitor("inh_flaky_api", "Flaky external service call", v_inh=0.50, salience=1.50)
+
+        prev_v = 0.50
+        for _ in range(10):
+            new_v = mem.potentiate_inhibitor("inh_flaky_api", boost=0.25)
+            # Must strictly deepen
+            assert new_v > prev_v
+            # Must never exceed 0.9998
+            assert new_v <= 0.9998
+            prev_v = new_v
+
+        engram = mem.buffer.buffer[0]
+        meta = engram["metadata"]
+        assert meta["consecutive_failures"] == 11
+        assert meta["consecutive_successes"] == 0
+        # Check asymptotic convergence: after 10 potentiation steps from 0.50 with boost=0.25:
+        # (0.9998 - 0.50) * (0.75^10) ~ 0.4998 * 0.0563 ~ 0.028 -> v ~ 0.97
+        assert meta["v_inh"] > 0.95
+        # Salience caps at 3.5
+        assert meta["salience"] == 3.5
+        # Elevated to core anchor
+        assert meta["is_core_anchor"] is True
+
+    def test_asymptotic_ltp_on_consecutive_failures_fast(self) -> None:
+        """Validates asymptotic LTP in FastBiomorphicMemory."""
+        mem = FastBiomorphicMemory(capacity=16)
+        mem.record_inhibitor("inh_auth", "GCloud auth token expired", v_inh=0.50, salience=1.50)
+
+        for _ in range(8):
+            mem.potentiate_inhibitor("inh_auth", boost=0.25)
+
+        eng = mem.engrams[0]
+        assert eng["v_inh"] > 0.90
+        assert eng["v_inh"] <= 0.9998
+        assert eng["salience"] >= 3.0
+        assert eng["is_core_anchor"] is True
+        assert eng["fidelity"] == 0.9998
+
+        # Potentiating non-existent key creates and potentiates it
+        new_v = mem.potentiate_inhibitor("inh_new_failure", context_tags={"tool": "write_to_file"})
+        assert new_v >= 0.50
+        assert any(e["key"] == "inh_new_failure" for e in mem.engrams)
+
+    def test_core_anchor_promotion_threshold(self) -> None:
+        """Validates that inhibitor promotes to core anchor when salience >= 2.0."""
+        mem = CognitiveMemoryManager(capacity=16, enable_csf_shielding=True)
+        mem.record_inhibitor("inh_crit", "Critical DB lock failure", v_inh=0.50, salience=1.50)
+
+        eng = mem.buffer.buffer[0]
+        assert eng["metadata"]["is_core_anchor"] is False
+
+        # First failure: S <- 1.50 + 0.35 * (1 + 0.1 * 2) = 1.92 (< 2.0)
+        mem.potentiate_inhibitor("inh_crit")
+        assert eng["metadata"]["salience"] < 2.0
+        assert eng["metadata"]["is_core_anchor"] is False
+
+        # Second failure: S <- 1.92 + 0.35 * (1 + 0.1 * 3) = 2.375 (>= 2.0)
+        mem.potentiate_inhibitor("inh_crit")
+        assert eng["metadata"]["salience"] >= 2.0
+        assert eng["metadata"]["is_core_anchor"] is True
+
+        # Recording with salience >= 2.0 directly starts as core anchor
+        mem.record_inhibitor("inh_fatal", "Fatal OOM crash", v_inh=0.80, salience=2.50)
+        fatal_eng = next(e for e in mem.buffer.buffer if e["metadata"]["key"] == "inh_fatal")
+        assert fatal_eng["metadata"]["is_core_anchor"] is True
+
+    def test_ltd_exponential_relaxation_on_success_torch(self) -> None:
+        """Validates LTD exponential decay, salience reduction, and core demotion in Torch."""
+        mem = CognitiveMemoryManager(capacity=16, enable_csf_shielding=True)
+        mem.record_inhibitor("inh_dep", "Temporary failure", v_inh=0.80, salience=2.20)
+        eng = mem.buffer.buffer[0]
+        assert eng["metadata"]["is_core_anchor"] is True
+
+        # Step 1: LTD relaxation
+        v_new = mem.depress_inhibitor("inh_dep", decay=0.30)
+        # V_inh <- 0.80 * 0.70 = 0.56
+        assert abs(v_new - 0.56) < 1e-4
+        assert abs(eng["metadata"]["v_inh"] - 0.56) < 1e-4
+        # Salience drops from 2.20 to 1.85 (< 2.0) -> is_core_anchor demoted to False
+        assert abs(eng["metadata"]["salience"] - 1.85) < 1e-4
+        assert eng["metadata"]["is_core_anchor"] is False
+        assert eng["metadata"]["consecutive_successes"] == 1
+        assert eng["metadata"]["consecutive_failures"] == 0
+
+        # Repeated depression reaches floors (V_floor = 0.05, S_floor = 0.20)
+        for _ in range(15):
+            mem.depress_inhibitor("inh_dep", decay=0.30)
+
+        assert eng["metadata"]["v_inh"] == 0.05
+        assert eng["metadata"]["salience"] == 0.20
+
+    def test_ltd_exponential_relaxation_on_success_fast(self) -> None:
+        """Validates LTD in FastBiomorphicMemory."""
+        mem = FastBiomorphicMemory(capacity=16)
+        mem.record_inhibitor("inh_fast_ltd", "Temporary bug", v_inh=0.70, salience=2.10)
+        assert mem.engrams[0]["is_core_anchor"] is True
+
+        v_new = mem.depress_inhibitor("inh_fast_ltd", decay=0.30)
+        assert abs(v_new - 0.49) < 1e-4
+        assert mem.engrams[0]["salience"] < 2.0
+        assert mem.engrams[0]["is_core_anchor"] is False
+
+        # Non-existent key returns 0.0 gracefully
+        assert mem.depress_inhibitor("non_existent_key") == 0.0
+
+    def test_context_divergence_recording_on_ltd(self) -> None:
+        """Validates that context switching during LTD documents parameter divergence."""
+        mem = CognitiveMemoryManager(capacity=16, enable_csf_shielding=True)
+        initial_ctx = {"tool": "run_command", "shell": "zsh", "sandbox": True}
+        mem.record_inhibitor("inh_ctx", "Sandbox network block", v_inh=0.60, salience=1.80, context_tags=initial_ctx)
+
+        # Successful retry with altered parameter (sandbox: False)
+        recovery_ctx = {"tool": "run_command", "shell": "zsh", "sandbox": False, "bypass_flag": True}
+        mem.depress_inhibitor("inh_ctx", context_tags=recovery_ctx)
+
+        eng = mem.buffer.buffer[0]
+        meta = eng["metadata"]
+        assert len(meta["context_divergence"]) == 1
+        div = meta["context_divergence"][0]
+        # 'sandbox' differed: (True, False)
+        assert "sandbox" in div
+        assert div["sandbox"] == (True, False)
+        # 'bypass_flag' differed: (None, True)
+        assert "bypass_flag" in div
+        assert div["bypass_flag"] == (None, True)
+        # 'tool' and 'shell' were unchanged, not in diff
+        assert "tool" not in div
+        assert "shell" not in div
+        # Context tags updated
+        assert meta["context_tags"]["sandbox"] is False
+        assert meta["context_tags"]["bypass_flag"] is True
+
+    def test_microglial_pruning_depotentiated_inhibitor_torch(self) -> None:
+        """Validates microglial eviction of depotentiated inhibitors (V_inh < 0.20, S <= 0.50)."""
+        mem = CognitiveMemoryManager(capacity=16, enable_csf_shielding=True)
+        # Inhibitor A: depotentiated (should be pruned)
+        mem.record_inhibitor("inh_depotentiated", "Resolved issue", v_inh=0.10, salience=0.40)
+        # Inhibitor B: active (should survive)
+        mem.record_inhibitor("inh_active", "Active threat", v_inh=0.75, salience=1.60)
+        # Inhibitor C: low V_inh but high salience / core anchor (should survive)
+        mem.record_inhibitor("inh_core_protected", "Protected rule", v_inh=0.10, salience=2.50)
+
+        pruned = mem.prune_obsolete()
+        pruned_keys = [p["key"] for p in pruned]
+
+        assert "inh_depotentiated" in pruned_keys
+        assert "inh_active" not in pruned_keys
+        assert "inh_core_protected" not in pruned_keys
+
+        remaining_keys = [e["metadata"]["key"] for e in mem.buffer.buffer]
+        assert "inh_depotentiated" not in remaining_keys
+        assert "inh_active" in remaining_keys
+        assert "inh_core_protected" in remaining_keys
+
+    def test_microglial_pruning_depotentiated_inhibitor_fast(self) -> None:
+        """Validates microglial eviction in FastBiomorphicMemory."""
+        mem = FastBiomorphicMemory(capacity=16)
+        mem.record_inhibitor("inh_prune_me", "Old resolved syntax issue", v_inh=0.12, salience=0.35)
+        mem.record_inhibitor("inh_keep_me", "Dangerous command", v_inh=0.85, salience=1.80)
+        mem.record_inhibitor("inh_core_safe", "Core policy", v_inh=0.10, salience=2.20)
+
+        pruned = mem.prune_obsolete()
+        assert "inh_prune_me" in pruned
+        assert "inh_keep_me" not in pruned
+        assert "inh_core_safe" not in pruned
+
+        remaining = [e["key"] for e in mem.engrams]
+        assert "inh_prune_me" not in remaining
+        assert "inh_keep_me" in remaining
+        assert "inh_core_safe" in remaining
+
+    def test_recall_inhibitors_ranking_and_filtering(self) -> None:
+        """Validates recall_inhibitors ranking by (V_inh * salience) and min_v_inh filtering."""
+        mem = CognitiveMemoryManager(capacity=16, enable_csf_shielding=True)
+        mem.record_decision("normal_decision", "Not an inhibitor", salience=2.0)
+        mem.record_inhibitor("inh_low", "Low V_inh", v_inh=0.15, salience=1.0)  # below 0.20
+        mem.record_inhibitor("inh_med", "Med V_inh", v_inh=0.50, salience=1.5)  # score: 0.75
+        mem.record_inhibitor("inh_high", "High V_inh", v_inh=0.80, salience=2.0)  # score: 1.60
+        mem.record_inhibitor("inh_highest", "Highest V_inh", v_inh=0.95, salience=2.5)  # score: 2.375
+
+        recalled = mem.recall_inhibitors(top_k=2, min_v_inh=0.20)
+        assert len(recalled) == 2
+        # Highest score first
+        assert recalled[0]["key"] == "inh_highest"
+        assert recalled[1]["key"] == "inh_high"
+        # Low V_inh is filtered out
+        assert all(r["key"] != "inh_low" for r in recalled)
+        # Normal decision not included
+        assert all(r["key"] != "normal_decision" for r in recalled)
+
+    def test_swr_replay_output_formatting_with_inhibitor_tier(self, tmp_path: Path) -> None:
+        """Validates that subconscious hook formats 🚫 İnhibitör / Anti-Pattern line in SWR replay."""
+        state_file = tmp_path / "quanta_cognitive_state.json"
+        engrams = [
+            {
+                "key": "native_first_rule",
+                "content": "Prioritize native platform CLI",
+                "salience": 2.8,
+                "category": "constraint",
+                "fidelity": 0.9998,
+                "age": 0,
+                "is_core_anchor": True,
+            },
+            {
+                "key": "temp_plan",
+                "content": "Temporary working plan",
+                "salience": 0.6,
+                "category": "contextual_decision",
+                "fidelity": 0.85,
+                "age": 1,
+                "is_core_anchor": False,
+            },
+            {
+                "key": "inh_unquoted_brackets",
+                "content": "Zsh glob error on unquoted brackets",
+                "salience": 2.20,
+                "category": "inhibitor",
+                "fidelity": 0.9998,
+                "age": 0,
+                "is_core_anchor": True,
+                "v_inh": 0.85,
+            },
+        ]
+        initial_state = {
+            "turn_count": 5,
+            "last_injected_time": 0.0,
+            "last_step_idx": 10,
+            "engrams": engrams,
+            "total_pruned_count": 0,
+            "kappa_csf": KAPPA_CSF,
+            "outcome_history": [],
+        }
+        with open(state_file, "w", encoding="utf-8") as f:
+            json.dump(initial_state, f, indent=2)
+
+        payload = {
+            "conversationId": "test_conv_swr_inh",
+            "artifactDirectoryPath": str(tmp_path),
+            "workspacePaths": [str(tmp_path)],
+            "stepIdx": 11,
+        }
+        res = subprocess.run(
+            [sys.executable, str(HOOK_PATH)],
+            input=json.dumps(payload).encode("utf-8"),
+            capture_output=True,
+            check=True,
+        )
+        data = json.loads(res.stdout.decode("utf-8"))
+        assert "injectSteps" in data
+        ephemeral = data["injectSteps"][0]["ephemeralMessage"]
+
+        # Check all tiers are formatted properly
+        assert "🔒 Çekirdek:" in ephemeral
+        assert "⚡ Geçici:" in ephemeral
+        assert "🚫 İnhibitör / Anti-Pattern:" in ephemeral
+        assert "inh_unquoted_brackets (V_inh=0.83, 99.98%)" in ephemeral
+
+    def test_preservation_of_all_53_production_engrams_with_inhibitors(self) -> None:
+        """Validates that adding inhibitors does not corrupt or evict any of the 53 prod engrams."""
+        assert PROD_STATE_PATH.exists()
+        with open(PROD_STATE_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+
+        prod_engrams = data.get("engrams", [])
+        assert len(prod_engrams) == 53
+
+        mem = FastBiomorphicMemory(capacity=128)
+        for pe in prod_engrams:
+            mem.record(
+                key=pe["key"],
+                content=pe["content"],
+                salience=float(pe["salience"]),
+                category=pe.get("category", "constraint"),
+                is_core_anchor=pe.get("is_core_anchor", True),
+            )
+
+        # Record multiple inhibitors
+        mem.record_inhibitor("inh_test_1", "Test failure 1", v_inh=0.60, salience=1.50)
+        mem.record_inhibitor("inh_test_2", "Test failure 2", v_inh=0.40, salience=1.20)
+        mem.record_inhibitor("inh_test_3", "Test failure 3", v_inh=0.10, salience=0.40)
+
+        # Step 10 turns and prune
+        for _ in range(10):
+            mem.step(dt=1.0)
+        pruned = mem.prune_obsolete()
+
+        # Depotentiated inhibitor should be pruned
+        assert "inh_test_3" in pruned
+
+        # All 53 production engrams must still be present and intact
+        prod_keys = {pe["key"] for pe in prod_engrams}
+        current_keys = {e["key"] for e in mem.engrams}
+        assert prod_keys.issubset(current_keys), "Production engrams must never be evicted or pruned"
+        for pe in prod_engrams:
+            curr = next(e for e in mem.engrams if e["key"] == pe["key"])
+            assert curr["is_core_anchor"] is True
+            assert curr["salience"] >= 2.0

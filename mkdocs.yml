@@ -74,6 +74,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - "2026 Research & Publications":
+    - "Quanta Architecture Whitepaper": papers/quanta_framework_paper.md
     - "Scientific Audit (Sept 2026)": scientific_audit_september_2026.md
     - "Strategic Roadmap (2026-2028)": quantum_roadmap_2026.md
   - Getting Started:

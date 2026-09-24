@@ -1,0 +1,49 @@
+{
+  "title": "Quanta: A Zero-Dependency Quantum Software Architecture with Apple Silicon Metal/MLX Acceleration, Continuous Hilbert Autograd, and 2026 Dual-Track Fault Tolerance",
+  "description": "Quanta (v1.2.0) is a local-first, zero-dependency quantum computing and continuous Hilbert automatic differentiation framework engineered from first principles in pure Python and NumPy. Designed to eliminate binary toolchain bloat, host-to-device PCIe transfer bottlenecks, and numerical gradient drift in hybrid algorithms, Quanta introduces five foundational architectural paradigms: (1) a standalone O(2^n) tensor contraction core with thread-isolated circuit construction and native instruction sets for IBM Heron, Google Sycamore, and IonQ architectures; (2) zero-copy Apple Silicon Metal/MLX GPU acceleration eliminating PCIe overhead (peak 52.1x speedup) alongside a SIMD-vectorized Aaronson-Gottesman binary tableau simulator (>3.1M gates/s) and norm-preserving Matrix Product States (MPS); (3) continuous Hilbert space automatic differentiation via the Daleckii-Krein spectral Fréchet formula with cardinal sine kernel (IEEE 754 double precision) and Dynamical Lie Algebra (DLA) barren plateau variance bounds; (4) a 2026 Dual-Track Fault-Tolerance Engine comprising Track A (rotated surface codes with Edmonds Blossom MWPM and Google Willow 3D spacetime defect graphs) and Track B (canonical Gross [[144, 12, 12]] Bivariate Bicycle qLDPC code with native Normalized Min-Sum BP-OSD-0 decoding providing 12x physical qubit compression), 15-to-1 Bravyi-Kitaev magic state distillation, and planar lattice surgery; and (5) certified mathematical rigor with runtime conservation invariant guards enforcing spectral unitarity (< 10^-14) and CPTP trace preservation (< 10^-12) across 2,076 automated tests.",
+  "creators": [
+    {
+      "name": "Abdullah Enes SARI",
+      "orcid": "0000-0002-8827-0587",
+      "affiliation": "ONMARTECH Quantum Computing Initiative, Istanbul, Turkey"
+    },
+    {
+      "name": "Quanta Quantum Research Group",
+      "affiliation": "ONMARTECH Quantum Computing Initiative, Istanbul, Turkey"
+    },
+    {
+      "name": "Antigravity Agentic AI Board",
+      "affiliation": "Google Antigravity Multi-Agent Research Consortium"
+    }
+  ],
+  "license": "Apache-2.0",
+  "keywords": [
+    "quantum computing",
+    "quantum software architecture",
+    "apple silicon",
+    "mlx",
+    "metal performance shaders",
+    "fault-tolerant quantum computing",
+    "quantum error correction",
+    "surface codes",
+    "qldpc",
+    "bivariate bicycle codes",
+    "bp-osd decoding",
+    "daleckii-krein",
+    "continuous autograd",
+    "dynamical lie algebras",
+    "barren plateaus",
+    "matrix product states"
+  ],
+  "upload_type": "software",
+  "version": "v1.2.0",
+  "publication_date": "2026-09-24",
+  "access_right": "open",
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/onmartech/quanta",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}
