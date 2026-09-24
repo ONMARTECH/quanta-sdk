@@ -555,8 +555,8 @@ All theoretical derivations, algorithmic implementations, and verification bound
 7. **[7] Panteleev, P., & Kalachev, G.**, "Degenerate Quantum LDPC Codes With Good Finite Length Performance", *Quantum* **5**, 585 (2021).  
    DOI: [10.22331/q-2021-11-22-585](https://doi.org/10.22331/q-2021-11-22-585) | arXiv: [1904.02703](https://arxiv.org/abs/1904.02703)
 
-8. **[8] Roffe, J., White, D. R., Burton, S., & Campbell, E. T.**, "Decoding across the quantum low-density parity-check code landscape", *PRX Quantum* **4**, 020305 (2023).  
-   DOI: [10.1103/PRXQuantum.4.020305](https://doi.org/10.1103/PRXQuantum.4.020305) | arXiv: [2203.07068](https://arxiv.org/abs/2203.07068)
+8. **[8] Roffe, J., White, D. R., Burton, S., & Campbell, E. T.**, "Decoding across the quantum low-density parity-check code landscape", *Physical Review Research* **2**, 043423 (2020).  
+   DOI: [10.1103/PhysRevResearch.2.043423](https://doi.org/10.1103/PhysRevResearch.2.043423) | arXiv: [2005.07016](https://arxiv.org/abs/2005.07016)
 
 9. **[9] Bravyi, S., & Kitaev, A.**, "Universal quantum computation with ideal Clifford gates and noisy ancillas", *Physical Review A* **71**, 022316 (2005).  
    DOI: [10.1103/PhysRevA.71.022316](https://doi.org/10.1103/PhysRevA.71.022316) | arXiv: [quant-ph/0403025](https://arxiv.org/abs/quant-ph/0403025)
@@ -576,8 +576,8 @@ All theoretical derivations, algorithmic implementations, and verification bound
 14. **[14] McClean, J. R., Boixo, S., Smelyanskiy, V. N., Babbush, R., & Neven, H.**, "Barren plateaus in quantum neural network training landscapes", *Nature Communications* **9**, 4812 (2018).  
     DOI: [10.1038/s41467-018-07090-4](https://doi.org/10.1038/s41467-018-07090-4) | arXiv: [1803.11173](https://arxiv.org/abs/1803.11173)
 
-15. **[15] Fontana, E., Herman, D., Chakrabarti, S., Kumar, N., Yalovetzky, R., Anand, N., & Cerezo, M.**, "The adjoint representation of the dynamical Lie algebra determines barren plateaus", *PRX Quantum* **5**, 040333 (2024).  
-    DOI: [10.1103/PRXQuantum.5.040333](https://doi.org/10.1103/PRXQuantum.5.040333) | arXiv: [2305.07059](https://arxiv.org/abs/2305.07059)
+15. **[15] Fontana, E., Herman, D., Chakrabarti, S., Kumar, N., Yalovetzky, R., Heredge, J., Sureshbabu, S. H., & Pistoia, M.**, "The Adjoint Is All You Need: Characterizing Barren Plateaus in Quantum Ansätze", *Nature Communications* **15**, 6088 (2024).  
+    DOI: [10.1038/s41467-024-49910-w](https://doi.org/10.1038/s41467-024-49910-w) | arXiv: [2309.07902](https://arxiv.org/abs/2309.07902)
 
 16. **[16] Lindblad, G.**, "On the generators of quantum dynamical semigroups", *Communications in Mathematical Physics* **48**, 119–130 (1976).  
     DOI: [10.1007/BF01608499](https://doi.org/10.1007/BF01608499)

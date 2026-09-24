@@ -264,8 +264,8 @@ The technical milestones and engineering targets in this multi-year roadmap buil
 4. **[4] Panteleev, P., & Kalachev, G.**, "Degenerate Quantum LDPC Codes With Good Finite Length Performance", *Quantum* **5**, 585 (2021).  
    DOI: [10.22331/q-2021-11-22-585](https://doi.org/10.22331/q-2021-11-22-585) | arXiv: [1904.02703](https://arxiv.org/abs/1904.02703)
 
-5. **[5] Roffe, J., White, D. R., Burton, S., & Campbell, E. T.**, "Decoding across the quantum low-density parity-check code landscape", *PRX Quantum* **4**, 020305 (2023).  
-   DOI: [10.1103/PRXQuantum.4.020305](https://doi.org/10.1103/PRXQuantum.4.020305) | arXiv: [2203.07068](https://arxiv.org/abs/2203.07068)
+5. **[5] Roffe, J., White, D. R., Burton, S., & Campbell, E. T.**, "Decoding across the quantum low-density parity-check code landscape", *Physical Review Research* **2**, 043423 (2020).  
+   DOI: [10.1103/PhysRevResearch.2.043423](https://doi.org/10.1103/PhysRevResearch.2.043423) | arXiv: [2005.07016](https://arxiv.org/abs/2005.07016)
 
 6. **[6] Bravyi, S., & Kitaev, A.**, "Universal quantum computation with ideal Clifford gates and noisy ancillas", *Physical Review A* **71**, 022316 (2005).  
    DOI: [10.1103/PhysRevA.71.022316](https://doi.org/10.1103/PhysRevA.71.022316) | arXiv: [quant-ph/0403025](https://arxiv.org/abs/quant-ph/0403025)
@@ -273,11 +273,11 @@ The technical milestones and engineering targets in this multi-year roadmap buil
 7. **[7] Horsman, C., Fowler, A. G., Devitt, S., & Van Meter, R.**, "Surface code quantum computing by lattice surgery", *New Journal of Physics* **14**, 123011 (2012).  
    DOI: [10.1088/1367-2630/14/12/123011](https://doi.org/10.1088/1367-2630/14/12/123011) | arXiv: [1111.4022](https://arxiv.org/abs/1111.4022)
 
-8. **[8] Bluvstein, D. et al.**, "Architectural design for fault-tolerant quantum computation with neutral-atom arrays", *Nature* **626**, 58–65 (2024).  
-   DOI: [10.1038/s41586-023-06927-3](https://doi.org/10.1038/s41586-023-06927-3) | arXiv: [2312.03818](https://arxiv.org/abs/2312.03818)
+8. **[8] Bluvstein, D. et al.**, "A logical quantum processor based on reconfigurable atom arrays", *Nature* **626**, 58–65 (2024).  
+   DOI: [10.1038/s41586-023-06927-3](https://doi.org/10.1038/s41586-023-06927-3) | arXiv: [2312.03982](https://arxiv.org/abs/2312.03982)
 
 9. **[9] Motzoi, F., Gambetta, J. M., Rebentrost, P., & Wilhelm, F. K.**, "Simple pulses for elimination of leakage in weakly nonlinear qubits", *Physical Review Letters* **103**, 110501 (2009).  
-   DOI: [10.1103/PhysRevLett.103.110501](https://doi.org/10.1103/PhysRevLett.103.110501) | arXiv: [0903.2030](https://arxiv.org/abs/0903.2030)
+   DOI: [10.1103/PhysRevLett.103.110501](https://doi.org/10.1103/PhysRevLett.103.110501) | arXiv: [0901.0534](https://arxiv.org/abs/0901.0534)
 
 10. **[10] Selinger, P.**, "Quantum circuits of T-depth one", *Physical Review A* **87**, 042302 (2013).  
     DOI: [10.1103/PhysRevA.87.042302](https://doi.org/10.1103/PhysRevA.87.042302) | arXiv: [1210.0974](https://arxiv.org/abs/1210.0974)
