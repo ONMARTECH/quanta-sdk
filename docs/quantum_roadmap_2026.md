@@ -248,7 +248,7 @@ By bridging exact mathematical rigor with hardware-accelerated computation and f
 ```bibtex
 @article{sari2026quanta_roadmap,
   title={Quanta SDK: Multi-Year Strategic Roadmap (2026-2028) and Competitive Positioning in Fault-Tolerant Quantum Computing},
-  author={Sarı, Abdullah Enes and Antigravity Quantum Research Team},
+  author={SARI, Abdullah Enes and Antigravity Quantum Research Team},
   journal={ONMARTECH Strategic Reports},
   year={2026},
   month={September},

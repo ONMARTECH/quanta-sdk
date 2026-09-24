@@ -530,7 +530,7 @@ The comprehensive academic and engineering audit confirms that Quanta SDK has su
 ```bibtex
 @article{sari2026quanta_audit,
   title={Quanta SDK: Comprehensive Scientific Audit, Mathematical Verification, and 2026 Fault-Tolerant Quantum Computing Architecture},
-  author={Sarı, Abdullah Enes and Antigravity Quantum Research Team},
+  author={SARI, Abdullah Enes and Antigravity Quantum Research Team},
   journal={ONMARTECH Research Publications},
   year={2026},
   month={September},
