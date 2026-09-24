@@ -10,13 +10,13 @@ Supports autonomous biomorphic subconscious mind-wandering daemon commands:
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+import contextlib
 import json
-import math
 import os
 import subprocess
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -483,11 +483,11 @@ def handle_service(args: argparse.Namespace) -> int:
 def handle_monitor(args: argparse.Namespace) -> int:
     """Displays real-time cognitive arbiter decisions, latency, and telemetry audit."""
     from quanta.cognitive.telemetry import (
+        _safe_float,
+        _safe_int,
         generate_dashboard_html,
         get_telemetry_summary,
         read_telemetry_events,
-        _safe_float,
-        _safe_int,
     )
 
     watch_interval = getattr(args, "watch", None)
@@ -506,7 +506,7 @@ def handle_monitor(args: argparse.Namespace) -> int:
         print("   ⚛️ QUANTA BİLİŞSEL KOKPİTİ: İNTERAKTİF HTML DASHBOARD")
         print("=" * 70)
         print(f"  Dosya Yolu: {path}")
-        print(f"  Tarayıcıda Açmak İçin:")
+        print("  Tarayıcıda Açmak İçin:")
         print(f"    open \"{path}\"")
         print("=" * 70)
         return 0
@@ -560,26 +560,109 @@ def handle_monitor(args: argparse.Namespace) -> int:
         print(f"  {BOLD}İzlenen Projeler:{RESET}       {BLUE}{projects_str}{RESET}")
         print("-" * 88)
 
-        # Panel 1: Subconscious Rule Guardian
+        # Panel 1: Subconscious Rule Guardian (Core Anchors, Contextual Decisions & Pruning)
         print(f"  {PURPLE}🧠 BİLİNÇALTI KURAL MUHAFIZLIĞI (SWR REPLAY & ENGRAL SADAKATİ){RESET}")
         pruned_cnt = _safe_int(summary.get("total_pruned_engrams"), 0)
-        print(f"  {GRAY}[Lindblad Kalkanı: κ_csf = 1/6250 | Mikroglial Budama: {pruned_cnt} engram elendi | Aktif: {active_engrams}]{RESET}")
-        print(f"  {'Kural Adı':<28} {'Sadakat':<15} {'Durum':<11} {'Kategori':<12} {'Önem':<6} {'Son Replay'}")
+        csf_badge = (
+            f"[Lindblad Kalkanı: κ_csf = 1/6250 | "
+            f"Mikroglial Budama: {pruned_cnt} engram elendi | "
+            f"Aktif: {active_engrams}]"
+        )
+        print(f"  {GRAY}{csf_badge}{RESET}")
         print("  " + "-" * 84)
 
         latest_rules = summary.get("latest_rules", [])
-        if not latest_rules:
-            print(f"  {GRAY}Aktif kurallar henüz kaydedilmedi.{RESET}")
+        core_rules: list[dict] = []
+        contextual_rules: list[dict] = []
+
+        for r in latest_rules:
+            if not isinstance(r, dict):
+                continue
+            sal = _safe_float(r.get("salience"), 1.0)
+            is_core = bool(r.get("is_core_anchor")) or (sal >= 2.0)
+            if is_core:
+                core_rules.append(r)
+            else:
+                contextual_rules.append(r)
+
+        # Check local state files for additional contextual decisions or pruned records
+        last_pruned_records: list[dict] = []
+        state_candidates = [
+            Path("quanta_cognitive_state.json"),
+            Path(os.path.expanduser("~/.gemini/antigravity/quanta_cognitive_state.json")),
+        ]
+        for sp in state_candidates:
+            if sp.exists():
+                with contextlib.suppress(Exception), open(sp, encoding="utf-8") as sf:
+                    st = json.load(sf)
+                    for e in st.get("engrams", []):
+                        if not isinstance(e, dict):
+                            continue
+                        k = e.get("key", "")
+                        sal = _safe_float(e.get("salience"), 1.0)
+                        is_core = bool(e.get("is_core_anchor")) or (sal >= 2.0)
+                        if not is_core and not any(cr.get("name") == k for cr in contextual_rules):
+                            fid = _safe_float(e.get("fidelity"), 0.9998)
+                            contextual_rules.append({
+                                "name": k,
+                                "fidelity": fid,
+                                "fidelity_pct": round(fid * 100.0, 2),
+                                "salience": round(sal, 2),
+                                "category": e.get("category", "contextual_decision"),
+                                "age": e.get("age", 0),
+                                "last_replayed": "Hafıza Kaydı",
+                            })
+                    for p in st.get("last_pruned_engrams", []):
+                        if isinstance(p, dict) and p not in last_pruned_records:
+                            last_pruned_records.append(p)
+                if contextual_rules or last_pruned_records:
+                    break
+
+        # Fallback if no core rules
+        if not core_rules and not latest_rules:
+            core_rules = [
+                {
+                    "name": "native_first_rule",
+                    "fidelity": 0.9998,
+                    "fidelity_pct": 99.98,
+                    "salience": 2.8,
+                    "category": "constraint",
+                    "last_replayed": "Başlangıç",
+                },
+                {
+                    "name": "executive_summary_rule",
+                    "fidelity": 0.9998,
+                    "fidelity_pct": 99.98,
+                    "salience": 2.5,
+                    "category": "constraint",
+                    "last_replayed": "Başlangıç",
+                },
+                {
+                    "name": "scientific_integrity_rule",
+                    "fidelity": 0.9998,
+                    "fidelity_pct": 99.98,
+                    "salience": 2.5,
+                    "category": "constraint",
+                    "last_replayed": "Başlangıç",
+                },
+            ]
+
+        # Sub-panel 1: Core Anchors
+        print(f"  {CYAN}🔒 DOKUNULMAZ ÇEKİRDEK ÇIPALAR (CORE ANCHORS){RESET}")
+        print(
+            f"  {'Kural Adı':<28} {'Sadakat':<15} {'Durum':<11} "
+            f"{'Kategori':<12} {'Önem':<6} {'Koruma Kalkanı'}"
+        )
+        print("  " + "-" * 84)
+        if not core_rules:
+            print(f"  {GRAY}Aktif çekirdek kural bulunmuyor.{RESET}")
         else:
-            for r in latest_rules[:6]:
-                if not isinstance(r, dict):
-                    continue
+            for r in core_rules[:8]:
                 r_name = str(r.get("name", "unnamed"))[:26]
                 r_fid = _safe_float(r.get("fidelity"), 0.9998)
                 r_pct = _safe_float(r.get("fidelity_pct"), round(r_fid * 100.0, 2))
                 r_cat = str(r.get("category", "constraint"))[:10]
                 r_sal = _safe_float(r.get("salience"), 1.0)
-                r_time = str(r.get("last_replayed", ""))[-12:]
 
                 if r_fid >= 0.95:
                     fid_col = GREEN
@@ -595,7 +678,68 @@ def handle_monitor(args: argparse.Namespace) -> int:
                 r_pct_clamped = max(0.0, min(100.0, r_pct))
                 bar_len = min(8, max(1, int(r_pct_clamped / 12.5)))
                 bar_str = f"[{'█' * bar_len}{' ' * (8 - bar_len)}]"
-                print(f"  {WHITE}{r_name:<28}{RESET} {fid_col}{fid_val_str:<7} {bar_str}{RESET} {stat_str} {GRAY}{r_cat:<12}{RESET} {r_sal:<6.1f} {r_time}")
+                shield_badge = f"{GREEN}🛡️ ASLA BUDANMAZ{RESET}"
+                print(
+                    f"  {WHITE}{r_name:<28}{RESET} {fid_col}{fid_val_str:<7} {bar_str}{RESET} "
+                    f"{stat_str} {GRAY}{r_cat:<12}{RESET} {r_sal:<6.1f} {shield_badge}"
+                )
+
+        # Sub-panel 2: Contextual Decisions
+        print("  " + "-" * 84)
+        print(f"  {YELLOW}⚡ AKTİF GEÇİCİ KARARLAR (CONTEXTUAL DECISIONS){RESET}")
+        if not contextual_rules:
+            print(
+                f"  {GRAY}Aktif geçici karar yok "
+                f"(Tüm kararlar dokunulmaz çekirdek çıpalarda korunuyor).{RESET}"
+            )
+        else:
+            print(
+                f"  {'Karar / Engram':<28} {'Sadakat':<15} {'Durum':<11} "
+                f"{'Kategori':<12} {'Önem':<6} {'Yaş (Turn)'}"
+            )
+            print("  " + "-" * 84)
+            for r in contextual_rules[:6]:
+                r_name = str(r.get("name", "unnamed"))[:26]
+                r_fid = _safe_float(r.get("fidelity"), 0.85)
+                r_pct = _safe_float(r.get("fidelity_pct"), round(r_fid * 100.0, 2))
+                r_cat = str(r.get("category", "decision"))[:10]
+                r_sal = _safe_float(r.get("salience"), 0.5)
+                r_age = r.get("age", 0)
+
+                if r_fid >= 0.85:
+                    fid_col = CYAN
+                    stat_str = f"{CYAN}ACTIVE{RESET}  "
+                elif r_fid >= 0.70:
+                    fid_col = YELLOW
+                    stat_str = f"{YELLOW}DECAYING{RESET}"
+                else:
+                    fid_col = PURPLE
+                    stat_str = f"{PURPLE}AT_RISK{RESET} "
+
+                fid_val_str = f"{r_pct:.2f}%"
+                r_pct_clamped = max(0.0, min(100.0, r_pct))
+                bar_len = min(8, max(1, int(r_pct_clamped / 12.5)))
+                bar_str = f"[{'█' * bar_len}{' ' * (8 - bar_len)}]"
+                age_str = f"{r_age} turn"
+                print(
+                    f"  {WHITE}{r_name:<28}{RESET} {fid_col}{fid_val_str:<7} {bar_str}{RESET} "
+                    f"{stat_str} {GRAY}{r_cat:<12}{RESET} {r_sal:<6.1f} {age_str}"
+                )
+
+        # Sub-panel 3: Pruned Engrams
+        print("  " + "-" * 84)
+        print(f"  {BLUE}✂️ MİKROGLİAL BUDAMA GEÇMİŞİ (PRUNED ENGRAMS){RESET}")
+        if last_pruned_records:
+            pruned_names = [str(p.get("key", p)) for p in last_pruned_records[:4]]
+            p_names_str = ", ".join(pruned_names)
+            print(f"  Son Elenenler: {WHITE}{p_names_str}{RESET} (Toplam {pruned_cnt} temizlendi)")
+        elif pruned_cnt > 0:
+            print(
+                f"  {GRAY}Son Temizlik:{RESET} {WHITE}Toplam {pruned_cnt} engram budandı{RESET} "
+                f"{GRAY}(Gürültü eliminasyonu aktif).{RESET}"
+            )
+        else:
+            print(f"  {GRAY}Henüz budanan engram yok (Hafıza tabanı temiz ve stabil).{RESET}")
         print("-" * 88)
 
         # Panel 2: Active Projects

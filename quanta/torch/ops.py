@@ -741,37 +741,79 @@ def unitary_evolution(
     t: torch.Tensor | float,
     psi0: torch.Tensor,
 ) -> torch.Tensor:
-    """Performs unitary matrix exponential state evolution: |psi(t)> = exp(-i H t) |psi0>."""
+    """Performs unitary matrix exponential state evolution: |psi(t)> = exp(-i H t) |psi0>.
+
+    Uses complex128 precision for continuous spectral evolution to eliminate numerical
+    norm drift and guarantee machine-precision unitarity.
+    """
+    orig_dtype = psi0.dtype
+    target_device = H.device
+    if psi0.device != target_device:
+        psi0 = psi0.to(device=target_device)
+
+    # Resolve calculation precision (complex128 on CPU/CUDA, complex64 on MPS)
+    if target_device.type != "mps":
+        c_calc_dtype = torch.complex128
+        r_calc_dtype = torch.float64
+    else:
+        c_calc_dtype = torch.complex64
+        r_calc_dtype = torch.float32
+
+    # Scale/format t
     if isinstance(t, torch.Tensor):
         if t.dim() == 0:
             t_scaled: float | torch.Tensor = t.item()
         elif t.dim() == 1:
-            t_scaled = t.unsqueeze(-1).unsqueeze(-1)
+            t_scaled = t.to(dtype=r_calc_dtype).unsqueeze(-1).unsqueeze(-1)
         else:
-            t_scaled = t
+            t_scaled = t.to(dtype=r_calc_dtype)
     else:
-        t_scaled = t
+        t_scaled = float(t)
 
-    # Matrix exponential
-    U = torch.linalg.matrix_exp(-1.0j * H * t_scaled)
+    H_calc = H.to(dtype=c_calc_dtype)
 
-    if psi0.device != H.device:
-        psi0 = psi0.to(device=H.device)
+    # Check if H is Hermitian for exact spectral evolution: H = V diag(lambda) V^H
+    is_hermitian = False
+    if (H.dim() == 2 and H.shape[0] == H.shape[1]) or (
+        H.dim() == 3 and H.shape[1] == H.shape[2]
+    ):
+        is_hermitian = bool(torch.allclose(H_calc, H_calc.mH, atol=1e-5))
+
+    if is_hermitian:
+        H_herm = (H_calc + H_calc.mH) / 2.0
+        evals, evecs = torch.linalg.eigh(H_herm)
+        if isinstance(t_scaled, torch.Tensor):
+            t_flat = t_scaled
+            while t_flat.dim() > 2:
+                t_flat = t_flat.squeeze(-1)
+            if t_flat.dim() == 0:
+                phases = torch.exp(-1.0j * evals * t_flat.item())
+            elif t_flat.dim() == 1 and evals.dim() == 2:
+                phases = torch.exp(-1.0j * evals * t_flat.unsqueeze(-1))
+            else:
+                phases = torch.exp(-1.0j * evals * t_flat)
+        else:
+            phases = torch.exp(-1.0j * evals * t_scaled)
+        U = evecs @ torch.diag_embed(phases) @ evecs.mH
+    else:
+        U = torch.linalg.matrix_exp(-1.0j * H_calc * t_scaled)
+
+    psi0_calc = psi0.to(dtype=c_calc_dtype)
 
     if psi0.dim() == 1:
         if H.dim() == 3:
             B = H.shape[0]
-            psi_exp = psi0.unsqueeze(0).expand(B, -1).unsqueeze(-1)
+            psi_exp = psi0_calc.unsqueeze(0).expand(B, -1).unsqueeze(-1)
             psi_t = torch.matmul(U, psi_exp).squeeze(-1)
         else:
-            psi_t = torch.matmul(U, psi0)
+            psi_t = torch.matmul(U, psi0_calc)
     elif psi0.dim() == 2:
-        psi_exp = psi0.unsqueeze(-1)
+        psi_exp = psi0_calc.unsqueeze(-1)
         psi_t = torch.matmul(U, psi_exp).squeeze(-1)
     else:
         raise ValueError(f"Unsupported psi0 dimension: {psi0.dim()}")
 
-    return psi_t.contiguous()
+    return psi_t.to(dtype=orig_dtype).contiguous()
 
 
 def ehrenfest_time_gradient(
@@ -815,19 +857,33 @@ def daleckii_krein_spectral_derivative(
 
     Returns d(exp(-i H t)) / d phi = V [ (V^dagger Omega V) * M(t) ] V^dagger.
     """
-    diff = eigenvalues.unsqueeze(-1) - eigenvalues.unsqueeze(-2)
-    mean = (eigenvalues.unsqueeze(-1) + eigenvalues.unsqueeze(-2)) / 2.0
+    orig_dtype = omega_matrix.dtype
+    dev = omega_matrix.device
+    if dev.type != "mps":
+        c_calc_dtype = torch.complex128
+        r_calc_dtype = torch.float64
+    else:
+        c_calc_dtype = torch.complex64
+        r_calc_dtype = torch.float32
 
-    arg = (diff * t) / (2.0 * math.pi)
-    sinc_val = torch.sinc(arg)
-    phase = torch.exp(-1.0j * mean * t)
-    M = -1.0j * t * phase * sinc_val
+    evals = eigenvalues.to(dtype=r_calc_dtype)
+    evecs = eigenvectors.to(dtype=c_calc_dtype)
+    omega = omega_matrix.to(dtype=c_calc_dtype)
+    t_val = t.to(dtype=r_calc_dtype) if isinstance(t, torch.Tensor) else float(t)
 
-    omega_tilde = eigenvectors.conj().transpose(-2, -1) @ omega_matrix @ eigenvectors
+    diff = evals.unsqueeze(-1) - evals.unsqueeze(-2)
+    mean = (evals.unsqueeze(-1) + evals.unsqueeze(-2)) / 2.0
+
+    arg = (diff * t_val) / (2.0 * math.pi)
+    sinc_val = torch.sinc(arg).to(dtype=c_calc_dtype)
+    phase = torch.exp(-1.0j * mean * t_val).to(dtype=c_calc_dtype)
+    M = -1.0j * t_val * phase * sinc_val
+
+    omega_tilde = evecs.mH @ omega @ evecs
     dU_tilde = omega_tilde * M
-    dU = eigenvectors @ dU_tilde @ eigenvectors.conj().transpose(-2, -1)
+    dU = evecs @ dU_tilde @ evecs.mH
 
-    return dU
+    return dU.to(dtype=orig_dtype)
 
 
 # ═══════════════════════════════════════════════════════════════════════════

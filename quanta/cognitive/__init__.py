@@ -6,6 +6,7 @@ from quanta.cognitive import (
     daemon,
     darwin_idle,
     decision_arbiter,
+    feedback,
     memory,
     memory_manager,
     middleware,
@@ -25,32 +26,52 @@ from quanta.cognitive.darwin_idle import (
     is_system_idle,
     set_background_qos,
 )
+from quanta.cognitive.feedback import (
+    ActionOutcome,
+    AdaptiveConfidenceEngine,
+    CognitiveFeedbackEvaluator,
+    CognitiveFeedbackLoop,
+    OutcomeType,
+    OutcomeVerifier,
+    RuleDriftTracker,
+    apply_confidence_feedback,
+)
 from quanta.cognitive.memory import CognitiveMemoryManager, text_to_statevector
 from quanta.cognitive.middleware import QuantaCognitiveMiddleware
 from quanta.cognitive.mind_wander import DreamInsight, MindWanderEngine
 from quanta.cognitive.poisson_trigger import PoissonSpindleTrigger
+from quanta.cognitive.telemetry import record_outcome_telemetry
 from quanta.cognitive.tom_analyzer import DreamSeed, TheoryOfMindAnalyzer
 from quanta.cognitive.workspace_harvester import WorkspaceContextHarvester
 
 __all__ = [
+    "ActionOutcome",
+    "AdaptiveConfidenceEngine",
+    "CognitiveFeedbackEvaluator",
+    "CognitiveFeedbackLoop",
     "CognitiveMemoryManager",
     "DarwinIdleMonitor",
     "DreamInsight",
     "DreamSeed",
     "MindWanderEngine",
+    "OutcomeType",
+    "OutcomeVerifier",
     "PoissonSpindleTrigger",
     "QOS_CLASS_BACKGROUND",
     "QuantumDecisionArbiter",
     "QuantaCognitiveMiddleware",
+    "RuleDriftTracker",
     "SubconsciousConsolidator",
     "SubconsciousDaemon",
     "TheoryOfMindAnalyzer",
     "WorkspaceContextHarvester",
+    "apply_confidence_feedback",
     "arbiter",
     "consolidation",
     "daemon",
     "darwin_idle",
     "decision_arbiter",
+    "feedback",
     "get_user_idle_seconds",
     "is_system_idle",
     "memory",
@@ -58,9 +79,11 @@ __all__ = [
     "middleware",
     "mind_wander",
     "poisson_trigger",
+    "record_outcome_telemetry",
     "set_background_qos",
     "telemetry",
     "text_to_statevector",
     "tom_analyzer",
     "workspace_harvester",
 ]
+

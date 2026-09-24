@@ -475,7 +475,7 @@ def simulate_noise(
         I2 = np.eye(2, dtype=complex)
         X2 = np.array([[0, 1], [1, 0]], dtype=complex)
         Y2 = np.array([[0, -1j], [1j, 0]], dtype=complex)
-        Z2 = np.array([[0 + 0j, 0], [0, -1]], dtype=complex)
+        Z2 = np.array([[1 + 0j, 0], [0, -1]], dtype=complex)
 
         kraus_map = {
             "depolarizing": [

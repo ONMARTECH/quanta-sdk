@@ -108,6 +108,7 @@ class CognitiveMemoryManager:
         salience: float = 1.0,
         category: str = "decision",
         overwrite: bool = True,
+        is_core_anchor: bool | None = None,
     ) -> int:
         """Records a strategic decision, constraint, or user instruction.
 
@@ -117,6 +118,8 @@ class CognitiveMemoryManager:
             salience: Priority tag (0.1-0.5: temporary, 1.0: normal, >=2.0: critical rule).
             category: Semantic category ('decision', 'constraint', 'temporary', etc.).
             overwrite: If True and an engram with `key` exists, consciously prunes the old one.
+            is_core_anchor: Whether this engram is a permanent core anchor immune to pruning.
+                If None, automatically resolves to True if salience >= 2.0, False otherwise.
 
         Returns:
             Buffer index of the stored engram.
@@ -125,11 +128,15 @@ class CognitiveMemoryManager:
             self.forget(key)
 
         state = text_to_statevector(f"{key}:{content}", dim=self.dim)
+        resolved_is_core = (
+            bool(is_core_anchor) if is_core_anchor is not None else (float(salience) >= 2.0)
+        )
         metadata = {
             "key": key,
             "content": content,
             "category": category,
             "salience": float(salience),
+            "is_core_anchor": resolved_is_core,
         }
 
         # Smart priority eviction if buffer is at capacity
@@ -138,16 +145,53 @@ class CognitiveMemoryManager:
 
         return self.buffer._store_single(state, dopamine_tag=salience, metadata=metadata)
 
+    def record_transient_decision(
+        self,
+        key: str,
+        content: str,
+        salience: float = 0.5,
+        category: str = "contextual_decision",
+    ) -> int:
+        """Records an ephemeral in-conversation decision with salience clamped to [0.2, 0.8].
+
+        Transient decisions are marked with is_core_anchor=False, allowing them to naturally
+        decay through Lindblad phase diffusion and be cleared by microglial synaptic pruning.
+
+        Args:
+            key: Concise key or title.
+            content: Full text explanation or decision summary.
+            salience: Priority tag (clamped to [0.2, 0.8], default: 0.5).
+            category: Semantic category (default: 'contextual_decision').
+
+        Returns:
+            Buffer index of the stored engram.
+        """
+        clamped_salience = max(0.2, min(0.8, float(salience)))
+        return self.record_decision(
+            key=key,
+            content=content,
+            salience=clamped_salience,
+            category=category,
+            overwrite=True,
+            is_core_anchor=False,
+        )
+
     def update_decision(
         self,
         key: str,
         content: str,
         salience: float = 1.0,
         category: str = "decision",
+        is_core_anchor: bool | None = None,
     ) -> int:
         """Consciously supersedes / updates an existing decision, preventing stale conflicts."""
         return self.record_decision(
-            key=key, content=content, salience=salience, category=category, overwrite=True
+            key=key,
+            content=content,
+            salience=salience,
+            category=category,
+            overwrite=True,
+            is_core_anchor=is_core_anchor,
         )
 
     def forget(self, key: str) -> bool:
@@ -183,8 +227,8 @@ class CognitiveMemoryManager:
 
         Inspired by sleep downscaling (Tononi & Cirelli) and microglial phagocytosis.
         Prunes engrams that have decayed below `fidelity_threshold` (for low/medium salience)
-        or exceeded `max_age`. High-salience constraints (salience >= 2.0) are shielded
-        against automatic pruning unless their fidelity catastrophically collapses.
+        or exceeded `max_age`. High-salience constraints and core anchors (is_core_anchor=True
+        or salience >= 2.0) are permanently shielded against automatic pruning.
 
         Returns:
             List of dictionaries describing each pruned engram and the pruning reason.
@@ -202,21 +246,28 @@ class CognitiveMemoryManager:
             fid = float((torch.abs(overlap) ** 2).item())
             d_tag = float(engram["dopamine_tag"])
             age = float(engram["age"])
-            key = engram.get("metadata", {}).get("key", "unnamed")
+            meta = engram.get("metadata") or {}
+            key = meta.get("key", "unnamed")
+
+            is_core = bool(meta.get("is_core_anchor", False) or d_tag >= 2.0)
+            if is_core:
+                survivors.append(engram)
+                continue
 
             should_prune = False
             reason = ""
+            is_transient = meta.get("is_core_anchor") is False and d_tag <= 0.8
 
-            # Condition A: Fidelity has fallen below threshold for low/medium salience
-            if fid < fidelity_threshold and d_tag <= min_salience:
+            # Condition A: Decayed below threshold for low-salience or transient decisions
+            if fid < fidelity_threshold and (d_tag <= min_salience or is_transient):
                 should_prune = True
                 reason = f"fidelity_decayed ({fid:.3f} < {fidelity_threshold})"
-            # Condition B: Low-salience scratchpad items exceeding maximum turn age
-            elif max_age is not None and age > max_age and d_tag <= min_salience:
+            # Condition B: Low-salience scratchpad or transient items exceeding maximum turn age
+            elif max_age is not None and age > max_age and (d_tag <= min_salience or is_transient):
                 should_prune = True
                 reason = f"age_exceeded ({age:.1f} turns > {max_age})"
             # Condition C: Catastrophic dephasing even for normal items (fidelity < 0.35)
-            elif fid < 0.35 and d_tag < 2.0:
+            elif fid < 0.35:
                 should_prune = True
                 reason = f"irrecoverable_dephasing ({fid:.3f} < 0.35)"
 
@@ -224,11 +275,12 @@ class CognitiveMemoryManager:
                 pruned_records.append(
                     {
                         "key": key,
-                        "content": engram.get("metadata", {}).get("content", ""),
+                        "content": meta.get("content", ""),
                         "salience": d_tag,
                         "age_turns": age,
                         "final_fidelity": round(fid, 5),
                         "reason": reason,
+                        "is_core_anchor": False,
                     }
                 )
             else:
@@ -239,14 +291,28 @@ class CognitiveMemoryManager:
         return pruned_records
 
     def _evict_least_salient(self) -> None:
-        """Evicts the engram with the lowest effective cognitive value V = salience * fidelity."""
+        """Evicts lowest-scoring non-core engram (protects core anchors with salience >= 2.0)."""
         if not self.buffer.buffer:
             return
 
-        min_idx = 0
-        min_score = float("inf")
+        candidate_indices = [
+            idx
+            for idx, e in enumerate(self.buffer.buffer)
+            if not (
+                (e.get("metadata") or {}).get("is_core_anchor", False)
+                or float(e.get("dopamine_tag", 1.0)) >= 2.0
+            )
+        ]
 
-        for idx, engram in enumerate(self.buffer.buffer):
+        # If all engrams in buffer are core anchors, buffer expands gracefully to prevent FIFO loss
+        if not candidate_indices:
+            self.buffer.capacity = max(self.buffer.capacity, len(self.buffer.buffer) + 1)
+            return
+
+        min_idx = candidate_indices[0]
+        min_score = float("inf")
+        for idx in candidate_indices:
+            engram = self.buffer.buffer[idx]
             psi_0 = engram["pristine_state"]
             psi_t = engram["degraded_state"]
             overlap = torch.vdot(psi_0, psi_t)
@@ -258,6 +324,7 @@ class CognitiveMemoryManager:
 
         self.buffer.buffer.pop(min_idx)
         self.total_pruned_count += 1
+
 
     def step(
         self,
@@ -375,17 +442,22 @@ class CognitiveMemoryManager:
                 )
             )
 
+            meta = engram.get("metadata") or {}
             results.append(
                 {
                     "index": idx,
-                    "key": engram["metadata"].get("key", ""),
-                    "content": engram["metadata"].get("content", ""),
-                    "category": engram["metadata"].get("category", ""),
+                    "key": meta.get("key", ""),
+                    "content": meta.get("content", ""),
+                    "category": meta.get("category", ""),
                     "salience": engram["dopamine_tag"],
                     "age_turns": round(float(engram["age"]), 1),
                     "retention_fidelity": round(fidelity, 5),
                     "retention_pct": round(fidelity * 100, 2),
                     "status": status,
+                    "is_core_anchor": bool(
+                        meta.get("is_core_anchor", float(engram["dopamine_tag"]) >= 2.0)
+                        or float(engram["dopamine_tag"]) >= 2.0
+                    ),
                 }
             )
 

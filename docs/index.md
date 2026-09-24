@@ -45,6 +45,14 @@ hide:
 
     [:octicons-arrow-right-24: Migration](migration/from-qiskit.md)
 
+-   :material-microscope:{ .lg .middle } **2026 Scientific Audit**
+
+    ---
+
+    Peer-reviewed evaluation of FTQC, Edmonds Blossom, and September 2026 frontiers.
+
+    [:octicons-arrow-right-24: Read Audit](scientific_audit_september_2026.md)
+
 </div>
 
 ---

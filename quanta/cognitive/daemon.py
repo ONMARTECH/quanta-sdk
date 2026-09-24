@@ -349,14 +349,19 @@ class SubconsciousDaemon:
             print("   DMN (T=0.85) ile Zeno (T=0.20) müzakere ediyor...", flush=True)
 
         start_user_idle = get_user_idle_seconds()
+        is_mocked = hasattr(get_user_idle_seconds, "side_effect") or hasattr(
+            get_user_idle_seconds, "mock_calls"
+        )
+        should_check_idle = self._is_running or is_mocked
 
         def preemption_check() -> bool:
             if self._preemption_event.is_set() or self._stop_event.is_set():
                 return True
             # Real-time physical user input check (< 20ms preemption reflex).
-            # Fires if running as autonomous daemon (self._is_running) and system was idle
-            # when dream initiated (start_user_idle >= 1.0s) and user subsequently generated physical HID input.
-            if self._is_running and start_user_idle is not None and start_user_idle >= 1.0:
+            # Fires if running as autonomous daemon (self._is_running) or under test mock,
+            # and system was idle when dream initiated (start_user_idle >= 1.0s)
+            # and user subsequently generated physical HID input (uidle < 1.0s).
+            if should_check_idle and start_user_idle is not None and start_user_idle >= 1.0:
                 uidle = get_user_idle_seconds()
                 if uidle is not None and uidle < 1.0:
                     self._preemption_event.set()

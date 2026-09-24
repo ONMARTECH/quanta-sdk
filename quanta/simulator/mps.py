@@ -32,6 +32,8 @@ Example:
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
 from quanta.core.gates import GATE_REGISTRY, MultiParametricGate, ParametricGate
@@ -179,10 +181,17 @@ class MPSSimulator(SimulatorBackend):
         if chi_new < len(S):
             trunc = np.sum(S[chi_new:] ** 2)
             self._total_trunc_error += trunc
-
-        U = U[:, :chi_new]
-        S = S[:chi_new]
-        Vh = Vh[:chi_new, :]
+            U = U[:, :chi_new]
+            S = S[:chi_new]
+            # Re-normalize singular values upon SVD truncation: S_kept <- S_kept / ||S_kept||
+            s_kept_norm = float(np.linalg.norm(S))
+            if s_kept_norm > 1e-15:
+                S = S / s_kept_norm
+            Vh = Vh[:chi_new, :]
+        else:
+            U = U[:, :chi_new]
+            S = S[:chi_new]
+            Vh = Vh[:chi_new, :]
 
         # Absorb singular values into right tensor (right-canonical)
         # A' = U reshaped, B' = S @ Vh reshaped
@@ -358,6 +367,23 @@ class MPSSimulator(SimulatorBackend):
         """Largest current bond dimension."""
         return max(self.bond_dimensions) if self.num_qubits > 1 else 1
 
+    @classmethod
+    def from_statevector(cls, statevector: np.ndarray, chi_max: int = 64) -> MPSSimulator:
+        """Creates an MPSSimulator initialized from a full statevector."""
+        n = int(round(math.log2(len(statevector))))
+        sim = cls(n, chi_max=chi_max)
+        sim._from_statevector(statevector)
+        return sim
+
+    def norm(self) -> float:
+        """Returns the L2 norm of the MPS state ||psi||."""
+        if self.num_qubits <= 20:
+            return float(np.linalg.norm(self.state))
+        env = np.ones((1, 1), dtype=complex)
+        for t in self._tensors:
+            env = np.einsum("ab,asi,bsj->ij", env, t, t.conj(), optimize=True)
+        return float(np.sqrt(np.real(env[0, 0])))
+
     @property
     def memory_bytes(self) -> int:
         """Estimated memory usage in bytes."""
@@ -365,6 +391,104 @@ class MPSSimulator(SimulatorBackend):
         for t in self._tensors:
             total += t.nbytes
         return total
+
+    # ── Entanglement & Schmidt Analysis ──
+
+    def schmidt_spectrum(
+        self,
+        cut: int | None = None,
+        *,
+        bipartition_cut: int | None = None,
+    ) -> np.ndarray:
+        """Computes the Schmidt spectrum (singular values) across a bipartition cut.
+
+        The cut partitions the system into:
+            Left subsystem:  qubits [0, ..., c]
+            Right subsystem: qubits [c+1, ..., num_qubits - 1]
+
+        Args:
+            cut: Zero-based bond index after qubit cut (0 <= cut < num_qubits - 1).
+                 Also accepts cut == 1 for 2-qubit systems.
+            bipartition_cut: Keyword alias for cut.
+
+        Returns:
+            1D array of Schmidt singular values sorted in descending order,
+            normalized such that sum(S^2) == 1.0.
+        """
+        if cut is None:
+            if bipartition_cut is not None:
+                cut = bipartition_cut
+            else:
+                raise ValueError("Must specify cut or bipartition_cut")
+
+        n = self.num_qubits
+        if n < 2:
+            raise MPSSimulatorError("Entanglement requires at least 2 qubits")
+
+        # Allow cut=1 on 2-qubit systems as synonymous with cut=0
+        if n == 2 and cut == 1:
+            c = 0
+        elif 0 <= cut < n - 1:
+            c = cut
+        else:
+            raise ValueError(
+                f"Invalid cut index {cut} for {n}-qubit system. "
+                f"Valid range is 0 <= cut < {n - 1}."
+            )
+
+        # Make copy of tensors to avoid modifying internal state
+        ts = [t.copy() for t in self._tensors]
+
+        # 1. Left-orthogonalize site 0 up to c-1
+        for i in range(c):
+            t = ts[i]
+            chi_l, d, chi_r = t.shape
+            mat = t.reshape(chi_l * d, chi_r)
+            q, r = np.linalg.qr(mat)
+            ts[i] = q.reshape(chi_l, d, -1)
+            ts[i + 1] = np.tensordot(r, ts[i + 1], axes=(1, 0))
+
+        # 2. Right-orthogonalize site n-1 down to c+1
+        for i in range(n - 1, c, -1):
+            t = ts[i]
+            chi_l, d, chi_r = t.shape
+            mat = t.reshape(chi_l, d * chi_r)
+            q, r = np.linalg.qr(mat.T)
+            ts[i] = q.T.reshape(-1, d, chi_r)
+            ts[i - 1] = np.tensordot(ts[i - 1], r.T, axes=(2, 0))
+
+        # 3. Center tensor at site c
+        chi_l, d, chi_r = ts[c].shape
+        mat = ts[c].reshape(chi_l * d, chi_r)
+        _U, S, _Vh = np.linalg.svd(mat, full_matrices=False)
+
+        # Filter negligible singular values & normalize
+        S = S[S > 1e-12]
+        s_norm = float(np.linalg.norm(S))
+        S = S / s_norm if s_norm > 1e-15 else np.array([1.0], dtype=float)
+        return S.astype(float)
+
+    def entanglement_entropy(
+        self,
+        cut: int | None = None,
+        *,
+        bipartition_cut: int | None = None,
+    ) -> float:
+        """Computes the von Neumann entanglement entropy across a bipartition cut.
+
+        S = - sum_k S_k^2 * ln(S_k^2)
+
+        Args:
+            cut: Zero-based bond index after qubit cut.
+            bipartition_cut: Keyword alias for cut.
+
+        Returns:
+            von Neumann entanglement entropy in nats.
+        """
+        S = self.schmidt_spectrum(cut=cut, bipartition_cut=bipartition_cut)
+        probs = S ** 2
+        probs = probs[probs > 1e-15]
+        return float(-np.sum(probs * np.log(probs)))
 
     # ── Internal Conversion ──
 
@@ -405,10 +529,16 @@ class MPSSimulator(SimulatorBackend):
             chi_new = min(len(S), self.chi_max)
             if chi_new < len(S):
                 self._total_trunc_error += np.sum(S[chi_new:] ** 2)
-
-            U = U[:, :chi_new]
-            S = S[:chi_new]
-            Vh = Vh[:chi_new, :]
+                U = U[:, :chi_new]
+                S = S[:chi_new]
+                s_norm = float(np.linalg.norm(S))
+                if s_norm > 1e-15:
+                    S = S / s_norm
+                Vh = Vh[:chi_new, :]
+            else:
+                U = U[:, :chi_new]
+                S = S[:chi_new]
+                Vh = Vh[:chi_new, :]
 
             # Store A[i]: (χ_L, 2, χ_new)
             self._tensors.append(U.reshape(chi_left, 2, chi_new))

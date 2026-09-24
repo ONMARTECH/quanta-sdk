@@ -57,31 +57,47 @@ def get_unitary(circuit: CircuitDefinition) -> np.ndarray:
     return unitary
 
 def unitaries_equivalent(
-    u1: np.ndarray, u2: np.ndarray, atol: float = 1e-8
+    u1: np.ndarray, u2: np.ndarray, atol: float = 1e-12
 ) -> bool:
     """Checks if two unitary matrices are equivalent up to global phase.
 
+    Uses the normalized Hilbert-Schmidt inner product fidelity:
+        F_HS(U1, U2) = (1 / 2^n) * |Tr(U1^dagger @ U2)|
+    Two unitaries are equivalent if and only if:
+        1. F_HS >= 1.0 - atol
+        2. The global phase factor has unit magnitude: ||phase| - 1.0| < atol
+        3. U2 matches U1 * phase pointwise within tolerance.
 
     Args:
+        u1: First unitary matrix.
+        u2: Second unitary matrix.
+        atol: Machine-precision tolerance (default 1e-12).
 
     Returns:
+        True if equivalent up to global phase, False otherwise.
     """
-    if u1.shape != u2.shape:
+    if u1.shape != u2.shape or u1.ndim != 2 or u1.shape[0] != u1.shape[1]:
         return False
 
-    for i in range(u1.shape[0]):
-        for j in range(u1.shape[1]):
-            if abs(u1[i, j]) > atol and abs(u2[i, j]) > atol:
-                phase = u2[i, j] / u1[i, j]
-                u1_adjusted = u1 * phase
-                return np.allclose(u1_adjusted, u2, atol=atol)
+    dim = u1.shape[0]
+    hs_prod = np.trace(u1.conj().T @ u2)
+    fid = float(np.abs(hs_prod)) / float(dim)
 
-    return np.allclose(u1, u2, atol=atol)
+    if fid < 1.0 - atol or fid > 1.0 + atol:
+        return False
+
+    # Verify unit-magnitude phase factor
+    phase = hs_prod / (fid * dim)
+    if abs(abs(phase) - 1.0) >= atol:
+        return False
+
+    max_diff = float(np.max(np.abs(u1 * phase - u2)))
+    return max_diff <= max(atol * 10.0, 1e-10)
 
 def circuits_equivalent(
     circuit_a: CircuitDefinition,
     circuit_b: CircuitDefinition,
-    atol: float = 1e-8,
+    atol: float = 1e-12,
 ) -> bool:
     """Checks if two circuits are equivalent.
 

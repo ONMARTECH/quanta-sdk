@@ -1,6 +1,6 @@
 site_name: Quanta SDK
 site_description: AI-native quantum computing SDK documentation
-site_url: https://onmartech.github.io/quanta-sdk/
+site_url: https://quanta.onmartech.com/
 repo_url: https://github.com/ONMARTECH/quanta-sdk
 repo_name: ONMARTECH/quanta-sdk
 
@@ -71,6 +71,10 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - "2026 Research & Audit":
+    - "Scientific Audit (Sept 2026)": scientific_audit_september_2026.md
+    - "Roadmap 2026-2027": quantum_roadmap_2026.md
+    - "Continuous Resonance RFC": RFC_CONTINUOUS_RESONANCE.md
   - Getting Started:
     - Installation: getting-started/install.md
     - Quick Start: getting-started/quickstart.md

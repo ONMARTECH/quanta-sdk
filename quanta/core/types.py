@@ -100,6 +100,8 @@ class Instruction:
     gate_name: str
     qubits: tuple[int, ...]
     params: tuple[float, ...] = ()
+    condition: tuple[int, int] | None = None
+    cbit: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

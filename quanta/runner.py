@@ -44,7 +44,7 @@ __all__ = ["run", "run_async", "sweep"]
 
 
 def run(
-    circuit: CircuitDefinition,
+    circuit: CircuitDefinition | DAGCircuit,
     shots: int = 1024,
     seed: int | None = None,
     backend: Backend | None = None,
@@ -57,8 +57,11 @@ def run(
     specified, it runs on the built-in statevector simulator. When a
     backend is provided, the circuit is compiled to a DAG and delegated.
 
+    Supports both static circuits and dynamic circuits (mid-circuit
+    measurement, conditional gate execution, and feedforward).
+
     Args:
-        circuit: Circuit defined with @circuit.
+        circuit: Circuit defined with @circuit or DAGCircuit.
         shots: Number of measurement repetitions. Default 1024.
         seed: Random seed for reproducibility.
         backend: Optional execution backend (IBM, IonQ, Google, etc.).
@@ -78,42 +81,154 @@ def run(
         >>> nm = NoiseModel().add(Depolarizing(0.01))
         >>> result = run(bell, shots=1024, noise=nm)
     """
-    if not isinstance(circuit, CircuitDefinition):
+    if isinstance(circuit, DAGCircuit):
+        dag = circuit
+        circuit_name = getattr(circuit, "name", "dynamic_circuit")
+    elif isinstance(circuit, CircuitDefinition):
+        builder = circuit.build(**kwargs) if kwargs else circuit.build()
+        dag = DAGCircuit.from_builder(builder)
+        circuit_name = circuit.name
+    else:
         raise QuantaError(
-            f"run() expects a @circuit-defined circuit. "
+            f"run() expects a @circuit-defined circuit or DAGCircuit. "
             f"Given type: {type(circuit).__name__}"
         )
 
     if shots < 1:
         raise QuantaError(f"Shot count must be positive, given: {shots}")
 
-    # Stage 1: Build circuit (lazy instructions)
-    builder = circuit.build(**kwargs) if kwargs else circuit.build()
-
-    # Stage 2: Build DAG
-    dag = DAGCircuit.from_builder(builder)
-
     # Delegate to backend if provided
     if backend is not None:
         result = backend.execute(dag, shots=shots, seed=seed)
-        result.circuit_name = circuit.name
+        result.circuit_name = circuit_name
         result.gate_count = dag.gate_count()
         result.depth = dag.depth()
         return result
 
-    # Stage 3: Built-in statevector simulation
-    simulator = StateVectorSimulator(dag.num_qubits, seed=seed)
-    rng = np.random.default_rng(seed)
+    # Check if DAG contains dynamic operations (conditions or mid-circuit measurements)
+    is_dynamic = (
+        getattr(dag, "is_dynamic", False)
+        or any(
+            getattr(op, "condition", None) is not None
+            or getattr(op, "cbit", None) is not None
+            or getattr(op, "gate_name", "").lower() == "measure"
+            for op in dag.op_nodes()
+        )
+    )
 
-    for op in dag.op_nodes():
-        simulator.apply(op.gate_name, op.qubits, op.params)
-        # Apply noise after each gate if noise model is provided
+    if not is_dynamic:
+        # Stage 3a: Fast static statevector simulation
+        simulator = StateVectorSimulator(dag.num_qubits, seed=seed)
+        rng = np.random.default_rng(seed)
+
+        for op in dag.op_nodes():
+            simulator.apply(op.gate_name, op.qubits, op.params)
+            # Apply noise after each gate if noise model is provided
+            if noise is not None:
+                simulator.apply_noise(noise, op.qubits, rng)
+
+        counts = simulator.sample(shots)
+
+        # Apply ReadoutError to measurement counts (post-measurement noise)
         if noise is not None:
-            simulator.apply_noise(noise, op.qubits, rng)
+            from quanta.simulator.noise import ReadoutError
 
-    counts = simulator.sample(shots)
+            for channel in noise.channels:
+                if isinstance(channel, ReadoutError):
+                    counts = channel.apply_to_counts(counts, rng)
 
-    # Apply ReadoutError to measurement counts (post-measurement noise)
+        if dag.measurement and dag.measurement.qubits:
+            measured = dag.measurement.qubits
+            counts = _filter_measured_qubits(counts, measured, dag.num_qubits)
+
+        return Result(
+            counts=counts,
+            shots=shots,
+            num_qubits=dag.num_qubits,
+            circuit_name=circuit_name,
+            gate_count=dag.gate_count(),
+            depth=dag.depth(),
+            statevector=simulator.state,
+        )
+
+    # Stage 3b: Dynamic circuit execution (shot-by-shot with projective collapse)
+    counts: dict[str, int] = {}
+    rng = np.random.default_rng(seed)
+    last_sim: StateVectorSimulator | None = None
+
+    for _ in range(shots):
+        sim = StateVectorSimulator(dag.num_qubits, seed=int(rng.integers(0, 2**31 - 1)))
+        clbits: dict[int, int] = {}
+
+        for op in dag.op_nodes():
+            # Check condition if present
+            cond = getattr(op, "condition", None)
+            if cond is not None:
+                cbit_idx, target_val = cond
+                if clbits.get(cbit_idx, 0) != target_val:
+                    continue
+
+            gate_name = op.gate_name.lower()
+            if gate_name == "measure":
+                # Mid-circuit measurement
+                qubit = op.qubits[0]
+                cbit_idx = getattr(op, "cbit", None)
+
+                n = dag.num_qubits
+                dim = 1 << n
+                indices = np.arange(dim)
+                mask1 = ((indices >> (n - 1 - qubit)) & 1) == 1
+
+                state = sim.state
+                probs = np.abs(state) ** 2
+                p1 = float(np.sum(probs[mask1]))
+                p1 = max(0.0, min(1.0, p1))
+
+                outcome = 1 if rng.random() < p1 else 0
+                if cbit_idx is not None:
+                    clbits[cbit_idx] = outcome
+
+                if outcome == 1:
+                    state[~mask1] = 0.0
+                else:
+                    state[mask1] = 0.0
+
+                norm = np.linalg.norm(state)
+                if norm > 1e-12:
+                    state = state / norm
+                sim.state = state
+            else:
+                sim.apply(op.gate_name, op.qubits, op.params)
+                if noise is not None:
+                    sim.apply_noise(noise, op.qubits, rng)
+
+        last_sim = sim
+
+        # Construct measured bitstring for this shot
+        if dag.measurement and dag.measurement.qubits:
+            probs = sim.probabilities()
+            p_sum = np.sum(probs)
+            if p_sum > 0:
+                probs = probs / p_sum
+            idx = int(rng.choice(len(probs), p=probs))
+            full_str = format(idx, f"0{dag.num_qubits}b")
+            shot_bits = "".join(full_str[q] for q in dag.measurement.qubits)
+        elif clbits:
+            num_cl = getattr(dag, "num_clbits", None)
+            if num_cl and num_cl > 0:
+                shot_bits = "".join(str(clbits.get(i, 0)) for i in range(num_cl))
+            else:
+                shot_bits = "".join(str(clbits.get(i, 0)) for i in range(max(clbits.keys()) + 1))
+        else:
+            probs = sim.probabilities()
+            p_sum = np.sum(probs)
+            if p_sum > 0:
+                probs = probs / p_sum
+            idx = int(rng.choice(len(probs), p=probs))
+            shot_bits = format(idx, f"0{dag.num_qubits}b")
+
+        counts[shot_bits] = counts.get(shot_bits, 0) + 1
+
     if noise is not None:
         from quanta.simulator.noise import ReadoutError
 
@@ -121,18 +236,14 @@ def run(
             if isinstance(channel, ReadoutError):
                 counts = channel.apply_to_counts(counts, rng)
 
-    if dag.measurement and dag.measurement.qubits:
-        measured = dag.measurement.qubits
-        counts = _filter_measured_qubits(counts, measured, dag.num_qubits)
-
     return Result(
         counts=counts,
         shots=shots,
         num_qubits=dag.num_qubits,
-        circuit_name=circuit.name,
+        circuit_name=circuit_name,
         gate_count=dag.gate_count(),
         depth=dag.depth(),
-        statevector=simulator.state,
+        statevector=last_sim.state if last_sim is not None else np.array([1.0], dtype=complex),
     )
 
 

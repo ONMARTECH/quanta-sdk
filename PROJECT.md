@@ -1,192 +1,108 @@
-# Project: Quanta Cognitive Architecture Pillar 3
-# Autonomous Biomorphic Subconscious Mind-Wandering & Anticipatory Prospection Engine
+# Project: Quanta SDK Comprehensive Scientific & Engineering Audit
 
 ## Architecture
-
-The Subconscious Mind-Wandering & Anticipatory Prospection Engine operates as an autonomous, biomorphic background cognitive process that models mammalian default mode network (DMN) daydreaming, thalamocortical sleep spindles, synaptic homeostasis downscaling, and sociological Theory of Mind. It executes strictly within Apple Silicon Efficiency cores (`QOS_CLASS_BACKGROUND`) without consuming foreground interactive CPU/GPU resources or exceeding the ~20W biomorphic thermodynamic budget.
-
-### Subsystem Decomposition & Data Flow:
-
-```
-[ Darwin Host Quiescence ] ──> [ Poisson Spindle Generator ] ──> [ Dream Pulse Trigger ]
-  (Mach host_info, thermal,          (lambda(t), refractory,               │
-   battery, E-core QoS)               ToM urgency modulation)              │
-                                                                           ▼
-[ Conversation Cadence & History ] ──> [ Theory of Mind Analyzer ] ──> [ Speculative Dream Seed ]
-                                                                           │
-                                                                           ▼
-                                                             [ Headless Dialectic Engine ]
-                                                             - Generative Dreamer (DMN)
-                                                             - Evaluative Arbiter (Zeno)
-                                                             - Anti-Rumination Check (cos > 0.95)
-                                                             - Headless Antigravity Conversation
-                                                                           │
-                                                                           ▼
-                                                             [ SWR Memory Consolidation ]
-                                                             - SWR Replay & Synaptic Downscaling
-                                                             - quanta_cognitive_state.json
-                                                             - Preemption Interrupt (<20ms)
-                                                                           │
-                                                                           ▼
-[ User Interactive Turn ] ───────────> [ PreInvocation Hook ] ───────> [ Pre-incubated Insight Delivery ]
-```
-
----
+Quanta SDK is a high-performance, standalone, zero-external-lock-in quantum computing framework for Apple Silicon and Python/NumPy.
+- **Core Layer**: Analytical unitary gates, circuit DAGs, machine-precision unitarity verification.
+- **Simulation Layer**: Statevector (NumPy CPU & MLX Metal GPU), Matrix Product States (MPS tensor networks), Stabilizer / Pauli frame (Aaronson-Gottesman), Density Matrix & Lindblad open system master equation.
+- **QEC / FTQC Layer**: Planar Surface Code, Color Code, Bivariate Bicycle qLDPC ([[144, 12, 12]]), Edmonds Blossom MWPM / Union-Find decoders, Willow 3D spacetime syndrome extraction, Magic State Distillation.
+- **Continuous / QML Layer**: `quanta.torch` Daleckii-Krein matrix exponential autograd, Dynamical Lie Algebras ($\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$), Barren Plateau analytical bounds.
+- **Dynamic Circuits / Export**: OpenQASM 3.0 parsing with mid-circuit measurement and classical feedforward conditional branches.
 
 ## Feature Inventory
-
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
-| 1 | R1 Comprehensive Theoretical Treatise | Formal mathematical and biophysical foundation in `docs/theory/subconscious_mind_wandering_and_dmn.md` | M0 | Survey 2 & Request |
-| 2 | Darwin Mach Thread QoS Assignment | Native `pthread_set_qos_class_self_np(0x09, 0)` enforcing `QOS_CLASS_BACKGROUND` on Apple Silicon E-cores | M1 | Survey 1 |
-| 3 | Darwin Disk I/O Throttling | Native `setiopolicy_np(IOPOL_TYPE_DISK, IOPOL_SCOPE_PROCESS, IOPOL_THROTTLE)` | M1 | Survey 1 |
-| 4 | Mach CPU Host Statistics | Instantaneous CPU idle tick tracking via `host_statistics64(HOST_CPU_LOAD_INFO)` | M1 | Survey 1 |
-| 5 | Apple Silicon Thermal Telemetry | Thermal pressure monitoring via `notify(3)` / `kIOPlatformThermalNotificationKey` / `NSProcessInfo` | M1 | Survey 1 |
-| 6 | Battery & Power State Telemetry | Power source detection via `IOKit` / `IOPowerSources.h` | M1 | Survey 1 |
-| 7 | Cross-Platform Hardware Fallback | Graceful stubs for Linux (`/proc/stat`, nice 19) and Windows (`GetSystemTimes`, idle priority) | M1 | Survey 1 |
-| 8 | Non-Homogeneous Poisson Rate $\lambda(t)$ | Dynamic rate $\lambda(t) = \lambda_0 \cdot \sigma((t - T_{\text{idle}})/\tau) \cdot (1 - \mathcal{F}_{\text{fatigue}}) \cdot \mathcal{S}_{\text{ToM}}$ | M2 | Survey 2 |
-| 9 | Exponential Inter-Arrival Sampling | Inverse transform stochastic sampling $\Delta t \sim -\ln(U)/\lambda(t)$ with refractory gating | M2 | Survey 2 |
-| 10 | Theory of Mind Latent Needs Extractor | Conversational cadence, hesitation, and epistemic uncertainty analyzer | M2 | Survey 2 |
-| 11 | Speculative Dream Seed Generator | Synthesizes high-utility speculative questions for background deliberation | M2 | Survey 2 |
-| 12 | Headless Antigravity Dialectic Engine | Headless `Agent` + `Conversation` dual-persona deliberation with zero prompt leakage | M3 | Survey 3 |
-| 13 | Dual Personas (DMN Dreamer & Zeno Critic)| Generative exploratory incubator vs. Evaluative prefrontal arbiter with virtual rollouts | M3 | Survey 3 |
-| 14 | Psychiatric Anti-Rumination Guard | Cosine similarity > 0.95 detection triggering synthetic noradrenaline reset | M3 | Survey 2 & Request |
-| 15 | Bounded Execution Budget | Hard turn limit ($\le 5$ turns) and token limit ($\le 2500$ tokens per cycle) | M3 | Request |
-| 16 | SWR Memory Engram Consolidation | Integrates consensus into `CognitiveMemoryManager` (`quanta_cognitive_state.json`) | M4 | Survey 3 |
-| 17 | Instant Preemption Reflex | User turn or hardware interrupt aborts/checkpoints subconscious run in $< 20\,\text{ms}$ | M4 | Survey 1 & 3 |
-| 18 | Background Subconscious Daemon Manager | Daemon lifecycle manager with PID tracking, signal handling, and status logging | M4 | Survey 3 |
-| 19 | CLI Command Suite | `quanta dream start/stop/status/inspect` commands | M4 | Survey 3 & Request |
-| 20 | PreInvocation Subconscious Hook | `scripts/hooks/quanta_subconscious_hook.py` serving pre-incubated insights on user turns | M4 | Survey 3 & Request |
-| 21 | Opaque-Box E2E Test Suite | 4-Tier requirement-driven E2E test suite published with `TEST_READY.md` | Test Track | Dual Track |
-| 22 | Kolmogorov-Smirnov Goodness-of-Fit | Statistical validation of Poisson renewal intervals via Time-Rescaling Theorem | M5 | Survey 2 |
-| 23 | Preemption Latency Benchmarking | Verification of interruption latency $< 50\,\text{ms}$ (target $< 20\,\text{ms}$) | M5 | Survey 1 & 3 |
-| 24 | Package Quality Gates | >90% test coverage across `quanta.cognitive`, 0 ruff lint errors, 0 mypy type errors | M5 | Request |
-
----
+| 1 | Exact Hamiltonian Evolution | Fix `_matrix_exp` Hermitian projection bug in `quanta/layer3/hamiltonian.py`; implement exact spectral decomposition $V e^{-i \Lambda t} V^\dagger$ and Suzuki-Trotter 2nd/4th order integrators | M1 | Survey R1 |
+| 2 | Machine-Precision Unitarity | Enforce two-sided $\|U^\dagger U - I\|_\infty < 10^{-12}$ in `custom_gate.py` and Hilbert-Schmidt fidelity with $|phase|=1$ check in `equivalence.py` | M1 | Survey R1 |
+| 3 | Open Quantum Systems & CPTP | Enforce Kraus completeness $\sum K_k^\dagger K_k = I$, trace preservation $\text{Tr}(\rho)=1$, and positive semi-definiteness $\rho \ge 0$ in `quanta/simulator/density_matrix.py` | M1 | Survey R1 |
+| 4 | Lindblad Master Equation Solver | Implement differential Lindblad master equation solver ($\dot{\rho} = -i[H,\rho] + \sum \mathcal{D}[L_k]\rho$) with Liouvillian superoperator in `quanta/simulator/lindblad.py` | M1 | Survey R1 |
+| 5 | Daleckii-Krein Precision Fix | Standardize `quanta/torch/ops.py` on `complex128` continuous evolution and fix `test_ops_unitary_evolution_norm` | M1 | Survey R1 |
+| 6 | Dynamical Lie Algebras & Barren Plateaus | Implement DLA closure engine $\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$ and analytical barren plateau mapping in `quanta/qml/lie_algebra.py` | M1 | Survey R1 |
+| 7 | Edmonds Blossom MWPM Decoder | Replace greedy matching in `quanta/qec/decoder.py` with standalone Edmonds Blossom MWPM (`networkx.min_weight_matching`) and fix boundary node replication on even defect counts | M2 | Survey R2 |
+| 8 | Physical Data Qubit Correction Chains | Reconstruct shortest-path Pauli correction chains on primal/dual lattices in `quanta/qec/decoder.py` rather than returning syndrome indices | M2 | Survey R2 |
+| 9 | Surface Code Decoder Integration | Refactor `quanta/qec/surface_code.py` to invoke decoders and verify homology cancellation $H \cdot (e \oplus c) = 0$ without ground-truth cheating | M2 | Survey R2 |
+| 10 | Willow Spacetime 3D Syndrome Decoding | Implement 3D spacetime defect graph with phenomenological measurement error noise and eliminate all synthetic mock objects in `DynamicSurfaceCodeResult` | M2 | Survey R2 |
+| 11 | qLDPC Bivariate Bicycle Codes | Implement Gross [[144, 12, 12]] bivariate bicycle codes and BP-OSD decoding in `quanta/qec/qldpc.py` | M2 | Survey R2 |
+| 12 | Magic State Distillation & Surgery | Implement executable 15-to-1 Bravyi-Kitaev and CCZ distillation circuits and lattice surgery patch models in `quanta/qec/distillation.py` | M2 | Survey R2 |
+| 13 | MPS Singular Value Renormalization | Fix MPS state norm collapse on SVD truncation in `quanta/simulator/mps.py` and implement `entanglement_entropy(cut)` | M3 | Survey R3 |
+| 14 | Apple Silicon MLX GPU Optimization | Eliminate synchronous host-device copies in `apply_phase()` / `apply_noise()` and optimize tensor transposition memory bandwidth in `quanta/simulator/mlx.py` | M3 | Survey R3 |
+| 15 | Stabilizer / Clifford Fast Engine | Vectorize Aaronson-Gottesman tableau operations and implement `SimulatorBackend` interface `.apply()` in `quanta/simulator/pauli_frame.py` | M3 | Survey R3 |
+| 16 | Dynamic Circuits & OpenQASM 3.0 | Add mid-circuit measurement and classical feedforward condition handling in `Instruction`, `DAGCircuit`, `quanta/export/qasm_import.py`, and `quanta/runner.py` | M3 | Survey R3 |
+| 17 | Comprehensive Scientific Audit Report | Compile authoritative September 2026 academic and engineering audit report in `docs/scientific_audit_september_2026.md` | M4 | Survey R4 |
+| 18 | Sept 2026 Ecosystem Matrix & Roadmap | Compile competitive positioning matrix vs Willow/Heron/QuEra and actionable roadmap in `docs/quantum_roadmap_2026.md` | M4 | Survey R4 |
+| 19 | Dual Track Opaque-Box E2E Test Suite | Design and verify independent 4-tier E2E test suite in `tests/e2e/` covering all 18 features with `TEST_READY.md` | E2E | Survey Track |
+| 20 | Zero Regression Final Pass | Execute complete test suite with 100% pass rate on all new tests and 0 regressions on existing 1611+ tests | M5 | Acceptance |
 
 ## Milestones
-
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M0 | R1 Theoretical Treatise | `docs/theory/subconscious_mind_wandering_and_dmn.md` | Survey Complete | DONE |
-| M1 | Darwin Mach QoS & Quiescence Monitor | `quanta/cognitive/darwin_idle.py` | Survey Complete | DONE |
-| M2 | Poisson Trigger & Theory of Mind Analyzer | `quanta/cognitive/poisson_trigger.py`, `quanta/cognitive/tom_analyzer.py` | M0, M1 | DONE |
-| M3 | Headless Dialectics & Mind Wander Engine | `quanta/cognitive/mind_wander.py` | M2 | DONE |
-| M4 | SWR Consolidation, Daemon, CLI & Hook | `quanta/cognitive/consolidation.py`, `quanta/cognitive/daemon.py`, `scripts/hooks/quanta_subconscious_hook.py`, `quanta/cli.py` | M3 | PLANNED |
-| M5 | Final Milestone: 100% E2E Pass & Benchmarks | Pass full E2E suite, empirical benchmarks (KS, latency), >90% coverage, 0 lint/type errors | M0-M4, TEST_READY.md | PLANNED |
-
----
+| M1 | Theoretical Physics & Math Rigor | Features 1, 2, 3, 4, 5, 6 | None | DONE |
+| M2 | Real-Time QEC & 2026 FTQC Standards | Features 7, 8, 9, 10, 11, 12 | None | DONE |
+| M3 | Hardware Acceleration & Simulators | Features 13, 14, 15, 16 | None | DONE |
+| M4 | Gap Analysis Report & 2026 Roadmap | Features 17, 18 | M1, M2, M3 | DONE |
+| M5 | Final E2E Integration & Verification | Feature 20 | M1, M2, M3, M4, E2E | DONE |
+| E2E | Opaque-Box E2E Testing Track | Feature 19 (Tiers 1-4 tests) | Parallel to M1-M3 | DONE |
 
 ## Interface Contracts
 
-### 1. `quanta.cognitive.darwin_idle`
-```python
-def set_background_qos() -> bool:
-    """Enforce QOS_CLASS_BACKGROUND (0x09) and IOPOL_THROTTLE."""
+### M1: Hamiltonian Evolution & Open Systems
+- `_matrix_exp(A: np.ndarray) -> np.ndarray`: For $A = -i H t$ with Hermitian $H$, $U = V \exp(-i \Lambda t) V^\dagger$. Unitarity $\|U^\dagger U - I\| < 10^{-12}$.
+- `quanta/simulator/lindblad.py`:
+  - `LindbladMasterEquation(H: np.ndarray, jump_ops: list[np.ndarray])`
+  - `evolve(rho_0: np.ndarray, t_span: tuple[float, float], steps: int = 100) -> tuple[np.ndarray, list[np.ndarray]]`
+  - Superoperator Liouvillian $\mathcal{L} = -i(I \otimes H - H^T \otimes I) + \sum_k \left( \overline{L_k} \otimes L_k - \frac{1}{2} I \otimes L_k^\dagger L_k - \frac{1}{2} L_k^T \overline{L_k} \otimes I \right)$.
+  - Trace preservation $|\text{Tr}(\rho(t)) - 1.0| < 10^{-12}$ and CPTP $\sum_k K_k^\dagger K_k = I$.
+- `quanta/qml/lie_algebra.py`:
+  - `dynamical_lie_algebra(generators: list[np.ndarray], tol: float = 1e-10) -> list[np.ndarray]`: Computes orthonormal Lie basis $\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$ using commutator closure $[A, B] = AB - BA$.
+  - `barren_plateau_bound(dla_dim: int, n_qubits: int) -> float`: Returns gradient variance bound $\text{Var}[\partial_\theta \langle O \rangle] \sim O(1/\dim(\mathfrak{g}))$.
 
-def get_cpu_quiescence() -> float:
-    """Return CPU idle ratio in [0.0, 1.0] from host_statistics64."""
+### M2: QEC, Decoders & FTQC
+- `quanta/qec/decoder.py`:
+  - `MWPMDecoder.decode(syndrome: np.ndarray, code_distance: int) -> CorrectionResult`:
+    Uses `networkx.min_weight_matching` for minimum-weight perfect matching on all defect nodes with virtual boundary node pairing on both even and odd defect counts. Returns physical data qubit Pauli correction operators $C \in \{I, X, Y, Z\}^{\otimes n}$.
+- `quanta/qec/surface_code.py`:
+  - `SurfaceCode.simulate_error_correction(...) -> SurfaceCodeResult`: Passes extracted syndrome $s = H_Z e_X$ to `MWPMDecoder`, applies correction $c$, verifies homology $H_Z (e_X \oplus c_X) = 0$.
+  - `SurfaceCode.simulate_dynamic(...) -> DynamicSurfaceCodeResult`: Genuine 3D spacetime decoding with time-like edge weights $\ln((1-p_m)/p_m)$. Zero mock objects in result.
+- `quanta/qec/qldpc.py`:
+  - `BivariateBicycleCode(l: int, m: int, A_poly: list, B_poly: list)`: Implements Gross $[[144, 12, 12]]$ code over $\mathbb{F}_2[x,y]/\langle x^\ell-1, y^m-1\rangle$.
+  - `BPOSDDecoder(parity_check_matrix: np.ndarray, max_bp_iter: int = 30, osd_order: int = 10)`: Native BP-OSD decoder.
+- `quanta/qec/distillation.py`:
+  - `BravyiKitaev15to1Factory()`: Produces $|T\rangle = \frac{1}{\sqrt{2}}(|0\rangle + e^{i\pi/4}|1\rangle)$ with output error rate $\epsilon_{out} \le 35 p^3$.
+  - `CCZFactory()`: Produces $|CCZ\rangle$ states for transversal non-Clifford gate synthesis.
 
-def get_thermal_state() -> int:
-    """Return Apple Silicon thermal state (0=Nominal, 1=Fair, 2=Serious, 3=Critical)."""
-
-def is_on_battery() -> bool:
-    """Return True if system is running on battery power."""
-
-def is_system_idle(idle_threshold: float = 0.70, max_thermal: int = 1) -> bool:
-    """Check if host is quiet enough for subconscious mind-wandering."""
-```
-
-### 2. `quanta.cognitive.poisson_trigger`
-```python
-class PoissonSpindleTrigger:
-    def __init__(self, lambda_0: float = 0.1, idle_min: float = 15.0, tau: float = 5.0, refractory_sec: float = 10.0): ...
-    def compute_rate(self, current_time: float, last_active_time: float, fatigue: float, tom_urgency: float) -> float: ...
-    def sample_next_interval(self, rate: float) -> float: ...
-    def should_trigger(self, current_time: float, last_active_time: float, last_dream_time: float, fatigue: float, tom_urgency: float) -> bool: ...
-```
-
-### 3. `quanta.cognitive.tom_analyzer`
-```python
-@dataclass
-class DreamSeed:
-    topic: str
-    speculative_question: str
-    urgency: float
-    context_keys: list[str]
-
-class TheoryOfMindAnalyzer:
-    def analyze_conversation(self, messages: list[dict], project_state: dict | None = None) -> tuple[float, list[DreamSeed]]:
-        """Return (tom_urgency, dream_seeds)."""
-```
-
-### 4. `quanta.cognitive.mind_wander`
-```python
-@dataclass
-class DreamInsight:
-    topic: str
-    seed_question: str
-    synthesis: str
-    confidence: float
-    turns_taken: int
-    tokens_used: int
-    anti_rumination_reset_occurred: bool
-
-class MindWanderEngine:
-    def __init__(self, max_turns: int = 5, max_tokens: int = 2500, rumination_threshold: float = 0.95): ...
-    def execute_dream_cycle(self, seed: DreamSeed, preemption_check: Callable[[], bool]) -> DreamInsight | None:
-        """Run headless dialectic with DMN and Zeno personas."""
-```
-
-### 5. `quanta.cognitive.consolidation`
-```python
-class SubconsciousConsolidator:
-    def __init__(self, state_file: Path | str = "quanta_cognitive_state.json"): ...
-    def consolidate_insight(self, insight: DreamInsight) -> bool:
-        """SWR replay into CognitiveMemoryManager engrams with category='subconscious_dream'."""
-```
-
-### 6. `quanta.cognitive.daemon`
-```python
-class SubconsciousDaemon:
-    def start(self) -> None: ...
-    def stop(self) -> None: ...
-    def status(self) -> dict: ...
-    def inspect(self) -> list[dict]: ...
-    def interrupt_immediate(self) -> None: ...
-```
-
----
+### M3: MPS, MLX GPU & OpenQASM 3.0
+- `quanta/simulator/mps.py`:
+  - `MPSSimulator.entanglement_entropy(bipartition_cut: int) -> float`: Calculates von Neumann entanglement entropy $S = -\sum_k S_k^2 \ln(S_k^2)$.
+  - Truncation re-normalization: $S_{\text{kept}} \leftarrow S_{\text{kept}} / \sqrt{\sum S_{\text{kept}}^2}$ ensuring $\|\psi\| \equiv 1.0$.
+- `quanta/simulator/pauli_frame.py`:
+  - `PauliFrameSimulator(num_qubits: int)` implements `apply(gate_name: str, qubits: tuple[int, ...]) -> None` conforming to `SimulatorBackend`.
+- `quanta/export/qasm_import.py` & `quanta/runner.py`:
+  - Supports OpenQASM 3.0 mid-circuit measurement `c[0] = measure q[0]` and conditional feedforward `if (c[0] == 1) { ... }`.
 
 ## Code Layout
-
-```
-quanta/
-├── __init__.py
-├── cli.py                               # CLI entry points (quanta dream ...)
-├── cognitive/
-│   ├── __init__.py                      # Export all subconscious public APIs
-│   ├── memory.py                        # CognitiveMemoryManager (existing)
-│   ├── arbiter.py                       # QuantumDecisionArbiter (existing)
-│   ├── middleware.py                    # QuantaCognitiveMiddleware (existing)
-│   ├── darwin_idle.py                   # Mach QoS, E-core, thermal, CPU quiescence
-│   ├── poisson_trigger.py               # Stochastic Poisson spindle scheduler
-│   ├── tom_analyzer.py                  # Theory of Mind & Dream Seed extractor
-│   ├── mind_wander.py                   # Isolated headless dialectic & anti-rumination
-│   ├── consolidation.py                 # SWR memory consolidation into state JSON
-│   └── daemon.py                        # Background daemon manager & IPC preemption
-docs/
-└── theory/
-    └── subconscious_mind_wandering_and_dmn.md  # Comprehensive theoretical monograph
-scripts/
-└── hooks/
-    └── quanta_subconscious_hook.py      # PreInvocation subconscious insight delivery hook
-tests/
-├── test_darwin_idle.py                  # Darwin Mach QoS & quiescence tests
-├── test_poisson_trigger.py              # Poisson rate, renewal sampling, KS tests
-├── test_tom_analyzer.py                 # Theory of Mind heuristics tests
-├── test_mind_wander.py                  # Headless dialectic & anti-rumination tests
-├── test_consolidation.py                # SWR memory consolidation & preemption tests
-├── test_subconscious_daemon.py          # Daemon start/stop/status CLI & IPC tests
-└── test_e2e_subconscious.py             # Full end-to-end integration test
-```
+- `quanta/core/`: Analytical gate matrices, custom gates, circuit equivalence.
+- `quanta/layer3/`: Hamiltonian evolution, matrix exponential, time evolution integrators.
+- `quanta/simulator/`:
+  - `mps.py`: Matrix Product State simulator.
+  - `mlx.py`: Apple Silicon Metal/MLX simulator.
+  - `pauli_frame.py`: Stabilizer/Clifford simulator.
+  - `density_matrix.py`: Density matrix simulator.
+  - `lindblad.py`: Lindblad master equation solver.
+- `quanta/qec/`:
+  - `decoder.py`: Edmonds Blossom MWPM and Union-Find decoders.
+  - `surface_code.py`: Surface code and Willow 3D dynamic syndrome extraction.
+  - `qldpc.py`: Bivariate Bicycle codes and BP-OSD.
+  - `distillation.py`: Magic state distillation factories.
+- `quanta/qml/`:
+  - `lie_algebra.py`: Dynamical Lie Algebras and Barren Plateau bounds.
+- `quanta/torch/`:
+  - `ops.py`: Daleckii-Krein matrix exponential autograd.
+- `quanta/export/`:
+  - `qasm_import.py`: OpenQASM 3.0 importer.
+- `docs/`:
+  - `scientific_audit_september_2026.md`: Comprehensive Scientific Audit Report.
+  - `quantum_roadmap_2026.md`: Competitive Ecosystem Matrix & Roadmap.
+- `tests/`:
+  - `test_theoretical_physics_m1.py`: M1 unit and analytical tests.
+  - `test_qec_ftqc_m2.py`: M2 unit and benchmark tests.
+  - `test_hardware_simulators_m3.py`: M3 unit and performance tests.
+  - `e2e/`: Opaque-box E2E test suite (Tiers 1-4).

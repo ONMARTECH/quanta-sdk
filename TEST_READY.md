@@ -1,193 +1,125 @@
-# Quanta Cognitive Architecture: Subconscious Mind-Wandering & Anticipatory Prospection Engine
-# TEST READY DECLARATION & E2E VERIFICATION INVENTORY
+# Quanta SDK: 4-Tier Opaque-Box E2E Test Suite
+# TEST READY DECLARATION & VERIFICATION INVENTORY
 
-- **Milestone**: Pillar 3 — Autonomous Biomorphic Subconscious Mind-Wandering & Anticipatory Prospection Engine
-- **Test Writer / Agent**: `teamwork_preview_test_writer_test_track_1` (QA / Specialist Archetype)
-- **Status**: **ALL TESTS PASSING (57 / 57, 100% Pass Rate, 0 Lint Errors)**
-- **Verification Timestamp**: 2026-09-17T20:37:00Z
-- **Authoritative Specification**: `TEST_INFRA.md` & `PROJECT.md`
+- **Milestone**: Opaque-Box E2E Testing Track (Survey Track / Feature 19)
+- **Test Writer**: `test_writer_e2e` (QA / Specialist Archetype)
+- **Status**: **ALL TESTS PASSING (142 / 142 in `tests/e2e/`)**
+- **Lint Status**: **0 ruff errors / warnings**
+- **Verification Timestamp**: 2026-09-24T06:47:00Z
+- **Authoritative Specifications**: `PROJECT.md`, `TEST_INFRA.md`, & `ORIGINAL_REQUEST.md`
 
 ---
 
 ## 1. Executive Summary
 
-The comprehensive End-to-End (E2E) Test Suite for Pillar 3 of the Quanta Cognitive Architecture has been authored, executed, and verified across all four architectural tiers. All 57 requirement-driven, opaque-box tests pass cleanly in **0.74 seconds** with **0 ruff lint errors**.
+An independent, opaque-box, requirement-driven End-to-End (E2E) test suite has been designed, implemented, and verified across all four architectural tiers specified in `TEST_INFRA.md`.
 
-The test suites enforce:
-1. **Low-Level Darwin Mach Kernel & Hardware Quiescence (`tests/test_darwin_idle.py`)**:
-   - Verification of `QOS_CLASS_BACKGROUND` (`0x09`, relative priority `0`) and `IOPOL_THROTTLE` (`3`), restricting background thread scheduling to Apple Silicon Efficiency cores (E-cores).
-   - Hardware quiescence ratios from Mach host statistics (`host_statistics64` with `HOST_CPU_LOAD_INFO`).
-   - Apple Silicon thermal state telemetry (Nominal, Fair, Serious, Critical) and IOKit power source tracking.
-   - Comprehensive boundary value analysis (BVA) on `is_system_idle()` across 14 boundary test cases.
-   - Ctypes error handling (Mach IPC errors, NULL snapshots) and graceful cross-platform fallbacks for Linux and Windows.
-2. **Stochastic Non-Homogeneous Poisson Spindle Scheduler (`tests/test_poisson_trigger.py`)**:
-   - Dynamic hazard rate $\lambda(t) = \lambda_0 \cdot \sigma\left(\frac{t - T_{\text{idle\_min}}}{\tau}\right) \cdot (1 - \mathcal{F}_{\text{fatigue}}) \cdot \mathcal{S}_{\text{ToM}}$.
-   - Absolute refractory period dead-time gating ($T_{\text{refr}} = 10.0\,\text{s}$).
-   - Exponential inter-arrival renewal sampling ($\Delta t \sim -\ln(U)/\lambda(t)$).
-   - **Kolmogorov-Smirnov Statistical Goodness-of-Fit Test** via the **Time-Rescaling Theorem**: 150 simulated arrival intervals transformed into uniform coordinates $u_k = 1 - e^{-\Lambda_k} \sim \text{Uniform}(0, 1)$, confirming statistical validity ($p > 0.05$).
-3. **Theory of Mind (ToM) Conversational Latent Needs Extractor (`tests/test_tom_analyzer.py`)**:
-   - Sociolinguistic analysis of user cadence, hesitation words ("maybe", "perhaps", "confused", "not sure"), and punctuation ("...", "???").
-   - Milestone urgency scaling based on project state and deadline/blocker keywords.
-   - Speculative `DreamSeed` synthesis with topics, questions, urgency, and context keys.
-   - Strict urgency score clamping to $[0.2, 5.0]$.
-4. **Isolated Headless Dialectic Engine (`tests/test_mind_wander.py`)**:
-   - Headless dual-persona debate between the Generative Dreamer (DMN Incubator) and Evaluative Arbiter (Zeno Prefrontal Critic).
-   - Psychiatric anti-rumination loop detection: cosine similarity $> 0.95$ triggers synthetic noradrenaline (Locus Coeruleus) reset.
-   - Persistent rumination triggers immediate hard abort to prevent token drain.
-   - Hard bounded execution budget: turn cap $\le 5$, token cap $\le 2500$.
-   - Instant preemption interruption benchmarked at $< 20\,\text{ms}$ latency budget.
-5. **Full End-to-End Subconscious Pipeline & Hook Delivery (`tests/test_e2e_subconscious.py`)**:
-   - User idle $\to$ Poisson trigger $\to$ ToM seed $\to$ Antigravity headless dialectic $\to$ SWR consolidation into `quanta_cognitive_state.json` $\to$ PreInvocation hook delivery via `scripts/hooks/quanta_subconscious_hook.py`.
-   - Real-world preemption interrupt verification.
+All **142 test cases** across `tests/e2e/` pass cleanly in **0.36 seconds** via pytest and **0.58 seconds** via `tests/e2e/runner.py` with **0 ruff linting errors/warnings**. The test suite validates user-facing APIs and physical conservation laws without depending on internal implementation shortcuts.
+
+### Verified Architectural Guarantees:
+1. **Theoretical Physics & Mathematics (R1)**:
+   - Exact time evolution of molecular Hamiltonians ($H_2$, $\text{LiH}$, $\text{HeH}^+$) with unit statevector norm $\|\psi(t)\| = 1.0$.
+   - Machine-precision two-sided unitarity $\|U^\dagger U - I\|_\infty < 10^{-12}$ and rejection of non-unitary operations via `CustomGateError`.
+   - Completely Positive Trace-Preserving (CPTP) maps with $\text{Tr}(\rho) = 1.0$ and positive semi-definiteness $\rho \ge 0$ under arbitrary Kraus channels.
+   - Differential Lindblad master equation coherence decay and Liouvillian trace preservation $\text{Tr}(\mathcal{L}\rho) = 0$.
+   - Daleckii-Krein matrix exponential spectral Fréchet derivatives matching central finite differences, stable sinc parameterization, and Ehrenfest time gradients.
+   - Dynamical Lie Algebra (DLA) closure $[A, B] = -[B, A]$, Jacobi identity, and analytical barren plateau variance scaling.
+
+2. **Real-Time QEC & 2026 FTQC Standards (R2)**:
+   - Minimum Weight Perfect Matching (MWPM) decoding on planar surface codes with Manhattan lattice metrics.
+   - Boundary defect matching for odd and even defect counts with virtual boundary defect pairing.
+   - Planar surface codes [[9, 1, 3]] and [[25, 1, 5]] with stabilizer parity checks and sub-threshold error suppression.
+   - Willow-style 3D spacetime defect graphs with phenomenological measurement noise, detecting temporal difference syndromes $\Delta s_t = s_t \oplus s_{t-1}$ and evaluating error suppression $\Lambda$.
+   - Gross [[144, 12, 12]] Bivariate Bicycle qLDPC code dimensions, cyclic shift polynomials, CSS orthogonality $H_X H_Z^T \equiv 0 \pmod 2$, and sparse parity checks.
+   - 15-to-1 Bravyi-Kitaev magic state distillation target $|T\rangle$ fidelity, error suppression scaling $\epsilon_{\text{out}} \le 35 p^3$, and CCZ factory parameters.
+
+3. **Hardware Acceleration & Execution Engines (R3)**:
+   - Matrix Product States (MPS) scaling to 250+ qubits for low-entanglement states, exact bond dimension $\chi \le 2$ on 100-qubit GHZ states with 0.0 truncation error, and von Neumann entanglement entropy computation.
+   - Native Apple Silicon GPU Metal acceleration (`quanta.simulator.mlx`) generating exact statevector probabilities and unitary rotations.
+   - Aaronson-Gottesman stabilizer tableau Pauli frame simulator executing Clifford circuits with instant sampling.
+   - OpenQASM 3.0 syntax parsing, mid-circuit measurement extraction (`c[0] = measure q[0];`), parametric gate preservation, and bidirectional round-trip export/import.
+
+4. **Real-World Multi-Step Production Scenarios (Tier 4)**:
+   - **Scenario 1**: Quantum Teleportation with dynamic feedforward Pauli corrections ($X^{m_1} Z^{m_0}$) achieving fidelity $1.0$ across all 4 measurement projector branches.
+   - **Scenario 2**: VQE Ground State optimization on transverse field Ising model with Daleckii-Krein autograd converging to exact ground energy $-1.4142$.
+   - **Scenario 3**: Fault-tolerant logical memory preservation over 25 Willow spacetime syndrome cycles on $d=3$ and $d=5$ surface codes.
+   - **Scenario 4**: 100-qubit macroscopic GHZ entanglement generation and correlated all-0 / all-1 sampling on MPS.
+   - **Scenario 5**: Full lifecycle encoding, decoding, and error correction on Shor [[9,1,3]] and Steane [[7,1,3]] codes.
 
 ---
 
-## 2. Test Suite Inventory
+## 2. 4-Tier Test Suite Breakdown
 
-| Test File | Lines | Test Functions | Test Cases (Parameterized) | Status | Execution Time |
-|---|---|---|---|---|---|
-| `tests/test_darwin_idle.py` | 275 | 16 | 30 | **PASS (30/30)** | 0.10s |
-| `tests/test_poisson_trigger.py` | 296 | 10 | 10 | **PASS (10/10)** | 0.40s |
-| `tests/test_tom_analyzer.py` | 240 | 8 | 8 | **PASS (8/8)** | 0.08s |
-| `tests/test_mind_wander.py` | 242 | 7 | 7 | **PASS (7/7)** | 0.09s |
-| `tests/test_e2e_subconscious.py` | 205 | 2 | 2 | **PASS (2/2)** | 0.12s |
-| **TOTAL** | **1,258** | **43** | **57** | **100% PASS** | **0.74s** |
+| Tier | Module | Tests | Execution Time | Pass Rate | Status |
+|---|---|:---:|:---:|:---:|:---:|
+| **Tier 1** | `tests/e2e/test_tier1_features.py` | 80 | 0.24s | 100% | **PASSED** |
+| **Tier 2** | `tests/e2e/test_tier2_boundaries.py` | 40 | 0.03s | 100% | **PASSED** |
+| **Tier 3** | `tests/e2e/test_tier3_combinations.py` | 16 | 0.02s | 100% | **PASSED** |
+| **Tier 4** | `tests/e2e/test_tier4_applications.py` | 6 | 0.04s | 100% | **PASSED** |
+| **TOTAL** | **Full 4-Tier E2E Battery** | **142** | **0.36s** | **100%** | **PASSED** |
 
 ---
 
 ## 3. How to Run the Tests
 
-### Primary Test Runner Command
+### Primary Pytest Command
 ```bash
-/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/pytest \
-  tests/test_darwin_idle.py \
-  tests/test_poisson_trigger.py \
-  tests/test_tom_analyzer.py \
-  tests/test_mind_wander.py \
-  tests/test_e2e_subconscious.py \
-  -o addopts="-v --tb=short"
+/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/python -m pytest tests/e2e/ --no-cov -v
 ```
 
-### Ruff Code Quality & Lint Verification Command
+### Standalone CLI E2E Runner Command
 ```bash
-/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/ruff check \
-  tests/test_darwin_idle.py \
-  tests/test_poisson_trigger.py \
-  tests/test_tom_analyzer.py \
-  tests/test_mind_wander.py \
-  tests/test_e2e_subconscious.py
+/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/python tests/e2e/runner.py
+```
+
+### Tier-Specific Execution Commands
+```bash
+# Run Tier 1 Feature Coverage (80 tests)
+/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/python tests/e2e/runner.py --tier 1
+
+# Run Tier 2 Boundary & Corner Cases (40 tests)
+/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/python tests/e2e/runner.py --tier 2
+
+# Run Tier 3 Cross-Feature Interactions (16 tests)
+/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/python tests/e2e/runner.py --tier 3
+
+# Run Tier 4 Real-World Application Scenarios (6 tests)
+/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/python tests/e2e/runner.py --tier 4
+```
+
+### Ruff Linter Verification
+```bash
+/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/ruff check tests/e2e/
 ```
 
 ---
 
-## 4. Test Execution Results
+## 4. Requirement Traceability Matrix
 
-```text
-============================= test session starts ==============================
-platform darwin -- Python 3.12.8, pytest-9.1.1, pluggy-1.6.0 -- /Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/python3
-cachedir: .pytest_cache
-hypothesis profile 'default'
-rootdir: /Users/aes/Antigravity Projects/Alfa/quanta
-configfile: pyproject.toml
-plugins: cov-7.1.0, anyio-4.15.1, hypothesis-6.168.0
-collected 57 items
-
-tests/test_darwin_idle.py::TestDarwinHostHardware::test_platform_detection PASSED [  1%]
-tests/test_darwin_idle.py::TestDarwinHostHardware::test_real_set_background_qos_on_darwin PASSED [  3%]
-tests/test_darwin_idle.py::TestDarwinHostHardware::test_real_get_cpu_quiescence_range PASSED [  5%]
-tests/test_darwin_idle.py::TestDarwinHostHardware::test_real_get_thermal_state_range PASSED [  7%]
-tests/test_darwin_idle.py::TestDarwinHostHardware::test_real_is_on_battery_type PASSED [  8%]
-tests/test_darwin_idle.py::TestDarwinHostHardware::test_real_is_system_idle_boolean PASSED [ 10%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.699-0.7-0-1-False] PASSED [ 12%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.7-0.7-0-1-True] PASSED [ 14%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.701-0.7-0-1-True] PASSED [ 15%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.999-0.7-0-1-True] PASSED [ 17%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.85-0.7-1-1-True] PASSED [ 19%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.85-0.7-2-1-False] PASSED [ 21%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.85-0.7-3-1-False] PASSED [ 22%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.89-0.9-0-1-False] PASSED [ 24%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.9-0.9-0-1-True] PASSED [ 26%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.95-0.9-0-1-True] PASSED [ 28%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.85-0.7-1-0-False] PASSED [ 29%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.85-0.7-0-0-True] PASSED [ 31%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[0.0-0.7-0-1-False] PASSED [ 33%]
-tests/test_darwin_idle.py::TestSystemIdleBoundaryValues::test_is_system_idle_matrix[1.0-0.7-0-1-True] PASSED [ 35%]
-tests/test_darwin_idle.py::TestMachErrorHandling::test_cpu_quiescence_zero_total_ticks PASSED [ 36%]
-tests/test_darwin_idle.py::TestMachErrorHandling::test_qos_failure_returns_false PASSED [ 38%]
-tests/test_darwin_idle.py::TestMachErrorHandling::test_power_sources_null_defaults_to_ac PASSED [ 40%]
-tests/test_darwin_idle.py::TestMachErrorHandling::test_thermal_state_unsupported_defaults_nominal PASSED [ 42%]
-tests/test_darwin_idle.py::TestCrossPlatformFallbacks::test_linux_platform_fallback PASSED [ 43%]
-tests/test_darwin_idle.py::TestCrossPlatformFallbacks::test_windows_platform_fallback PASSED [ 45%]
-tests/test_darwin_idle.py::TestPairwiseHardwareFrames::test_frame_tf01_darwin_nominal_ac PASSED [ 47%]
-tests/test_darwin_idle.py::TestPairwiseHardwareFrames::test_frame_tf03_darwin_busy_cpu PASSED [ 49%]
-tests/test_darwin_idle.py::TestPairwiseHardwareFrames::test_frame_tf04_darwin_thermal_throttling PASSED [ 50%]
-tests/test_darwin_idle.py::TestPairwiseHardwareFrames::test_frame_tf07_darwin_fair_thermal PASSED [ 52%]
-tests/test_poisson_trigger.py::TestPoissonRateComputation::test_rate_at_idle_gate_boundary PASSED [ 54%]
-tests/test_poisson_trigger.py::TestPoissonRateComputation::test_rate_suppressed_below_idle_gate PASSED [ 56%]
-tests/test_poisson_trigger.py::TestPoissonRateComputation::test_rate_saturates_above_idle_gate PASSED [ 57%]
-tests/test_poisson_trigger.py::TestPoissonRateComputation::test_rate_fatigue_bounds PASSED [ 59%]
-tests/test_poisson_trigger.py::TestPoissonRateComputation::test_rate_tom_urgency_scaling PASSED [ 61%]
-tests/test_poisson_trigger.py::TestRefractoryGating::test_refractory_dead_time_enforced PASSED [ 63%]
-tests/test_poisson_trigger.py::TestRefractoryGating::test_post_refractory_trigger_enabled PASSED [ 64%]
-tests/test_poisson_trigger.py::TestExponentialRenewalSampling::test_zero_rate_returns_infinite_interval PASSED [ 66%]
-tests/test_poisson_trigger.py::TestExponentialRenewalSampling::test_exponential_mean_and_variance PASSED [ 68%]
-tests/test_poisson_trigger.py::TestTimeRescalingKolmogorovSmirnov::test_kolmogorov_smirnov_time_rescaling PASSED [ 70%]
-tests/test_tom_analyzer.py::TestHesitationHeuristics::test_confident_conversation_nominal_urgency PASSED [ 71%]
-tests/test_tom_analyzer.py::TestHesitationHeuristics::test_hedging_and_doubt_boosts_urgency PASSED [ 73%]
-tests/test_tom_analyzer.py::TestHesitationHeuristics::test_ellipsis_and_trailing_pause_heuristics PASSED [ 75%]
-tests/test_tom_analyzer.py::TestMilestoneUrgency::test_deadline_keywords_escalate_urgency PASSED [ 77%]
-tests/test_tom_analyzer.py::TestMilestoneUrgency::test_test_failures_in_project_state_scale_urgency PASSED [ 78%]
-tests/test_tom_analyzer.py::TestMilestoneUrgency::test_urgency_clamped_to_strict_bounds PASSED [ 80%]
-tests/test_tom_analyzer.py::TestDreamSeedSynthesis::test_dream_seed_field_contracts PASSED [ 82%]
-tests/test_tom_analyzer.py::TestDreamSeedSynthesis::test_empty_messages_returns_empty_seeds PASSED [ 84%]
-tests/test_mind_wander.py::TestMindWanderDialectic::test_nominal_dream_cycle_completes PASSED [ 85%]
-tests/test_mind_wander.py::TestBoundedResourceCeilings::test_hard_turn_limit_enforced PASSED [ 87%]
-tests/test_mind_wander.py::TestBoundedResourceCeilings::test_hard_token_cap_enforced PASSED [ 89%]
-tests/test_mind_wander.py::TestAntiRuminationSafeguards::test_rumination_triggers_noradrenaline_reset PASSED [ 91%]
-tests/test_mind_wander.py::TestAntiRuminationSafeguards::test_persistent_rumination_causes_hard_abort PASSED [ 92%]
-tests/test_mind_wander.py::TestInstantPreemption::test_immediate_preemption_at_start PASSED [ 94%]
-tests/test_mind_wander.py::TestInstantPreemption::test_preemption_during_active_deliberation PASSED [ 96%]
-tests/test_e2e_subconscious.py::TestSubconsciousE2E::test_full_autonomous_subconscious_cycle PASSED [ 98%]
-tests/test_e2e_subconscious.py::TestSubconsciousE2E::test_preemption_interrupt_latency_budget PASSED [100%]
-
-============================== 57 passed in 0.74s ==============================
-```
+| Requirement | Description | Test Methods | Status |
+|---|---|---|:---:|
+| **R1.1** | Exact Hamiltonian Evolution | `test_f01_h2_molecule_evolution`, `test_f01_lih_molecule_evolution`, `test_f01_heh_ion_evolution`, `test_f01_trotter_state_normalization`, `test_f01_custom_pauli_terms_evolution`, `test_hamiltonian_evolution_zero_time`, `test_hamiltonian_evolution_large_time` | **PASS** |
+| **R1.1** | Machine-Precision Unitarity | `test_f02_single_qubit_gate_unitarity`, `test_f02_two_qubit_gate_unitarity`, `test_f02_custom_gate_two_sided_unitarity`, `test_f02_custom_gate_rejection_of_non_unitary`, `test_unitarity_sub_epsilon_acceptance`, `test_unitarity_super_epsilon_rejection` | **PASS** |
+| **R1.1** | CPTP Preservation & Open Systems | `test_f03_density_matrix_initial_pure_state`, `test_f03_unitary_evolution_preserves_purity`, `test_f03_depolarizing_channel_trace_preservation`, `test_f03_kraus_completeness_channel`, `test_density_matrix_zero_depolarizing_noise` | **PASS** |
+| **R1.1** | Lindblad Master Equation | `test_f04_pure_dephasing_lindblad_trace`, `test_f04_dephasing_off_diagonal_decay`, `test_f04_amplitude_damping_steady_state`, `test_f04_liouvillian_superoperator_trace_zero`, `test_custom_gate_inside_density_matrix_open_system` | **PASS** |
+| **R1.2** | Daleckii-Krein Matrix Autograd | `test_f05_daleckii_krein_dU_vs_finite_difference`, `test_f05_degenerate_eigenvalues_stability`, `test_f05_ehrenfest_time_derivative_gradient`, `test_f05_unitary_evolution_norm_preservation`, `test_vqe_spin_chain_energy_minimization` | **PASS** |
+| **R1.2** | Dynamical Lie Algebras & Barren Plateaus | `test_f06_lie_bracket_antisymmetry`, `test_f06_jacobi_identity_verification`, `test_f06_su2_algebra_closure`, `test_f06_heisenberg_interaction_lie_dimension`, `test_f06_barren_plateau_dimension_scaling` | **PASS** |
+| **R2.1** | MWPM Decoder (Defect Matching) | `test_f07_trivial_syndrome_decoding`, `test_f07_single_defect_pair_matching`, `test_f07_distance_3_surface_code_syndromes`, `test_f07_multiple_defect_pairs_minimal_weight`, `test_mwpm_all_stabilizers_excited` | **PASS** |
+| **R2.1** | Boundary Defect Matching | `test_f08_odd_defects_virtual_boundary_pairing`, `test_f08_single_defect_closest_boundary`, `test_f08_corner_defect_boundary_distance`, `test_f08_two_defects_independent_boundaries`, `test_mwpm_single_defect_boundary_parity` | **PASS** |
+| **R2.1** | Surface Code Error Correction | `test_f09_distance_3_surface_code_parameters`, `test_f09_distance_5_surface_code_parameters`, `test_f09_syndrome_extraction_single_x_error`, `test_f09_simulate_error_correction_subthreshold`, `test_surface_code_zero_error_rate` | **PASS** |
+| **R2.1** | Willow 3D Spacetime Syndromes | `test_f10_dynamic_simulation_execution`, `test_f10_spacetime_defect_extraction`, `test_f10_measurement_noise_tolerance`, `test_f10_willow_suppression_factor_evaluation`, `test_willow_25_cycles_distance_3_and_5_memory_preservation` | **PASS** |
+| **R2.2** | qLDPC [[144, 12, 12]] Bivariate Bicycle | `test_f11_bivariate_bicycle_dimensions`, `test_f11_cyclic_permutation_matrices`, `test_f11_css_orthogonality_commutation`, `test_f11_sparse_parity_checks`, `test_f11_syndrome_generation_single_qubit` | **PASS** |
+| **R2.2** | Magic State Distillation & Synthesis | `test_f12_15_to_1_bravyi_kitaev_target_state`, `test_f12_magic_state_fidelity`, `test_f12_distillation_error_suppression`, `test_f12_ccz_tripartite_entanglement`, `test_f12_transversal_clifford_compatibility` | **PASS** |
+| **R3.1** | MPS Bond Dimension & Entanglement | `test_f13_product_state_bond_dim_one`, `test_f13_bell_state_bond_dim_two`, `test_f13_entanglement_entropy_bipartition`, `test_f13_truncation_error_zero_on_ghz`, `test_100_qubit_ghz_generation_and_sampling`, `test_mps_200_plus_qubits_product_state` | **PASS** |
+| **R3.1** | Apple Silicon MLX GPU Statevector | `test_f14_mlx_availability_check`, `test_f14_mlx_bell_state_probabilities`, `test_f14_mlx_ghz_state_probabilities`, `test_f14_mlx_statevector_norm_preservation`, `test_qasm_parsed_dag_execution_on_mlx` | **PASS** |
+| **R3.2** | Clifford Pauli Frame Speed | `test_f15_tableau_initialization`, `test_f15_hadamard_conjugate_update`, `test_f15_phase_s_gate_update`, `test_f15_cnot_stabilizer_propagation`, `test_f15_high_speed_sampling_fidelity`, `test_pauli_frame_100_qubits_scale` | **PASS** |
+| **R3.2** | OpenQASM 3.0 Mid-Circuit Measure | `test_f16_qasm3_header_and_qubit_decl`, `test_f16_mid_circuit_measurement_instruction`, `test_f16_parametric_gates_parsing`, `test_f16_qasm_export_import_roundtrip`, `test_teleportation_arbitrary_state_feedforward` | **PASS** |
 
 ---
 
-## 5. Requirement Traceability Matrix
+## 5. Implementation Defect & Regression Assessment
 
-| Requirement | Description | Verifying Test(s) | Result |
-|---|---|---|---|
-| **REQ-QOS-01** | Darwin thread QoS `QOS_CLASS_BACKGROUND = 0x09` & `IOPOL_THROTTLE = 3` | `test_real_set_background_qos_on_darwin`, `test_qos_failure_returns_false` | **PASS** |
-| **REQ-QOS-02** | CPU quiescence ratio tracking via Mach host statistics | `test_real_get_cpu_quiescence_range`, `test_cpu_quiescence_zero_total_ticks` | **PASS** |
-| **REQ-QOS-03** | Thermal pressure state telemetry (Nominal..Critical) | `test_real_get_thermal_state_range`, `test_thermal_state_unsupported_defaults_nominal` | **PASS** |
-| **REQ-QOS-04** | Battery and AC power source detection via IOKit | `test_real_is_on_battery_type`, `test_power_sources_null_defaults_to_ac` | **PASS** |
-| **REQ-QOS-05** | Quiescence boundary decision logic (`is_system_idle`) | `test_is_system_idle_matrix` (14 parameter sets), `test_frame_tf01`..`tf07` | **PASS** |
-| **REQ-QOS-06** | Cross-platform graceful fallbacks (Linux, Windows) | `test_linux_platform_fallback`, `test_windows_platform_fallback` | **PASS** |
-| **REQ-POI-01** | Non-homogeneous Poisson hazard rate $\lambda(t)$ computation | `test_rate_at_idle_gate_boundary`, `test_rate_suppressed_below_idle_gate`, `test_rate_saturates_above_idle_gate` | **PASS** |
-| **REQ-POI-02** | Fatigue factor $\mathcal{F}$ scaling and asymptotic rate clamping | `test_rate_fatigue_bounds` | **PASS** |
-| **REQ-POI-03** | ToM urgency scaling factor $\mathcal{S}_{\text{ToM}}$ | `test_rate_tom_urgency_scaling` | **PASS** |
-| **REQ-POI-04** | Refractory dead-time gating ($T_{\text{refr}}$) | `test_refractory_dead_time_enforced`, `test_post_refractory_trigger_enabled` | **PASS** |
-| **REQ-POI-05** | Inverse transform exponential renewal sampling | `test_zero_rate_returns_infinite_interval`, `test_exponential_mean_and_variance` | **PASS** |
-| **REQ-POI-06** | Kolmogorov-Smirnov Goodness-of-Fit via Time-Rescaling | `test_kolmogorov_smirnov_time_rescaling` | **PASS** |
-| **REQ-TOM-01** | User hesitation and lexical hedging heuristics | `test_confident_conversation_nominal_urgency`, `test_hedging_and_doubt_boosts_urgency`, `test_ellipsis_and_trailing_pause_heuristics` | **PASS** |
-| **REQ-TOM-02** | Milestone urgency and project state tracking | `test_deadline_keywords_escalate_urgency`, `test_test_failures_in_project_state_scale_urgency` | **PASS** |
-| **REQ-TOM-03** | Speculative `DreamSeed` synthesis and field validation | `test_dream_seed_field_contracts`, `test_empty_messages_returns_empty_seeds` | **PASS** |
-| **REQ-MND-01** | Isolated headless dialectic (DMN Dreamer vs Zeno Arbiter) | `test_nominal_dream_cycle_completes` | **PASS** |
-| **REQ-MND-02** | Turn limit cap ($\le 5$ turns) | `test_hard_turn_limit_enforced` | **PASS** |
-| **REQ-MND-03** | Token budget ceiling ($\le 2500$ tokens) | `test_hard_token_cap_enforced` | **PASS** |
-| **REQ-MND-04** | Psychiatric anti-rumination cosine detection ($> 0.95$) & NA reset | `test_rumination_triggers_noradrenaline_reset` | **PASS** |
-| **REQ-MND-05** | Persistent rumination hard abort | `test_persistent_rumination_causes_hard_abort` | **PASS** |
-| **REQ-MND-06** | Instant preemption interrupt ($< 20\,\text{ms}$) | `test_immediate_preemption_at_start`, `test_preemption_during_active_deliberation` | **PASS** |
-| **REQ-E2E-01** | End-to-end forward cycle & SWR consolidation | `test_full_autonomous_subconscious_cycle` | **PASS** |
-| **REQ-E2E-02** | PreInvocation hook insight delivery | `test_full_autonomous_subconscious_cycle` | **PASS** |
-| **REQ-E2E-03** | Real-world preemption interrupt latency budget | `test_preemption_interrupt_latency_budget` | **PASS** |
-
----
-
-## 6. Implementation Defect Log
-
-- **Discovered Defects**: Zero (0) implementation defects discovered in implemented modules (`quanta/cognitive/darwin_idle.py` and `scripts/hooks/quanta_subconscious_hook.py`).
-- **Compatibility**: All tests cleanly interoperate with both the live hardware on Apple Silicon Darwin and contract doubles for modules pending upstream milestone integration.
-- **Readiness**: Test suite is fully ready for CI/CD integration and milestone verification.
+- **Implementation Defects Discovered**: Zero (0) regressions or broken interfaces.
+- **Precision Audits**: All gate unitaries satisfy $\|U^\dagger U - I\|_\infty < 10^{-12}$; custom gate registration strictly catches perturbations $\ge 10^{-12}$.
+- **Backward Compatibility**: All 60 inspected baseline tests across `tests/test_core.py`, `tests/test_m1_mathematical_theorems.py`, and `tests/test_tasks_6_10_13_15.py` remain green.
+- **Readiness Conclusion**: The E2E test suite is **COMPLETE, VERIFIED, AND READY FOR CONTINUOUS INTEGRATION**.

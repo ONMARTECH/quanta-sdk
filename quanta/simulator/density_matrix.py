@@ -72,6 +72,7 @@ class DensityMatrixSimulator:
         matrix = self._get_gate_matrix(gate_name, params)
         full = self._expand_gate(matrix, qubits)
         self._rho = full @ self._rho @ full.conj().T
+        self._enforce_cptp()
 
     def apply_kraus(
         self,
@@ -87,11 +88,64 @@ class DensityMatrixSimulator:
             kraus_ops: List of Kraus operators. Must satisfy sum(K.H @ K) = I.
             qubits: Target qubits.
         """
+        if not kraus_ops:
+            raise DensityMatrixError("Kraus operators list cannot be empty.")
+
+        target_dim = 2 ** len(qubits)
+        completeness = np.zeros((target_dim, target_dim), dtype=complex)
+        for k in kraus_ops:
+            k_mat = np.asarray(k, dtype=complex)
+            if k_mat.shape != (target_dim, target_dim):
+                raise DensityMatrixError(
+                    f"Kraus operator shape {k_mat.shape} does not match "
+                    f"target qubits dimension ({target_dim}, {target_dim})"
+                )
+            completeness += k_mat.conj().T @ k_mat
+
+        eye = np.eye(target_dim, dtype=complex)
+        dev = float(np.max(np.abs(completeness - eye)))
+        if dev >= 1e-12:
+            raise DensityMatrixError(
+                f"Kraus operators violate completeness relation: "
+                f"||sum K^dagger K - I||_inf = {dev:.2e} >= 1e-12"
+            )
+
         new_rho = np.zeros_like(self._rho)
         for k in kraus_ops:
             full_k = self._expand_gate(k, qubits)
             new_rho += full_k @ self._rho @ full_k.conj().T
         self._rho = new_rho
+        self._enforce_cptp()
+
+    def _enforce_cptp(self) -> None:
+        """Enforces Hermiticity, trace preservation Tr(rho)=1, and complete positivity rho >= 0."""
+        # 1. Hermiticity: rho = (rho + rho^dagger) / 2
+        self._rho = (self._rho + self._rho.conj().T) / 2.0
+
+        # 2. Trace preservation: |Tr(rho) - 1.0| < 1e-12
+        tr = np.trace(self._rho)
+        tr_val = float(np.real(tr))
+        if abs(tr_val - 1.0) >= 1e-12 or abs(float(np.imag(tr))) >= 1e-12:
+            raise DensityMatrixError(
+                f"Density matrix violates trace conservation: Tr(rho) = {tr_val:.4e} "
+                f"(deviation {abs(tr_val - 1.0):.2e} >= 1e-12)"
+            )
+
+        # 3. Complete positivity: eigenvalues >= -1e-12
+        evals, evecs = np.linalg.eigh(self._rho)
+        min_eval = float(np.min(evals))
+        if min_eval < -1e-12:
+            raise DensityMatrixError(
+                f"Density matrix violates complete positivity: "
+                f"min eigenvalue = {min_eval:.2e} < -1e-12"
+            )
+
+        # Clip numerical negative eigenvalues and re-normalize trace
+        clipped_evals = np.maximum(evals, 0.0)
+        s = float(np.sum(clipped_evals))
+        if s > 0:
+            clipped_evals /= s
+        self._rho = evecs @ np.diag(clipped_evals) @ evecs.conj().T
 
     def apply_depolarizing(self, qubit: int, p: float) -> None:
         """Applies depolarizing noise on a single qubit.
@@ -164,7 +218,12 @@ class DensityMatrixSimulator:
 
     def probabilities(self) -> np.ndarray:
         """Returns measurement probabilities: P(i) = rho[i,i]."""
-        return np.real(np.diag(self._rho))
+        probs = np.real(np.diag(self._rho))
+        probs = np.maximum(probs, 0.0)
+        s = float(np.sum(probs))
+        if s > 0:
+            probs /= s
+        return probs
 
     def sample(self, shots: int) -> dict[str, int]:
         """Samples measurement results from density matrix."""

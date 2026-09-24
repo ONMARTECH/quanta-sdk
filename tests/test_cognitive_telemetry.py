@@ -1,20 +1,20 @@
 """Unit and Integration tests for Quanta Cognitive Telemetry & Monitoring."""
 
-import io
 import json
 import math
 from pathlib import Path
+
 import pytest
 
+from quanta.cli import main
 from quanta.cognitive.telemetry import (
+    detect_workspace,
+    generate_dashboard_html,
+    get_telemetry_summary,
+    read_telemetry_events,
     record_decision_telemetry,
     record_hook_telemetry,
-    read_telemetry_events,
-    get_telemetry_summary,
-    generate_dashboard_html,
-    detect_workspace,
 )
-from quanta.cli import main
 
 
 class TestCognitiveTelemetry:
@@ -256,6 +256,7 @@ class TestCognitiveTelemetry:
 
         # Check telemetry file
         events = read_telemetry_events(telemetry_file=telemetry_file)
+        assert isinstance(events, list)
         # Arbiter by default logs to default telemetry, so test direct record or check summary
         record_decision_telemetry(
             goal=goal,
@@ -599,8 +600,9 @@ class TestCognitiveTelemetry:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Verifies quanta monitor -w --json outputs valid JSON streaming and exits cleanly on SIGINT."""
-        from quanta.cli import main
         from unittest.mock import patch
+
+        from quanta.cli import main
 
         t_file = tmp_path / "watch_json.jsonl"
         record_decision_telemetry(
@@ -633,6 +635,7 @@ class TestCognitiveTelemetry:
         """Verifies _save_state_atomically sanitizes conversation_id and falls back cleanly if directory is unwritable."""
         import re
         import stat
+
         from scripts.hooks.quanta_subconscious_hook import _save_state_atomically
 
         # Safe sanitization of path traversal conversation IDs

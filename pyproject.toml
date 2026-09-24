@@ -75,7 +75,7 @@ torch = ["torch>=2.0"]
 Homepage = "https://github.com/ONMARTECH/quanta-sdk"
 Repository = "https://github.com/ONMARTECH/quanta-sdk"
 Issues = "https://github.com/ONMARTECH/quanta-sdk/issues"
-Documentation = "https://onmartech.github.io/quanta-sdk/"
+Documentation = "https://quanta.onmartech.com/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["quanta"]
@@ -87,7 +87,7 @@ exclude = ["notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
-ignore = ["D100", "D104"]
+ignore = ["D100", "D104", "E501"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

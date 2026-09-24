@@ -8,6 +8,18 @@ ve yardımcı fonksiyonlar burada tanımlanır.
 import pytest
 
 from quanta import CX, H, X, circuit, measure
+from quanta.core.gates import GATE_REGISTRY
+
+_BUILTIN_GATE_KEYS = set(GATE_REGISTRY.keys())
+
+
+@pytest.fixture(autouse=True)
+def clean_gate_registry():
+    """Restores GATE_REGISTRY to built-in gates after each test to prevent cross-test pollution."""
+    yield
+    current_keys = set(GATE_REGISTRY.keys())
+    for k in current_keys - _BUILTIN_GATE_KEYS:
+        GATE_REGISTRY.pop(k, None)
 
 
 @pytest.fixture

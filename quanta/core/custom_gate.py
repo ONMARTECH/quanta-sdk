@@ -92,11 +92,15 @@ def custom_gate(
             f"Gate dimension must be power of 2. Got {dim}"
         )
 
-    # Validate unitarity: U @ U.H should be identity
-    product = mat @ mat.conj().T
-    if not np.allclose(product, np.eye(dim), atol=1e-8):
+    # Two-sided machine-precision unitarity: max(||U @ U.H - I||, ||U.H @ U - I||) < 1e-12
+    eye = np.eye(dim, dtype=complex)
+    dev_right = float(np.max(np.abs(mat @ mat.conj().T - eye)))
+    dev_left = float(np.max(np.abs(mat.conj().T @ mat - eye)))
+    max_dev = max(dev_right, dev_left)
+    if max_dev >= 1e-12:
         raise CustomGateError(
-            f"Gate '{name}' is not unitary. U @ U.H != I"
+            f"Gate '{name}' is not unitary within machine precision (tolerance 1e-12). "
+            f"max(||U @ U.H - I||_inf, ||U.H @ U - I||_inf) = {max_dev:.2e} >= 1e-12"
         )
 
     # Check name uniqueness
