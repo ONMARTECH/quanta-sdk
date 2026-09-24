@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this software or cite its theoretical findings, please cite it as below."
+authors:
+  - family-names: "Sarı"
+    given-names: "Abdullah Enes"
+    orcid: "https://orcid.org/0000-0002-8827-0587"
+    email: "info@onmartech.com"
+    affiliation: "ONMARTECH"
+title: "Quanta: Native High-Performance Quantum Computing Framework & Fault-Tolerant Architecture"
+version: 1.2.0
+date-released: 2026-09-24
+url: "https://quanta.onmartech.com"
+repository-code: "https://github.com/ONMARTECH/quanta-sdk"
+license: "MIT"
+keywords:
+  - "quantum computing"
+  - "fault-tolerant quantum computing"
+  - "quantum error correction"
+  - "qLDPC"
+  - "surface codes"
+  - "Daleckii-Krein autograd"
+  - "apple silicon metal"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Sarı"
+      given-names: "Abdullah Enes"
+      orcid: "https://orcid.org/0000-0002-8827-0587"
+      email: "info@onmartech.com"
+      affiliation: "ONMARTECH"
+  title: "Quanta SDK: Comprehensive Scientific Audit, Mathematical Verification, and 2026 Fault-Tolerant Quantum Computing Architecture"
+  journal: "ONMARTECH Research Publications"
+  month: 9
+  year: 2026
+  url: "https://quanta.onmartech.com/scientific_audit_september_2026/"

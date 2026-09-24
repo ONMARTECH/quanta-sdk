@@ -1,5 +1,5 @@
 # Quanta SDK: Comprehensive Scientific Audit & Theoretical Physics Inspection Report
-**Lead Author & Principal Architect**: Abdullah Enes SARI (<info@onmartech.com>) — ONMARTECH  
+**Lead Author & Principal Architect**: [Abdullah Enes SARI](https://orcid.org/0000-0002-8827-0587) [![ORCID](https://orcid.org/sites/default/files/images/orcid_16x16.png)](https://orcid.org/0000-0002-8827-0587) (<info@onmartech.com>) — ONMARTECH  
 **Co-Author & Peer Inspection**: Quanta Quantum Research Group & Antigravity Agentic AI Board  
 **Publication**: ONMARTECH Quantum Computing Technical Whitepaper Series (v1.2.0 Release)  
 **Date**: September 2026  
@@ -512,8 +512,18 @@ The comprehensive academic and engineering audit confirms that Quanta SDK has su
 
 ## 7. Citation & Authorship
 
-**Primary Author & Lead Architect**: Abdullah Enes SARI (`info@onmartech.com`)  
-*Founder & Head of AI/Quantum Engineering, ONMARTECH*
+**Primary Author & Lead Architect**: [Abdullah Enes SARI](https://orcid.org/0000-0002-8827-0587) [![ORCID](https://orcid.org/sites/default/files/images/orcid_16x16.png)](https://orcid.org/0000-0002-8827-0587) (`info@onmartech.com`)  
+*Founder & Head of AI/Quantum Engineering, ONMARTECH*  
+*ORCID*: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587)
+
+<div style="display: flex; align-items: center; gap: 15px; margin-top: 10px; margin-bottom: 15px;">
+  <img src="../assets/images/orcid_qr.png" alt="ORCID QR Code" width="90" style="border: 1px solid #ddd; border-radius: 6px; padding: 4px; background: white;" />
+  <div>
+    <strong>Author Digital Identity (ORCID)</strong><br />
+    <a href="https://orcid.org/0000-0002-8827-0587" target="_blank" rel="noopener noreferrer">https://orcid.org/0000-0002-8827-0587</a><br />
+    <small>Verified Researcher Record &bull; ONMARTECH Quantum Computing Initiative</small>
+  </div>
+</div>
 
 **Co-Author & Scientific Review Board**: Quanta Quantum Research Group & Antigravity Agentic AI Board
 
@@ -524,7 +534,8 @@ The comprehensive academic and engineering audit confirms that Quanta SDK has su
   journal={ONMARTECH Research Publications},
   year={2026},
   month={September},
-  url={https://quanta.onmartech.com/scientific_audit_september_2026/}
+  url={https://quanta.onmartech.com/scientific_audit_september_2026/},
+  note={ORCID: 0000-0002-8827-0587}
 }
 ```
 

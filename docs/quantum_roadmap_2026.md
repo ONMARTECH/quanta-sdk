@@ -1,5 +1,5 @@
 # Quanta SDK: September 2026 Competitive Positioning Matrix & Multi-Year Strategic Roadmap (2026 – 2028)
-**Lead Author & Chief Architect**: Abdullah Enes SARI (<info@onmartech.com>) — ONMARTECH  
+**Lead Author & Chief Architect**: [Abdullah Enes SARI](https://orcid.org/0000-0002-8827-0587) [![ORCID](https://orcid.org/sites/default/files/images/orcid_16x16.png)](https://orcid.org/0000-0002-8827-0587) (<info@onmartech.com>) — ONMARTECH  
 **Co-Author & Strategic Planning**: Quanta Quantum Research Group & Antigravity Agentic AI Board  
 **Publication**: ONMARTECH Strategic Whitepaper Series (v1.2.0 Edition)  
 **Date**: September 2026  
@@ -230,8 +230,18 @@ By bridging exact mathematical rigor with hardware-accelerated computation and f
 
 ## 7. Citation & Authorship
 
-**Primary Author & Chief Architect**: Abdullah Enes SARI (`info@onmartech.com`)  
-*Founder & Head of AI/Quantum Engineering, ONMARTECH*
+**Primary Author & Chief Architect**: [Abdullah Enes SARI](https://orcid.org/0000-0002-8827-0587) [![ORCID](https://orcid.org/sites/default/files/images/orcid_16x16.png)](https://orcid.org/0000-0002-8827-0587) (`info@onmartech.com`)  
+*Founder & Head of AI/Quantum Engineering, ONMARTECH*  
+*ORCID*: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587)
+
+<div style="display: flex; align-items: center; gap: 15px; margin-top: 10px; margin-bottom: 15px;">
+  <img src="../assets/images/orcid_qr.png" alt="ORCID QR Code" width="90" style="border: 1px solid #ddd; border-radius: 6px; padding: 4px; background: white;" />
+  <div>
+    <strong>Author Digital Identity (ORCID)</strong><br />
+    <a href="https://orcid.org/0000-0002-8827-0587" target="_blank" rel="noopener noreferrer">https://orcid.org/0000-0002-8827-0587</a><br />
+    <small>Verified Researcher Record &bull; ONMARTECH Quantum Computing Initiative</small>
+  </div>
+</div>
 
 **Co-Author & Strategic Planning Board**: Quanta Quantum Research Group & Antigravity Agentic AI Board
 
@@ -242,7 +252,8 @@ By bridging exact mathematical rigor with hardware-accelerated computation and f
   journal={ONMARTECH Strategic Reports},
   year={2026},
   month={September},
-  url={https://quanta.onmartech.com/quantum_roadmap_2026/}
+  url={https://quanta.onmartech.com/quantum_roadmap_2026/},
+  note={ORCID: 0000-0002-8827-0587}
 }
 ```
 
