@@ -67,7 +67,7 @@ class BivariateBicycleCode:
         H_X @ H_Z^T = A @ B + B @ A = 2 AB = 0 (mod 2).
 
     Args:
-        l: Cyclic shift dimension along x (default: 12).
+        ell: Cyclic shift dimension along x (default: 12).
         m: Cyclic shift dimension along y (default: 6).
         A_poly: List of (power_x, power_y) terms in polynomial A(x, y).
             Default: Gross code [(3, 0), (0, 1), (0, 2)] -> x^3 + y + y^2.

@@ -61,3 +61,54 @@ Integrity mode: development
 ### Test Bütünlüğü ve Falsifiability
 - [ ] Hiçbir iddia testi olmadan raporlanamaz: Her eksiklik veya gelişim alanı için `tests/` dizininde çalıştırılabilir bir test, kıyaslama (benchmark) veya property-based test (Hypothesis) yazılmış olmalıdır.
 - [ ] Tüm yeni testler `/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/python -m pytest` altında %100 başarıyla geçmeli, mevcut 1600+ testte hiçbir regresyon oluşmamalıdır.
+
+
+## 2026-09-24T20:14:23Z
+
+Implement Plastic Biomorphic Cognitive Immunity (LTP/LTD-governed Negative Engrams) and Multi-Branch Decision Tree Deliberation (DAG Rollouts) in Quanta SDK with seamless Antigravity hook integration.
+
+Working directory: /Users/aes/Antigravity Projects/Alfa/quanta
+Integrity mode: development
+
+## Requirements
+
+### R1. Plastic Negative Engrams & Cognitive Immunity (LTP/LTD)
+Implement an adaptive inhibitory memory layer in `FastBiomorphicMemory` and `CognitiveMemoryManager`:
+- Negative engrams (`category="inhibitor"` or `"anti_pattern"`) must feature dynamic synaptic weights ($V_{\text{inh}}$) and context tags (`runtime`, `library`, `os`, etc.).
+- **Long-Term Potentiation (LTP)**: Repeated failure in the same context progressively deepens the inhibition strength and increases salience.
+- **Long-Term Depression (LTD) & Context Switching**: If an operation succeeds under a different or updated context, the inhibitor relaxes its weight and documents the contextual divergence.
+- SWR Replay serialization in `quanta_subconscious_hook.py` must include a designated `🚫 İnhibitör / Anti-Pattern` line alongside `🔒 Çekirdek` and `⚡ Geçici`.
+
+### R2. Non-Binary Multi-Branch Decision Manifold (DAG Rollouts)
+Extend Quanta's cognitive deliberation to support multi-option branching ($A, B, C, D, E \to \text{sub-branches}$):
+- Model decision trajectories as a directed acyclic graph (DAG) or multi-branch tensor superposition.
+- Provide biomorphic evaluation that cascades through downstream consequences (e.g. secondary trade-offs, maintenance costs, latency).
+- Prefrontal Zeno Arbiter prunes dominated sub-branches while Generative Dreamer (DMN) maintains exploratory lateral paths.
+
+### R3. Antigravity Hook & Feedback Pipeline Integration
+Wire up bidirectional telemetry between Antigravity and Quanta:
+- Add a fail-safe `PostToolUse` handler to `scripts/hooks/quanta_subconscious_hook.py` (and update `~/.gemini/config/hooks.json`).
+- When a tool emits an error (`error` in payload or non-zero exit), automatically register or potentiate the corresponding negative engram.
+- When subsequent tools succeed in related tasks, depress or clear temporary inhibitory blocks.
+
+### R4. Architectural Invariants, Code Quality & Test Suite
+Maintain 100% adherence to Quanta's framework standards:
+- All code, comments, and docstrings in English (Google-style docstrings, 100-character line limit).
+- Type hints on all public interfaces, zero Ruff lint errors, and passing `mypy quanta/ --ignore-missing-imports`.
+- Comprehensive unit and E2E integration test suite in `tests/test_cognitive_plasticity.py` or new dedicated test modules verifying LTP/LTD dynamics, hook execution (< 25ms latency), and zero regression across the existing test suite.
+
+## Acceptance Criteria
+
+### Biomorphic Memory & Plasticity
+- [ ] `FastBiomorphicMemory` and `CognitiveMemoryManager` support recording, reinforcing (LTP), and depressing (LTD) negative engrams.
+- [ ] Negative engrams decay or relax when validated against positive context switches.
+- [ ] Hook output produces formatted `🚫 İnhibitör:` lines formatted identically to the biological SWR standard.
+
+### Hook Pipeline & Latency
+- [ ] `PostToolUse` handler executes fail-safe with `< 25ms` latency, never interrupting tool workflows.
+- [ ] Non-zero exit status or tool error triggers plastic negative engram updates.
+
+### Quality & Test Suite
+- [ ] `ruff check quanta/` and `mypy quanta/ --ignore-missing-imports` pass with zero errors.
+- [ ] All new tests pass via `/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/pytest`.
+- [ ] Existing cognitive test suites (`test_cognitive_*.py`, `test_subconscious*.py`) suffer zero regressions.

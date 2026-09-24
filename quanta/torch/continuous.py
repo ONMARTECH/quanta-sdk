@@ -793,7 +793,7 @@ class ContinuousResonantLayer(nn.Module):
 
         Args:
             x: Input feature tensor of shape (B, in_features), (in_features,),
-               or (*batch, in_features).
+                or (*batch, in_features).
 
         Returns:
             Expectation tensor of shape (B, out_features), (out_features,),
