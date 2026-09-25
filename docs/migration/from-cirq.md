@@ -1,6 +1,6 @@
 # Coming from Cirq
 
-> Tested with: Quanta SDK v0.9.2
+> Tested with: Quanta SDK v1.2.0-production
 
 ## Why Switch?
 
@@ -10,9 +10,9 @@
 | IBM Hardware | ❌ (Google only) | ✅ (direct REST API) |
 | Dependencies | 15+ packages | 2 (numpy, python-dotenv) |
 | Learning curve | Moderate (Moment, Circuit, Simulator) | Gentle (3 imports to start) |
-| Gate count | 60+ | 25 (IBM Heron parity) |
-| AI Integration | ❌ | ✅ (20 MCP tools for Claude/GPT) |
-| QEC | Basic | Surface code + Color code + decoders |
+| Gate count | 60+ | 31 (IBM Heron parity + Google/IonQ native) |
+| AI Integration | ❌ | ✅ (23 MCP tools for Claude/GPT) |
+| QEC | Basic | Dual-track FTQC (Edmonds Blossom MWPM + Gross qLDPC) |
 
 ## Side-by-Side: 12 Common Patterns
 

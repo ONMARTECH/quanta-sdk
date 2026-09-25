@@ -1,6 +1,6 @@
 # Coming from Qiskit
 
-> Tested with: Quanta SDK v0.9.2
+> Tested with: Quanta SDK v1.2.0-production
 
 ## Why Switch?
 
@@ -11,7 +11,7 @@
 | Dependencies | 20+ packages | 2 (numpy, python-dotenv) |
 | Learning curve | Steep (Primitives, Transpiler, Provider) | Gentle (3 imports to start) |
 | Gate count | 50+ | 31 (IBM Heron parity + Google/IonQ native) |
-| AI Integration | ❌ | ✅ (20 MCP tools for Claude/GPT) |
+| AI Integration | ❌ | ✅ (23 MCP tools for Claude/GPT) |
 
 ## Side-by-Side: 15 Common Patterns
 

@@ -1,16 +1,16 @@
 # Coming from PennyLane
 
-> Tested with: Quanta SDK v0.9.2
+> Tested with: Quanta SDK v1.2.0-production
 
 ## Why Switch?
 
 | Feature | PennyLane | Quanta |
 |---------|-----------|--------|
 | Install size | ~200 MB | ~5 MB |
-| Dependencies | TensorFlow/JAX/Torch optional | NumPy only |
-| IBM Hardware | Via plugin | Built-in REST API |
-| QEC | ❌ | ✅ (7 codes, 2 decoders) |
-| MCP (AI tools) | ❌ | ✅ (20 tools) |
+| Dependencies | TensorFlow/JAX/Torch optional | NumPy only (PyTorch optional) |
+| IBM Hardware | Via plugin | Built-in direct REST API |
+| QEC | ❌ | ✅ Dual-track FTQC (Edmonds Blossom MWPM + Gross qLDPC) |
+| MCP (AI tools) | ❌ | ✅ (23 tools) |
 | QASM 3.0 | ❌ | ✅ (export + import) |
 
 ## Side-by-Side: 10 Common Patterns

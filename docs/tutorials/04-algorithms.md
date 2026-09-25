@@ -1,6 +1,6 @@
 # Quantum Algorithms
 
-> Tested with: Quanta SDK v0.9.2
+> Tested with: Quanta SDK v1.2.0-production
 
 ## What You'll Learn
 

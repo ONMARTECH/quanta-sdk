@@ -1,7 +1,7 @@
 # MCP Server
 
-Quanta's MCP server exposes 20 tools, 5 resources, and 4 guided prompts
-for AI assistants (Claude, GPT, etc.).
+Quanta's MCP server exposes **23 tools**, 5 resources, and 4 guided prompts
+for AI assistants (Claude, GPT, Gemini, etc.).
 
 ## Installation
 
@@ -10,7 +10,7 @@ pip install "quanta-sdk[mcp]"
 fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 ```
 
-## Tools
+## Tools (23 Tools)
 
 | Tool | Category | Description |
 |------|----------|-------------|
@@ -28,12 +28,15 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `run_on_ibm` | Hardware | Run on IBM Quantum hardware |
 | `ibm_backends` | Hardware | List IBM quantum computers |
 | `ibm_job_result` | Hardware | Poll job status & fetch results |
-| `surface_code_simulate` | Research | Surface code QEC simulation |
-| `compare_decoders` | Research | Compare MWPM vs Union-Find decoders |
+| `surface_code_simulate` | 2026 FTQC | Surface code QEC simulation |
+| `compare_decoders` | 2026 FTQC | Compare Edmonds Blossom vs heuristics |
 | `qml_classify` | Business | Quantum machine learning classification |
 | `optimize_circuit` | Core | Compile and optimize quantum circuits |
 | `option_greeks` | Business | Compute option Greeks (Δ,Γ,ν,Θ,ρ) |
-| `qec_diagnose` | Research | Diagnose errors from syndrome measurement |
+| `qec_diagnose` | 2026 FTQC | Diagnose errors from syndrome measurement |
+| `estimate_fault_tolerant_cost` | 2026 FTQC | Estimate FTQC physical qubit & runtime overhead |
+| `quanta_reasoning_eval` | Cognitive | Biomorphic Zeno cognitive decision arbitration |
+| `transpile_for_target` | Compilation | Transpile circuit for specific hardware topology |
 
 ## Resources
 

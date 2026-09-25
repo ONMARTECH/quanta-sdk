@@ -1,19 +1,20 @@
 # Quanta SDK
 
-Python için yapay zeka odaklı, modüler ve yüksek başarımlı kuantum hesaplama SDK'si. **v1.1.0** — [PyPI](https://pypi.org/project/quanta-sdk/)
+Python için yapay zeka odaklı, modüler ve yüksek başarımlı kuantum hesaplama SDK'si. **v1.2.0-production** — [PyPI](https://pypi.org/project/quanta-sdk/) · [Dokümantasyon](https://quanta.onmartech.com/) · [Zenodo DOI](https://doi.org/10.5281/zenodo.22952779)
 
 ## Genel Bakış
 
-Quanta, yapay zeka ajanları (MCP), derin öğrenme araştırmacıları ve üretim iş yükleri için tasarlanmış çok katmanlı modern bir kuantum çalışma ortamı sunar:
+Quanta SDK, 2026 yılı kuantum bilişim standartlarında tasarlanmış, yapay zeka ajanları (MCP), derin öğrenme araştırmacıları ve hataya dayanıklı kuantum hesaplama (FTQC) iş yükleri için geliştirilmiş bağımsız bir kuantum yazılım mimarisidir. Sistem 5 temel bilimsel paradigma üzerine kuruludur:
 
-- **Derin Öğrenme Katmanı (`quanta.torch`)**: PyTorch `nn.Module` tabanlı diferansiyellenebilir `QuantumLayer` (analitik parameter-shift gradyanları) ve sürekli zamanlı `ContinuousResonator` ile biyomorfik kuantum beyni.
-- **Deklaratif Katman (Katman 3)**: `search()`, `optimize()`, `vqe()`, `factor()`, `resolve()` — kapı seviyesi detaylara girmeden doğrudan algoritmik çözüm.
-- **Devre DSL Katmanı (Katman 2)**: `@circuit`, 31 yerleşik kapı (H, CX, RZ, MS, ECR vb.), parametrik rotasyonlar ve ölçüm yönetimi.
-- **Fiziksel & Donanım Hızlandırıcı Katmanı (Katman 1)**:
-  - **Apple Silicon Metal/MLX**: M-serisi çiplerde birleşik bellek (Unified Memory) tensör kasılmalarıyla **404 kat hızlanma**.
-  - **NVIDIA cuStateVec**: Büyük ölçekli GPU durum vektörü simülasyonu.
-  - **Çoklu Bulut Kuantum Donanımı**: Gerçek donanım üzerinde IonQ Cloud REST API v0.3, IBM Quantum Heron r3 (156 qubit) ve Google Cirq Sycamore entegrasyonu.
-- **Ajan Odaklı MCP Katmanı**: AI ajanlarının (Claude, Gemini, GPT) kuantum hesaplamalarını doğrudan yönetebilmesi için **23 Model Context Protocol (MCP) aracı**.
+1. **Sıfır Bağımlılıklı İlk-İlkeler Çekirdeği (Local-First Core)**: Ağır C++/LLVM derleme zincirleri veya CUDA kısıtları olmadan, saf Python/NumPy ile taşınabilir 31 yerleşik kuantum kapısı (IBM Heron, Google Sycamore, IonQ yerel kapı setleri).
+2. **Apple Silicon Metal / MLX Sıfır-Kopya GPU Hızlandırma**: Birleşik bellek (Unified Memory) mimarisinde CPU-GPU veri kopyalama maliyetlerini sıfırlayan Metal/MLX tensör motoru ve SIMD vektörize >3.13M kapı/sn Clifford simülatörü.
+3. **Sürekli Hilbert Gradyanları & Daleckii-Krein Autograd (`quanta.torch`)**: Padé sapmalarını sıfırlayan $10^{-15}$ hassasiyetinde kapalı formlu Fréchet matris türevi, dinamik Lie cebiri ($\dim(\mathfrak{g})$) tabanlı barren plateau analizi ve biyomorfik kuantum rezonans beyni (`ContinuousResonator`, `BiomorphicResonantBrain`).
+4. **2026 Çift-Kanal Hata Toleransı Motoru (Dual-Track FTQC)**:
+   - **Track A (2D Topolojik)**: Açgözlü eşleme açıklarını kapatan Edmonds Blossom MWPM dekoderi ve Google Willow uyumlu 3D uzay-zaman sendrom döngüleri.
+   - **Track B (Yüksek Dereceli qLDPC)**: 2D yüzey kodlarına kıyasla $12\times$ qubit tasarrufu sağlayan kanonik Gross $[[144, 12, 12]]$ Bivariate Bicycle kodu ve yerel Normalized Min-Sum BP-OSD-0 dekoderi.
+   - **Non-Clifford Evrensellik**: 15-to-1 Bravyi-Kitaev sihirli durum damıtma (magic state distillation) fabrikası ($\epsilon_{\text{out}} \le 35 p^3$) ve örgü cerrahisi (lattice surgery).
+5. **Ajan Odaklı MCP Katmanı**: Otonom AI ajanlarının (Claude, Gemini, GPT) kuantum hesaplamalarını doğrudan yönetebilmesi için **23 Model Context Protocol (MCP) aracı**.
+6. **Doğrulanabilir Bilimsel Titizlik**: 2.076 adet tam otomatize, regresyonsuz test ile üniterlik ($\|U^\dagger U - I\| < 10^{-14}$) ve CPTP iz korunum garantisi.
 
 ---
 
@@ -107,23 +108,27 @@ pytest
 ---
 
 ## Dokümantasyon
+ 
+Detaylı Türkçe ve İngilizce kılavuzlar için dokümantasyon merkezini ziyaret edebilirsiniz:
 
-Detaylı Türkçe ve İngilizce kılavuzlar için `docs/` dizinini inceleyebilirsiniz:
-
+- [Resmi Dokümantasyon Portalı](https://quanta.onmartech.com/)
+- [Quanta Mimari Makalesi (Whitepaper)](papers/quanta_framework_paper.md)
 - [Mimari Detayları](ARCHITECTURE_TR.md)
 - [Kapsamlı Özellikler ve Kapı Seti](FEATURES_TR.md)
 - [Diğer SDK'lar ile Karşılaştırma](COMPARISON_TR.md)
 - [Kurulum Kılavuzu](INSTALL_TR.md)
-- [Akademik Teori ve Kanıtlar](theory/quantum_brain_frontiers.md)
+- [Akademik Teori ve Monograflar](theory/quantum_brain_frontiers.md)
 
 ---
 
-## Geliştirici & İletişim
+## Geliştirici & Yazar Künyesi
 
-**Abdullah Enes SARI** — ONMARTECH  
-E-posta: info@onmartech.com  
-Web: [onmartech.com](https://onmartech.com)
+- **Baş Mimar & Yazar**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
+- **Kurum**: ONMARTECH Kuantum Teknolojileri İnisiyatifi (`info@onmartech.com`)
+- **Web**: [onmartech.com](https://onmartech.com) · [quanta.onmartech.com](https://quanta.onmartech.com)
+- **Kalıcı Yazılım DOI**: [10.5281/zenodo.22952779](https://doi.org/10.5281/zenodo.22952779)
 
 ## Lisans
 
 Apache License 2.0
+

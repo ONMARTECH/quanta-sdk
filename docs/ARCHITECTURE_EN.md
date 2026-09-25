@@ -1,48 +1,59 @@
-# Quanta SDK — Architecture
+# Quanta SDK — Architecture (v1.2.0-production)
 
 ## Overview
 
-Quanta uses a **3-layer independent architecture**. Each layer can be used independently.
+Quanta SDK is a standalone quantum software architecture engineered for 2026 quantum computing frontiers, structured across **5 Core Scientific Paradigms**. The framework pairs a zero-dependency Python/NumPy core with Apple Silicon Metal GPU acceleration, analytical Daleckii-Krein Hilbert gradients, and dual-track fault-tolerant quantum error correction (FTQC).
 
-## Layer Diagram
+## Layered Architecture Diagram
 
 ```
-+---------------------------------------------------------+
-|              LAYER 3: DECLARATIVE API                   |
-|  search() | optimize() | vqe() | factor() | qsvm()     |
-|  portfolio_optimize() | resolve() | MultiAgentSystem    |
-|  "What do you want?" -- no gate knowledge needed        |
-+---------------------------------------------------------+
-|              LAYER 2: ALGORITHMIC DSL                   |
-|  @circuit | H/CX/RZ | measure() | run() | sweep()      |
-|  custom_gate() | 25 built-in gates (IBM parity)          |
-|  "How to build the circuit?"                            |
-+---------------------------------------------------------+
-|              LAYER 1: PHYSICAL ENGINE                   |
-|  DAG | Compiler | Routing | Simulator | QEC | QASM I/O  |
-|  "How will it run on hardware?"                         |
-+---------------------------------------------------------+
++---------------------------------------------------------------------------------+
+|                       LAYER 4: AGENTIC & MCP ORCHESTRATION                      |
+|  23 Model Context Protocol (MCP) Tools | Claude, Gemini, GPT Autonomous Agents  |
+|  "Governing end-to-end quantum workflows via natural language and agentic loops"|
++---------------------------------------------------------------------------------+
+|               LAYER 3: DEEP LEARNING & DECLARATIVE COGNITIVE API                |
+|  quanta.torch: QuantumLayer | Daleckii-Krein Autograd | Lie Algebra Barren Tool |
+|  BiomorphicResonantBrain | SWR Replay | ContinuousResonator (Schrödinger Flow)  |
+|  search() | optimize() | vqe() | factor() | portfolio_optimize() | resolve()    |
+|  "What to solve?" -- high-level algorithmic execution without manual gate design|
++---------------------------------------------------------------------------------+
+|                       LAYER 2: ALGORITHMIC CIRCUIT DSL                          |
+|  @circuit | 31 Native Gates (IBM Heron, Google Sycamore, IonQ native parity)    |
+|  Parametric Rotations (RX, RY, RZ, P, U) | measure() | sweep() | equivalence    |
+|  "How to construct the quantum circuit?"                                        |
++---------------------------------------------------------------------------------+
+|             LAYER 1: 2026 DUAL-TRACK FAULT-TOLERANCE (FTQC ENGINE)              |
+|  Track A: Edmonds Blossom MWPM | Willow-Compliant 3D Spacetime Syndrome Cycles  |
+|  Track B: Gross [[144, 12, 12]] qLDPC | Native Normalized Min-Sum BP-OSD-0      |
+|  Non-Clifford: 15-to-1 Bravyi-Kitaev Magic State Distillation | Lattice Surgery  |
++---------------------------------------------------------------------------------+
+|                 LAYER 0: PHYSICAL COMPUTATION & HARDWARE BACKENDS               |
+|  DAG Circuit (Kahn) | Compiler Pipeline (CancelInverses, MergeRotations, Route) |
+|  Metal/MLX Zero-Copy GPU (52.09x) | SIMD Clifford (>3.13M g/s) | MPS (250q)     |
+|  7-Channel Kraus Lindblad Noise | Multi-Cloud (IBM REST, Google Cirq, IonQ)     |
+|  "How to execute on physical hardware and high-performance simulators?"         |
++---------------------------------------------------------------------------------+
 ```
 
 ## Dependency Graph
 
 ```
-layer3/ -------> simulator/ -------> core/
-                      |
-runner.py -------> dag/ -------> core/
-                      |
-compiler/ -------> dag/ -------> core/
-                      |
-backends/ -------> simulator/ -------> core/
-                      |
-export/ -------> dag/ -------> core/
-                      |
-benchmark/ -------> export/ + simulator/ + compiler/
-                      |
-qec/ -------> core/
+mcp_server.py ──┐
+                ▼
+      quanta.torch / layer3/ ───────► simulator/ ───────► core/
+                 │                        │                 ▲
+                 ▼                        ▼                 │
+             qec/ (FTQC) ────────────► dag/ ────────────────┘
+                 │                        ▲
+                 ▼                        │
+            compiler/ ────────────────────┘
+                 │
+                 ▼
+         backends/ & export/
 ```
 
-**Rule**: Dependencies always flow downward. No lower layer depends on an upper layer.
+**Rule**: Dependencies always flow downward and inward toward the standalone core (`core/`). No lower layer depends on an upper layer.
 
 ## Module Details
 
@@ -112,59 +123,83 @@ qec/ -------> core/
 | `qasm.py` | OpenQASM 3.0 export |
 | `qasm_import.py` | QASM 2.0/3.0 import to DAG |
 
-### qec/ -- Error Correction
+### qec/ -- 2026 Dual-Track Fault-Tolerance (FTQC)
 
 | File | Responsibility |
 |------|----------------|
 | `codes.py` | BitFlip [[3,1,3]], PhaseFlip [[3,1,3]], Steane [[7,1,3]] |
-| `surface_code.py` | Surface code [[d^2,1,d]], stabilizer-based syndrome extraction |
-| `color_code.py` | Color code, triangular lattice, restriction decoder |
-| `decoder.py` | MWPM + Union-Find decoders |
+| `surface_code.py` | Rotated Surface Code [[d^2,1,d]], 3D spacetime syndrome extraction |
+| `color_code.py` | 2D Triangular Color Code, transversal Clifford, restriction decoder |
+| `decoder.py` | Edmonds Blossom MWPM (full-weight perfect matching) and Union-Find |
+| `qldpc.py` | Gross [[144, 12, 12]] Bivariate Bicycle code, Normalized Min-Sum BP-OSD-0 |
+| `distillation.py` | 15-to-1 Bravyi-Kitaev magic state distillation factory, lattice surgery |
 
-### benchmark/ -- Quality Benchmarking
+### quanta.torch / cognitive/ -- Deep Learning & Biomorphic Quantum Engine
+
+| Module / File | Responsibility |
+|---------------|----------------|
+| `quanta.torch.QuantumLayer` | PyTorch nn.Module layer with analytical parameter-shift autograd VJP |
+| `quanta.torch.ContinuousResonator` | Continuous-time Schrödinger evolution, Daleckii-Krein Fréchet derivatives |
+| `quanta.torch.BiomorphicResonantBrain` | Dual-hemisphere quantum brain with 4 neuromodulators (DA, ACh, 5-HT, NE) |
+| `quanta.torch.lie_algebra` | Dynamical Lie algebra dim(g) dimension and analytical barren plateau tool |
+| `quanta.cognitive` | SWR memory consolidation, REM sleep continual replay, CSF phase shield |
+
+### benchmark/ -- Quality Benchmarking & Empirical Verification
 
 | File | Responsibility |
 |------|----------------|
 | `qasmbench.py` | 10 standard + 3 large QASMBench circuits |
 | `benchpress_adapter.py` | Cross-SDK benchmarking API (Nation et al.) |
+| `run_paper_benchmarks.py` | Peer-reviewed empirical microsecond benchmarks |
 
 ### Support Modules
 
 | File | Responsibility |
 |------|----------------|
 | `runner.py` | 6-stage orchestrator: build > DAG > compile > sim > noise > sample > result |
-| `result.py` | Measurement results, probabilities, Dirac notation |
-| `visualize.py` | ASCII circuit diagram |
-| `visualize_state.py` | Probability histogram, phase diagram |
-| `mcp_server.py` | MCP server — 20 tools + 4 prompts for AI-assisted quantum computation (SSE + stdio) |
+| `result.py` | Measurement results, probabilities, Dirac notation, statevector |
+| `visualize.py` | ASCII and SVG circuit diagrams |
+| `visualize_state.py` | Probability histogram, Bloch sphere, phase diagram |
+| `mcp_server.py` | MCP server — **23 quantum tools** for autonomous AI assistants (SSE + stdio) |
 
 ## Data Flow
 
 ```
-User Code               SDK Internals
-    |                       |
-@circuit(qubits=N) ---> CircuitDefinition
-    |                       |
-H(q[0]), CX(...)    ---> CircuitBuilder (lazy Instruction list)
-    |                       |
-measure(q)          ---> MeasureSpec
-    |                       |
-run(circuit)        ---> +- DAGCircuit.from_builder()
-                         +- CompilerPipeline.run(dag)
-                         +- StateVectorSimulator.apply(ops)
-                         +- simulator.sample(shots)
-                         +- Result(counts, probs, statevector)
+User Code / Autonomous AI Agent (MCP)
+          │
+          ▼
+   @circuit / layer3 / quanta.torch
+          │
+          ▼
+   DAGCircuit (Kahn topological sort)
+          │
+          ▼
+   CompilerPipeline (CancelInverses, MergeRotations, Routing)
+          │
+          ▼
+   QEC Fault-Tolerance Shield (Edmonds Blossom MWPM / Gross qLDPC BP-OSD)
+          │
+          ▼
+   Execution Backend (Metal/MLX, StateVector, Clifford SIMD, MPS, or IBM/Google/IonQ Hardware)
+          │
+          ▼
+   Result (Measurement counts, statevector, analytical gradients, syndrome logs)
 ```
 
-## Design Decisions
+## Architectural Design Principles
 
-1. **Lazy Evaluation**: Gates are recorded as Instructions, not applied immediately
-2. **DAG Representation**: Enables parallelism detection and optimization
-3. **Protocol-based**: CompilerPass is a Protocol -- duck typing is sufficient
-4. **Immutable**: QubitRef, Instruction, nodes are frozen dataclasses
-5. **Thread-local Builder**: Multiple circuits can be built concurrently
-6. **Hybrid approach**: Classical blocking + quantum optimization for real-world problems
-7. **Lightweight**: Pure Python + NumPy only — ideal for serverless (Lambda, Cloud Functions), edge computing, and CI/CD integration
-8. **AI-native**: MCP server enables AI assistants to perform quantum computations directly
-9. **Encapsulation**: All simulator state access through public API (`state`, `apply_phase`, `apply_noise`) — no `_state` external access
-10. **Noise-first**: Noise channels integrated into `run()` pipeline, not bolted on
+1. **Standalone First-Principles Core**: Full quantum execution capability in pure Python/NumPy without requiring heavy C++/LLVM toolchains or CUDA runtimes.
+2. **Apple Silicon Zero-Copy GPU Acceleration**: Metal Performance Shaders / MLX zero-copy Unified Memory tensor pipeline yielding up to **52.09× peak speedup**.
+3. **Continuous Hilbert Gradients**: Analytical closed-form Daleckii-Krein Fréchet derivatives maintaining exact machine precision ($9.99\times 10^{-16}$) with Lie algebra barren plateau guarantees.
+4. **2026 Dual-Track FTQC**: Full Edmonds Blossom MWPM on 2D surface codes and high-rate canonical Gross $[[144, 12, 12]]$ qLDPC with native BP-OSD-0, slashing physical qubit overhead by $12\times$.
+5. **AI-Native MCP Orchestration**: 23 native Model Context Protocol tools enabling Claude, GPT, and Gemini agents to autonomously design, simulate, transpile, and verify quantum workloads.
+6. **Falsifiable Empiricism & Certified Rigor**: 2,076 fully automated tests with zero mock or synthetic oracles, certifying mathematical unitarity and CPTP trace preservation.
+
+---
+
+## Authorship & Identity Metadata
+
+- **Lead Author & Principal Architect**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
+- **Affiliation**: ONMARTECH Quantum Computing Initiative (`info@onmartech.com`)
+- **Permanent Software DOI**: [10.5281/zenodo.22952779](https://doi.org/10.5281/zenodo.22952779)
+

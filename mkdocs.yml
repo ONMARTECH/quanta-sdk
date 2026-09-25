@@ -141,9 +141,19 @@ nav:
     - From Qiskit: migration/from-qiskit.md
     - From PennyLane: migration/from-pennylane.md
     - From Cirq: migration/from-cirq.md
+  - Architecture & Features:
+    - "System Architecture (EN)": ARCHITECTURE_EN.md
+    - "Features & Gate Catalog (EN)": FEATURES_EN.md
+    - "Cross-SDK Comparison (EN)": COMPARISON_EN.md
+    - "Empirical Benchmarks": BENCHMARK.md
+  - "Türkçe Dokümantasyon":
+    - "Genel Bakış (TR)": README_TR.md
+    - "Sistem Mimarisi (TR)": ARCHITECTURE_TR.md
+    - "Özellikler & Kapı Seti (TR)": FEATURES_TR.md
+    - "SDK Karşılaştırması (TR)": COMPARISON_TR.md
+    - "Kurulum Kılavuzu (TR)": INSTALL_TR.md
+    - "Yük Testi & Başarım (TR)": LOADTEST_TR.md
   - Domain Packs: domain-packs.md
-  - Architecture: ARCHITECTURE_EN.md
-  - Comparison: COMPARISON_EN.md
 
 extra_javascript:
   - javascripts/mathjax.js

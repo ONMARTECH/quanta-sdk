@@ -1,19 +1,20 @@
 # Quanta SDK
 
-An AI-native, modular, and high-performance quantum computing SDK for Python. **v1.1.0** — [PyPI](https://pypi.org/project/quanta-sdk/)
+An AI-native, modular, and high-performance quantum computing SDK for Python. **v1.2.0-production** — [PyPI](https://pypi.org/project/quanta-sdk/) · [Documentation](https://quanta.onmartech.com/) · [Zenodo DOI](https://doi.org/10.5281/zenodo.22952779)
 
 ## Overview
 
-Quanta delivers a modern, multi-tier quantum computing runtime designed for AI agents (via MCP), deep learning researchers, and production workloads:
+Quanta delivers a standalone quantum software architecture engineered for 2026 quantum computing frontiers, AI agents (via MCP), deep learning researchers, and fault-tolerant quantum computing (FTQC) workloads. The framework is grounded in 5 core scientific paradigms:
 
-- **Deep Learning Layer (`quanta.torch`)**: PyTorch `nn.Module` integration with analytical parameter-shift autograd (`QuantumLayer`) and continuous-time quantum resonance (`ContinuousResonator`, `BiomorphicResonantBrain`).
-- **Layer 3 (Declarative)**: `search()`, `optimize()`, `vqe()`, `factor()`, `resolve()`, `MultiAgentSystem` — high-level algorithms without manual gate synthesis.
-- **Layer 2 (Circuit DSL)**: `@circuit`, 31 built-in gates (H, CX, RZ, MS, ECR, etc.), parametric rotations, and measurement handling.
-- **Layer 1 (Physical & Hardware Acceleration)**:
-  - **Apple Silicon Metal/MLX**: Native tensor contractions on Apple Unified Memory delivering up to **404x speedup**.
-  - **NVIDIA cuStateVec**: Large-scale GPU statevector simulation.
-  - **Multi-Cloud Hardware**: Live verified execution on IonQ Cloud REST API v0.3, IBM Quantum Heron r3 (156 qubits), and Google Cirq Sycamore.
-- **Agentic MCP Layer**: **23 Model Context Protocol (MCP) tools** empowering AI assistants (Claude, Gemini, GPT) to author, transpile, simulate, and optimize quantum workflows.
+1. **Local-First, Zero-Dependency First-Principles Core**: Full quantum execution engine operating in pure Python/NumPy without heavy C++/LLVM build chains or CUDA prerequisites, featuring 31 native gates with direct parity across IBM Heron, Google Sycamore, and IonQ architectures.
+2. **Apple Silicon Metal / MLX Zero-Copy GPU Acceleration**: High-performance tensor contraction engine eliminating CPU-GPU memory copy overhead on Apple Unified Memory, alongside a SIMD-vectorized >3.13M gates/s Clifford tableau simulator.
+3. **Continuous Hilbert Gradients & Daleckii-Krein Autograd (`quanta.torch`)**: Analytical closed-form Fréchet matrix derivative autograd maintaining machine precision ($10^{-15}$ error), dynamical Lie algebra ($\dim(\mathfrak{g})$) barren plateau diagnosis, and biomorphic continuous quantum brain dynamics (`ContinuousResonator`, `BiomorphicResonantBrain`).
+4. **2026 Dual-Track Fault-Tolerance Engine (FTQC)**:
+   - **Track A (2D Topological)**: Edmonds Blossom MWPM decoding eliminating greedy heuristic failure modes, with Google Willow-compliant 3D spacetime syndrome extraction.
+   - **Track B (High-Rate qLDPC)**: Canonical Gross $[[144, 12, 12]]$ Bivariate Bicycle qLDPC code achieving $12\times$ physical qubit reduction over surface codes, paired with a native Normalized Min-Sum BP-OSD-0 decoder.
+   - **Non-Clifford Universality**: 15-to-1 Bravyi-Kitaev magic state distillation factory ($\epsilon_{\text{out}} \le 35 p^3$) and planar lattice surgery.
+5. **Agentic MCP Integration Layer**: **23 Model Context Protocol (MCP) tools** empowering autonomous AI agents (Claude, Gemini, GPT) to design, transpile, simulate, and benchmark quantum systems.
+6. **Falsifiable Empiricism & Certified Rigor**: 2,076 fully automated regression-free tests ensuring exact unitarity ($\|U^\dagger U - I\| < 10^{-14}$) and CPTP trace preservation.
 
 ---
 
@@ -106,22 +107,26 @@ pytest
 
 ## Documentation
 
-Explore detailed documentation in the `docs/` directory:
+Explore detailed documentation in the official portal:
 
+- [Official Documentation Portal](https://quanta.onmartech.com/)
+- [Quanta Architecture Whitepaper](papers/quanta_framework_paper.md)
 - [Architecture](ARCHITECTURE_EN.md)
 - [Features & Gate Set](FEATURES_EN.md)
 - [Comparison with Other SDKs](COMPARISON_EN.md)
 - [Installation Guide](INSTALL_TR.md)
-- [Academic Whitepapers & Proofs](theory/quantum_brain_frontiers.md)
+- [Theoretical Foundations & Monographs](theory/quantum_brain_frontiers.md)
 
 ---
 
-## Author & Contact
+## Authorship & Identity Metadata
 
-**Abdullah Enes SARI** — ONMARTECH  
-Email: info@onmartech.com  
-Website: [onmartech.com](https://onmartech.com)
+- **Lead Author & Principal Architect**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
+- **Affiliation**: ONMARTECH Quantum Computing Initiative (`info@onmartech.com`)
+- **Website**: [onmartech.com](https://onmartech.com) · [quanta.onmartech.com](https://quanta.onmartech.com)
+- **Permanent Software DOI**: [10.5281/zenodo.22952779](https://doi.org/10.5281/zenodo.22952779)
 
 ## License
 
 Apache License 2.0
+

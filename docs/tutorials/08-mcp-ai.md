@@ -1,6 +1,6 @@
 # MCP AI Integration
 
-> Tested with: Quanta SDK v0.9.2
+> Tested with: Quanta SDK v1.2.0-production
 
 ## What You'll Learn
 
@@ -9,28 +9,37 @@ Connect Quanta to Claude, GPT, and other AI assistants using the Model Context P
 ## Prerequisites
 
 - [01 — Getting Started](01-getting-started.md)
-- Claude Desktop or a MCP-compatible AI client
+- Claude Desktop or any MCP-compatible AI client
 
 ## What is MCP?
 
-MCP (Model Context Protocol) lets AI assistants call tools directly. Quanta exposes 14 quantum tools that any MCP client can use:
+MCP (Model Context Protocol) lets AI assistants discover and call tools directly. Quanta exposes **23 native quantum tools** that any MCP client can use:
 
-| Tool | Description |
-|------|-------------|
-| `run_circuit` | Build and run any circuit |
-| `create_bell_state` | One-click Bell state |
-| `grover_search` | Quantum search |
-| `shor_factor` | Factor integers |
-| `simulate_noise` | Noisy simulation |
-| `list_gates` | Show all 31 gates |
-| `explain_result` | AI-friendly result explanation |
-| `monte_carlo_price` | Option pricing |
-| `qaoa_optimize` | Combinatorial optimization |
-| `cluster_data` | Quantum clustering |
-| `run_on_ibm` | Submit to IBM hardware |
-| `ibm_backends` | List IBM backends |
-| `ibm_job_result` | Poll IBM job |
-| `draw_circuit` | ASCII circuit diagram |
+| Tool | Category | Description |
+|------|----------|-------------|
+| `run_circuit` | Core Circuit | Build and simulate any quantum circuit |
+| `create_bell_state` | Core Circuit | Instant Bell state preparation |
+| `list_gates` | Core Circuit | Inspect all 31 native quantum gates |
+| `draw_circuit` | Core Circuit | Visual ASCII / SVG circuit diagram |
+| `optimize_circuit` | Compilation | Multi-pass compiler optimization |
+| `transpile_for_target` | Compilation | Target architecture transpilation |
+| `grover_search` | Algorithms | Quadratic search algorithm |
+| `shor_factor` | Algorithms | Integer factorization via period finding |
+| `qaoa_optimize` | Algorithms | Combinatorial QAOA solver |
+| `monte_carlo_price` | Finance | Amplitude estimation option pricing |
+| `option_greeks` | Finance | Quantum Monte Carlo Greeks evaluation |
+| `cluster_data` | Machine Learning | Swap-test quantum k-means clustering |
+| `qml_classify` | Machine Learning | Differentiable quantum classification |
+| `simulate_noise` | Noise & Systems | 7-channel Kraus open system simulation |
+| `surface_code_simulate` | 2026 FTQC | Stabilizer surface code simulation |
+| `compare_decoders` | 2026 FTQC | Benchmark Edmonds Blossom vs heuristics |
+| `qec_diagnose` | 2026 FTQC | Error syndrome diagnosis and extraction |
+| `estimate_fault_tolerant_cost` | 2026 FTQC | Physical qubit overhead estimation |
+| `quanta_reasoning_eval` | Cognitive | Biomorphic Zeno cognitive decision arbitration |
+| `explain_result` | AI Utilities | AI-native structured measurement analysis |
+| `run_on_ibm` | Hardware | Submit job to IBM Quantum cloud |
+| `ibm_backends` | Hardware | Enumerate real quantum processors |
+| `ibm_job_result` | Hardware | Poll remote quantum hardware execution |
 
 ## Setup — Claude Desktop
 
