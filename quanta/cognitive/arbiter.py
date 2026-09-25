@@ -15,12 +15,16 @@ from quanta.cognitive.telemetry import record_decision_telemetry
 from quanta.torch.brain import QuantumZenoAttention
 
 __all__ = [
+    "CognitivePanelScore",
     "ConsequenceVector",
     "DecisionDAG",
     "DecisionEdge",
     "DecisionNode",
     "DecisionTrajectory",
+    "NeurobiologicalEvaluation",
+    "PsychiatricEvaluation",
     "QuantumDecisionArbiter",
+    "SociologicalEvaluation",
 ]
 
 def _safe_float(val: Any, default: float = 0.0) -> float:
@@ -29,6 +33,19 @@ def _safe_float(val: Any, default: float = 0.0) -> float:
         return default
     try:
         return float(val)
+    except (ValueError, TypeError):
+        return default
+
+
+def _clamp01(val: Any, default: float = 0.0) -> float:
+    """Safely converts value to float clamped in [0.0, 1.0] with NaN/Inf handling."""
+    if val is None:
+        return default
+    try:
+        f = float(val)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return max(0.0, min(1.0, f))
     except (ValueError, TypeError):
         return default
 
@@ -51,40 +68,234 @@ def _safe_dict(val: Any) -> dict[str, Any]:
 
 
 @dataclass
+class NeurobiologicalEvaluation:
+    """Neurobiological evaluation metrics grounded in synaptic and energy homeostasis.
+
+    Attributes:
+        synaptic_saturation: [0.0, 1.0] Degree of synaptic saturation / SHY downscaling need.
+        energy_expenditure: [0.0, 1.0] Landauer metabolic / compute energy cost penalty.
+        sleep_consolidation_affinity: [0.0, 1.0] Affinity for deferring to quiescent consolidation.
+    """
+
+    synaptic_saturation: float = 0.0
+    energy_expenditure: float = 0.0
+    sleep_consolidation_affinity: float = 0.0
+
+    def aggregate_cost(
+        self,
+        weights: tuple[float, float, float] = (0.40, 0.35, 0.25),
+    ) -> float:
+        """Computes the weighted aggregate neurobiological penalty in [0.0, 1.0]."""
+        return float(
+            weights[0] * self.synaptic_saturation
+            + weights[1] * self.energy_expenditure
+            + weights[2] * self.sleep_consolidation_affinity
+        )
+
+    def to_dict(self) -> dict[str, float]:
+        """Serializes neurobiological evaluation to dictionary."""
+        return {
+            "synaptic_saturation": self.synaptic_saturation,
+            "energy_expenditure": self.energy_expenditure,
+            "sleep_consolidation_affinity": self.sleep_consolidation_affinity,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> NeurobiologicalEvaluation:
+        """Instantiates NeurobiologicalEvaluation from dictionary with safe fallbacks."""
+        if not data or not isinstance(data, dict):
+            return cls()
+        return cls(
+            synaptic_saturation=_clamp01(data.get("synaptic_saturation"), 0.0),
+            energy_expenditure=_clamp01(data.get("energy_expenditure"), 0.0),
+            sleep_consolidation_affinity=_clamp01(data.get("sleep_consolidation_affinity"), 0.0),
+        )
+
+
+@dataclass
+class PsychiatricEvaluation:
+    """Psychiatric and cognitive stability evaluation metrics.
+
+    Attributes:
+        rumination_risk: [0.0, 1.0] Repetitive circular deliberation / looping penalty.
+        perseveration_penalty: [0.0, 1.0] Inability to shift cognitive sets after repeated failures.
+        threat_distortion: [0.0, 1.0] Catastrophizing or paranoid hyper-vigilance vs calibrated risk.
+    """
+
+    rumination_risk: float = 0.0
+    perseveration_penalty: float = 0.0
+    threat_distortion: float = 0.0
+
+    def aggregate_cost(
+        self,
+        weights: tuple[float, float, float] = (0.40, 0.35, 0.25),
+    ) -> float:
+        """Computes the weighted aggregate psychiatric penalty in [0.0, 1.0]."""
+        return float(
+            weights[0] * self.rumination_risk
+            + weights[1] * self.perseveration_penalty
+            + weights[2] * self.threat_distortion
+        )
+
+    def to_dict(self) -> dict[str, float]:
+        """Serializes psychiatric evaluation to dictionary."""
+        return {
+            "rumination_risk": self.rumination_risk,
+            "perseveration_penalty": self.perseveration_penalty,
+            "threat_distortion": self.threat_distortion,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> PsychiatricEvaluation:
+        """Instantiates PsychiatricEvaluation from dictionary with safe fallbacks."""
+        if not data or not isinstance(data, dict):
+            return cls()
+        return cls(
+            rumination_risk=_clamp01(data.get("rumination_risk"), 0.0),
+            perseveration_penalty=_clamp01(data.get("perseveration_penalty"), 0.0),
+            threat_distortion=_clamp01(data.get("threat_distortion"), 0.0),
+        )
+
+
+@dataclass
+class SociologicalEvaluation:
+    """Sociological and human alignment evaluation metrics.
+
+    Attributes:
+        social_misalignment: [0.0, 1.0] Violation of social context framing, norms, or tone.
+        user_fatigue_impact: [0.0, 1.0] Cognitive load imposed on the user (verbosity, friction).
+        coordination_friction: [0.0, 1.0] Friction with peer agents or collective intelligence.
+    """
+
+    social_misalignment: float = 0.0
+    user_fatigue_impact: float = 0.0
+    coordination_friction: float = 0.0
+
+    def aggregate_cost(
+        self,
+        weights: tuple[float, float, float] = (0.35, 0.40, 0.25),
+    ) -> float:
+        """Computes the weighted aggregate sociological penalty in [0.0, 1.0]."""
+        return float(
+            weights[0] * self.social_misalignment
+            + weights[1] * self.user_fatigue_impact
+            + weights[2] * self.coordination_friction
+        )
+
+    def to_dict(self) -> dict[str, float]:
+        """Serializes sociological evaluation to dictionary."""
+        return {
+            "social_misalignment": self.social_misalignment,
+            "user_fatigue_impact": self.user_fatigue_impact,
+            "coordination_friction": self.coordination_friction,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> SociologicalEvaluation:
+        """Instantiates SociologicalEvaluation from dictionary with safe fallbacks."""
+        if not data or not isinstance(data, dict):
+            return cls()
+        return cls(
+            social_misalignment=_clamp01(data.get("social_misalignment"), 0.0),
+            user_fatigue_impact=_clamp01(data.get("user_fatigue_impact"), 0.0),
+            coordination_friction=_clamp01(data.get("coordination_friction"), 0.0),
+        )
+
+
+@dataclass
+class CognitivePanelScore:
+    """Composite multi-disciplinary cognitive panel evaluation score.
+
+    Attributes:
+        neurobiology: Synaptic saturation and energy budgeting evaluation.
+        psychiatry: Cognitive stability and anti-rumination evaluation.
+        sociology: Human alignment and fatigue impact evaluation.
+    """
+
+    neurobiology: NeurobiologicalEvaluation = field(default_factory=NeurobiologicalEvaluation)
+    psychiatry: PsychiatricEvaluation = field(default_factory=PsychiatricEvaluation)
+    sociology: SociologicalEvaluation = field(default_factory=SociologicalEvaluation)
+
+    def aggregate_penalty(
+        self,
+        discipline_weights: tuple[float, float, float] = (0.30, 0.35, 0.35),
+    ) -> float:
+        """Computes the interdisciplinary aggregate penalty score in [0.0, 1.0]."""
+        return float(
+            discipline_weights[0] * self.neurobiology.aggregate_cost()
+            + discipline_weights[1] * self.psychiatry.aggregate_cost()
+            + discipline_weights[2] * self.sociology.aggregate_cost()
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes composite cognitive panel score to dictionary."""
+        return {
+            "neurobiology": self.neurobiology.to_dict(),
+            "psychiatry": self.psychiatry.to_dict(),
+            "sociology": self.sociology.to_dict(),
+            "aggregate_penalty": round(self.aggregate_penalty(), 4),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> CognitivePanelScore:
+        """Instantiates CognitivePanelScore from dictionary with safe fallbacks."""
+        if not data or not isinstance(data, dict):
+            return cls()
+        return cls(
+            neurobiology=NeurobiologicalEvaluation.from_dict(data.get("neurobiology")),
+            psychiatry=PsychiatricEvaluation.from_dict(data.get("psychiatry")),
+            sociology=SociologicalEvaluation.from_dict(data.get("sociology")),
+        )
+
+
+@dataclass
 class ConsequenceVector:
-    """4-Dimensional biomorphic consequence evaluation vector.
+    """4-Dimensional operational cost and Multi-Disciplinary Cognitive Panel vector.
 
     Attributes:
         latency: [0.0, 1.0] Runtime latency, I/O overhead, and response time impact.
         maintenance: [0.0, 1.0] Technical debt, cognitive complexity, and maintenance burden.
         risk: [0.0, 1.0] Blast radius, failure probability, and irreversibility / vendor lock-in.
         metabolic: [0.0, 1.0] CPU/memory overhead and Landauer thermodynamic footprint.
+        cognitive_panel: Multi-disciplinary cognitive evaluation panel score.
     """
 
     latency: float = 0.0
     maintenance: float = 0.0
     risk: float = 0.0
     metabolic: float = 0.0
+    cognitive_panel: CognitivePanelScore = field(default_factory=CognitivePanelScore)
 
     def weighted_cost(
         self,
         weights: tuple[float, float, float, float] = (0.25, 0.35, 0.25, 0.15),
+        panel_weight: float = 0.0,
     ) -> float:
-        """Computes the weighted aggregate operational cost penalty in [0.0, 1.0]."""
-        return float(
+        """Computes the weighted aggregate operational cost penalty in [0.0, 1.0].
+
+        When panel_weight == 0.0, strictly evaluates the baseline 4D consequence cost.
+        When panel_weight > 0.0, interpolates between 4D cost and cognitive panel penalty.
+        """
+        c_4d = float(
             weights[0] * self.latency
             + weights[1] * self.maintenance
             + weights[2] * self.risk
             + weights[3] * self.metabolic
         )
+        if panel_weight <= 0.0:
+            return c_4d
+        w_p = min(1.0, max(0.0, panel_weight))
+        c_panel = self.cognitive_panel.aggregate_penalty()
+        return float((1.0 - w_p) * c_4d + w_p * c_panel)
 
-    def to_dict(self) -> dict[str, float]:
+    def to_dict(self) -> dict[str, Any]:
         """Serializes consequence vector to dictionary."""
         return {
             "latency": self.latency,
             "maintenance": self.maintenance,
             "risk": self.risk,
             "metabolic": self.metabolic,
+            "cognitive_panel": self.cognitive_panel.to_dict(),
         }
 
     @classmethod
@@ -92,11 +303,22 @@ class ConsequenceVector:
         """Instantiates ConsequenceVector from a dictionary with safe fallbacks."""
         if not data or not isinstance(data, dict):
             return cls()
+        c_panel_raw = data.get("cognitive_panel")
+        if isinstance(c_panel_raw, CognitivePanelScore):
+            c_panel = c_panel_raw
+        elif isinstance(c_panel_raw, dict):
+            c_panel = CognitivePanelScore.from_dict(c_panel_raw)
+        elif any(k in data for k in ("neurobiology", "psychiatry", "sociology")):
+            c_panel = CognitivePanelScore.from_dict(data)
+        else:
+            c_panel = CognitivePanelScore()
+
         return cls(
-            latency=_safe_float(data.get("latency"), 0.0),
-            maintenance=_safe_float(data.get("maintenance"), 0.0),
-            risk=_safe_float(data.get("risk"), 0.0),
-            metabolic=_safe_float(data.get("metabolic"), 0.0),
+            latency=_clamp01(data.get("latency"), 0.0),
+            maintenance=_clamp01(data.get("maintenance"), 0.0),
+            risk=_clamp01(data.get("risk"), 0.0),
+            metabolic=_clamp01(data.get("metabolic"), 0.0),
+            cognitive_panel=c_panel,
         )
 
 
@@ -421,7 +643,15 @@ class DecisionDAG:
             root_id = str(raw_id) if raw_id is not None else "root"
             raw_label = root_spec.get("label")
             root_label = str(raw_label) if raw_label is not None else "Root"
-            root_consequence = ConsequenceVector.from_dict(root_spec.get("consequences"))
+            r_c_data = root_spec.get("consequences", root_spec.get("consequence"))
+            r_cp_data = root_spec.get("cognitive_panel")
+            if r_cp_data is not None:
+                if r_c_data is None:
+                    r_c_data = {"cognitive_panel": r_cp_data}
+                elif isinstance(r_c_data, dict) and "cognitive_panel" not in r_c_data:
+                    r_c_data = dict(r_c_data)
+                    r_c_data["cognitive_panel"] = r_cp_data
+            root_consequence = ConsequenceVector.from_dict(r_c_data)
             root_meta = _safe_dict(root_spec.get("metadata"))
         else:
             root_id = "root"
@@ -466,6 +696,13 @@ class DecisionDAG:
                     )
                     label = str(raw_label) if raw_label is not None else str_key
                     c_data = val.get("consequences", val.get("consequence"))
+                    cp_data = val.get("cognitive_panel")
+                    if cp_data is not None:
+                        if c_data is None:
+                            c_data = {"cognitive_panel": cp_data}
+                        elif isinstance(c_data, dict) and "cognitive_panel" not in c_data:
+                            c_data = dict(c_data)
+                            c_data["cognitive_panel"] = cp_data
                     meta = {
                         k: v
                         for k, v in val.items()
@@ -476,6 +713,7 @@ class DecisionDAG:
                             "children",
                             "consequences",
                             "consequence",
+                            "cognitive_panel",
                             "label",
                             "name",
                         )
@@ -555,11 +793,13 @@ class QuantumDecisionArbiter:
         injected_prompt_constraint: str | None = None,
         counterfactual_ab: dict[str, Any] | None = None,
         step_idx: int = 0,
+        panel_weight: float | None = None,
     ) -> dict[str, Any]:
         """Evaluates decision options against a goal and criteria using Zeno attention.
 
         Supports arbitrary N-option branching, structured multi-criteria analysis,
-        and dynamic Zeno pinning factor derived from 6-qubit quantum projections.
+        multi-disciplinary cognitive panel evaluation penalties, and dynamic Zeno
+        pinning factor derived from 6-qubit quantum projections.
 
         Args:
             goal: Target objective or strategic constraint.
@@ -574,6 +814,7 @@ class QuantumDecisionArbiter:
             injected_prompt_constraint: Optional explicit prompt constraint string.
             counterfactual_ab: Optional dict with 'without_quanta' and 'with_quanta'.
             step_idx: Optional current step index.
+            panel_weight: Optional float weight in [0.0, 1.0] for cognitive panel penalties.
 
         Returns:
             Dictionary containing recommended option, scores, latency, and quantum diagnostics.
@@ -600,7 +841,15 @@ class QuantumDecisionArbiter:
                 parts = [
                     f"{k}: {v}"
                     for k, v in opt.items()
-                    if k not in ("name", "title", "option")
+                    if k
+                    not in (
+                        "name",
+                        "title",
+                        "option",
+                        "cognitive_panel",
+                        "consequence",
+                        "consequences",
+                    )
                 ]
                 desc = " | ".join(parts)
                 full_repr = f"{name} ({desc})" if desc else name
@@ -649,7 +898,50 @@ class QuantumDecisionArbiter:
         zeno_pin = float(max(0.15, min(0.985, raw_zeno)))
         anti_zeno_tunneling = max(0.0, 1.0 - zeno_pin)
 
-        probs = F.softmax(alignments * (1.0 + zeno_pin), dim=-1).tolist()
+        # Multi-Disciplinary Cognitive Panel penalty integration
+        option_panel_scores: list[CognitivePanelScore | None] = []
+        option_panel_penalties: list[float] = []
+        for _, _, opt_dict in parsed_options:
+            panel_score = None
+            if opt_dict is not None:
+                if "cognitive_panel" in opt_dict:
+                    raw_cp = opt_dict["cognitive_panel"]
+                    if isinstance(raw_cp, CognitivePanelScore):
+                        panel_score = raw_cp
+                    elif isinstance(raw_cp, dict):
+                        panel_score = CognitivePanelScore.from_dict(raw_cp)
+                elif "consequence" in opt_dict or "consequences" in opt_dict:
+                    raw_c = opt_dict.get("consequence", opt_dict.get("consequences"))
+                    if isinstance(raw_c, ConsequenceVector):
+                        panel_score = raw_c.cognitive_panel
+                    elif isinstance(raw_c, dict):
+                        panel_score = ConsequenceVector.from_dict(raw_c).cognitive_panel
+                elif any(k in opt_dict for k in ("neurobiology", "psychiatry", "sociology")):
+                    panel_score = CognitivePanelScore.from_dict(opt_dict)
+
+            option_panel_scores.append(panel_score)
+            pen = panel_score.aggregate_penalty() if panel_score is not None else 0.0
+            option_panel_penalties.append(pen)
+
+        has_any_panel_penalty = any(p > 0.0 for p in option_panel_penalties)
+        if panel_weight is not None:
+            eff_panel_weight = max(0.0, min(1.0, float(panel_weight)))
+        elif has_any_panel_penalty:
+            eff_panel_weight = 0.50
+        else:
+            eff_panel_weight = 0.0
+
+        if eff_panel_weight > 0.0 and has_any_panel_penalty:
+            penalty_tensor = torch.tensor(
+                option_panel_penalties,
+                dtype=torch.float32,
+                device=alignments.device,
+            )
+            adj_alignments = alignments - eff_panel_weight * penalty_tensor
+        else:
+            adj_alignments = alignments
+
+        probs = F.softmax(adj_alignments * (1.0 + zeno_pin), dim=-1).tolist()
 
         ranking: list[dict[str, Any]] = []
         for i, (name, full_repr, details) in enumerate(parsed_options):
@@ -660,6 +952,9 @@ class QuantumDecisionArbiter:
                 "tr_rho_pi": round(float(norm_tr[i]), 6),
                 "raw_alignment": round(float(alignments[i].item()), 4),
             }
+            if option_panel_scores[i] is not None:
+                item["cognitive_panel"] = option_panel_scores[i].to_dict()  # type: ignore[union-attr]
+                item["panel_penalty"] = round(float(option_panel_penalties[i]), 4)
             if details is not None:
                 item["details"] = details
             elif full_repr != name:
@@ -937,12 +1232,14 @@ class QuantumDecisionArbiter:
         beam_width: int | None = None,
         workspace: str | None = None,
         log_telemetry: bool = True,
+        panel_weight: float = 0.0,
     ) -> dict[str, Any]:
         """Evaluates multi-branch decision trajectories through a Directed Acyclic Graph (DAG).
 
         1. Computes quantum statevectors for all nodes and goal.
         2. Runs batch Quantum Zeno Attention over candidate transitions.
-        3. Evaluates cascading downstream consequences along each trajectory.
+        3. Evaluates cascading downstream consequences along each trajectory, interpolating
+           operational 4D cost with multi-disciplinary cognitive panel penalties.
         4. Applies microglial pruning to eliminate dominated sub-branches while protecting
            lateral exploratory paths (DMN mode).
         5. Returns winning trajectory, full trajectory rankings, and quantum diagnostics.
@@ -1065,7 +1362,9 @@ class QuantumDecisionArbiter:
                     p_zenos.append(p_z)
                     projections.append(t_t)
 
-                    cost_t = v_node.consequence.weighted_cost(consequence_weights)
+                    cost_t = v_node.consequence.weighted_cost(
+                        consequence_weights, panel_weight=panel_weight
+                    )
                     discount = math.pow(discount_factor, step_idx - 1)
 
                     step_utility = r_t * (1.0 + p_z)
@@ -1203,6 +1502,7 @@ class QuantumDecisionArbiter:
             "mean_p_zeno": winner.mean_p_zeno,
             "latency_ms": round(latency_ms, 2),
             "pytorch_latency_ms": round(pytorch_latency_ms, 2),
+            "panel_weight": panel_weight,
         }
 
     def arbitrate_multibranch(
@@ -1218,11 +1518,12 @@ class QuantumDecisionArbiter:
         beam_width: int | None = None,
         workspace: str | None = None,
         log_telemetry: bool = True,
+        panel_weight: float = 0.0,
     ) -> dict[str, Any]:
         """High-level entry point that converts a multi-branch tree or DAG specification into
 
         a DecisionDAG, executes cascading rollout arbitration, and produces an executive summary
-        and counterfactual A/B evaluation.
+        and counterfactual A/B evaluation reflecting cognitive panel considerations.
         """
         if isinstance(branches, dict) and "branches" in branches:
             spec = dict(branches)
@@ -1244,6 +1545,7 @@ class QuantumDecisionArbiter:
             beam_width=beam_width,
             workspace=workspace,
             log_telemetry=log_telemetry,
+            panel_weight=panel_weight,
         )
 
         winner = dag_res["winning_trajectory"]
@@ -1254,29 +1556,62 @@ class QuantumDecisionArbiter:
             1 for t in dag_res["surviving_trajectories"] if t.get("is_speculative")
         )
 
+        has_panel = any(
+            n.consequence.cognitive_panel.aggregate_penalty() > 0.0
+            for n in dag.nodes.values()
+        )
+        winner_panel_penalty = sum(
+            dag.nodes[nid].consequence.cognitive_panel.aggregate_penalty()
+            for nid in winner["path_nodes"]
+            if nid in dag.nodes
+        )
+
+        panel_note = ""
+        if panel_weight > 0.0 or has_panel:
+            panel_note = (
+                f"\n- Bilişsel Panel: Nörobiyolojik, psikiyatrik ve sosyolojik kısıtlar "
+                f"değerlendirildi (ceza skoru: {winner_panel_penalty:.2f})."
+            )
+
         exec_summary = (
             f"🏛️ Yönetici Özeti (Executive Summary):\n"
             f"- Tavsiye Edilen Yol: '{rec_path_str}'\n"
             f"- Gerekçe: Stratejik hedefe en yüksek uyum ({winner['net_score']:.2f}) sağlandı; "
-            f"kaskat operasyonel maliyetler ve riskler minimize edildi.\n"
+            f"kaskat operasyonel maliyetler ve riskler minimize edildi.{panel_note}\n"
             f"- Budanan Seçenekler: {pruned_count}/{total_trajectories} alternatif yüksek "
             f"teknik borç / operasyonel yük nedeniyle elendi.\n"
             f"- Korunan İnovasyon Yolları: {speculative_survivors} spekülatif lateral yol "
             f"alternatif senaryolar için korundu."
         )
 
-        counterfactual_ab = {
-            "without_quanta": (
-                "Ajan Quanta olmadan tek adımlı açgözlü (greedy) seçim yapar; "
-                "uzun vadeli bakım yükü, gecikme ve mimari kilitlenme risklerini öngöremez."
-            ),
-            "with_quanta": (
-                f"Quanta çok kollu karar manifoldu (DAG Rollouts) ile {total_trajectories} "
-                f"yol kaskat halinde değerlendirildi; P_zeno={dag_res['mean_p_zeno']:.4f} ile "
-                f"'{rec_path_str}' yoluna kilitlenerek baskın dallar budandı."
-            ),
-            "effect_verified": True,
-        }
+        if panel_weight > 0.0 or has_panel:
+            counterfactual_ab = {
+                "without_quanta": (
+                    "Ajan Quanta olmadan tek adımlı açgözlü (greedy) seçim yapar; "
+                    "uzun vadeli bakım yükü, gecikme, kullanıcı bilişsel yorgunluğu ve "
+                    "rumatif kilitlenme risklerini öngöremez."
+                ),
+                "with_quanta": (
+                    f"Quanta çok disiplinli karar manifoldu (DAG Rollouts) ile {total_trajectories} "
+                    f"yol kaskat halinde değerlendirildi; P_zeno={dag_res['mean_p_zeno']:.4f} ile "
+                    f"'{rec_path_str}' yoluna kilitlenerek baskın ve bilişsel yük getiren "
+                    f"dallar budandı."
+                ),
+                "effect_verified": True,
+            }
+        else:
+            counterfactual_ab = {
+                "without_quanta": (
+                    "Ajan Quanta olmadan tek adımlı açgözlü (greedy) seçim yapar; "
+                    "uzun vadeli bakım yükü, gecikme ve mimari kilitlenme risklerini öngöremez."
+                ),
+                "with_quanta": (
+                    f"Quanta çok kollu karar manifoldu (DAG Rollouts) ile {total_trajectories} "
+                    f"yol kaskat halinde değerlendirildi; P_zeno={dag_res['mean_p_zeno']:.4f} ile "
+                    f"'{rec_path_str}' yoluna kilitlenerek baskın dallar budandı."
+                ),
+                "effect_verified": True,
+            }
 
         dag_res["executive_summary"] = exec_summary
         dag_res["counterfactual_ab"] = counterfactual_ab

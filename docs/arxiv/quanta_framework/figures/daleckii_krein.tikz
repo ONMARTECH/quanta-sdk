@@ -20,7 +20,7 @@
 % Backward Path
 \node[font=\bfseries] at (3.2, 3.2) {Exact Autograd Backward Pass};
 \node[bwd] (cotangent) at (3.2, 2.2) {\textbf{Vector-Only Cotangent Contraction}\\$|w\rangle = \sum_m \bar{Y}_m O_m |\psi_t\rangle \quad (O(B \cdot 2^N)\text{ mem})$};
-\node[spec] (dk_kernel) at (3.2, 0.6) {\textbf{Daleckii-Krein Fréchet Kernel}\\$M_{ab}(t) = -it e^{-i\frac{\lambda_a+\lambda_b}{2}t} \operatorname{sinc}\left(\frac{(\lambda_a-\lambda_b)t}{2\pi}\right)$};
+\node[spec] (dk_kernel) at (3.2, 0.6) {\textbf{Daleckii-Krein Fr\'echet Kernel}\\$M_{ab}(t) = -it e^{-i\frac{\lambda_a+\lambda_b}{2}t} \operatorname{sinc}\left(\frac{(\lambda_a-\lambda_b)t}{2\pi}\right)$};
 \node[bwd] (grads) at (3.2, -1.0) {\textbf{Hermitian Parameter Projections}\\$\nabla_\theta = \operatorname{Tr}(S \cdot \frac{\partial H}{\partial \theta}), \quad \frac{d}{dt}\langle O \rangle = 2\operatorname{Im}\langle w|H|\psi_t\rangle$};
 
 \draw[arr] (cotangent) -- (dk_kernel);

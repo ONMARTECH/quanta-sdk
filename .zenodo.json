@@ -37,11 +37,12 @@
   ],
   "upload_type": "software",
   "version": "v1.2.0",
-  "publication_date": "2026-09-24",
+  "doi": "10.5281/zenodo.22952779",
+  "publication_date": "2026-09-25",
   "access_right": "open",
   "related_identifiers": [
     {
-      "identifier": "https://github.com/onmartech/quanta",
+      "identifier": "https://github.com/ONMARTECH/quanta-sdk",
       "relation": "isSupplementTo",
       "scheme": "url"
     }

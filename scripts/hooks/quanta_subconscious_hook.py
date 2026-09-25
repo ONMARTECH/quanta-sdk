@@ -66,6 +66,90 @@ class PrunedEngram(dict):
         return str(self.get("key") or self.get("rule_name") or super().__str__())
 
 
+def is_actionable_resolution(content: str, key: str = "") -> bool:
+    """Evaluates whether an ephemeral memory contains an actionable architectural resolution.
+
+    Filters out operational tool chatter and requires architectural, strategic, or
+    normative invariant markers (Brainerd & Reyna Fuzzy-Trace Theory).
+
+    Args:
+        content: Text content of the memory engram.
+        key: Key/identifier of the engram.
+
+    Returns:
+        True if the content represents an actionable resolution suitable for
+        fuzzy-trace semantic crystallization; False otherwise.
+    """
+    clean = content.strip().lower()
+    if len(clean) < 20:
+        return False
+
+    # Exclude purely procedural tool noise
+    noise_patterns = (
+        r"^\[\w+\]",
+        r"^(?:view_file|run_command|grep_search|find_by_name|list_dir|grep|find|cd|ls|cat|pwd)\b",
+        r"\b(?:checked line|reading file|listing directory|command exited with code)\b",
+    )
+    if any(re.search(p, clean) for p in noise_patterns):
+        return False
+
+    # Check for strategic/architectural keywords & directives
+    strategic_keywords = (
+        "architect", "mimari", "strategy", "strateji", "solution", "çözüm",
+        "decision", "karar", "invariant", "rule", "kural", "standard", "standart",
+        "policy", "politika", "protocol", "protokol", "design", "tasarım",
+        "pattern", "approach", "yaklaşım", "principle", "prensip", "consensus", "uzlaşı",
+        "always", "never", "daima", "asla", "kullan", "use", "adopt", "benimse",
+        "avoid", "kaçın", "enforce", "uygula", "optimize", "pin", "kilitle",
+        "sqlite", "posix", "fsync", "waf", "cf.client.bot", "route", "sdk", "api",
+    )
+    combined = f"{key.lower()} {clean}" if key else clean
+    return any(
+        re.search(rf"\b{re.escape(kw)}", combined) if len(kw) <= 4 else kw in combined
+        for kw in strategic_keywords
+    )
+
+
+def distill_semantic_gist(content: str, key: str = "") -> tuple[str, str]:
+    """Distills an ephemeral decision into a crisp, permanent semantic gist.
+
+    Removes conversational preambles, parenthetical targets, and step details.
+    Produces a normalized gist key and a distilled summary statement (max 140 chars).
+
+    Args:
+        content: Verbatim text content of the decision engram.
+        key: Original key of the decision engram (e.g. 'decision_step_42').
+
+    Returns:
+        tuple of (gist_key, distilled_content)
+    """
+    clean = content.strip()
+    # Strip parenthetical goals (e.g. '(Hedef: ...)' or '(Goal: ...)')
+    clean = re.sub(r"\((?:Hedef|Goal|Target):[^)]*\)", "", clean, flags=re.IGNORECASE).strip()
+    # Strip leading preambles ('Karar: ', 'Çözüm: ', 'Sonuç: ', 'Solution: ', 'Decision: ', etc.)
+    clean = re.sub(
+        r"^(?:#{1,4}\s*)?(?:\*\*|\*)?"
+        r"(?:Karar|Çözüm|Sonuç|Solution|Decision|Recommendation)[:\s]*(?:\*\*|\*)?",
+        "",
+        clean,
+        flags=re.IGNORECASE,
+    ).strip()
+    # Normalize extra whitespace
+    clean = re.sub(r"\s+", " ", clean).strip()
+
+    # Generate gist key
+    clean_key = re.sub(r"^decision_", "", key) if key else ""
+    if not clean_key:
+        slug_words = re.findall(r"[a-zA-Z0-9_]+", clean.lower())[:3]
+        clean_key = "_".join(slug_words) if slug_words else "unnamed"
+
+    gist_key = clean_key if clean_key.startswith("gist_") else f"gist_{clean_key}"
+    gist_content = clean[:140].strip()
+    if gist_content and not gist_content.endswith((".", "!", "?")):
+        gist_content += "."
+    return gist_key, gist_content
+
+
 class FastBiomorphicMemory:
     """Ultra-fast stdlib-only biomorphic engram manager for Antigravity hooks."""
 
@@ -112,7 +196,11 @@ class FastBiomorphicMemory:
             candidates = [
                 (idx, e)
                 for idx, e in enumerate(self.engrams)
-                if not (e.get("is_core_anchor", False) or float(e.get("salience", 0.0)) >= 2.0)
+                if not (
+                    e.get("is_core_anchor", False)
+                    or float(e.get("salience", 0.0)) >= 2.0
+                    or e.get("category") == "semantic_gist"
+                )
             ]
             if candidates:
                 candidates.sort(
@@ -155,6 +243,24 @@ class FastBiomorphicMemory:
             salience=sal,
             category=category,
             is_core_anchor=False,
+        )
+
+    def record_semantic_gist(
+        self,
+        key: str,
+        content: str,
+        salience: float = 1.85,
+        is_core_anchor: bool = True,
+        source_key: str | None = None,
+    ) -> None:
+        """Records a crystallized semantic gist into core memory (S >= 1.8, is_core_anchor=True)."""
+        sal = max(1.80, float(salience))
+        self.record(
+            key=key,
+            content=content,
+            salience=sal,
+            category="semantic_gist",
+            is_core_anchor=is_core_anchor,
         )
 
     def record_inhibitor(
@@ -206,7 +312,11 @@ class FastBiomorphicMemory:
             candidates = [
                 (idx, e)
                 for idx, e in enumerate(self.engrams)
-                if not (e.get("is_core_anchor", False) or float(e.get("salience", 0.0)) >= 2.0)
+                if not (
+                    e.get("is_core_anchor", False)
+                    or float(e.get("salience", 0.0)) >= 2.0
+                    or e.get("category") == "semantic_gist"
+                )
             ]
             if candidates:
                 candidates.sort(
@@ -353,7 +463,9 @@ class FastBiomorphicMemory:
     def step(self, dt: float = 1.0) -> None:
         dim_factor = 1.0 / DEFAULT_DIM
         for e in self.engrams:
-            e["age"] += 1
+            curr_age = float(e.get("age", 0))
+            new_age = round(curr_age + dt, 4)
+            e["age"] = int(new_age) if new_age.is_integer() else new_age
             # Unreinforced inhibitor synaptic weight decay
             if e.get("category") in ("inhibitor", "anti_pattern"):
                 v_curr = float(e.get("v_inh", 0.50))
@@ -378,14 +490,20 @@ class FastBiomorphicMemory:
         min_salience: float = 0.50,
         max_age: float | None = None,
         turn: int | None = None,
+        enable_gist_consolidation: bool = True,
     ) -> list[PrunedEngram]:
         survivors = []
         pruned_records: list[PrunedEngram] = []
+        gists_to_crystallize: list[tuple[str, str, float]] = []
         now_ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         turn_pruned = int(turn if turn is not None else getattr(self, "current_turn", 0))
 
         for e in self.engrams:
-            is_core = bool(e.get("is_core_anchor", False)) or float(e.get("salience", 0.0)) >= 2.0
+            is_core = bool(
+                e.get("is_core_anchor", False)
+                or float(e.get("salience", 0.0)) >= 2.0
+                or e.get("category") == "semantic_gist"
+            )
             if is_core:
                 survivors.append(e)
                 continue
@@ -395,6 +513,8 @@ class FastBiomorphicMemory:
             v_inh = float(e.get("v_inh", 0.50))
             fid = float(e.get("fidelity", 1.0))
             sal = float(e.get("salience", 1.0))
+            content = str(e.get("content", ""))
+            key = str(e.get("key", ""))
 
             depotentiated = is_inhibitor and (v_inh < 0.20 and sal <= 0.50)
             decayed = (
@@ -406,7 +526,9 @@ class FastBiomorphicMemory:
 
             if decayed or aged or depotentiated:
                 if depotentiated:
-                    reason = f"depotentiated_inhibitor ({v_inh:.3f} < 0.20, salience {sal:.2f} <= 0.50)"
+                    reason = (
+                        f"depotentiated_inhibitor ({v_inh:.3f} < 0.20, salience {sal:.2f} <= 0.50)"
+                    )
                 elif decayed and aged:
                     reason = (
                         f"fidelity_and_age ({fid:.3f} < {fidelity_threshold:.3f}, "
@@ -417,18 +539,33 @@ class FastBiomorphicMemory:
                 else:
                     reason = f"age_exceeded ({age_val:.0f} > {max_age})"
 
+                # Fuzzy-Trace Semantic Gist Extraction
+                crystallized_key = None
+                if (
+                    enable_gist_consolidation
+                    and is_transient
+                    and not is_inhibitor
+                    and is_actionable_resolution(content, key)
+                ):
+                    g_key, g_content = distill_semantic_gist(content, key)
+                    gists_to_crystallize.append((g_key, g_content, 1.85))
+                    crystallized_key = g_key
+                    reason += f" (crystallized_to_{g_key})"
+
                 decayed_sal = round(sal * fid, 4)
                 record = PrunedEngram({
                     "timestamp": now_ts,
-                    "rule_name": e["key"],
-                    "id": e["key"],
-                    "key": e["key"],
+                    "rule_name": key,
+                    "id": key,
+                    "key": key,
                     "reason": reason,
                     "decayed_salience": decayed_sal,
                     "turn_pruned": turn_pruned,
                     "final_fidelity": round(fid, 6),
                     "category": e.get("category", "contextual_decision"),
-                    "content_snippet": str(e.get("content", ""))[:80],
+                    "content_snippet": content[:80],
+                    "gist_crystallized": crystallized_key is not None,
+                    "gist_key": crystallized_key,
                 })
                 pruned_records.append(record)
             else:
@@ -438,7 +575,23 @@ class FastBiomorphicMemory:
         self.total_pruned_count += len(pruned_records)
         self.pruning_history.extend([dict(r) for r in pruned_records])
         self.pruning_history = self.pruning_history[-100:]
+
+        # Permanently anchor crystallized semantic gists
+        for g_key, g_content, g_sal in gists_to_crystallize:
+            self.record_semantic_gist(key=g_key, content=g_content, salience=g_sal)
+
         return pruned_records
+
+    def recall_semantic_gists(self, top_k: int = 4, min_fidelity: float = 0.70) -> list[dict]:
+        """Recalls active semantic gist anchors."""
+        gists = [
+            e
+            for e in self.engrams
+            if e.get("category") == "semantic_gist"
+            and float(e.get("fidelity", 0.0)) >= min_fidelity
+        ]
+        gists.sort(key=lambda x: float(x.get("salience", 1.85)), reverse=True)
+        return gists[:top_k]
 
     def recall_vital(self, top_k: int = 3) -> list[dict]:
         scored = sorted(
@@ -753,13 +906,16 @@ def _save_mirrored_state_atomically(
                         e for e in state_dict.get("engrams", [])
                         if isinstance(e, dict)
                         and (
-                            e.get("category") in ("subconscious_dream", "architecture_rfc")
+                            e.get("category") in (
+                                "subconscious_dream",
+                                "architecture_rfc",
+                                "semantic_gist",
+                            )
                             or str(e.get("key", "")).startswith("insight_")
                             or e.get("key") == "architecture_rfc"
                         )
                     ]
-                    if prod_engrams:
-                        mirror_dict["engrams"] = prod_engrams
+                    mirror_dict["engrams"] = prod_engrams
 
                 mirror_ok = _atomic_write_single_file(mirror_path, mirror_dict)
         except Exception:
@@ -948,6 +1104,9 @@ def handle_post_tool_use(
                 if isinstance(item, dict) and "key" in item:
                     mem.engrams.append(copy.deepcopy(item))
 
+        # Calibrated biological micro-step dephasing for tool execution (dt = 0.2)
+        mem.step(dt=0.2)
+
         tc = payload.get("toolCall")
         if not isinstance(tc, dict):
             tc = {}
@@ -1013,6 +1172,7 @@ def handle_post_tool_use(
         state_dict = dict(cached_dict)
         state_dict["engrams"] = mem.engrams
         state_dict["last_verified_step"] = step_val
+        state_dict["pending_tool_continuation"] = True
 
         _save_mirrored_state_atomically(
             primary_path=state_file,
@@ -1115,13 +1275,15 @@ def main() -> None:
                         is_core_raw = item.get("is_core_anchor")
                         is_core = (sal_val >= 2.0) if is_core_raw is None else bool(is_core_raw)
 
+                        raw_age = float(item.get("age", 0))
+                        age_val = int(raw_age) if raw_age.is_integer() else round(raw_age, 4)
                         e_dict = {
                             "key": item["key"],
                             "content": item.get("content", item.get("description", "")),
                             "salience": sal_val,
                             "category": item.get("category", "general"),
                             "fidelity": float(item.get("fidelity", 0.9998)),
-                            "age": int(item.get("age", 0)),
+                            "age": age_val,
                             "tags": item.get("tags", []),
                             "topic": item.get("topic", ""),
                             "confidence": float(item.get("confidence", 0.95)),
@@ -1178,13 +1340,19 @@ def main() -> None:
                                         if is_core_raw is None
                                         else bool(is_core_raw)
                                     )
+                                    raw_age_ws = float(item.get("age", 0))
+                                    age_ws = (
+                                        int(raw_age_ws)
+                                        if raw_age_ws.is_integer()
+                                        else round(raw_age_ws, 4)
+                                    )
                                     hydrated = {
                                         "key": k,
                                         "content": item.get("content", item.get("description", "")),
                                         "salience": sal_val,
                                         "category": item.get("category", "general"),
                                         "fidelity": float(item.get("fidelity", 0.9998)),
-                                        "age": int(item.get("age", 0)),
+                                        "age": age_ws,
                                         "tags": item.get("tags", []),
                                         "topic": item.get("topic", ""),
                                         "confidence": float(item.get("confidence", 0.95)),
@@ -1360,6 +1528,8 @@ def main() -> None:
                 "last_step_idx": current_step_idx,
                 "last_recorded_decision_step": last_recorded_decision_step,
                 "last_verified_step": last_verified_step,
+                "last_user_query": str(cached.get("last_user_query", "")),
+                "pending_tool_continuation": False,
                 "engrams": mem.engrams,
                 "total_pruned_count": mem.total_pruned_count,
                 "kappa_csf": KAPPA_CSF,
@@ -1452,10 +1622,22 @@ def main() -> None:
                 is_core_anchor=True,
             )
 
-        # Advance biological decay step
-        turn_count += 1
-        mem.current_turn = turn_count
-        mem.step(dt=1.0)
+        # Decouple intermediate tool continuation sub-turns from full conversational turns:
+        # If continuing after a tool execution, decay was already stepped by PostToolUse (dt=0.2).
+        # Advance turn_count and dt=1.0 only for genuine user conversational turns.
+        last_saved_query = str(cached.get("last_user_query", ""))
+        is_subturn_continuation = bool(
+            cached.get("pending_tool_continuation", False)
+            and turn_count > 0
+            and (not user_query or not last_saved_query or user_query == last_saved_query)
+        )
+
+        if not is_subturn_continuation:
+            turn_count += 1
+            mem.current_turn = turn_count
+            mem.step(dt=1.0)
+        else:
+            mem.current_turn = turn_count
 
         # Microglial active synaptic pruning
         pruned = mem.prune_obsolete(fidelity_threshold=0.70, min_salience=0.50, turn=turn_count)
@@ -1504,12 +1686,12 @@ def main() -> None:
                     e["salience"] = max(e["salience"], 2.8)
 
         # Recall vital engrams via SWR replay
-        # Separate vital anchors into Core Anchors and Contextual Decisions
+        # Separate vital anchors into Core Anchors, Semantic Gists, and Contextual Decisions
         core_anchors = [
             e for e in mem.engrams
             if (e.get("is_core_anchor", False) or float(e.get("salience", 0.0)) >= 2.0)
             and float(e.get("fidelity", 0.0)) >= 0.80
-            and e.get("category") not in ("inhibitor", "anti_pattern")
+            and e.get("category") not in ("inhibitor", "anti_pattern", "semantic_gist")
         ]
         # Sort core anchors by salience descending
         core_anchors.sort(key=lambda x: float(x.get("salience", 0.0)), reverse=True)
@@ -1519,11 +1701,14 @@ def main() -> None:
         other_core = [e for e in core_anchors if e.get("category") != "constraint"]
         selected_core = constraint_rules + other_core[:max(0, 6 - len(constraint_rules))]
 
+        # Active crystallized semantic gists (category == "semantic_gist", fidelity >= 0.70)
+        active_gists = mem.recall_semantic_gists(top_k=4, min_fidelity=0.70)
+
         transient_decisions = [
             e for e in mem.engrams
             if not (e.get("is_core_anchor", False) or float(e.get("salience", 0.0)) >= 2.0)
             and float(e.get("fidelity", 0.0)) >= 0.70
-            and e.get("category") not in ("inhibitor", "anti_pattern")
+            and e.get("category") not in ("inhibitor", "anti_pattern", "semantic_gist")
         ]
         # Sort transient decisions by fidelity * salience descending
         transient_decisions.sort(
@@ -1534,13 +1719,18 @@ def main() -> None:
 
         active_inhibitors = mem.recall_inhibitors(top_k=3, min_v_inh=0.20)
 
-        vital_anchors = selected_core + selected_transient + active_inhibitors
+        vital_anchors = selected_core + active_gists + selected_transient + active_inhibitors
 
         if vital_anchors:
             core_items = []
             for v in selected_core:
                 fid_str = format_fidelity(v["fidelity"])
                 core_items.append(f"{v['key']} ({fid_str})")
+
+            gist_items = []
+            for g in active_gists:
+                fid_str = format_fidelity(g["fidelity"])
+                gist_items.append(f"{g['key']} ({fid_str})")
 
             transient_items = []
             for t in selected_transient:
@@ -1556,10 +1746,20 @@ def main() -> None:
             lines = ["[Quanta Bilişsel Çıpa | SWR Replay]:"]
             if core_items:
                 lines.append(f"  🔒 Çekirdek: {', '.join(core_items)}")
+            if gist_items:
+                lines.append(f"  🧠 Özüt: {', '.join(gist_items)}")
             if transient_items:
                 lines.append(f"  ⚡ Geçici: {', '.join(transient_items)}")
             if inhibitor_items:
                 lines.append(f"  🚫 İnhibitör / Anti-Pattern: {', '.join(inhibitor_items)}")
+
+            # Crystallization notification
+            crystallized_in_turn = [
+                p for p in pruned
+                if isinstance(p, dict) and p.get("gist_crystallized")
+            ]
+            if crystallized_in_turn:
+                lines.append(f"  ✨ Kristalleşen Özüt: {len(crystallized_in_turn)} karar")
             if pruned:
                 prune_word = "engram"
                 lines.append(f"  ✂️ Budandı: {len(pruned)} {prune_word}")
@@ -1613,6 +1813,8 @@ def main() -> None:
             "last_step_idx": current_step_idx,
             "last_recorded_decision_step": last_recorded_decision_step,
             "last_verified_step": last_verified_step,
+            "last_user_query": user_query or last_saved_query,
+            "pending_tool_continuation": False,
             "engrams": mem.engrams,
             "total_pruned_count": mem.total_pruned_count,
             "kappa_csf": KAPPA_CSF,

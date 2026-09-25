@@ -10,7 +10,7 @@ date: "2026-09-25"
 <div class="result" markdown>
 <span><img src="https://img.shields.io/badge/arXiv-quant--ph%2F2609.xxxxx-b31b1b.svg" alt="arXiv"/></span>
 <span><img src="https://img.shields.io/badge/JOSS-10.21105%2Fjoss.quanta-blue.svg" alt="JOSS"/></span>
-<span><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.17208420-informational.svg" alt="Zenodo"/></span>
+<span><a href="https://doi.org/10.5281/zenodo.22952779"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22952779-informational.svg" alt="Zenodo DOI"/></a></span>
 <span><img src="https://img.shields.io/badge/version-1.2.0-blue.svg" alt="Version"/></span>
 <span><img src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-brightgreen.svg" alt="Python"/></span>
 <span><img src="https://img.shields.io/badge/tests-2%2C076%20passed-success.svg" alt="Tests"/></span>
@@ -23,13 +23,20 @@ date: "2026-09-25"
 
 <div class="admonition info">
 <p class="admonition-title">Author & Institutional Metadata</p>
-<ul>
-  <li><strong>Lead Author & Principal Architect:</strong> <strong>Abdullah Enes SARI</strong> (<a href="https://orcid.org/0000-0002-8827-0587">ORCID: 0000-0002-8827-0587</a>) &mdash; <em>ONMARTECH Quantum Computing Initiative</em>, Istanbul, Turkey (<a href="mailto:info@onmartech.com">info@onmartech.com</a>)</li>
-  <li><strong>Co-Author & Peer Inspection Board:</strong> <strong>Quanta Quantum Research Group</strong> (<em>ONMARTECH Quantum Computing Initiative</em>) &amp; <strong>Antigravity Agentic AI Board</strong> (<em>Google Antigravity Multi-Agent Research Consortium</em>)</li>
-  <li><strong>Release Designation:</strong> <code>Quanta SDK v1.2.0-production</code> | <strong>Date:</strong> September 25, 2026</li>
-  <li><strong>Target Archives:</strong> arXiv:quant-ph / cs.MS; Journal of Open Source Software (JOSS); Zenodo / CERN (DOI: 10.5281/zenodo.17208420)</li>
-  <li><strong>Official Repository:</strong> <a href="https://github.com/ONMARTECH/quanta-sdk">github.com/ONMARTECH/quanta-sdk</a> | <strong>Documentation:</strong> <a href="https://quanta.onmartech.com/">quanta.onmartech.com</a></li>
-</ul>
+<div style="display: flex; align-items: center; gap: 20px; margin-top: 10px; flex-wrap: wrap;">
+  <a href="https://orcid.org/0000-0002-8827-0587" target="_blank" rel="noopener noreferrer" style="flex-shrink: 0;">
+    <img src="../assets/images/orcid_qr.png" alt="ORCID QR Code: 0000-0002-8827-0587" width="105" style="border-radius: 8px; border: 1px solid #c8e6c9; box-shadow: 0 3px 8px rgba(0,0,0,0.12);" />
+  </a>
+  <div style="flex: 1; min-width: 280px;">
+    <ul style="margin: 0; padding-left: 20px;">
+      <li><strong>Lead Author & Principal Architect:</strong> <strong>Abdullah Enes SARI</strong> (<a href="https://orcid.org/0000-0002-8827-0587" target="_blank">ORCID: 0000-0002-8827-0587</a>) &mdash; <em>ONMARTECH Quantum Computing Initiative</em>, Istanbul, Turkey (<a href="mailto:info@onmartech.com">info@onmartech.com</a>)</li>
+      <li><strong>Co-Author & Peer Inspection Board:</strong> <strong>Quanta Quantum Research Group</strong> (<em>ONMARTECH Quantum Computing Initiative</em>) &amp; <strong>Antigravity Agentic AI Board</strong> (<em>Google Antigravity Multi-Agent Research Consortium</em>)</li>
+      <li><strong>Release Designation:</strong> <code>Quanta SDK v1.2.0-production</code> | <strong>Date:</strong> September 25, 2026</li>
+      <li><strong>Target Archives:</strong> arXiv:quant-ph / cs.MS; Journal of Open Source Software (JOSS); Zenodo / CERN (<a href="https://doi.org/10.5281/zenodo.22952779">DOI: 10.5281/zenodo.22952779</a>)</li>
+      <li><strong>Official Repository:</strong> <a href="https://github.com/ONMARTECH/quanta-sdk">github.com/ONMARTECH/quanta-sdk</a> | <strong>Documentation:</strong> <a href="https://quanta.onmartech.com/">quanta.onmartech.com</a></li>
+    </ul>
+  </div>
+</div>
 </div>
 
 ---
@@ -56,30 +63,37 @@ The transition from noisy intermediate-scale quantum (NISQ) systems toward fault
 
 Where NISQ workflows prioritized small, parameterized circuit executions and empirical error mitigation, fault-tolerant architectures demand continuous, high-throughput syndrome processing, non-Clifford state distillation, dynamic feedback, and macroscopic tensor network simulations operating under strict latency constraints.
 
-```
-       ┌─────────────────────────────────────────────────────────────┐
-       │                      QUANTA SDK v1.2.0                      │
-       │           Zero-Dependency Scientific Architecture           │
-       └──────────────────────────────┬──────────────────────────────┘
-                                      │
-         ┌────────────────────────────┼────────────────────────────┐
-         │                            │                            │
-         ▼                            ▼                            ▼
-  PARADIGM 1 & 2               PARADIGM 3                   PARADIGM 4 & 5
-┌─────────────────┐          ┌─────────────────┐          ┌─────────────────┐
-│ First-Principles│          │ Continuous      │          │ 2026 Dual-Track │
-│ Core & Apple UMA│          │ Hilbert Autograd│          │ FTQC Engine     │
-│                 │          │                 │          │                 │
-│ • O(2^n) Tensor │          │ • Daleckii-Krein│          │ • Track A:      │
-│   Contractions  │          │   Spectral      │          │   Rotated [[d^2,│
-│ • Apple Metal   │          │   Fréchet       │          │   1, d]] Willow │
-│   MLX Zero-Copy │          │ • Sinc Kernel   │          │ • Track B: Gross│
-│   (52.1x speedup│          │ • DLA Barren    │          │   [[144,12,12]] │
-│ • SIMD Clifford │          │   Plateau Bound │          │   BP-OSD-0      │
-│   (>3.1M ops/s) │          │   1/dim(g)      │          │ • 15-to-1 Magic │
-│ • MPS Simulator │          │ • Ehrenfest Time│          │   Distillation  │
-│   (chi Renorm)  │          │   Derivatives   │          │ • Invariant Grds│
-└─────────────────┘          └─────────────────┘          └─────────────────┘
+```mermaid
+flowchart TD
+    subgraph L5["Paradigm 5: Certified Mathematical Rigor & Conservation Invariants"]
+        R1["Spectral Unitarity ||U†U - I|| < 1e-14"] --- R2["CPTP Trace |Tr(ρ)-1| < 1e-12"] --- R3["2,076 Passing Tests"]
+    end
+    subgraph L4["Paradigm 4: 2026 FTQC Dual-Track Fault-Tolerance Engine"]
+        TA["Track A: Rotated [[d², 1, d]] + Blossom MWPM + 3D Spacetime Graph"]
+        TB["Track B: Gross [[144, 12, 12]] qLDPC (12x Savings) + Min-Sum BP-OSD"]
+        TU["Universality: 15-to-1 Bravyi-Kitaev Magic Distillation + Lattice Surgery"]
+    end
+    subgraph L3["Paradigm 3: Continuous Hilbert Gradients & Daleckii-Krein Autograd"]
+        DK["Exact Spectral Fréchet Derivative (Sinc Kernel, Machine Precision 1e-16)"]
+        EF["Ehrenfest Time Derivatives d/dt⟨O⟩"]
+        DLA["Dynamic Lie Algebra Bound: Var ≤ 1/dim(g)"]
+    end
+    subgraph L2["Paradigm 2: Apple Silicon Metal / MLX & SIMD High-Throughput Simulation"]
+        UMA["Zero-Copy Unified Memory (52.1x GPU Speedup, Zero PCIe Latency)"]
+        SIMD["SIMD Binary Tableau (>3.1M Clifford ops/s)"]
+        MPS["Norm-Preserving MPS Simulator (250q GHZ in 2.7 ms)"]
+    end
+    subgraph L1["Paradigm 1: Local-First Zero-Dependency First-Principles Core"]
+        PY["Pure Python & NumPy Core"] --- TC["O(2^n) Multidimensional Tensor Contractions"] --- NO["Zero C++/LLVM/CUDA Lock-in"]
+    end
+
+    L1 ==> L2 ==> L3 ==> L4 ==> L5
+
+    style L1 fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style L2 fill:#e0f2f1,stroke:#00897b,stroke-width:2px
+    style L3 fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style L4 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style L5 fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
 ```
 
 ### The Three Systemic Bottlenecks of Classical Quantum Software
@@ -150,27 +164,25 @@ $$
 
 where $t_{\text{H2D}}$ and $t_{\text{D2H}}$ represent host-to-device and device-to-host memory copy latencies over PCIe channels. For dynamic circuits requiring real-time mid-circuit measurements and conditional feedforward operations, this latency penalty severely impedes throughput.
 
-```
-(a) Discrete GPU Architecture (NVIDIA CUDA / PCIe Bus)
-    ┌──────────────┐     PCIe Bus (16-64 GB/s)     ┌──────────────┐
-    │   Host CPU   │ ═════════════════════════════►│  Device GPU  │
-    │  System RAM  │ ◄═════════════════════════════│  Device VRAM │
-    └──────────────┘      Δt_PCIe > 0 (Latency)    └──────────────┘
+```mermaid
+flowchart LR
+    subgraph DISCRETE["(a) Conventional Discrete GPU System"]
+        direction TB
+        CPU1["Host CPU<br>(x86 / ARM)"] <--> RAM1["Host RAM<br>(DDR4/5)"]
+        RAM1 <==>|"PCIe Bus (16-32 GB/s)<br>Copy Latency Δt_PCIe > 0"| VRAM1["Device VRAM<br>(GDDR6/HBM)"]
+        VRAM1 <--> GPU1["Discrete GPU<br>(CUDA Cores)"]
+    end
 
-(b) Apple Silicon Unified Memory Architecture (Quanta Metal / MLX)
-    ┌─────────────────────────────────────────────────────────────┐
-    │               Single Physical Unified Memory                │
-    │            Bandwidth: 400 - 800+ GB/s (UMA Pool)            │
-    └──────────────┬───────────────────────────────┬──────────────┘
-                   │                               │
-            Zero-Copy Pointer               Zero-Copy Pointer
-          (Δt_PCIe ≡ 0 Latency)           (Δt_PCIe ≡ 0 Latency)
-                   │                               │
-                   ▼                               ▼
-            ┌──────────────┐                ┌──────────────┐
-            │   CPU Core   │                │  Metal GPU   │
-            │  (NumPy SIMD)│                │ (MLX Shaders)│
-            └──────────────┘                └──────────────┘
+    subgraph APPLE["(b) Quanta Apple Silicon Unified Memory (UMA)"]
+        direction TB
+        ACPU["Apple CPU Cores<br>(NumPy SIMD)"] <--> POOL[("Shared Unified Physical RAM Pool<br>Up to 800+ GB/s Bandwidth<br>Direct Virtual Pointer Sharing")]
+        AGPU["Metal GPU Shaders<br>(Apple MLX Engine)"] <--> POOL
+        NOTE["Zero-Copy Execution: Δt_PCIe ≡ 0<br>Up to 52.1x Speedup over CPU NumPy"]
+    end
+
+    style DISCRETE fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    style APPLE fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style POOL fill:#fff8e1,stroke:#ffa000,stroke-width:2px
 ```
 
 Quanta natively targets the Apple Silicon Unified Memory Architecture (UMA) through Apple MLX (`mlx.core`) and Metal Performance Shaders (`quanta/simulator/mlx.py`). On Apple M-series processors (M1/M2/M3/M4/M5 Pro, Max, and Ultra), CPU, GPU, and Neural Engine share a unified physical memory pool over a wide memory bus providing bandwidths exceeding 800+ GB/s.
@@ -319,6 +331,25 @@ where $\operatorname{sinc}(u) = \frac{\sin(\pi u)}{\pi u}$ with $\operatorname{s
 
 Quanta exploits this cardinal sine formulation (`quanta/torch/continuous.py`) to eliminate numerical division-by-zero singularities when eigenvalues are degenerate or near-degenerate ($|\lambda_a - \lambda_b| < \epsilon$), maintaining continuous differentiability across the entire parameter manifold.
 
+```mermaid
+flowchart TD
+    subgraph FWD["Forward Quantum Evolution"]
+        IN["Input Features x & Parameters θ<br>H(x, θ) = H_XY(J) + H_Z(x, h, W) + H_X(ω)"] --> EIGH["Spectral Eigendecomposition<br>H = V Λ V†,  ξ₀ = V† |ψ₀⟩"]
+        EIGH --> EVOLVE["Eigenbasis Evolution & Observable<br>ψ_t = V (e^{-iΛt} ⊙ ξ₀),  ⟨O_m⟩ = ⟨ψ_t|O_m|ψ_t⟩"]
+    end
+
+    subgraph BWD["Exact Daleckii-Krein Backward Pass"]
+        COT["Vector Cotangent Contraction<br>|w⟩ = Σ_m Ȳ_m O_m |ψ_t⟩ (O(B · 2^N) Memory)"] --> DKK["Daleckii-Krein Spectral Kernel<br>M_ab(t) = -i t e^{-i(λ_a+λ_b)t/2} sinc((λ_a - λ_b)t / 2π)"]
+        DKK --> PROJ["Hermitian Gradient Projections<br>∇_θ = Re Tr(S · ∂H/∂θ),  d/dt⟨O⟩ = 2 Im⟨w|H|ψ_t⟩"]
+    end
+
+    EVOLVE -.->|"VJP Cotangent Flow"| COT
+
+    style FWD fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
+    style BWD fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style DKK fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
+```
+
 ### 4.3 Cotangent Backward Contraction & Ehrenfest Time Derivatives
 
 In the backward step, Quanta evaluates vector-Jacobian products (VJPs) with $O(B \cdot 2^N)$ memory consumption by avoiding explicit instantiation of dense $2^N \times 2^N$ derivative matrices. The cotangent projection vector:
@@ -374,36 +405,28 @@ Quanta provides `is_barren_plateau_immune(dla_dim, n_qubits)`, allowing research
 
 ## 5. Paradigm 4: 2026 FTQC Dual-Track Fault-Tolerance Engine
 
-```
-       ┌─────────────────────────────────────────────────────────────┐
-       │             2026 FTQC Dual-Track Architecture               │
-       └──────────────────────────────┬──────────────────────────────┘
-                                      │
-         ┌────────────────────────────┴────────────────────────────┐
-         │                                                         │
-         ▼                                                         ▼
-  TRACK A: 2D Topological                         TRACK B: High-Dim qLDPC
-┌─────────────────────────────────┐       ┌─────────────────────────────────┐
-│ Rotated Surface Code [[d^2,1,d]]│       │ Gross [[144, 12, 12]] Bivariate │
-│                                 │       │ Bicycle Code                    │
-│ • Nearest-neighbor 2D planar    │       │ • Group Ring: F_2[x,y]/<x^12-1, │
-│ • Edmonds Blossom MWPM Decoder  │       │   y^6-1>                        │
-│ • Willow 3D Spacetime Engine:   │       │ • Check matrices: H_X = [A|B],  │
-│   Δs_t = s_t ⊕ s_{t-1}          │       │   H_Z = [B^T|A^T]               │
-│ • Logarithmic likelihood weights│       │ • 12x Memory Compression over 2D│
-│ • Lambda error suppression > 1.0│       │ • Native BP-OSD Decoder:        │
-│                                 │       │   Normalized Min-Sum (α=0.75)   │
-│                                 │       │   with OSD-0 fallback           │
-│                                 │       │   (1.54 ms latency, 100% clear) │
-└─────────────────────────────────┘       └─────────────────────────────────┘
-                                 │
-                                 ▼
-       ┌─────────────────────────────────────────────────────────────┐
-       │                 Non-Clifford Universality                   │
-       │ • 15-to-1 Bravyi-Kitaev Distillation: ε_out ≤ 35 p^3        │
-       │ • CCZ Tripartite State Factory                              │
-       │ • Planar Surface Code Lattice Surgery (Z/X-merge, split)    │
-       └─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph TRACKA["Track A: 2D Surface Codes & Google Willow 3D Engine"]
+        LAT["Rotated [[d², 1, d]] Lattice<br>m_X = (d²-1)/2,  m_Z = (d²-1)/2"] --> ST["3D Spacetime Defect Graph<br>Temporal: Δs_t = s_t ⊕ s_{t-1}<br>Weights: w = -ln(p/(1-p))"]
+        ST --> MWPM["Edmonds Blossom MWPM Decoder<br>Optimal Matching O(V³)<br>Suppression: P_L ∝ (p/p_th)^{(d+1)/2}"]
+    end
+
+    subgraph TRACKB["Track B: Canonical Gross [[144, 12, 12]] qLDPC Code"]
+        RING["Bivariate Group Ring R = F₂[x,y] / ⟨x¹²-1, y⁶-1⟩<br>A(x,y) = x³ + y + y²,  B(x,y) = y³ + x + x²"] --> CSS["CSS Orthogonal Matrices<br>H_X = [A | B],  H_Z = [B^T | A^T]<br>H_X H_Z^T ≡ 0 (mod 2) — 12x Memory Savings"]
+        CSS --> BPOSD["Normalized Min-Sum BP + OSD-0 Decoder<br>Attenuation α=0.75, GF(2) Pivot Reduction<br>1.54 ms Latency, 100% Syndrome Clearance"]
+    end
+
+    subgraph UNIV["Non-Clifford Fault-Tolerant Universality"]
+        DIST["15-to-1 Bravyi-Kitaev Magic Distillation<br>|T⟩ State Factory: ε_out ≤ 35 p³"] <--> SURG["Planar Lattice Surgery<br>Non-Destructive Joint Parity Check"]
+    end
+
+    TRACKA -.-> UNIV
+    TRACKB -.-> UNIV
+
+    style TRACKA fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style TRACKB fill:#ede7f6,stroke:#512da8,stroke-width:2px
+    style UNIV fill:#fffde7,stroke:#fbc02d,stroke-width:2px
 ```
 
 ### 5.1 Track A: Rotated Surface Codes & Willow 3D Spacetime Engine

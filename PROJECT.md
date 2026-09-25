@@ -31,9 +31,9 @@ Quanta SDK Cognitive Architecture enhancement integrating biomorphic quantum-ins
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Calibrated Biological Time & Calmed Decay Kinetics | Features 1, 2, 3 | None | IN_PROGRESS |
-| M2 | Fuzzy-Trace Semantic Gist Extraction & Consolidation | Features 4, 5, 6, 7, 8, 9 | M1 | PLANNED |
-| M3 | Multi-Disciplinary Cognitive Evaluation Panel | Features 10, 11, 12, 13, 14, 15 | None | PLANNED |
+| M1 | Calibrated Biological Time & Calmed Decay Kinetics | Features 1, 2, 3 | None | DONE |
+| M2 | Fuzzy-Trace Semantic Gist Extraction & Consolidation | Features 4, 5, 6, 7, 8, 9 | M1 | DONE |
+| M3 | Multi-Disciplinary Cognitive Evaluation Panel | Features 10, 11, 12, 13, 14, 15 | None | IN_PROGRESS |
 | M4 | Architectural Invariants, Quality Verification & Tests | Features 16, 17 | M1, M2, M3 | PLANNED |
 
 ## Interface Contracts

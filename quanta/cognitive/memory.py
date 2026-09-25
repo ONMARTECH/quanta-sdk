@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import re
 from typing import Any
 
 import torch
@@ -22,6 +23,8 @@ DELTA_S_LTP: float = 0.35
 LAMBDA_LTD: float = 0.30
 DELTA_S_LTD: float = 0.35
 GAMMA_INH: float = 0.02
+SALIENCE_GIST_DEFAULT: float = 1.85
+GIST_CATEGORY: str = "semantic_gist"
 
 
 def text_to_statevector(text: str, dim: int = 64) -> torch.Tensor:
@@ -76,6 +79,90 @@ def text_to_statevector(text: str, dim: int = 64) -> torch.Tensor:
         res: torch.Tensor = torch.as_tensor(c_tensor / norm)
         return res
     return c_tensor
+
+
+def is_actionable_resolution(content: str, key: str = "") -> bool:
+    """Evaluates whether an ephemeral memory contains an actionable architectural resolution.
+
+    Filters out operational tool chatter and requires architectural, strategic, or
+    normative invariant markers (Brainerd & Reyna Fuzzy-Trace Theory).
+
+    Args:
+        content: Text content of the memory engram.
+        key: Key/identifier of the engram.
+
+    Returns:
+        True if the content represents an actionable resolution suitable for
+        fuzzy-trace semantic crystallization; False otherwise.
+    """
+    clean = content.strip().lower()
+    if len(clean) < 20:
+        return False
+
+    # Exclude purely procedural tool noise
+    noise_patterns = (
+        r"^\[\w+\]",
+        r"^(?:view_file|run_command|grep_search|find_by_name|list_dir|grep|find|cd|ls|cat|pwd)\b",
+        r"\b(?:checked line|reading file|listing directory|command exited with code)\b",
+    )
+    if any(re.search(p, clean) for p in noise_patterns):
+        return False
+
+    # Check for strategic/architectural keywords & directives
+    strategic_keywords = (
+        "architect", "mimari", "strategy", "strateji", "solution", "çözüm",
+        "decision", "karar", "invariant", "rule", "kural", "standard", "standart",
+        "policy", "politika", "protocol", "protokol", "design", "tasarım",
+        "pattern", "approach", "yaklaşım", "principle", "prensip", "consensus", "uzlaşı",
+        "always", "never", "daima", "asla", "kullan", "use", "adopt", "benimse",
+        "avoid", "kaçın", "enforce", "uygula", "optimize", "pin", "kilitle",
+        "sqlite", "posix", "fsync", "waf", "cf.client.bot", "route", "sdk", "api",
+    )
+    combined = f"{key.lower()} {clean}" if key else clean
+    return any(
+        re.search(rf"\b{re.escape(kw)}", combined) if len(kw) <= 4 else kw in combined
+        for kw in strategic_keywords
+    )
+
+
+def distill_semantic_gist(content: str, key: str = "") -> tuple[str, str]:
+    """Distills an ephemeral decision into a crisp, permanent semantic gist.
+
+    Removes conversational preambles, parenthetical targets, and step details.
+    Produces a normalized gist key and a distilled summary statement (max 140 chars).
+
+    Args:
+        content: Verbatim text content of the decision engram.
+        key: Original key of the decision engram (e.g. 'decision_step_42').
+
+    Returns:
+        tuple of (gist_key, distilled_content)
+    """
+    clean = content.strip()
+    # Strip parenthetical goals (e.g. '(Hedef: ...)' or '(Goal: ...)')
+    clean = re.sub(r"\((?:Hedef|Goal|Target):[^)]*\)", "", clean, flags=re.IGNORECASE).strip()
+    # Strip leading preambles ('Karar: ', 'Çözüm: ', 'Sonuç: ', 'Solution: ', 'Decision: ', etc.)
+    clean = re.sub(
+        r"^(?:#{1,4}\s*)?(?:\*\*|\*)?"
+        r"(?:Karar|Çözüm|Sonuç|Solution|Decision|Recommendation)[:\s]*(?:\*\*|\*)?",
+        "",
+        clean,
+        flags=re.IGNORECASE,
+    ).strip()
+    # Normalize extra whitespace
+    clean = re.sub(r"\s+", " ", clean).strip()
+
+    # Generate gist key
+    clean_key = re.sub(r"^decision_", "", key) if key else ""
+    if not clean_key:
+        slug_words = re.findall(r"[a-zA-Z0-9_]+", clean.lower())[:3]
+        clean_key = "_".join(slug_words) if slug_words else "unnamed"
+
+    gist_key = clean_key if clean_key.startswith("gist_") else f"gist_{clean_key}"
+    gist_content = clean[:140].strip()
+    if gist_content and not gist_content.endswith((".", "!", "?")):
+        gist_content += "."
+    return gist_key, gist_content
 
 
 class CognitiveMemoryManager:
@@ -187,6 +274,37 @@ class CognitiveMemoryManager:
             category=category,
             overwrite=True,
             is_core_anchor=False,
+        )
+
+    def record_semantic_gist(
+        self,
+        key: str,
+        content: str,
+        salience: float = SALIENCE_GIST_DEFAULT,
+        is_core_anchor: bool = True,
+    ) -> int:
+        """Records a crystallized semantic gist into core memory (Brainerd & Reyna FTT).
+
+        Anchors overarching conclusion into core memory with high salience (S >= 1.8)
+        and is_core_anchor=True, permanently protecting it against synaptic downscaling.
+
+        Args:
+            key: Unique gist identifier (e.g. 'gist_posix_atomic').
+            content: Distilled invariant summary text.
+            salience: Dopaminergic priority tag (clamped to >= 1.80).
+            is_core_anchor: Whether to flag as an immutable core anchor (default: True).
+
+        Returns:
+            Buffer index of the stored engram.
+        """
+        sal = max(1.80, float(salience))
+        return self.record_decision(
+            key=key,
+            content=content,
+            salience=sal,
+            category=GIST_CATEGORY,
+            overwrite=True,
+            is_core_anchor=is_core_anchor,
         )
 
     def update_decision(
@@ -474,13 +592,19 @@ class CognitiveMemoryManager:
         fidelity_threshold: float = 0.70,
         min_salience: float = 0.5,
         max_age: float | None = None,
+        enable_gist_consolidation: bool = True,
     ) -> list[dict[str, Any]]:
-        """Active Synaptic Pruning: Clears decayed, expired, or unreinforced engrams.
+        """Active Synaptic Pruning with Fuzzy-Trace Semantic Gist Extraction.
 
-        Inspired by sleep downscaling (Tononi & Cirelli) and microglial phagocytosis.
-        Prunes engrams that have decayed below `fidelity_threshold` (for low/medium salience)
-        or exceeded `max_age`. High-salience constraints and core anchors (is_core_anchor=True
-        or salience >= 2.0) are permanently shielded against automatic pruning.
+        Inspired by sleep downscaling (Tononi & Cirelli), microglial phagocytosis,
+        and Brainerd & Reyna Fuzzy-Trace Theory (FTT). Prunes engrams that have decayed
+        below `fidelity_threshold` (for low/medium salience) or exceeded `max_age`.
+        Before pruning decayed transient decisions at fidelity_threshold, analyzes
+        whether an actionable strategic/architectural resolution exists. If so,
+        synthesizes and anchors a semantic gist (category='semantic_gist', S >= 1.8)
+        into core memory while evicting the fine-grained verbatim engram.
+        High-salience constraints and core anchors (is_core_anchor=True or salience >= 2.0)
+        are permanently shielded against automatic pruning.
 
         Returns:
             List of dictionaries describing each pruned engram and the pruning reason.
@@ -490,6 +614,7 @@ class CognitiveMemoryManager:
 
         survivors = []
         pruned_records = []
+        gists_to_record: list[tuple[str, str, float]] = []
 
         for engram in self.buffer.buffer:
             psi_0 = engram["pristine_state"]
@@ -500,8 +625,14 @@ class CognitiveMemoryManager:
             age = float(engram["age"])
             meta = engram.get("metadata") or {}
             key = meta.get("key", "unnamed")
+            cat = meta.get("category", "")
+            content = meta.get("content", "")
 
-            is_core = bool(meta.get("is_core_anchor", False) or d_tag >= 2.0)
+            is_core = bool(
+                meta.get("is_core_anchor", False)
+                or d_tag >= 2.0
+                or cat == GIST_CATEGORY
+            )
             if is_core:
                 survivors.append(engram)
                 continue
@@ -509,13 +640,15 @@ class CognitiveMemoryManager:
             should_prune = False
             reason = ""
             is_transient = meta.get("is_core_anchor") is False and d_tag <= 0.8
-            is_inhibitor = meta.get("category") in ("inhibitor", "anti_pattern")
+            is_inhibitor = cat in ("inhibitor", "anti_pattern")
             v_inh = float(meta.get("v_inh", V_INH_DEFAULT))
 
             # Condition 0: Depotentiated inhibitor clearance (V_inh < 0.20 and salience <= 0.50)
             if is_inhibitor and v_inh < 0.20 and d_tag <= 0.50:
                 should_prune = True
-                reason = f"depotentiated_inhibitor ({v_inh:.3f} < 0.20, salience {d_tag:.2f} <= 0.50)"
+                reason = (
+                    f"depotentiated_inhibitor ({v_inh:.3f} < 0.20, salience {d_tag:.2f} <= 0.50)"
+                )
             # Condition A: Decayed below threshold for low-salience or transient decisions
             elif fid < fidelity_threshold and (d_tag <= min_salience or is_transient):
                 should_prune = True
@@ -530,15 +663,29 @@ class CognitiveMemoryManager:
                 reason = f"irrecoverable_dephasing ({fid:.3f} < 0.35)"
 
             if should_prune:
+                crystallized_key: str | None = None
+                if (
+                    enable_gist_consolidation
+                    and is_transient
+                    and not is_inhibitor
+                    and is_actionable_resolution(content, key)
+                ):
+                    g_key, g_content = distill_semantic_gist(content, key)
+                    gists_to_record.append((g_key, g_content, SALIENCE_GIST_DEFAULT))
+                    crystallized_key = g_key
+                    reason += f" (crystallized_to_{g_key})"
+
                 pruned_records.append(
                     {
                         "key": key,
-                        "content": meta.get("content", ""),
+                        "content": content,
                         "salience": d_tag,
                         "age_turns": age,
                         "final_fidelity": round(fid, 5),
                         "reason": reason,
                         "is_core_anchor": False,
+                        "gist_crystallized": crystallized_key is not None,
+                        "gist_key": crystallized_key,
                     }
                 )
             else:
@@ -546,6 +693,11 @@ class CognitiveMemoryManager:
 
         self.buffer.buffer = survivors
         self.total_pruned_count += len(pruned_records)
+
+        # Anchor newly crystallized semantic gists into core buffer
+        for g_key, g_content, g_sal in gists_to_record:
+            self.record_semantic_gist(key=g_key, content=g_content, salience=g_sal)
+
         return pruned_records
 
     def _evict_least_salient(self) -> None:
@@ -559,6 +711,7 @@ class CognitiveMemoryManager:
             if not (
                 (e.get("metadata") or {}).get("is_core_anchor", False)
                 or float(e.get("dopamine_tag", 1.0)) >= 2.0
+                or (e.get("metadata") or {}).get("category") == GIST_CATEGORY
             )
         ]
 
@@ -727,6 +880,22 @@ class CognitiveMemoryManager:
 
         results.sort(key=lambda x: x["salience"] * x["retention_fidelity"], reverse=True)
         return results[:top_k]
+
+    def recall_semantic_gists(
+        self, top_k: int = 4, min_fidelity: float = 0.70
+    ) -> list[dict[str, Any]]:
+        """Recalls active crystallized semantic gists.
+
+        Args:
+            top_k: Maximum number of gists to return.
+            min_fidelity: Minimum retention fidelity threshold.
+
+        Returns:
+            List of semantic gist dictionaries sorted by salience * fidelity descending.
+        """
+        vitals = self.recall_vital_context(top_k=self.buffer.capacity, min_fidelity=min_fidelity)
+        gists = [v for v in vitals if v.get("category") == GIST_CATEGORY]
+        return gists[:top_k]
 
     def get_status_summary(self) -> dict[str, Any]:
         """Returns diagnostic metrics of the cognitive buffer."""

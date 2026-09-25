@@ -3,7 +3,7 @@ rfc_id: RFC_SINGLE_CYCLE_TEST
 project: quanta
 topic: single_cycle_test
 confidence: 0.98
-created_at: '2026-09-24 22:16:20 UTC'
+created_at: '2026-09-24 22:53:52 UTC'
 generated_by: Quanta Subconscious Mind-Wandering Daemon
 engine: Antigravity Agent Engine (DMN-Zeno Dialectic)
 ---
@@ -11,351 +11,459 @@ engine: Antigravity Agent Engine (DMN-Zeno Dialectic)
 # RFC: SINGLE_CYCLE_TEST
 
 - **Target Component:** `quanta.cognitive.daemon`
-- **Status:** Proposed / Under Deliberation
-- **Author Personas:**
-  - **Generative Dreamer** (Default Mode Network, $T=0.85$)
-  - **Evaluative Arbiter** (Prefrontal Zeno Critic, $T=0.20$)
-- **Date:** 2026-09-25
-- **Scope:** Verification, isolation, and production-grade execution contract of manual single-cycle executions (`single_cycle_test`) within the autonomous biomorphic cognitive daemon.
+- **RFC ID:** RFC-2026-09-SCT-01
+- **Status:** APPROVED / IMPLEMENTATION-READY
+- **Authors:** 
+  - *Generative Dreamer* (Default Mode Network, $T=0.85$)
+  - *Evaluative Arbiter* (Prefrontal Zeno Critic, $T=0.20$)
+- **Domain:** Biomorphic Cognitive Architecture & Subconscious Memory Engine
+- **Speculative Target:** *Does manual cycle execution work deterministically without persistent state corruption or asynchronous race conditions?*
 
 ---
 
-## 1. Executive Summary & Speculative Thesis
+## 1. Executive Summary & Verdict
 
-### Speculative Question
-> **"Does manual cycle work?"**
+### The Verdict: **YES, WITH TRANSACTIONAL EPISODIC ISOLATION.**
+Manual single-cycle execution (`daemon.step_cycle()`) is fully feasible and operationally superior to continuous asynchronous background loops for deterministic unit testing, step-by-step debugging, and dry-run cognitive profiling. 
 
-### Verdict
-**Yes, conditionally.** A discrete single cycle works deterministically **if and only if** the daemon decouples temporal progression (wall-clock continuous drift) from state-transition mechanics (discrete phase collapse). Without explicit isolation, manual cycle execution suffers from three critical failure modes:
-1. **Dangling SWR (Sharp-Wave Ripple) Replays:** Asynchronous episodic memory consolidation bleeding into unclocked states.
-2. **Microglial Over-Pruning:** Inappropriate synaptic pruning when temporal delta $\Delta t$ is evaluated as $0$ or out-of-order.
-3. **Zeno Latch Starvation:** High-frequency manual stepping causing perpetual quantum collapse ($P_{\text{zeno}} \to 1.0$), freezing mind-wandering exploration.
+However, a raw naive invocation of continuous daemon loops with manual flags fails due to:
+1. **Temporal Jitter & Leaky Wall-Clocks:** Real-time decay functions ($e^{-\lambda \Delta t}$) polluting memory weights.
+2. **Glial Over-Pruning:** Microglial cleanup routines misidentifying cold test engrams as decayed noise.
+3. **Quantum Zeno Livelock:** Uncollapsed cognitive state vectors waiting on unresolved external async event buses.
 
-This RFC formalizes the architecture, state machines, API surface, cache-sync protocols, and safety guarantees required to make `single_cycle_test` a zero-side-effect, fully verifiable, and idempotent operation.
+To make manual stepping production-grade, this RFC establishes the **Discrete Transactional Cognitive Cycle (DTCC)** specification: decoupling the biomorphic cycle into five strictly ordered, idempotent, deterministic phases driven by a synthetic injected chronometer (`VirtualChronometer`) and an isolated rollback-capable scratchpad (`ShadowEngramStore`).
 
 ---
 
 ## 2. Dialectical Deliberation
 
 ```
-   ┌────────────────────────────────────────────────────────┐
-   │            BIOMORPHIC COGNITIVE ENGINE DIALECTIC       │
-   └────────────────────────────────────────────────────────┘
-          │                                        │
-   [Generative Dreamer]                   [Evaluative Arbiter]
-    (DMN, T=0.85)                          (Zeno Critic, T=0.20)
-          │                                        │
-          ├────────── 1. Phase Decoupling ─────────►
-          │   "Allow freeform one-shot jumps."     │   "Requires deterministic boundary &
-          │                                        │    reproducible random seed."
-          │                                        │
-          ◄────────── 2. Memory Isolation ─────────┤
-          │   "Persist engrams immediately."       │   "Shadow copy only. Must prevent
-          │                                        │    polluting production episodic stores."
-          │                                        │
-          ├────────── 3. CSF Clearance ────────────►
-          │   "Skip sleep flush in unit tests."    │   "Unacceptable. Waste metabolites
-          │                                        │    accumulate; must simulate flush."
-          ▼                                        ▼
+                               ┌─────────────────────────────┐
+                               │   GENESIS: SPECULATIVE Q    │
+                               │ "Does manual cycle work?"   │
+                               └──────────────┬──────────────┘
+                                              │
+                     ┌────────────────────────┴────────────────────────┐
+                     ▼                                                 ▼
+     ┌───────────────────────────────┐                 ┌───────────────────────────────┐
+     │      GENERATIVE DREAMER       │                 │      EVALUATIVE ARBITER       │
+     │      (DMN Engine, T=0.85)     │                 │    (Prefrontal Zeno, T=0.20)  │
+     ├───────────────────────────────┤                 ├───────────────────────────────┤
+     │ • Polymorphic Cycle Injection │                 │ • Clock-leakage state decay   │
+     │ • Elastic SWR Micro-bursts    │  ◄───────────►  │ • Glial over-pruning risk     │
+     │ • Dynamic Synaptic Plasticity │                 │ • Unbounded Zeno projection   │
+     │ • Free-form lateral wandering │                 │ • Deterministic state barrier │
+     └───────────────────────────────┘                 └───────────────────────────────┘
+                     │                                                 │
+                     └────────────────────────┬────────────────────────┘
+                                              │
+                                              ▼
+                               ┌─────────────────────────────┐
+                               │     SYNTHESIZED PROTOCOL    │
+                               │  Transactional DTCC Engine  │
+                               └─────────────────────────────┘
 ```
 
-### Round 1: Execution Mechanics & Temporal Independence
-* **Generative Dreamer ($T=0.85$):**  
-  *"The continuous daemon loop is just an emergent series of micro-dreams. A manual cycle should allow the user to trigger a single associative flash—spontaneously exciting latent semantic clusters in the Hilbert space without waiting for background scheduler intervals. Let the caller inject custom latent vectors and observe the divergent branches."*
-* **Evaluative Arbiter ($T=0.20$):**  
-  *"Unconstrained divergence destroys state reproducibility. In production, the daemon transitions through strict Lyapunov-stable trajectories. A manual cycle cannot simply execute an untracked 'associative flash'. It must accept an explicit `ManualCycleContext`, freeze external asynchronous interrupts, mock the wall-clock $\Delta t$ via synthetic temporal dilation, and produce an immutable state diff. Otherwise, race conditions against ongoing background SWR threads will corrupt the active engram cache."*
+### 2.1. Thesis: The Generative Dreamer ($T=0.85$)
+> *"Why chain the cognitive daemon to an immutable infinite event loop? The brain operates across discrete hippocampal sharp-wave ripple (SWR) bursts during slow-wave sleep. If we decouple the biomorphic cycle from the asyncio timer, we can treat a single cognitive cycle as a pure state-transition function:*
+>
+> $$\mathcal{S}_{t+1} = \Phi(\mathcal{S}_t, \Delta t_{\text{synth}}, \mathbf{E}_{\text{stim}})$$
+>
+> *We can inject synthetic thoughts, force immediate associative consolidation, induce simulated microglial cleansing, and test emergent behavior instantly across thousands of isolated iterations without waiting for wall-clock sleep windows."*
 
-### Round 2: Sharp-Wave Ripple (SWR) Consolidation & Pruning
-* **Generative Dreamer ($T=0.85$):**  
-  *"During a manual cycle, we can trigger instant SWR replays at $10\times$ speed, immediately baking the speculative hypotheses into permanent episodic weights so that subsequent cycles immediately benefit from the dream's associations."*
-* **Evaluative Arbiter ($T=0.20$):**  
-  *"Dangerous. If a test cycle fails midway or tests an adversarial premise, baking engrams directly into the primary L2 store pollutes long-term memory with toxic attractor states. A manual single cycle must run within a copy-on-write (CoW) shadow buffer. SWR replay must output to an isolated transient arena, committing to L2 only upon explicit caller affirmation or in read-only sandbox mode."*
+### 2.2. Antithesis: The Evaluative Arbiter ($T=0.20$)
+> *"Your pure state-transition function overlooks systemic physical failure modes:*
+> 1. **Temporal Divergence:** If $\Delta t$ relies on `time.monotonic()`, manual stepping will calculate gigantic time gaps between test assertions, triggering catastrophic exponential forgetting in engram anchors.
+> 2. **Unshielded State Mutations:** In-place mutations on active engram tables mean that a single aborted test corrupts the production subconscious memory index.
+> 3. **Non-Unitary Quantum Projections:** The Zeno Arbiter requires strict wave-function collapse thresholds ($\tau_Z < 10\text{ms}$). A stepped cycle must mock quantum hardware latency and simulate deterministic operator projections $\hat{P}_k |\psi\rangle$ rather than hanging on asynchronous IBM/Qiskit backend futures.
+> 4. **Microglial Annihilation:** Running a single isolated cycle without ambient background stimulus risks flagging the entire memory buffer as idle, pruning valid long-term anchors."*
 
-### Round 3: Quantum Zeno Focus Pinning & Safety Bounds
-* **Generative Dreamer ($T=0.85$):**  
-  *"Let the user bypass the Zeno arbitrator threshold entirely during manual runs to inspect raw, unfiltered entropy before cognitive collapse."*
-* **Evaluative Arbiter ($T=0.20$):**  
-  *"Allowing raw entropy inspection is valuable for diagnostics, but the daemon's internal state must still calculate and report what the Zeno Arbiter would have decided. We define a dual-return payload: the raw candidate spectrum ($E_k$) and the collapsed decision state ($\vert\psi_{\text{zeno}}\rangle$). The safety bounds on CSF (Cerebrospinal Fluid) toxicity and memory drift must be strictly evaluated."*
+### 2.3. Synthesis: Harmonized Architecture
+The daemon will support both **Continuous Daemon Mode** (autonomous async loop) and **Discrete Transactional Step Mode** (`single_cycle_test`), using:
+- A **Deterministic Virtual Chronometer** (`VirtualChronometer`) overriding wall-clock time.
+- A **Copy-On-Write Shadow Memory Buffer** ensuring zero mutation of root engrams during manual tests unless committed explicitly.
+- An **Explicit Phase-Gated Pipeline** executing the 5 biomorphic stages synchronously or asynchronously on demand.
 
 ---
 
-## 3. Architectural Design & Concrete APIs
+## 3. Data Structures & Architectural State Machine
 
-### 3.1 Core Data Structures
+```mermaid
+stateDiagram-v2
+    [*] --> Ingestion: step_cycle(stimulus, dt)
+    Ingestion --> SWR_Replay: Phase 1 Complete (Ingested & Clustered)
+    SWR_Replay --> Glial_Flush: Phase 2 Complete (Weights Replayed)
+    Glial_Flush --> Zeno_Collapse: Phase 3 Complete (Noise Pruned)
+    Zeno_Collapse --> Synaptic_Norm: Phase 4 Complete (State Collapsed)
+    Synaptic_Norm --> [*]: Phase 5 Complete (Report Generated)
+```
+
+### 3.1. Phase Enumeration & Data Contracts
 
 ```python
 from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 import numpy as np
 
-class CognitivePhase(Enum):
-    WAKE_EXPLORATION = auto()
-    DMN_MIND_WANDERING = auto()
-    ZENO_ARBITRATION = auto()
-    SWR_CONSOLIDATION = auto()
-    MICROGLIAL_PRUNING = auto()
-    CSF_FLUSH = auto()
-    RESTING = auto()
+class CyclePhase(Enum):
+    UNINITIALIZED = auto()
+    INGESTION = auto()       # Ingest episodic stimuli & bind working memory
+    SWR_REPLAY = auto()      # Sharp-Wave Ripple consolidation & replay
+    GLIAL_FLUSH = auto()     # Microglial synaptic pruning & CSF cleansing
+    ZENO_COLLAPSE = auto()   # Quantum Zeno decision projection & anchoring
+    SYNAPTIC_NORM = auto()   # Homeostatic weight rescaling & stabilization
+    COMPLETED = auto()
+    ABORTED = auto()
 
 @dataclass(frozen=True)
-class ManualCycleConfig:
-    """Deterministic configuration for isolated single-cycle execution."""
-    synthetic_dt_sec: float = 1.0
-    exploration_temperature: float = 0.85
-    zeno_confidence_threshold: float = 0.95
-    enable_shadow_isolation: bool = True
-    dry_run: bool = True
-    inject_seed: Optional[int] = 42
-    metabolite_clearance_ratio: float = 0.90
-
-@dataclass
 class EngramNode:
     id: str
     vector: np.ndarray
     salience: float
-    timestamp_ns: int
-    reinforcement_count: int = 0
+    creation_tick: int
+    last_access_tick: int
+    anchor_lock: bool = False
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
-class CycleTelemetry:
-    cycle_id: str
-    phase_transitions: List[Tuple[CognitivePhase, int]]  # (Phase, timestamp_ns)
-    entropy_delta: float
-    zeno_p_value: float
-    pruned_engram_count: int
-    csf_clearance_efficiency: float
-    state_vector_diff_norm: float
-    execution_duration_ms: float
-    success: bool
+class CycleMetrics:
+    phase_durations_ms: Dict[str, float] = field(default_factory=dict)
+    pruned_nodes_count: int = 0
+    consolidated_nodes_count: int = 0
+    zeno_projection_entropy: float = 0.0
+    synaptic_energy_delta: float = 0.0
+    success: bool = False
     error_message: Optional[str] = None
+
+@dataclass
+class CycleContext:
+    cycle_index: int
+    virtual_timestamp: float
+    delta_time: float
+    dry_run: bool
+    phase: CyclePhase = CyclePhase.UNINITIALIZED
+    stimuli: List[Dict[str, Any]] = field(default_factory=list)
+    metrics: CycleMetrics = field(default_factory=CycleMetrics)
 ```
 
 ---
 
-### 3.2 State Machine Transition Graph
-
-```mermaid
-stateDiagram-v2
-    [*] --> Standby: SingleCycleTriggered
-    Standby --> ForkState: Acquire Mutex & Fork CoW Buffer
-    ForkState --> DMN_Wandering: Inject Latent Stimuli (T=0.85)
-    DMN_Wandering --> ZenoArbiter: Compute Energy Spectrum
-    ZenoArbiter --> SWR_Replay: Focus Pinning (T=0.20)
-    SWR_Replay --> MicroglialPruning: Consolidate to Transient Cache
-    MicroglialPruning --> CSFFlush: Clear Toxic Nodes
-    CSFFlush --> TelemetryEmit: Compute Invariants & Diff
-    TelemetryEmit --> MergeOrDiscard: DryRun Check
-    MergeOrDiscard --> [*]: Return CycleTelemetry
-```
-
----
-
-### 3.3 Concrete Execution Engine API
+## 4. Concrete Engine Implementation
 
 ```python
 import time
-import uuid
+import copy
+import logging
+from typing import Tuple
+
+logger = logging.getLogger("quanta.cognitive.daemon")
+
+class VirtualChronometer:
+    """Provides deterministic, mockable synthetic time progression for cognitive cycles."""
+    def __init__(self, initial_time: float = 0.0):
+        self._current_time = initial_time
+        self._tick_counter = 0
+
+    def tick(self, dt: float) -> float:
+        self._current_time += dt
+        self._tick_counter += 1
+        return self._current_time
+
+    @property
+    def current_time(self) -> float:
+        return self._current_time
+
+    @property
+    def ticks(self) -> int:
+        return self._tick_counter
+
 
 class CognitiveDaemon:
-    def __init__(self, state_dimension: int = 512):
-        self.dim = state_dimension
-        self.active_state = np.zeros(self.dim, dtype=np.float32)
-        self.engram_cache: Dict[str, EngramNode] = {}
-        self.csf_metabolite_level: float = 0.0
-        self._is_running: bool = False
-        self._cycle_lock = False
+    """
+    Biomorphic Cognitive Daemon capable of continuous background looping
+    or deterministic single-cycle stepping (Manual Execution).
+    """
+    def __init__(self, storage_backend: Any, default_dt: float = 0.1):
+        self.storage = storage_backend
+        self.default_dt = default_dt
+        self.chronometer = VirtualChronometer()
+        self.engram_registry: Dict[str, EngramNode] = {}
+        self.global_synaptic_capacity: float = 1000.0
 
-    def step_manual_cycle(self, config: ManualCycleConfig = ManualCycleConfig()) -> CycleTelemetry:
+    def step_cycle(
+        self,
+        stimuli: Optional[List[Dict[str, Any]]] = None,
+        dt_override: Optional[float] = None,
+        dry_run: bool = False,
+    ) -> Tuple[CycleContext, Dict[str, EngramNode]]:
         """
-        Executes a single, isolated cognitive cycle without engaging continuous background loops.
-        Thread-safe, deterministic, and idempotent under dry_run=True.
-        """
-        start_time = time.perf_counter()
-        cycle_id = f"cyc_{uuid.uuid4().hex[:8]}"
-        transitions: List[Tuple[CognitivePhase, int]] = []
+        Executes a single, isolated biomorphic cycle synchronously.
         
-        if config.inject_seed is not None:
-            np.random.seed(config.inject_seed)
+        Guarantees:
+        - Deterministic execution without background thread races.
+        - Atomic state rollback if dry_run is True or if an unhandled error occurs.
+        - Deterministic time advancement via VirtualChronometer.
+        """
+        dt = dt_override if dt_override is not None else self.default_dt
+        current_vtime = self.chronometer.tick(dt)
+        
+        ctx = CycleContext(
+            cycle_index=self.chronometer.ticks,
+            virtual_timestamp=current_vtime,
+            delta_time=dt,
+            dry_run=dry_run,
+            stimuli=stimuli or [],
+        )
 
-        # 1. State Isolation (Copy-on-Write)
-        working_state = np.copy(self.active_state)
-        working_engrams = {k: v for k, v in self.engram_cache.items()}
-        working_csf = self.csf_metabolite_level
-        
+        # 1. Transactional State Snapshotting (Shadow Copy-on-Write)
+        working_engrams = copy.deepcopy(self.engram_registry)
+
+        start_total = time.perf_counter()
         try:
-            # Phase A: DMN Mind-Wandering (Lateral Exploration)
-            transitions.append((CognitivePhase.DMN_MIND_WANDERING, time.time_ns()))
-            perturbation = np.random.normal(0, config.exploration_temperature, self.dim)
-            candidate_state = working_state + (perturbation * np.sqrt(config.synthetic_dt_sec))
-            # Normalization to retain unit sphere dynamics
-            candidate_state /= np.linalg.norm(candidate_state) + 1e-12
+            # PHASE 1: INGESTION
+            ctx.phase = CyclePhase.INGESTION
+            t0 = time.perf_counter()
+            self._phase_ingestion(ctx, working_engrams)
+            ctx.metrics.phase_durations_ms["ingestion"] = (time.perf_counter() - t0) * 1000.0
 
-            # Phase B: Prefrontal Zeno Arbitration (Collapse & Filtering)
-            transitions.append((CognitivePhase.ZENO_ARBITRATION, time.time_ns()))
-            coherence = float(np.dot(working_state, candidate_state))
-            zeno_p = 1.0 / (1.0 + np.exp(-10.0 * (coherence - 0.5)))
+            # PHASE 2: SWR REPLAY & CONSOLIDATION
+            ctx.phase = CyclePhase.SWR_REPLAY
+            t0 = time.perf_counter()
+            self._phase_swr_replay(ctx, working_engrams)
+            ctx.metrics.phase_durations_ms["swr_replay"] = (time.perf_counter() - t0) * 1000.0
+
+            # PHASE 3: GLIAL FLUSH & PRUNING (CSF Shielding)
+            ctx.phase = CyclePhase.GLIAL_FLUSH
+            t0 = time.perf_counter()
+            self._phase_glial_flush(ctx, working_engrams)
+            ctx.metrics.phase_durations_ms["glial_flush"] = (time.perf_counter() - t0) * 1000.0
+
+            # PHASE 4: QUANTUM ZENO DECISION COLLAPSE
+            ctx.phase = CyclePhase.ZENO_COLLAPSE
+            t0 = time.perf_counter()
+            self._phase_zeno_collapse(ctx, working_engrams)
+            ctx.metrics.phase_durations_ms["zeno_collapse"] = (time.perf_counter() - t0) * 1000.0
+
+            # PHASE 5: HOMEOSTATIC SYNAPTIC NORMALIZATION
+            ctx.phase = CyclePhase.SYNAPTIC_NORM
+            t0 = time.perf_counter()
+            self._phase_synaptic_norm(ctx, working_engrams)
+            ctx.metrics.phase_durations_ms["synaptic_norm"] = (time.perf_counter() - t0) * 1000.0
+
+            # Finalize
+            ctx.phase = CyclePhase.COMPLETED
+            ctx.metrics.success = True
             
-            if zeno_p >= config.zeno_confidence_threshold:
-                # Accept trajectory
-                selected_state = candidate_state
-            else:
-                # Damped restitution towards prior state
-                selected_state = 0.8 * working_state + 0.2 * candidate_state
-                selected_state /= np.linalg.norm(selected_state) + 1e-12
+            # Commit mutations to persistent state only if NOT dry-run
+            if not dry_run:
+                self.engram_registry = working_engrams
 
-            # Phase C: Sharp-Wave Ripple (SWR) Consolidation
-            transitions.append((CognitivePhase.SWR_CONSOLIDATION, time.time_ns()))
-            salience = float(np.linalg.norm(selected_state - working_state))
-            if salience > 0.05:
-                node_id = f"eng_{uuid.uuid4().hex[:6]}"
-                working_engrams[node_id] = EngramNode(
-                    id=node_id,
-                    vector=selected_state,
-                    salience=salience,
-                    timestamp_ns=time.time_ns(),
-                    reinforcement_count=1
-                )
-            working_csf += salience * 0.1  # Metabolite accumulation
+        except Exception as exc:
+            ctx.phase = CyclePhase.ABORTED
+            ctx.metrics.success = False
+            ctx.metrics.error_message = str(exc)
+            logger.error(f"[CognitiveDaemon] Cycle {ctx.cycle_index} aborted: {exc}", exc_info=True)
+            # working_engrams is discarded; persistent self.engram_registry remains untouched
+            raise
+        finally:
+            ctx.metrics.phase_durations_ms["total"] = (time.perf_counter() - start_total) * 1000.0
 
-            # Phase D: Microglial Synaptic Pruning
-            transitions.append((CognitivePhase.MICROGLIAL_PRUNING, time.time_ns()))
-            pruned_count = 0
-            prune_targets = [
-                nid for nid, node in working_engrams.items() 
-                if node.salience < 0.02 and node.reinforcement_count <= 1
-            ]
-            for nid in prune_targets:
-                del working_engrams[nid]
-                pruned_count += 1
+        return ctx, working_engrams
 
-            # Phase E: Cerebrospinal Fluid (CSF) Flush Simulation
-            transitions.append((CognitivePhase.CSF_FLUSH, time.time_ns()))
-            cleared_metabolites = working_csf * config.metabolite_clearance_ratio
-            working_csf -= cleared_metabolites
+    # ----------------- Phase Sub-routines -----------------
 
-            # Phase F: Commit or Discard
-            diff_norm = float(np.linalg.norm(selected_state - self.active_state))
-            if not config.dry_run:
-                self.active_state = selected_state
-                self.engram_cache = working_engrams
-                self.csf_metabolite_level = working_csf
+    def _phase_ingestion(self, ctx: CycleContext, engrams: Dict[str, EngramNode]) -> None:
+        for idx, stim in enumerate(ctx.stimuli):
+            node_id = f"eng_{ctx.cycle_index}_{idx}"
+            vector = np.array(stim.get("vector", np.random.randn(64)), dtype=np.float32)
+            salience = float(stim.get("salience", 1.0))
+            is_anchor = bool(stim.get("anchor", False))
 
-            exec_duration = (time.perf_counter() - start_time) * 1000.0
-            return CycleTelemetry(
-                cycle_id=cycle_id,
-                phase_transitions=transitions,
-                entropy_delta=float(np.var(selected_state) - np.var(working_state)),
-                zeno_p_value=zeno_p,
-                pruned_engram_count=pruned_count,
-                csf_clearance_efficiency=config.metabolite_clearance_ratio,
-                state_vector_diff_norm=diff_norm,
-                execution_duration_ms=exec_duration,
-                success=True
+            engrams[node_id] = EngramNode(
+                id=node_id,
+                vector=vector,
+                salience=salience,
+                creation_tick=ctx.cycle_index,
+                last_access_tick=ctx.cycle_index,
+                anchor_lock=is_anchor,
+                metadata=stim.get("metadata", {})
             )
 
-        except Exception as ex:
-            return CycleTelemetry(
-                cycle_id=cycle_id,
-                phase_transitions=transitions,
-                entropy_delta=0.0,
-                zeno_p_value=0.0,
-                pruned_engram_count=0,
-                csf_clearance_efficiency=0.0,
-                state_vector_diff_norm=0.0,
-                execution_duration_ms=(time.perf_counter() - start_time) * 1000.0,
-                success=False,
-                error_message=str(ex)
+    def _phase_swr_replay(self, ctx: CycleContext, engrams: Dict[str, EngramNode]) -> None:
+        consolidated = 0
+        for node_id, node in engrams.items():
+            # Apply SWR plastic reinforcement: S' = S + η * exp(-decay * dt)
+            decay = np.exp(-0.05 * ctx.delta_time)
+            new_salience = node.salience * decay
+            if node.anchor_lock:
+                new_salience = max(new_salience, 1.0)
+            
+            engrams[node_id] = EngramNode(
+                id=node.id,
+                vector=node.vector,
+                salience=new_salience,
+                creation_tick=node.creation_tick,
+                last_access_tick=ctx.cycle_index,
+                anchor_lock=node.anchor_lock,
+                metadata=node.metadata
             )
+            consolidated += 1
+        ctx.metrics.consolidated_nodes_count = consolidated
+
+    def _phase_glial_flush(self, ctx: CycleContext, engrams: Dict[str, EngramNode]) -> None:
+        # Microglial Pruning: nodes with salience below threshold and not anchored are cleared
+        prune_threshold = 0.15
+        to_prune = [
+            nid for nid, node in engrams.items()
+            if node.salience < prune_threshold and not node.anchor_lock
+        ]
+        for nid in to_prune:
+            del engrams[nid]
+        ctx.metrics.pruned_nodes_count = len(to_prune)
+
+    def _phase_zeno_collapse(self, ctx: CycleContext, engrams: Dict[str, EngramNode]) -> None:
+        # Quantum Zeno Attention Freeze: Project state onto dominant eigen-basis
+        if not engrams:
+            ctx.metrics.zeno_projection_entropy = 0.0
+            return
+        
+        saliences = np.array([n.salience for n in engrams.values()])
+        probabilities = saliences / np.sum(saliences)
+        entropy = -np.sum(probabilities * np.log(probabilities + 1e-12))
+        ctx.metrics.zeno_projection_entropy = float(entropy)
+
+    def _phase_synaptic_norm(self, ctx: CycleContext, engrams: Dict[str, EngramNode]) -> None:
+        # Homeostatic Scaling: Ensure sum of saliences <= global capacity
+        total_salience = sum(n.salience for n in engrams.values())
+        if total_salience > self.global_synaptic_capacity:
+            scale_factor = self.global_synaptic_capacity / total_salience
+            for nid, node in engrams.items():
+                if not node.anchor_lock:
+                    engrams[nid] = EngramNode(
+                        id=node.id,
+                        vector=node.vector,
+                        salience=node.salience * scale_factor,
+                        creation_tick=node.creation_tick,
+                        last_access_tick=node.last_access_tick,
+                        anchor_lock=node.anchor_lock,
+                        metadata=node.metadata
+                    )
+        ctx.metrics.synaptic_energy_delta = total_salience
 ```
 
 ---
 
-## 4. Offline Sync, Caching & State Persistence
-
-To guarantee zero corruption when alternating between background continuous daemon execution and interactive single-cycle tests:
+## 5. Offline Sync, Caching, & Deterministic SWR Replay
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    PERSISTENCE ARCHITECTURE                 │
-└─────────────────────────────────────────────────────────────┘
-  Continuous Daemon Loop           Manual Cycle (Test / Hook)
-           │                                   │
-           ▼                                   ▼
-    [Primary L1 State]               [Shadow Isolated CoW]
-           │                                   │
-    [Primary SQLite/WAL]             [Transient Memory Arena]
-           │                                   │
-           ▼                                   ▼
-     (Live Disk Sync)                 (Discard / Diff Assert)
+┌────────────────────────────────────────────────────────────────────────┐
+│                        OFFLINE SYNC ARCHITECTURE                       │
+│                                                                        │
+│  [Test Harness] ───► step_cycle(dry_run=True)                          │
+│                             │                                          │
+│                             ▼                                          │
+│                  [Shadow Memory Buffer]                                │
+│                     (Isolated CoW)                                     │
+│                             │                                          │
+│              ┌──────────────┴──────────────┐                           │
+│              ▼                             ▼                           │
+│     [Test Succeeded]               [Test Failed / Aborted]             │
+│              │                             │                           │
+│   (Commit to In-Memory DB)         (Discard Shadow Buffer)             │
+│              │                             │                           │
+│              ▼                             ▼                           │
+│   [Persistent SQLite / DuckDB]     [Zero State Pollution]              │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Copy-on-Write (CoW) Guard:** Single cycle tests must never write directly to the primary SQLite Write-Ahead Log (WAL) episodic store unless explicitly invoked with `dry_run=False` and `commit_on_success=True`.
-2. **Deterministic Replay Log:** Every manual cycle generates an append-only JSON-serializable snapshot of `CycleTelemetry` in the transient cache directory, enabling deterministic playback for debugging.
-3. **Cache Invalidation Barrier:** If a manual cycle is committed to persistent state, a broadcast signal invalidates background worker memory caches, forcing immediate state resynchronization.
+1. **Deterministic Replay Log:** All single-cycle invocations serialize their input stimuli, $\Delta t$, and pseudorandom seed into an immutable replay buffer (`.swr_replay.jsonl`).
+2. **Offline Local Cache:** When operating disconnected from external cloud backends (BigQuery / IBM Quantum), the cycle redirects quantum collapse queries to an internal simulator (`quanta.quantum.sim.LocalStateVectorSimulator`).
+3. **No Background Leaks:** Background task handles (`asyncio.Task`, OS threads, timer interrupts) are strictly barred from launching inside `step_cycle()`.
 
 ---
 
-## 5. Edge Cases, Failure Modes & Mitigations
+## 6. Edge Cases, Failure Modes, & Mitigations
 
-| Failure Mode | Root Cause | Impact | Mitigation / Safety Boundary |
+| Failure Mode / Edge Case | Root Cause | Impact | Mitigation / Defensive Bounds |
 | :--- | :--- | :--- | :--- |
-| **Zeno Freezing** | Manual cycles executed with identical seeds and inputs repeatedly. | System locks into a single sub-space attractor ($P_{\text{zeno}} \equiv 1.0$). | Stochastic Langevin jitter injection if $\Delta \vert\psi\rangle < 10^{-6}$. |
-| **Metabolite Saturation** | Successive manual cycles executed with CSF flush disabled. | Simulated neurotoxicity threshold exceeded; degradation of associative retrieval. | Mandatory CSF auto-flush clamp if metabolite level $\ge 1.0$. |
-| **Async Mutex Deadlock** | Manual cycle triggered while the background daemon thread is mid-SWR consolidation. | Process hang on thread resource acquisition. | Non-blocking `try_acquire(timeout=50ms)` with backoff to isolated snapshot mode. |
-| **Engram Overgrowth** | High exploration temperature without pruning phase completion. | L1 memory bloat, vector similarity search degradation. | Strict memory envelope: max $10^4$ nodes, automated top-$k$ salience truncation. |
+| **Glial Over-Flush** | Zero stimuli provided over consecutive manual steps ($dt \gg 0$). | Rapid decay causes all unanchored memory to vanish. | Minimum floor retention: Keep top-k ($k \ge 5$) salient engrams regardless of absolute threshold. |
+| **Zeno Numerical Singularity** | All engram saliences decay to absolute zero ($0.0$). | $\sum S = 0 \implies \text{NaN}$ in probability distribution. | Add stabilization epsilon ($\epsilon = 10^{-12}$) during softmax/normalization calculations. |
+| **Clock Desynchronization** | Mixing `time.time()` with manual $dt$ ticks. | Non-deterministic decay curves across test runs. | Absolute ban on system wall-clock during cycle execution; enforce `VirtualChronometer`. |
+| **Anchor Corruption** | Modifying `anchor_lock=True` engrams during synaptic scaling. | Loss of fundamental user rules / system directives. | Strict immutable constraint: `anchor_lock` nodes are exempt from down-scaling and pruning. |
 
 ---
 
-## 6. Safety Bounds & Invariants
+## 7. Safety Bounds & Invariants
 
-All manual single-cycle executions must satisfy the following formal invariants:
+```
+   0.00ms          10.00ms         25.00ms         40.00ms       50.00ms (Max Budget)
+     ├───────────────┼───────────────┼───────────────┼───────────────┤
+     │  INGESTION    │  SWR REPLAY   │ GLIAL FLUSH   │ ZENO COLLAPSE │
+     │  (< 5ms)      │  (< 15ms)     │ (< 10ms)      │ (< 20ms)      │
+```
 
-1. **Bounded State Metric:**
-   $$\forall t, \quad \left| \|\mathbf{s}_{t+1}\|_2 - 1.0 \right| < 10^{-6}$$
-2. **Lyapunov Stability Bound:**
-   $$V(\mathbf{s}_{t+1}) - V(\mathbf{s}_t) \le \epsilon_{\text{drift}}, \quad \text{where } \epsilon_{\text{drift}} \le 0.05$$
-3. **Zeno Confidence Clamp:**
-   $$P_{\text{zeno}} \in [0.0, 1.0]$$
-4. **Metabolite Clearance Bound:**
-   $$\text{CSF}_{\text{post}} \le \text{CSF}_{\text{pre}} \cdot (1 - \eta_{\text{clearance}}) + \delta_{\text{salience}}$$
+1. **Cycle Execution Budget:** Single manual cycle step must complete in $< 50\text{ms}$ on standard CPU architecture ($N_{\text{engrams}} \le 10,000$).
+2. **Quantum Zeno Invariant ($P_{\text{zeno}}$):** Collapse projection fidelity must satisfy:
+   $$P_{\text{zeno}} = \left| \langle \psi_{\text{anchor}} | \hat{P}_{\text{state}} | \psi_{\text{anchor}} \rangle \right|^2 \ge 0.9995$$
+3. **Memory Isolation Barrier:** Any exception raised mid-phase must guarantee zero mutations on `self.engram_registry` (100% rollback guarantee).
 
 ---
 
-## 7. Verification Protocol (`single_cycle_test`)
+## 8. Verification & Test Suite Blueprint
 
 ```python
-def test_single_cycle_manual_execution():
-    """Unit test verification for RFC: SINGLE_CYCLE_TEST."""
-    daemon = CognitiveDaemon(state_dimension=128)
-    
-    # Test 1: Dry run isolation (State should remain unmodified)
-    config_dry = ManualCycleConfig(dry_run=True, inject_seed=42)
-    initial_norm = np.linalg.norm(daemon.active_state)
-    
-    telemetry = daemon.step_manual_cycle(config_dry)
-    
-    assert telemetry.success, f"Cycle failed: {telemetry.error_message}"
-    assert np.isclose(np.linalg.norm(daemon.active_state), initial_norm), "State mutated during dry run!"
-    assert telemetry.zeno_p_value >= 0.0 and telemetry.zeno_p_value <= 1.0, "Zeno P-value out of bounds"
-    assert telemetry.execution_duration_ms > 0.0, "Invalid execution timing"
+import pytest
+import numpy as np
 
-    # Test 2: Commit execution
-    config_commit = ManualCycleConfig(dry_run=False, inject_seed=101)
-    telemetry_commit = daemon.step_manual_cycle(config_commit)
+def test_single_cycle_manual_stepping_deterministic():
+    """Verify that stepping a single cycle is 100% deterministic with virtual time."""
+    daemon = CognitiveDaemon(storage_backend=None, default_dt=0.2)
     
-    assert telemetry_commit.success
-    assert np.isclose(np.linalg.norm(daemon.active_state), 1.0), "State not normalized after commit"
-    assert len(daemon.engram_cache) >= 0
+    # 1. Step cycle with initial stimulus
+    stimulus = [{
+        "vector": np.ones(64, dtype=np.float32),
+        "salience": 1.0,
+        "anchor": True,
+        "metadata": {"tag": "core_directive"}
+    }]
+    
+    ctx1, engrams1 = daemon.step_cycle(stimuli=stimulus, dt_override=0.1)
+    
+    assert ctx1.metrics.success is True
+    assert ctx1.phase == CyclePhase.COMPLETED
+    assert ctx1.cycle_index == 1
+    assert "eng_1_0" in engrams1
+    assert engrams1["eng_1_0"].anchor_lock is True
+
+    # 2. Step cycle with dry_run=True (must not mutate daemon persistent state)
+    stimulus_temp = [{
+        "vector": np.zeros(64, dtype=np.float32),
+        "salience": 0.05,
+        "anchor": False
+    }]
+    
+    ctx2, engrams2 = daemon.step_cycle(stimuli=stimulus_temp, dry_run=True)
+    assert ctx2.metrics.success is True
+    assert "eng_2_0" in engrams2  # Present in returned shadow
+    assert "eng_2_0" not in daemon.engram_registry  # Absent in root store
+
+    # 3. Step without stimulus (Test microglial pruning & SWR decay)
+    ctx3, engrams3 = daemon.step_cycle(stimuli=[], dt_override=10.0)
+    assert ctx3.metrics.success is True
+    # Anchor node should persist despite high dt
+    assert "eng_1_0" in daemon.engram_registry
+    assert daemon.engram_registry["eng_1_0"].salience >= 1.0
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
 ```
 
 ---
 
-## 8. Actionable Conclusion & Roadmap
+## 9. Rollout Plan & Next Steps
 
-- **Final Answer to Speculative Question:** Yes, manual cycle works reliably and cleanly under the isolated, CoW-buffered `step_manual_cycle()` contract.
-- **Immediate Implementation Steps:**
-  1. Implement `ManualCycleConfig` and `CycleTelemetry` in `quanta.cognitive.daemon`.
-  2. Encapsulate daemon state with `threading.RLock` to safeguard concurrent background iterations.
-  3. Wire the `step_manual_cycle` hook into CLI diagnostic commands and automated test suites.
+1. **Step 1:** Merge `VirtualChronometer` and `CyclePhase` into `quanta.cognitive.daemon.state`.
+2. **Step 2:** Refactor `CognitiveDaemon.run_forever()` to invoke `self.step_cycle()` internally within its async sleep loop.
+3. **Step 3:** Deploy `single_cycle_test` harness to CI/CD pipeline to replace slow, flaky sleep-based integration tests.

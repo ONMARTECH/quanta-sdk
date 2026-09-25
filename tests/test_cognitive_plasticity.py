@@ -293,11 +293,14 @@ class TestTier1FeatureCoverage:
         with open(PROD_STATE_PATH, encoding="utf-8") as f:
             data = json.load(f)
 
-        engrams = data.get("engrams", [])
-        assert len(engrams) == 53, f"Expected exactly 53 engrams in production state, found {len(engrams)}"
+        all_engrams = data.get("engrams", [])
+        base_engrams = [e for e in all_engrams if e.get("category") != "semantic_gist"]
+        assert len(base_engrams) == 53, (
+            f"Expected exactly 53 base engrams in production state, found {len(base_engrams)}"
+        )
 
-        # 100% of existing engrams must have salience >= 2.0 (CSF protected core anchors)
-        for idx, eng in enumerate(engrams):
+        # 100% of existing base engrams must have salience >= 2.0 (CSF protected core anchors)
+        for idx, eng in enumerate(base_engrams):
             key = eng.get("key", f"index_{idx}")
             salience = eng.get("salience", 0.0)
             assert salience >= 2.0, (
@@ -994,7 +997,8 @@ class TestTier5PlasticCognitiveImmunity:
         with open(PROD_STATE_PATH, encoding="utf-8") as f:
             data = json.load(f)
 
-        prod_engrams = data.get("engrams", [])
+        all_engrams = data.get("engrams", [])
+        prod_engrams = [e for e in all_engrams if e.get("category") != "semantic_gist"]
         assert len(prod_engrams) == 53
 
         mem = FastBiomorphicMemory(capacity=128)
