@@ -46,8 +46,10 @@ site/
 *result*.json
 *20gb*.json
 
-# Multi-agent swarm traces
+# Multi-agent swarm traces and legacy agent configs
+.agent/
 .agents/
+docs/rfcs/
 dashboard.html
 # Subconscious Mind-Wandering Daemon
 quanta_dream.log
