@@ -77,6 +77,13 @@ nav:
     - "Quanta Architecture Whitepaper": papers/quanta_framework_paper.md
     - "Scientific Audit (Sept 2026)": scientific_audit_september_2026.md
     - "Strategic Roadmap (2026-2028)": quantum_roadmap_2026.md
+  - "Theoretical Foundations & Monographs":
+    - "Biomorphic Quantum Brain Frontiers": theory/quantum_brain_frontiers.md
+    - "Cerebrospinal Fluid (CSF) Quantum Shielding": theory/csf_quantum_shielding.md
+    - "Continuous Quantum Neural Dynamics": theory/continuous_quantum_neural_dynamics.md
+    - "Subconscious Mind-Wandering & DMN": theory/subconscious_mind_wandering_and_dmn.md
+    - "Dialectical Adversarial Synthesis": theory/dialectical_adversarial_quantum_brain.md
+    - "Academic Provenance & Novelty Audit": theory/academic_provenance_and_novelty_audit.md
   - Getting Started:
     - Installation: getting-started/install.md
     - Quick Start: getting-started/quickstart.md

@@ -3,7 +3,8 @@
 **Document Type:** Authoritative Theoretical Monograph & Mathematical Biophysics Treatise  
 **Target Architecture:** Quanta SDK — Pillar 2 Frontiers (`quanta.torch.brain`)  
 **Target File:** `docs/theory/csf_quantum_shielding.md`  
-**Authors:** Quanta Research Swarm & Clinical Biophysics Consortium  
+**Lead Author & Principal Architect:** **Abdullah Enes SARI** ([ORCID: 0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587)) — *ONMARTECH Quantum Computing Initiative*, Istanbul, Turkey (<info@onmartech.com>)  
+**Co-Authors & Peer Review:** Quanta Quantum Research Group & Clinical Biophysics Consortium  
 **Date:** September 17, 2026  
 **Status:** Authoritative Mathematical Foundation & Peer-Reviewed Biophysical Monograph  
 **Classification:** Advanced Quantum Neuromorphic Biophysics & Clinical Neurophysics  

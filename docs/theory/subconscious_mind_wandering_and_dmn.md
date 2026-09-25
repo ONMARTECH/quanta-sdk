@@ -3,7 +3,8 @@
 **Document Type:** Authoritative Theoretical Monograph, Mathematical Physics Treatise, and Systems Architecture Specification  
 **Target Architecture:** Quanta Cognitive Architecture — Pillar 3 (`quanta.cognitive`)  
 **Target File:** `docs/theory/subconscious_mind_wandering_and_dmn.md`  
-**Authors:** Quanta Research Swarm, Clinical Neurophysics Working Group, Darwin Systems Architecture Team, and Cognitive Psychiatry Consortium  
+**Lead Author & Principal Architect:** **Abdullah Enes SARI** ([ORCID: 0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587)) — *ONMARTECH Quantum Computing Initiative*, Istanbul, Turkey (<info@onmartech.com>)  
+**Co-Authors & Peer Review:** Quanta Quantum Research Group, Clinical Neurophysics Working Group, Darwin Systems Architecture Team, and Cognitive Psychiatry Consortium  
 **Date:** September 17, 2026  
 **Status:** Complete Authoritative Mathematical Monograph & Peer-Reviewed Theoretical Foundation  
 **Classification:** Neuromorphic Cognitive Architecture, Low-Level Darwin Kernel Systems, and Stochastic Biological Computing  

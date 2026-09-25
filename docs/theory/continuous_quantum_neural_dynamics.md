@@ -2,6 +2,8 @@
 
 **Title**: Continuous Quantum Neural Dynamics: Foundational Physics, Quantum Neuroscience & Exact Autograd Formulations  
 **Document Type**: Technical Whitepaper & Architectural Specification  
+**Lead Author & Principal Architect:** **Abdullah Enes SARI** ([ORCID: 0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587)) — *ONMARTECH Quantum Computing Initiative*, Istanbul, Turkey (<info@onmartech.com>)  
+**Co-Authors & Peer Review:** Quanta Quantum Research Group & Antigravity Agentic AI Board  
 **Architecture Reference**: Quanta SDK — Pillar 2 (`quanta.torch` & `ContinuousResonantLayer`)  
 **Publication Target**: `docs/theory/continuous_quantum_neural_dynamics.md`  
 **Date**: September 16, 2026  

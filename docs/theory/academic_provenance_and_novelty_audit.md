@@ -2,9 +2,10 @@
 
 **Document ID:** QTR-2026-AUDIT-001  
 **Project:** Quanta SDK / Biomorphic Quantum Resonance Architecture  
+**Lead Author & Principal Architect:** **Abdullah Enes SARI** ([ORCID: 0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587)) — *ONMARTECH Quantum Computing Initiative*, Istanbul, Turkey (<info@onmartech.com>)  
+**Co-Authors & Peer Review:** Quanta Academic Integrity & Biophysical Epistemology Swarm  
 **Focus:** 100% Authentic Bibliography, Anti-Hallucination Source Check, Prior Art Demarcation & Original Discovery Attribution  
 **Date:** September 2026  
-**Auditor:** Quanta Academic Integrity & Biophysical Epistemology Swarm  
 **Status:** Comprehensive / Exhaustive (No Length Restrictions)
 
 ---

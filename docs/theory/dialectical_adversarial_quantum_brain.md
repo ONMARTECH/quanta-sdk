@@ -2,8 +2,9 @@
 
 **Document Classification**: Publication-Grade Theoretical Monograph & Adversarial Synthesis  
 **Project**: Quanta SDK — Pillar 2 Biomorphic Quantum Brain Architecture (`quanta.torch.brain`)  
+**Lead Author & Principal Architect:** **Abdullah Enes SARI** ([ORCID: 0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587)) — *ONMARTECH Quantum Computing Initiative*, Istanbul, Turkey (<info@onmartech.com>)  
 **Target Milestone**: Milestone 1 (M1) Adversarial Theoretical Synthesis  
-**Authoring Body**: Joint Dialectical Commission of 50 Specialized Autonomous Agents  
+**Authoring & Review Body**: Joint Dialectical Commission of 50 Specialized Autonomous Agents  
 - **Team A (Thesis Camp)**: 25 Specialized Pro-Quantum Cognition & Biomorphic Physics Units  
 - **Team B (Antithesis Camp)**: 25 Specialized Classical Neurobiology & Computational Physics Units  
 **Date of Completion**: September 17, 2026  

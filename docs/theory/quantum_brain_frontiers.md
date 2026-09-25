@@ -2,6 +2,8 @@
 
 **Title**: Biomorphic Quantum Brain Architecture: Continual REM Orthogonalization, Non-Equilibrium Thermodynamic Landauer Bounds, and Quantum Zeno Cognitive Dynamics  
 **Document Type**: Publication-Grade Theoretical Monograph & Mathematical Physics Treatise  
+**Lead Author & Principal Architect:** **Abdullah Enes SARI** ([ORCID: 0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587)) — *ONMARTECH Quantum Computing Initiative*, Istanbul, Turkey (<info@onmartech.com>)  
+**Co-Authors & Peer Review:** Quanta Quantum Research Group & Antigravity Agentic AI Board  
 **Target Architecture**: Quanta SDK — Pillar 2 Frontiers (`quanta.torch.brain`)  
 **Target File**: `docs/theory/quantum_brain_frontiers.md`  
 **Date**: September 16, 2026  
