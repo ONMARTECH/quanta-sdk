@@ -1,0 +1,50 @@
+% TikZ Figure: Apple Silicon Zero-Copy Unified Memory vs Discrete GPU PCIe Bus Bottleneck
+\begin{tikzpicture}[
+    scale=0.88, every node/.style={transform shape},
+    box/.style={rectangle, draw=black!70, rounded corners=3pt, thick, align=center, inner sep=5pt},
+    cpu/.style={box, fill=blue!15, draw=blue!70, minimum width=2.2cm, minimum height=1.0cm},
+    gpu/.style={box, fill=green!15, draw=green!70, minimum width=2.2cm, minimum height=1.0cm},
+    mem/.style={box, fill=amber!20, draw=amber!80, minimum width=2.4cm, minimum height=1.0cm},
+    bus/.style={box, fill=red!15, draw=red!70, minimum width=2.8cm, minimum height=0.6cm},
+    speed/.style={font=\footnotesize\bfseries, color=green!60!black},
+    slow/.style={font=\footnotesize\bfseries, color=red!70!black},
+    arrow/.style={<->, >=stealth, very thick}
+]
+
+% Panel (a): Conventional Discrete GPU (PCIe Bottleneck)
+\node[font=\bfseries] at (-2.4, 2.8) {(a) Conventional Discrete GPU System};
+\draw[dashed, draw=black!40, rounded corners=4pt] (-4.6, -1.8) rectangle (-0.2, 2.4);
+
+\node[cpu] (dcpu) at (-3.4, 1.4) {\textbf{Host CPU}\\(x86 / ARM)};
+\node[mem] (dhostmem) at (-1.4, 1.4) {\textbf{Host RAM}\\(DDR4/5)};
+\draw[arrow, draw=blue!70] (dcpu) -- (dhostmem);
+
+\node[bus] (pcie) at (-2.4, 0.1) {\textbf{PCIe Bus (16--32 GB/s)}\\\small Latency $\Delta t_{\text{PCIe}} > 0$};
+
+\node[gpu] (dgpu) at (-3.4, -1.1) {\textbf{Discrete GPU}\\(CUDA)};
+\node[mem] (dvram) at (-1.4, -1.1) {\textbf{Device VRAM}\\(GDDR6/HBM)};
+\draw[arrow, draw=green!70] (dgpu) -- (dvram);
+
+\draw[arrow, draw=red!70] (dhostmem) -- (pcie);
+\draw[arrow, draw=red!70] (pcie) -- (dvram);
+\node[slow] at (-2.4, -2.1) {Host-to-Device Copy Overhead};
+
+% Panel (b): Apple Silicon Unified Memory Zero-Copy Architecture
+\node[font=\bfseries] at (2.6, 2.8) {(b) Quanta Apple Silicon Unified Memory};
+\draw[dashed, draw=black!40, rounded corners=4pt] (0.4, -1.8) rectangle (4.8, 2.4);
+
+\node[cpu] (acpu) at (1.6, 1.3) {\textbf{Apple CPU}\\\small High-Perf Cores};
+\node[gpu] (agpu) at (3.6, 1.3) {\textbf{Metal GPU}\\\small MPS Shader Cores};
+
+\node[box, fill=amber!25, draw=amber!90, minimum width=4.0cm, minimum height=1.3cm] (umem) at (2.6, -0.6) {
+    \textbf{Unified Physical Memory Pool (UMA)}\\
+    \small Up to 800+ GB/s Bandwidth\\
+    \small Direct Virtual Address Pointer Sharing
+};
+
+\draw[arrow, draw=teal!80, very thick] (acpu) -- (1.6, 0.05);
+\draw[arrow, draw=teal!80, very thick] (agpu) -- (3.6, 0.05);
+
+\node[speed] at (2.6, -2.1) {Zero-Copy ($\Delta t_{\text{PCIe}} \equiv 0$), 52.1$\times$ Peak Speedup};
+
+\end{tikzpicture}
