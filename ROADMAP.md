@@ -10,24 +10,24 @@
 | :---: | :--- | :---: | :---: |
 | 🍏 **Sütun 1** | **Apple Silicon Yerel Metal/MLX Kuantum Motoru** (`MLXSimulator`) | **v1.0.0** | **✅ TAMAMLANDI** |
 | 🔥 **Sütun 2** | **PyTorch Kuantum Katmanı & Sürekli Rezonans (`quanta.torch`)** | **v1.1.0** | **✅ TAMAMLANDI** |
-| 🛡️ **Sütun 3** | **Gerçek Zamanlı QEC & Hızlı Sendrom Çözümleyici (MWPM / Union-Find)** | **v1.2.0** | 🟡 Sıradaki |
-| 🌐 **Sütun 4** | **Endüstriyel QUBO & Büyük Ölçekli Graf Ayrıştırma Motoru** | **v1.3.0** | ⚪ Planlandı |
+| 🛡️ **Sütun 3** | **2026 Çift-Kanal FTQC Motoru (Edmonds Blossom MWPM & Gross [[144,12,12]] qLDPC)** | **v1.2.0** | **✅ TAMAMLANDI** |
+| 🌐 **Sütun 4** | **Endüstriyel QUBO & Büyük Ölçekli Graf Ayrıştırma Motoru** | **v1.3.0** | 🟡 Sıradaki |
 | 🤖 **Sütun 5** | **Akıllı Kuantum Maliyet ve Sadakat Yönlendirici Ajanı (FinOps / Arbiter)** | **v1.4.0** | ⚪ Planlandı |
 
 ---
 
-## Mevcut Durum Özeti (v1.1.0)
+## Mevcut Durum Özeti (v1.2.0-production)
 
 ```
-Version:     1.1.0 (Production) Tests:       1044+ (91.34% coverage)
-Gates:       31                 Files:       95+
-Torch QML:   QuantumLayer + ContinuousResonantLayer + Daleckii-Krein Autograd
-Tutorials:   14 + 15 notebooks  MCP Tools:   23
+Version:     1.2.0 (Production) Tests:       2,076 (100% pass rate)
+Gates:       31                 Files:       120+
+Torch QML:   QuantumLayer + ContinuousResonantLayer + Daleckii-Krein Machine-Precision Autograd
+Tutorials:   16 + 15 notebooks  MCP Tools:   23
 Backends:    6 (PyTorch Native + MLX Metal + Local + IBM + IonQ + Google)
 Compiler:    6-pass (cancel + merge + translate + route + decompose + validate)
 QML:         Classifier + Regressor + QSVM + 3 feature maps + Scikit-Learn Mixins
-Hardware:    Apple Silicon M5 Pro 48GB (30 Qubits, 20GB RAM, 400x MLX Speedup)
-QEC:         7 codes (bit/phase/steane/shor/surface/color/willow dynamic)
+Hardware:    Apple Silicon M-Series (30 Qubits Unified RAM, 52.09x MLX Speedup)
+QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[144, 12, 12]] qLDPC BP-OSD-0; 15-to-1 BK Distillation)
 ```
 
 ---

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "quanta-sdk"
-version = "1.1.0"
+version = "1.2.0"
 description = "AI-native quantum computing SDK — PyTorch QuantumLayer & Continuous Resonance, Apple Silicon Metal/MLX GPU engine, 23 MCP tools, Willow dynamic QEC, 200+ qubit MPS"
 readme = "README.md"
 license = { text = "Apache-2.0" }

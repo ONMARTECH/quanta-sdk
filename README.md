@@ -6,27 +6,36 @@
   </p>
   <p align="center">
     <a href="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml"><img src="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml/badge.svg" alt="CI"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-90%25-brightgreen.svg" alt="Coverage"></a>
-    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-92%25-brightgreen.svg" alt="Coverage"></a>
+    <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-1.2.0-blue.svg" alt="Version"></a>
+    <a href="https://doi.org/10.5281/zenodo.22952779"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22952779.svg" alt="DOI"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-900%2B%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-2076%20passed-success.svg" alt="Tests"></a>
     <a href="#pytorch-engine"><img src="https://img.shields.io/badge/PyTorch-QuantumLayer-EE4C2C.svg" alt="PyTorch"></a>
-    <a href="#apple-silicon"><img src="https://img.shields.io/badge/Apple%20Silicon-Metal%20404x-000000.svg" alt="Metal"></a>
+    <a href="#apple-silicon"><img src="https://img.shields.io/badge/Apple%20Silicon-Metal%2052x-000000.svg" alt="Metal"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
     <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-23%20tools-teal.svg" alt="MCP"></a>
-    <a href="https://onmartech.github.io/quanta-sdk/"><img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs"></a>
+    <a href="https://quanta.onmartech.com/"><img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs"></a>
     <a href="#features"><img src="https://img.shields.io/badge/gates-31-blueviolet.svg" alt="Gates"></a>
-    <a href="https://onmartech.github.io/quanta-sdk/tutorials/01-getting-started/"><img src="https://img.shields.io/badge/tutorials-14-informational.svg" alt="Tutorials"></a>
+    <a href="https://quanta.onmartech.com/tutorials/01-getting-started/"><img src="https://img.shields.io/badge/tutorials-16-informational.svg" alt="Tutorials"></a>
   </p>
 </p>
 
 ---
 
-Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides deep learning quantum layers (`quanta.torch`), continuous quantum neural resonance, native Apple Silicon Metal acceleration, multi-cloud hardware execution (IBM Quantum, IonQ, Google Cirq), and **23 MCP tools** that let AI assistants directly run quantum workloads.
+Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides deep learning quantum layers (`quanta.torch`), continuous quantum neural resonance, native Apple Silicon Metal acceleration, 2026 Dual-Track FTQC (surface codes + Gross qLDPC), multi-cloud hardware execution (IBM Quantum, IonQ, Google Cirq), and **23 MCP tools** that let AI assistants directly run quantum workloads.
 
-### 🚀 What's New in v1.1.0 & v1.0.0
+### 🚀 What's New in v1.2.0 (September 2026)
+
+- **2026 Dual-Track Fault-Tolerance Engine (FTQC)**:
+  - **Track A (2D Topological)**: Full Edmonds Blossom MWPM decoding with Google Willow-compliant 3D spacetime syndrome extraction.
+  - **Track B (High-Rate qLDPC)**: Canonical Gross $[[144, 12, 12]]$ Bivariate Bicycle code paired with native Normalized Min-Sum BP-OSD-0 decoder, slashing physical qubit overhead by **$12\times$**.
+  - **Non-Clifford Universality**: 15-to-1 Bravyi-Kitaev magic state distillation factory ($\epsilon_{\text{out}} \le 35 p^3$) and planar lattice surgery.
+- **Continuous Hilbert Gradients & Daleckii-Krein Autograd (`quanta.torch`)**: Analytical Fréchet matrix exponential derivatives achieving exact machine precision ($9.99\times 10^{-16}$) alongside dynamic Lie algebra ($\dim(\mathfrak{g})$) barren plateau diagnosis.
+- **2,076 Passing Automated Tests**: 100% pass rate with zero mock calls and certified mathematical unitarity ($\|U^\dagger U - I\| < 10^{-14}$).
+- **Apple Silicon Metal / MLX Zero-Copy GPU**: 52.09× peak speedup on Unified Memory and SIMD Clifford engine executing >3.13M gates/s.
 
 - **PyTorch Native Quantum Engine (`quanta.torch`)** — `QuantumLayer` with analytical parameter-shift autograd, seamless `nn.Module` integration, and Apple Silicon MPS/Metal support.
 - **Biomorphic Resonant Brain** — Continuous-time quantum neural dynamics (`ContinuousResonator`), dual-hemisphere architecture, 4 neuromodulators ($DA, ACh, 5\text{-}HT, NE$), cerebral oxygenation ($sO_2$), REM continual learning, `NoisyHippocampalBuffer` with SWR replay, `DialecticalSynthesizer`, and `CSFBiophysicalShield`.

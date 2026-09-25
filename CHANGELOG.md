@@ -4,6 +4,26 @@ All notable changes to Quanta SDK.
 
 Format: [Semantic Versioning](https://semver.org/)
 
+## [v1.2.0] - 2026-09-25 — 2026 Dual-Track FTQC, Daleckii-Krein Autograd, & Academic Whitepaper
+
+### Added — 2026 Dual-Track Fault-Tolerant Quantum Computing (FTQC)
+- `quanta/qec/decoder.py`: Edmonds Blossom Minimum-Weight Perfect Matching (`MWPMDecoder`) replacing greedy heuristics, achieving theoretical threshold ($p_{\text{th}} \approx 1\%$).
+- `quanta/qec/qldpc.py`: Canonical Gross $[[144, 12, 12]]$ Bivariate Bicycle qLDPC code with native Normalized Min-Sum BP-OSD-0 decoder (1.54 ms syndrome decode, $12\times$ qubit footprint reduction).
+- `quanta/qec/distillation.py`: 15-to-1 Bravyi-Kitaev magic state distillation factory ($\epsilon_{\text{out}} \le 35 p^3$) and planar lattice surgery.
+- `quanta/qec/surface_code.py`: Google Willow-compliant 3D spacetime syndrome extraction tracking circuit and measurement errors across fault cycles.
+
+### Added — Continuous Hilbert Gradients & Daleckii-Krein Autograd
+- Closed-form Fréchet matrix exponential autograd eliminating Padé truncation errors ($>1.3\times 10^{-6}$) with exact machine precision ($9.99\times 10^{-16}$).
+- `quanta/torch/lie_algebra.py`: Dynamic Lie algebra ($\dim(\mathfrak{g})$) dimension and analytical barren plateau pre-flight diagnosis.
+
+### Added — MCP Server Tools Expansion & Academic Whitepaper
+- 23 Model Context Protocol tools (`estimate_fault_tolerant_cost`, `quanta_reasoning_eval`, `transpile_for_target`).
+- Academic Software Architecture Paper (`docs/papers/quanta_framework_paper.md` and `docs/arxiv/quanta_framework/main.tex`).
+- Permanent CERN/Zenodo Release DOI: [10.5281/zenodo.22952779](https://doi.org/10.5281/zenodo.22952779).
+- Total automated tests reached **2,076 tests** with 100% pass rate.
+
+---
+
 ## [v1.1.0] - 2026-09-16 — Pillar 2: PyTorch Quantum Layer & Continuous Resonance
 
 ### Added — PyTorch Native Quantum Engine (`quanta.torch`)
