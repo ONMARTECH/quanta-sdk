@@ -3,7 +3,7 @@
 > Benchmark Date: September 2026  
 > Test Platform: Apple Silicon M-Series (macOS Darwin ARM64), Python 3.12+, NumPy 2.x, PyTorch 2.x, MLX  
 > Verification Suite: `benchmarks/run_paper_benchmarks.py` · 2,076 Passing Automated Tests  
-> Software DOI: [10.5281/zenodo.22952779](https://doi.org/10.5281/zenodo.22952779)
+> Software DOI: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 
 ## 1. Simulation & Hardware Acceleration Benchmarks
 

@@ -17,7 +17,10 @@ from quanta.cognitive import (
     workspace_harvester,
 )
 from quanta.cognitive.arbiter import QuantumDecisionArbiter
-from quanta.cognitive.consolidation import SubconsciousConsolidator
+from quanta.cognitive.consolidation import (
+    GlymphaticClearanceResult,
+    SubconsciousConsolidator,
+)
 from quanta.cognitive.daemon import SubconsciousDaemon
 from quanta.cognitive.darwin_idle import (
     QOS_CLASS_BACKGROUND,
@@ -53,6 +56,7 @@ __all__ = [
     "DarwinIdleMonitor",
     "DreamInsight",
     "DreamSeed",
+    "GlymphaticClearanceResult",
     "MindWanderEngine",
     "OutcomeType",
     "OutcomeVerifier",

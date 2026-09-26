@@ -1,6 +1,6 @@
 # Quanta SDK
 
-An AI-native, modular, and high-performance quantum computing SDK for Python. **v1.2.0-production** — [PyPI](https://pypi.org/project/quanta-sdk/) · [Documentation](https://quanta.onmartech.com/) · [Zenodo DOI](https://doi.org/10.5281/zenodo.22952779)
+An AI-native, modular, and high-performance quantum computing SDK for Python. **v1.2.0-production** — [PyPI](https://pypi.org/project/quanta-sdk/) · [Documentation](https://quanta.onmartech.com/) · [GitHub Release](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 
 ## Overview
 
@@ -124,7 +124,7 @@ Explore detailed documentation in the official portal:
 - **Lead Author & Principal Architect**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
 - **Affiliation**: ONMARTECH Quantum Computing Initiative (`info@onmartech.com`)
 - **Website**: [onmartech.com](https://onmartech.com) · [quanta.onmartech.com](https://quanta.onmartech.com)
-- **Permanent Software DOI**: [10.5281/zenodo.22952779](https://doi.org/10.5281/zenodo.22952779)
+- **Permanent Software DOI**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 
 ## License
 

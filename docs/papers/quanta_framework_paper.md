@@ -10,7 +10,7 @@ date: "2026-09-25"
 <div class="result" markdown>
 <span><img src="https://img.shields.io/badge/arXiv-quant--ph%2F2609.xxxxx-b31b1b.svg" alt="arXiv"/></span>
 <span><img src="https://img.shields.io/badge/JOSS-10.21105%2Fjoss.quanta-blue.svg" alt="JOSS"/></span>
-<span><a href="https://doi.org/10.5281/zenodo.22952779"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22952779-informational.svg" alt="Zenodo DOI"/></a></span>
+<span><a href="https://doi.org/Pending Registration"><img src="https://img.shields.io/badge/DOI-pending%20publication-orange.svg" alt="Zenodo DOI"/></a></span>
 <span><img src="https://img.shields.io/badge/version-1.2.0-blue.svg" alt="Version"/></span>
 <span><img src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-brightgreen.svg" alt="Python"/></span>
 <span><img src="https://img.shields.io/badge/tests-2%2C076%20passed-success.svg" alt="Tests"/></span>
@@ -32,7 +32,7 @@ date: "2026-09-25"
       <li><strong>Lead Author & Principal Architect:</strong> <strong>Abdullah Enes SARI</strong> (<a href="https://orcid.org/0000-0002-8827-0587" target="_blank">ORCID: 0000-0002-8827-0587</a>) &mdash; <em>ONMARTECH Quantum Computing Initiative</em>, Istanbul, Turkey (<a href="mailto:info@onmartech.com">info@onmartech.com</a>)</li>
       <li><strong>Co-Author & Peer Inspection Board:</strong> <strong>Quanta Quantum Research Group</strong> (<em>ONMARTECH Quantum Computing Initiative</em>) &amp; <strong>Antigravity Agentic AI Board</strong> (<em>Google Antigravity Multi-Agent Research Consortium</em>)</li>
       <li><strong>Release Designation:</strong> <code>Quanta SDK v1.2.0-production</code> | <strong>Date:</strong> September 25, 2026</li>
-      <li><strong>Target Archives:</strong> arXiv:quant-ph / cs.MS; Journal of Open Source Software (JOSS); Zenodo / CERN (<a href="https://doi.org/10.5281/zenodo.22952779">DOI: 10.5281/zenodo.22952779</a>)</li>
+      <li><strong>Target Archives:</strong> arXiv:quant-ph / cs.MS; Journal of Open Source Software (JOSS); Zenodo / CERN (<a href="https://doi.org/Pending Registration">DOI: Pending Registration</a>)</li>
       <li><strong>Official Repository:</strong> <a href="https://github.com/ONMARTECH/quanta-sdk">github.com/ONMARTECH/quanta-sdk</a> | <strong>Documentation:</strong> <a href="https://quanta.onmartech.com/">quanta.onmartech.com</a></li>
     </ul>
   </div>

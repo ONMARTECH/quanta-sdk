@@ -144,7 +144,8 @@ class TestSubconsciousDaemon:
     def test_instant_preemption_thread_event_latency(self, tmp_path: Path) -> None:
         """Verifies interrupt_immediate() aborts active cycle in < 20ms."""
         state_file = tmp_path / "quanta_cognitive_state.json"
-        daemon = SubconsciousDaemon(state_file=state_file)
+        pid_file = tmp_path / "quanta_dream.pid"
+        daemon = SubconsciousDaemon(state_file=state_file, pid_file=pid_file)
 
         seed = DreamSeed(
             topic="preemption_latency_test",
@@ -167,7 +168,8 @@ class TestSubconsciousDaemon:
     def test_instant_preemption_sigusr1_signal(self, tmp_path: Path) -> None:
         """Verifies SIGUSR1 signal triggers interrupt_immediate() and sets preemption event."""
         state_file = tmp_path / "quanta_cognitive_state.json"
-        daemon = SubconsciousDaemon(state_file=state_file)
+        pid_file = tmp_path / "quanta_dream.pid"
+        daemon = SubconsciousDaemon(state_file=state_file, pid_file=pid_file)
 
         assert daemon._preemption_event.is_set() is False
 

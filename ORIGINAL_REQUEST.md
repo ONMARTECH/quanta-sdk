@@ -210,3 +210,87 @@ Quanta SDK'nın akademik özgünlüğü, piyasadaki mevcut araçların kopyası 
 - [ ] `benchmarks/run_paper_benchmarks.py` scripti hatasız çalışmalı ve makaledeki sayısal metrikleri doğrulamalıdır.
 - [ ] Mevcut 1.907 testte hiçbir regresyon olmamalı, test suite %100 yeşil kalmalıdır.
 - [ ] `mkdocs build --strict` komutu 0 uyarı ile derlenmeli ve web edisyonu siteye entegre edilmelidir.
+
+## 2026-09-25T15:46:52Z
+
+Implement Two-Phase Biomorphic Sleep Architecture (NREM Deep-Sleep Synaptic Scaling & REM Hyper-Associative Cross-Project Dreaming) with Reverse-Chronological Replay in Quanta SDK.
+
+Working directory: /Users/aes/Antigravity Projects/Alfa/quanta
+Integrity mode: development
+
+## Requirements
+
+### R1. Two-Phase Sleep State Engine (NREM vs. REM Sleep Cycles)
+Implement an autonomous biological dual-state sleep engine in `quanta/cognitive/` and `quanta_mindwander_daemon.py`:
+- **NREM (Slow-Wave Sleep / SWS)**: Non-dreaming quiescent state dedicated to Glymphatic metabolic clearance, Synaptic Homeostasis (SHY downscaling of weak ephemeral activations), and silent hippocampal-to-neocortical memory consolidation.
+- **REM (Paradoxical Dreaming)**: Hyper-associative, exploratory state where prefrontal inhibitory gates are relaxed and acetylcholine-analogue exploration drives creative recombination.
+- Cycle duration follows biomorphic pacing: alternating periods of SWS consolidation followed by REM associative dreaming bursts.
+
+### R2. Recency Gradient & Reverse-Chronological Episodic Replay
+Structure dream and consolidation triggers using a temporal decay cascade:
+- Prioritize the most recent active session messages, user prompts, and decisions from the current day.
+- Systematically ripple backward into past conversation horizons (yesterday, previous sprint, long-term memory), simulating hippocampal sharp-wave ripple (SWR) replay cascades.
+
+### R3. Cross-Project Hyper-Associative Synthesis ("Bisociation")
+Break project isolation barriers during REM dream generation:
+- Randomly and semantically pair disparate projects across `/Users/aes/Antigravity Projects` (e.g., flight booking engine x CRM graph clustering, or modern web frontend x BigQuery cost guardrails).
+- Generate novel cross-domain architectural insights ("bisociations") and document them as emergent hybrid RFCs (`RFC_HYBRID_*.md`).
+- Ensure sandbox safety: hybrid dreaming analyzes patterns without mutating underlying project production code.
+
+### R4. Biophysical Plasticity & Anti-Overfitting Safeguards
+Incorporate computational sleep theory (Hoel's Overfitted Brain Hypothesis & Hinton's Wake-Sleep):
+- Inject controlled stochastic noise during REM to prevent the cognitive core from overfitting to recent tasks.
+- Strengthen cross-domain generalizing engrams while pruning noisy, task-specific idiosyncrasies during SWS.
+
+## Acceptance Criteria
+
+### Sleep State Engine & Dynamics
+- [ ] Explicit distinction between NREM (silent downscaling/clearing) and REM (active associative dreaming) cycles in daemon telemetry.
+- [ ] Recency bias prioritized in episodic replay cascades, gradually bridging into deep historical context.
+- [ ] Controlled cross-project blending yields validated hybrid insight RFCs (`RFC_HYBRID_*.md`) without cross-contaminating production project states.
+
+### Quality, Stability & Test Suite
+- [ ] Zero Ruff lint errors and passing `mypy quanta/ --ignore-missing-imports`.
+- [ ] Automated test suite in `tests/test_biomorphic_sleep_cycles.py` verifying state transitions, recency replay ordering, and cross-project synthesis safety.
+- [ ] 100% pass rate across the full Quanta test suite (559+ tests) via `/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/pytest`.
+
+## 2026-09-25T21:42:58Z
+
+Use a very large team of agents.
+
+Kafes tabanlı kuantum sonrası kriptografinin (Post-Quantum Cryptography - LWE/Kyber/Dilithium) temelini oluşturan En Yakın Vektör Problemini (Closest Vector Problem - CVP) çözmek ve sınırlarını test etmek üzere; mevcut durumdaki literatürü ve algoritmaları derinlemesine inceleyen, yetersizlikleri tespit eden ve Quanta SDK'nın Bilişsel Mimarisi (Zeno Karar Hakemi, SWR Engram Hafızası, CSF Kalkanı) ile güçlendirilmiş hibrit kuantum çözücü (QAOA-Cognitive) geliştiren kapsamlı araştırma ve mühendislik çalışması.
+
+Working directory: /Users/aes/Antigravity Projects/Alfa/quanta
+Integrity mode: development
+
+## Requirements
+
+### R1. Mevcut Durum Analizi ve Yetersizlik Tespiti (SOTA & Gap Analysis)
+- Kafes tabanlı problemlerde (CVP/SVP) güncel klasik algoritmaları (LLL, BKZ) ve mevcut kuantum yaklaşımlarını (QUBO formülasyonu, standart QAOA) teorik ve pratik olarak inceleyin.
+- Küçük ve orta ölçekli sentetik kafes örnekleri üzerinde mevcut çözücülerin tıkandığı boyut eşiklerini, barren plateau (kısırlık platosu) sorunlarını ve başarı/hata oranlarını test edip belgeleyin.
+
+### R2. Quanta Bilişsel-Kuantum Hibrit CVP Çözücüsü
+- CVP problemini Ising / QUBO Hamiltonyenine dönüştüren ve Quanta SDK'nın `quanta.primitives.qaoa` modülü ile çözen bir kuantum çekirdek oluşturun.
+- Arama uzayının kombinatoryal patlamasını ve barren plateau sorununu aşmak için Quanta SDK'nın **Zeno Karar Hakemi** (arama alt-uzayını sabitleyen projeksiyonel budama) ve **SWR Engram Belleği** (önceki başarılı baz vektörlerini uyku/tekrar döngüsünde pekiştiren mekanizma) entegrasyonunu gerçekleştirin.
+
+### R3. Bağımsız ve Programatik Doğrulama (Benchmark Suite)
+- Bilinen doğru çözümleri (ground-truth closest vectors) olan sentetik kafes test setleri oluşturun ($n = 4, 8, 12, 16$ ve üzeri boyutlar).
+- Aşağıdaki üç yaklaşımı bağımsız ve adil olarak aynı test setlerinde kıyaslayın:
+  1. Klasik Heuristik (LLL / Babai Nearest Plane)
+  2. Standart Kuantum Optimizasyonu (Vanilla QAOA)
+  3. Quanta Bilişsel-Kuantum Çözücü (Cognitive QAOA + Zeno + SWR)
+- Metrikler: Başarı oranı (exact match), yaklaşım faktörü ($\gamma$), iterasyon/devre derinliği sayısı ve çözüm süresi.
+
+### R4. Stratejik Değerlendirme ve Raporlama
+- Bilişsel özelliklerin (Zeno & SWR) sağladığı net avantajları, kısıtları ve kuantum sonrası kriptografi güvenliğine etkilerini ortaya koyan yönetici özeti ve teknik dokümantasyon hazırlayın.
+
+## Acceptance Criteria
+
+### Doğruluk ve Çalışabilirlik
+- [ ] Test setlerindeki sentetik CVP örnekleri için doğru en yakın vektör mesafesi matematiksel olarak doğrulanabilir olmalıdır.
+- [ ] Geliştirilen çözücü script veya modülü `/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/python` ortamında hatasız çalışmalıdır.
+
+### Kıyaslama ve Metrik Raporu
+- [ ] En az 3 farklı boyut kademesinde ($n=4, 8, 12+$) klasik vs standart QAOA vs bilişsel QAOA karşılaştırmalı sayısal sonuç tablosu üretilmelidir.
+- [ ] Bilişsel Zeno Hakeminin barren plateau ve yerel minimumlara takılma oranını düşürdüğü somut veriyle gösterilmelidir.
+- [ ] Kod tabanında geriye dönük uyumluluk korunmalı, Quanta SDK'nın mevcut testleri kırılmamalıdır.

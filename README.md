@@ -8,7 +8,7 @@
     <a href="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml"><img src="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml/badge.svg" alt="CI"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-92%25-brightgreen.svg" alt="Coverage"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-1.2.0-blue.svg" alt="Version"></a>
-    <a href="https://doi.org/10.5281/zenodo.22952779"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22952779.svg" alt="DOI"></a>
+    <a href="https://doi.org/Pending Registration"><img src="https://img.shields.io/badge/DOI-pending%20publication-orange.svg" alt="DOI"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>

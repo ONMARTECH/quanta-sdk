@@ -5,6 +5,8 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+import time
+from datetime import datetime
 from typing import Any
 
 import torch
@@ -25,6 +27,84 @@ DELTA_S_LTD: float = 0.35
 GAMMA_INH: float = 0.02
 SALIENCE_GIST_DEFAULT: float = 1.85
 GIST_CATEGORY: str = "semantic_gist"
+
+# Multi-Horizon Temporal Decay Constants (Milestone M2)
+LAMBDA_TODAY: float = 0.02  # per hour (< 24h)
+LAMBDA_YESTERDAY: float = 0.05  # per hour (24h - 48h)
+LAMBDA_SPRINT: float = 0.15  # per day (2d - 7d)
+LAMBDA_LONGTERM: float = 0.05  # per day (> 7d)
+
+# Anchored continuous piecewise exponential decay boundary weights
+W_TODAY_BOUNDARY: float = 1.0
+W_YESTERDAY_BOUNDARY: float = math.exp(-LAMBDA_TODAY * 24.0)  # ~0.61878
+W_SPRINT_BOUNDARY: float = W_YESTERDAY_BOUNDARY * math.exp(-LAMBDA_YESTERDAY * 24.0)  # ~0.18637
+W_LONGTERM_BOUNDARY: float = W_SPRINT_BOUNDARY * math.exp(-LAMBDA_SPRINT * 5.0)  # ~0.08803 (120h = 5d)
+
+
+def calculate_temporal_decay(
+    created_at: float | datetime,
+    salience: float = 1.0,
+    is_core_anchor: bool = False,
+    category: str = "",
+    now_ts: float | datetime | None = None,
+) -> float:
+    """Calculates anchored continuous piecewise exponential decay with core anchor protection.
+
+    Biomorphic continuous decay formulation:
+        - dt < 24h (Today):
+            w = W_TODAY_BOUNDARY * exp(-lambda_today * dt_hours)
+        - 24h <= dt < 48h (Yesterday):
+            w = W_YESTERDAY_BOUNDARY * exp(-lambda_yesterday * (dt_hours - 24.0))
+        - 48h <= dt < 168h (Sprint, 2d - 7d):
+            w = W_SPRINT_BOUNDARY * exp(-lambda_sprint * ((dt_hours - 48.0) / 24.0))
+        - dt >= 168h (Long-term, > 7d):
+            w = W_LONGTERM_BOUNDARY * exp(-lambda_longterm * ((dt_hours - 168.0) / 24.0))
+
+    Guarantees strict monotonicity: w(t1) > w(t2) for all 0 <= t1 < t2, eliminating
+    boundary discontinuities and inversions across horizons.
+
+    Core anchor protection:
+        Engrams with salience >= 2.0 or is_core_anchor=True or category == 'semantic_gist'
+        are shielded (w_eff = 1.0).
+
+    Args:
+        created_at: Creation timestamp (Unix epoch float or datetime).
+        salience: Dopaminergic salience tag.
+        is_core_anchor: Whether engram is an immutable core anchor.
+        category: Semantic category (e.g. 'semantic_gist', 'constraint').
+        now_ts: Current timestamp for time delta calculation (default: now).
+
+    Returns:
+        Effective temporal weight w_eff in (0.0, 1.0].
+    """
+    if float(salience) >= 2.0 or is_core_anchor or category == GIST_CATEGORY:
+        return 1.0
+
+    if now_ts is None:
+        now_sec = time.time()
+    elif isinstance(now_ts, datetime):
+        now_sec = now_ts.timestamp()
+    else:
+        now_sec = float(now_ts)
+
+    created_sec = (
+        created_at.timestamp() if isinstance(created_at, datetime) else float(created_at)
+    )
+
+    dt_sec = max(0.0, now_sec - created_sec)
+    dt_hours = dt_sec / 3600.0
+
+    if dt_hours < 24.0:
+        return float(W_TODAY_BOUNDARY * math.exp(-LAMBDA_TODAY * dt_hours))
+    elif dt_hours < 48.0:
+        return float(W_YESTERDAY_BOUNDARY * math.exp(-LAMBDA_YESTERDAY * (dt_hours - 24.0)))
+    elif dt_hours < 168.0:
+        dt_days_sprint = (dt_hours - 48.0) / 24.0
+        return float(W_SPRINT_BOUNDARY * math.exp(-LAMBDA_SPRINT * dt_days_sprint))
+    else:
+        dt_days_longterm = (dt_hours - 168.0) / 24.0
+        return float(W_LONGTERM_BOUNDARY * math.exp(-LAMBDA_LONGTERM * dt_days_longterm))
+
 
 
 def text_to_statevector(text: str, dim: int = 64) -> torch.Tensor:
@@ -209,6 +289,8 @@ class CognitiveMemoryManager:
         category: str = "decision",
         overwrite: bool = True,
         is_core_anchor: bool | None = None,
+        created_at: float | datetime | None = None,
+        is_system_core: bool = False,
     ) -> int:
         """Records a strategic decision, constraint, or user instruction.
 
@@ -220,6 +302,9 @@ class CognitiveMemoryManager:
             overwrite: If True and an engram with `key` exists, consciously prunes the old one.
             is_core_anchor: Whether this engram is a permanent core anchor immune to pruning.
                 If None, automatically resolves to True if salience >= 2.0, False otherwise.
+            created_at: Optional creation timestamp (Unix epoch float or datetime).
+                Defaults to current time.
+            is_system_core: Whether this engram is an immutable system-level core anchor.
 
         Returns:
             Buffer index of the stored engram.
@@ -228,22 +313,44 @@ class CognitiveMemoryManager:
             self.forget(key)
 
         state = text_to_statevector(f"{key}:{content}", dim=self.dim)
-        resolved_is_core = (
-            bool(is_core_anchor) if is_core_anchor is not None else (float(salience) >= 2.0)
+        resolved_system_core = bool(
+            is_system_core
+            or category in ("system_core", GIST_CATEGORY)
+            or key.startswith("system_")
         )
+        resolved_is_core = (
+            True
+            if resolved_system_core
+            else (bool(is_core_anchor) if is_core_anchor is not None else (float(salience) >= 2.0))
+        )
+        if created_at is None:
+            now_epoch = time.time()
+        elif isinstance(created_at, datetime):
+            now_epoch = created_at.timestamp()
+        else:
+            now_epoch = float(created_at)
+
         metadata = {
             "key": key,
             "content": content,
             "category": category,
             "salience": float(salience),
             "is_core_anchor": resolved_is_core,
+            "is_system_core": resolved_system_core,
+            "created_at": now_epoch,
+            "last_replayed_at": 0.0,
+            "replay_count": 0,
         }
 
         # Smart priority eviction if buffer is at capacity
         if len(self.buffer.buffer) >= self.buffer.capacity:
             self._evict_least_salient()
 
-        return self.buffer._store_single(state, dopamine_tag=salience, metadata=metadata)
+        idx = self.buffer._store_single(state, dopamine_tag=salience, metadata=metadata)
+        if self.buffer.buffer:
+            self.buffer.buffer[-1]["created_at"] = now_epoch
+            self.buffer.buffer[-1]["is_system_core"] = resolved_system_core
+        return idx
 
     def record_transient_decision(
         self,
@@ -251,6 +358,7 @@ class CognitiveMemoryManager:
         content: str,
         salience: float = 0.5,
         category: str = "contextual_decision",
+        created_at: float | datetime | None = None,
     ) -> int:
         """Records an ephemeral in-conversation decision with salience clamped to [0.2, 0.8].
 
@@ -262,6 +370,7 @@ class CognitiveMemoryManager:
             content: Full text explanation or decision summary.
             salience: Priority tag (clamped to [0.2, 0.8], default: 0.5).
             category: Semantic category (default: 'contextual_decision').
+            created_at: Optional creation timestamp (Unix epoch float or datetime).
 
         Returns:
             Buffer index of the stored engram.
@@ -274,6 +383,7 @@ class CognitiveMemoryManager:
             category=category,
             overwrite=True,
             is_core_anchor=False,
+            created_at=created_at,
         )
 
     def record_semantic_gist(
@@ -355,6 +465,7 @@ class CognitiveMemoryManager:
         tags = dict(context_tags) if context_tags else {}
 
         state = text_to_statevector(f"{key}:{content}", dim=self.dim)
+        now_epoch = time.time()
         metadata = {
             "key": key,
             "content": content,
@@ -366,12 +477,18 @@ class CognitiveMemoryManager:
             "consecutive_failures": 1,
             "consecutive_successes": 0,
             "context_divergence": [],
+            "created_at": now_epoch,
+            "last_replayed_at": 0.0,
+            "replay_count": 0,
         }
 
         if len(self.buffer.buffer) >= self.buffer.capacity:
             self._evict_least_salient()
 
-        return self.buffer._store_single(state, dopamine_tag=clamped_sal, metadata=metadata)
+        idx = self.buffer._store_single(state, dopamine_tag=clamped_sal, metadata=metadata)
+        if self.buffer.buffer:
+            self.buffer.buffer[-1]["created_at"] = now_epoch
+        return idx
 
     def potentiate_inhibitor(
         self,
@@ -700,6 +817,182 @@ class CognitiveMemoryManager:
 
         return pruned_records
 
+    def apply_wake_sleep_plasticity(
+        self,
+        phase: Any,
+        shy_factor: float = 0.90,
+        fidelity_threshold: float = 0.70,
+        min_salience_prune: float = 0.80,
+    ) -> dict[str, Any]:
+        """Applies Hinton Wake-Sleep biophysical synaptic plasticity.
+
+        During SWS (phase == SleepPhase.NREM_SWS):
+            - Proactively downscales non-core engrams: S_e <- max(0.20, S_e * shy_factor).
+            - Prunes noisy ephemeral engrams (S <= 0.80 and (fidelity < 0.70 or older non-anchor items)).
+            - Returns dict with 'phase', 'downscaled_count', and 'pruned_count'.
+
+        During REM (phase == SleepPhase.REM_DREAM):
+            - Selectively potentiates generalizing cross-domain bisociations and high-salience
+              emergent RFC engrams: S >= 2.50, marking them as core anchors to prevent eviction.
+            - Returns dict with 'phase' and 'potentiated_count'.
+
+        Args:
+            phase: SleepPhase enum or string ('NREM_SWS', 'REM_DREAM').
+            shy_factor: Synaptic downscale factor for non-core engrams in SWS (default 0.90).
+            fidelity_threshold: Fidelity cut-off for pruning degraded noise in SWS (default 0.70).
+            min_salience_prune: Salience threshold below which noise is pruned in SWS (default 0.80).
+
+        Returns:
+            Dictionary containing plasticity outcome metrics.
+        """
+        phase_str = phase.value if hasattr(phase, "value") else str(phase)
+        if "NREM" in phase_str or "SWS" in phase_str:
+            downscaled_count = 0
+            survivors = []
+            pruned_count = 0
+
+            for engram in self.buffer.buffer:
+                d_tag = float(engram["dopamine_tag"])
+                meta = engram.get("metadata") or {}
+                cat = meta.get("category", "")
+                age = float(engram.get("age", 0))
+
+                is_core = bool(
+                    meta.get("is_core_anchor", False)
+                    or d_tag >= 2.0
+                    or cat in (GIST_CATEGORY, "subconscious_dream")
+                    or meta.get("is_system_core", False)
+                    or engram.get("is_system_core", False)
+                )
+
+                if not is_core:
+                    new_s = max(0.0, d_tag * shy_factor)
+                    engram["dopamine_tag"] = new_s
+                    downscaled_count += 1
+                    current_salience = new_s
+                else:
+                    current_salience = d_tag
+
+                # Compute fidelity
+                psi_0 = engram["pristine_state"]
+                psi_t = engram["degraded_state"]
+                overlap = torch.vdot(psi_0, psi_t)
+                fid = float((torch.abs(overlap) ** 2).item())
+
+                # Check pruning of noisy ephemeral engrams:
+                # S <= 0.80 and (fidelity < 0.70 or older non-anchor items or noise tags),
+                # OR unreinforced non-core salience decayed to viability floor (S <= 0.30)
+                is_noisy_ephemeral = (
+                    not is_core
+                    and (
+                        current_salience <= 0.30
+                        or (
+                            current_salience <= min_salience_prune
+                            and (
+                                fid < fidelity_threshold
+                                or age > 10.0
+                                or cat in (
+                                    "ephemeral",
+                                    "noise",
+                                    "scratchpad",
+                                    "transient",
+                                    "transient_task",
+                                )
+                                or any(
+                                    t in ("noise", "ephemeral", "temp", "scratchpad")
+                                    for t in (meta.get("tags") or [])
+                                )
+                            )
+                        )
+                    )
+                )
+
+                if is_noisy_ephemeral:
+                    pruned_count += 1
+                else:
+                    survivors.append(engram)
+
+            self.buffer.buffer = survivors
+            self.total_pruned_count += pruned_count
+            return {
+                "phase": "NREM_SWS",
+                "downscaled_count": downscaled_count,
+                "pruned_count": pruned_count,
+            }
+
+        elif "REM" in phase_str:
+            potentiated_count = 0
+            dream_engram_indices = []
+            for idx, engram in enumerate(self.buffer.buffer):
+                meta = engram.get("metadata") or {}
+                cat = meta.get("category", "")
+                key = str(meta.get("key", ""))
+                tags = meta.get("tags") or []
+                if isinstance(tags, str):
+                    tags = [tags]
+
+                is_bisociation = (
+                    cat
+                    in (
+                        "subconscious_dream",
+                        "hybrid_dream",
+                        "bisociation",
+                        "rfc_hybrid",
+                        "cross_domain",
+                    )
+                    or any(
+                        t in ("bisociation", "hybrid", "cross_project", "rfc") for t in tags
+                    )
+                    or key.startswith(("rfc_", "hybrid_", "bisociation_", "dream_"))
+                    or "projects_paired" in meta
+                    or "domain_pair" in meta
+                    or meta.get("hybrid") is True
+                    or "rfc_path" in meta
+                )
+                is_emergent_rfc = (
+                    "rfc" in key.lower()
+                    or "rfc" in cat.lower()
+                    or "rfc" in str(tags).lower()
+                    or float(meta.get("confidence", 0.0)) >= 0.85
+                )
+
+                if is_bisociation or is_emergent_rfc:
+                    dream_engram_indices.append(idx)
+
+            # Cap active core dream anchors (max 50) to prevent unbounded memory growth
+            dream_engram_indices.sort(
+                key=lambda i: float(self.buffer.buffer[i].get("created_at", 0.0)),
+                reverse=True,
+            )
+            max_dream_anchors = 50
+            for rank, idx in enumerate(dream_engram_indices):
+                engram = self.buffer.buffer[idx]
+                meta = engram.get("metadata") or {}
+                if rank < max_dream_anchors:
+                    d_tag = float(engram["dopamine_tag"])
+                    engram["dopamine_tag"] = max(2.50, d_tag)
+                    meta["is_core_anchor"] = True
+                    engram["is_core_anchor"] = True
+                    engram["metadata"] = meta
+                    potentiated_count += 1
+                else:
+                    meta["is_core_anchor"] = False
+                    engram["is_core_anchor"] = False
+                    engram["dopamine_tag"] = min(float(engram["dopamine_tag"]), 1.50)
+                    engram["metadata"] = meta
+
+            return {
+                "phase": "REM_DREAM",
+                "potentiated_count": potentiated_count,
+            }
+
+        return {
+            "phase": phase_str,
+            "downscaled_count": 0,
+            "pruned_count": 0,
+            "potentiated_count": 0,
+        }
+
     def _evict_least_salient(self) -> None:
         """Evicts lowest-scoring non-core engram (protects core anchors with salience >= 2.0)."""
         if not self.buffer.buffer:
@@ -712,13 +1005,38 @@ class CognitiveMemoryManager:
                 (e.get("metadata") or {}).get("is_core_anchor", False)
                 or float(e.get("dopamine_tag", 1.0)) >= 2.0
                 or (e.get("metadata") or {}).get("category") == GIST_CATEGORY
+                or (e.get("metadata") or {}).get("is_system_core", False)
+                or e.get("is_system_core", False)
             )
         ]
 
-        # If all engrams in buffer are core anchors, buffer expands gracefully to prevent FIFO loss
+        # If all engrams in buffer are core anchors, check if any are dream candidates
+        # (e.g. subconscious dreams or bisociations) that can be pruned to preserve capacity.
         if not candidate_indices:
-            self.buffer.capacity = max(self.buffer.capacity, len(self.buffer.buffer) + 1)
-            return
+            dream_candidates = [
+                idx
+                for idx, e in enumerate(self.buffer.buffer)
+                if (
+                    (e.get("metadata") or {}).get("category")
+                    in ("subconscious_dream", "hybrid_dream", "bisociation", "rfc_hybrid")
+                    or str((e.get("metadata") or {}).get("key", "")).startswith(
+                        ("dream_", "bisociation_", "hybrid_", "rfc_")
+                    )
+                )
+                and not (
+                    (e.get("metadata") or {}).get("is_system_core", False)
+                    or e.get("is_system_core", False)
+                    or (e.get("metadata") or {}).get("category") in ("system_core", GIST_CATEGORY)
+                    or str((e.get("metadata") or {}).get("key", "")).startswith("system_")
+                )
+            ]
+            if dream_candidates:
+                candidate_indices = dream_candidates
+            else:
+                # If all engrams in buffer are immutable core anchors, buffer expands gracefully
+                # to prevent FIFO loss of core anchors.
+                self.buffer.capacity = max(self.buffer.capacity, len(self.buffer.buffer) + 1)
+                return
 
         min_idx = candidate_indices[0]
         min_score = float("inf")
@@ -896,6 +1214,161 @@ class CognitiveMemoryManager:
         vitals = self.recall_vital_context(top_k=self.buffer.capacity, min_fidelity=min_fidelity)
         gists = [v for v in vitals if v.get("category") == GIST_CATEGORY]
         return gists[:top_k]
+
+    def recall_reverse_chronological_cascade(
+        self,
+        top_k: int = 10,
+        min_fidelity: float = 0.40,
+        now_ts: float | None = None,
+        query: str = "",
+    ) -> list[dict[str, Any]]:
+        """Traverses memories in reverse-chronological order (newest first, t_now -> t_past).
+
+        Prioritizes current day's active problems while rippling backward into foundational
+        decisions. Applies multi-horizon temporal decay and dopaminergic core anchor protection.
+
+        Args:
+            top_k: Maximum number of memories to return (default: 10).
+            min_fidelity: Minimum retention fidelity threshold.
+            now_ts: Optional evaluation timestamp (epoch seconds).
+            query: Optional query for relevance boosting.
+
+        Returns:
+            List of memory dictionaries sorted in reverse-chronological order (newest first).
+        """
+        if not self.buffer.buffer:
+            return []
+
+        now_sec = time.time() if now_ts is None else float(now_ts)
+        candidates: list[dict[str, Any]] = []
+
+        for idx, engram in enumerate(self.buffer.buffer):
+            psi_0 = engram["pristine_state"]
+            psi_t = engram["degraded_state"]
+            overlap = torch.vdot(psi_0, psi_t)
+            fidelity = float((torch.abs(overlap) ** 2).item())
+
+            if fidelity < min_fidelity:
+                continue
+
+            meta = engram.get("metadata") or {}
+            key = meta.get("key", "")
+            content = meta.get("content", "")
+            cat = meta.get("category", "")
+            salience = float(engram["dopamine_tag"])
+            age_turns = round(float(engram["age"]), 1)
+
+            # Determine created_at timestamp: engram.get first, then meta.get
+            created_at = engram.get("created_at")
+            if created_at is None:
+                created_at = meta.get("created_at")
+            if created_at is None:
+                created_at = max(0.0, now_sec - (age_turns * 60.0))
+            if isinstance(created_at, datetime):
+                created_at = created_at.timestamp()
+            else:
+                created_at = float(created_at)
+
+            # Synchronize created_at across metadata and engram
+            meta["created_at"] = created_at
+            engram["created_at"] = created_at
+
+            dt_hours = max(0.0, (now_sec - created_at) / 3600.0)
+            if dt_hours < 24.0:
+                horizon = "today"
+            elif dt_hours < 48.0:
+                horizon = "yesterday"
+            elif dt_hours < 168.0:
+                horizon = "sprint"
+            else:
+                horizon = "longterm"
+
+            is_core = bool(
+                meta.get("is_core_anchor", salience >= 2.0)
+                or salience >= 2.0
+                or cat == GIST_CATEGORY
+            )
+
+            w_eff = calculate_temporal_decay(
+                created_at=created_at,
+                salience=salience,
+                is_core_anchor=is_core,
+                category=cat,
+                now_ts=now_sec,
+            )
+
+            # Replay score calculation
+            base_score = salience * fidelity * w_eff
+            rel_boost = 0.0
+            if query and content:
+                q_words = set(query.lower().split())
+                c_words = set(content.lower().split())
+                overlap_len = len(q_words & c_words)
+                if overlap_len > 0:
+                    rel_boost = min(1.0, overlap_len / max(1, len(q_words)))
+            replay_score = base_score * (1.0 + 0.25 * rel_boost)
+
+            status = (
+                "pristine"
+                if fidelity >= 0.999
+                else (
+                    "consolidated"
+                    if fidelity >= 0.95
+                    else ("decaying" if fidelity >= 0.70 else "obsolete")
+                )
+            )
+
+            candidates.append(
+                {
+                    "index": idx,
+                    "key": key,
+                    "content": content,
+                    "category": cat,
+                    "salience": salience,
+                    "age_turns": age_turns,
+                    "created_at": created_at,
+                    "age_hours": round(dt_hours, 2),
+                    "horizon": horizon,
+                    "temporal_weight": round(w_eff, 5),
+                    "replay_score": round(replay_score, 5),
+                    "retention_fidelity": round(fidelity, 5),
+                    "retention_pct": round(fidelity * 100, 2),
+                    "status": status,
+                    "is_core_anchor": is_core,
+                }
+            )
+
+        if not candidates:
+            return []
+
+        # Sort reverse-chronologically (newest first, t_now -> t_past)
+        if len(candidates) <= top_k:
+            candidates.sort(key=lambda x: x["created_at"], reverse=True)
+            return candidates
+
+        # Budget allocation to guarantee rippling backward into foundational decisions:
+        core_candidates = [c for c in candidates if c["is_core_anchor"]]
+        non_core = [c for c in candidates if not c["is_core_anchor"]]
+
+        core_candidates.sort(key=lambda x: x["salience"] * x["retention_fidelity"], reverse=True)
+        non_core.sort(key=lambda x: x["created_at"], reverse=True)
+
+        num_core_slots = min(len(core_candidates), max(1, top_k // 3))
+        selected_core = core_candidates[:num_core_slots]
+        core_keys = {c["key"] for c in selected_core}
+
+        remaining_slots = top_k - len(selected_core)
+        selected_recent = [c for c in non_core if c["key"] not in core_keys][:remaining_slots]
+
+        merged = selected_core + selected_recent
+        if len(merged) < top_k and len(core_candidates) > len(selected_core):
+            additional_core = [
+                c for c in core_candidates if c["key"] not in core_keys
+            ][:(top_k - len(merged))]
+            merged.extend(additional_core)
+
+        merged.sort(key=lambda x: x["created_at"], reverse=True)
+        return merged
 
     def get_status_summary(self) -> dict[str, Any]:
         """Returns diagnostic metrics of the cognitive buffer."""

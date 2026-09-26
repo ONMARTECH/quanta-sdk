@@ -111,11 +111,12 @@ class TestPreemptionLatencyEmpirical:
             context_keys=["darwin_idle"],
         )
 
-        # Introduce realistic 500us deliberation per turn
         orig_simulate_step = daemon.wander_engine.simulator.simulate_step
+        turn_started = threading.Event()
 
         def delayed_simulate_step(*args: Any, **kwargs: Any) -> Any:
-            time.sleep(0.0005)
+            turn_started.set()
+            time.sleep(0.002)
             return orig_simulate_step(*args, **kwargs)
 
         daemon.wander_engine.simulator.simulate_step = delayed_simulate_step  # type: ignore[method-assign]
@@ -126,6 +127,7 @@ class TestPreemptionLatencyEmpirical:
         for i in range(run_count):
             daemon._preemption_event.clear()
             daemon._stop_event.clear()
+            turn_started.clear()
 
             cycle_res: list[Any] = []
 
@@ -135,7 +137,7 @@ class TestPreemptionLatencyEmpirical:
             t = threading.Thread(target=worker, name=f"MidWorker-{i}")
             t.start()
             # Allow worker thread to enter turn 0
-            time.sleep(0.0008)
+            turn_started.wait(timeout=0.1)
 
             t0 = time.perf_counter()
             daemon.interrupt_immediate()

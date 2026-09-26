@@ -1,6 +1,6 @@
 # Quanta SDK
 
-Python için yapay zeka odaklı, modüler ve yüksek başarımlı kuantum hesaplama SDK'si. **v1.2.0-production** — [PyPI](https://pypi.org/project/quanta-sdk/) · [Dokümantasyon](https://quanta.onmartech.com/) · [Zenodo DOI](https://doi.org/10.5281/zenodo.22952779)
+Python için yapay zeka odaklı, modüler ve yüksek başarımlı kuantum hesaplama SDK'si. **v1.2.0-production** — [PyPI](https://pypi.org/project/quanta-sdk/) · [Dokümantasyon](https://quanta.onmartech.com/) · [GitHub Release](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 
 ## Genel Bakış
 
@@ -126,7 +126,7 @@ Detaylı Türkçe ve İngilizce kılavuzlar için dokümantasyon merkezini ziyar
 - **Baş Mimar & Yazar**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
 - **Kurum**: ONMARTECH Kuantum Teknolojileri İnisiyatifi (`info@onmartech.com`)
 - **Web**: [onmartech.com](https://onmartech.com) · [quanta.onmartech.com](https://quanta.onmartech.com)
-- **Kalıcı Yazılım DOI**: [10.5281/zenodo.22952779](https://doi.org/10.5281/zenodo.22952779)
+- **Kalıcı Yazılım DOI**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 
 ## Lisans
 

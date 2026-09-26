@@ -9,7 +9,6 @@ authors:
 title: "Quanta: Native High-Performance Quantum Computing Framework & Fault-Tolerant Architecture"
 version: 1.2.0
 date-released: 2026-09-25
-doi: 10.5281/zenodo.22952779
 url: "https://quanta.onmartech.com"
 repository-code: "https://github.com/ONMARTECH/quanta-sdk"
 license: "MIT"

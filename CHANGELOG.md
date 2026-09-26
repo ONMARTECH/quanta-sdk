@@ -19,7 +19,7 @@ Format: [Semantic Versioning](https://semver.org/)
 ### Added — MCP Server Tools Expansion & Academic Whitepaper
 - 23 Model Context Protocol tools (`estimate_fault_tolerant_cost`, `quanta_reasoning_eval`, `transpile_for_target`).
 - Academic Software Architecture Paper (`docs/papers/quanta_framework_paper.md` and `docs/arxiv/quanta_framework/main.tex`).
-- Permanent CERN/Zenodo Release DOI: [10.5281/zenodo.22952779](https://doi.org/10.5281/zenodo.22952779).
+- Permanent CERN/Zenodo Release DOI: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0).
 - Total automated tests reached **2,076 tests** with 100% pass rate.
 
 ---

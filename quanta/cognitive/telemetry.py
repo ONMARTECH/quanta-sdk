@@ -386,6 +386,58 @@ def record_outcome_telemetry(
         pass
 
 
+def record_sleep_cycle_telemetry(
+    phase: str,
+    duration_ms: float,
+    metrics: dict[str, Any] | None = None,
+    telemetry_file: Path | None = None,
+    workspace: str | None = None,
+    **kwargs: Any,
+) -> None:
+    """Appends a sleep cycle (NREM_SWS or REM_DREAM) event to the persistent telemetry ledger.
+
+    Guaranteed fail-safe: never raises exceptions or interrupts agent execution.
+
+    Args:
+        phase: Sleep cycle phase ("NREM_SWS" or "REM_DREAM").
+        duration_ms: Total duration of the cycle in milliseconds.
+        metrics: Dictionary of clearance or dreaming metrics.
+        telemetry_file: Optional explicit path to the JSONL log file.
+        workspace: Optional workspace name identifier.
+    """
+    try:
+        log_file = telemetry_file or get_telemetry_file()
+        now = time.time()
+        iso_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        record: dict[str, Any] = {
+            "event_type": "sleep_cycle",
+            "timestamp": now,
+            "iso_time": iso_str,
+            "workspace": detect_workspace(workspace),
+            "sleep_phase": str(phase),
+            "duration_ms": round(_safe_float(duration_ms, 0.0), 2),
+            "metrics": metrics or {},
+        }
+        for k, v in kwargs.items():
+            if k not in record:
+                record[k] = v
+
+        with open(log_file, "a", encoding="utf-8") as f:
+            if _HAS_FCNTL:
+                try:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                    f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    f.flush()
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+            else:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                f.flush()
+    except Exception:
+        pass
+
+
 def read_telemetry_events(
     event_type: str | None = None,
     limit: int = 50,
@@ -573,9 +625,6 @@ def get_telemetry_summary(telemetry_file: Path | None = None) -> dict[str, Any]:
     pruned_counts = [
         _safe_float(h.get("pruned_count"), 0.0)
         for h in hook_steps
-        if isinstance(h.get("pruned_count"), (int, float))
-        and not isinstance(h.get("pruned_count"), bool)
-        and math.isfinite(h.get("pruned_count"))
     ]
     total_pruned_engrams = int(sum(pruned_counts))
 
@@ -726,9 +775,10 @@ def generate_dashboard_html(
         else _safe_int(summary.get("total_pruned_engrams"), 0),
     )
 
-    feedback_metrics = (
-        cognitive_state.get("feedback_metrics")
-        if isinstance(cognitive_state.get("feedback_metrics"), dict)
+    raw_feedback = cognitive_state.get("feedback_metrics")
+    feedback_metrics: dict[str, Any] = (
+        raw_feedback
+        if isinstance(raw_feedback, dict)
         else {}
     )
     feedback_history = (
@@ -960,9 +1010,10 @@ def generate_dashboard_html(
         arb_winning_label = str(latest_arb.get("winning_label") or arb_winner)
         arb_pzeno = _safe_float(latest_arb.get("p_zeno"), zeno_val)
         arb_constraint = str(latest_arb.get("injected_prompt_constraint") or "")
-        ab_dict = (
-            latest_arb.get("counterfactual_ab")
-            if isinstance(latest_arb.get("counterfactual_ab"), dict)
+        ab_raw = latest_arb.get("counterfactual_ab")
+        ab_dict: dict[str, Any] = (
+            ab_raw
+            if isinstance(ab_raw, dict)
             else {}
         )
         without_quanta = str(

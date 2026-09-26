@@ -901,7 +901,6 @@ def _save_mirrored_state_atomically(
                 mirror_dict = state_dict
                 if is_root_target:
                     mirror_dict = copy.deepcopy(state_dict)
-                    # Filter engrams so that root file strictly preserves production engrams
                     prod_engrams = [
                         e for e in state_dict.get("engrams", [])
                         if isinstance(e, dict)
@@ -909,11 +908,12 @@ def _save_mirrored_state_atomically(
                             e.get("category") in (
                                 "subconscious_dream",
                                 "architecture_rfc",
-                                "semantic_gist",
                             )
                             or str(e.get("key", "")).startswith("insight_")
                             or e.get("key") == "architecture_rfc"
                         )
+                        and e.get("key") != "insight_google_drive_mcp_architecture"
+                        and not str(e.get("key", "")).startswith(("gist_", "rfc_hybrid_"))
                     ]
                     mirror_dict["engrams"] = prod_engrams
 
@@ -1271,35 +1271,26 @@ def main() -> None:
                     mean_zeno_pinning = cached.get("mean_zeno_pinning")
                     recent_arbitrations = list(cached.get("recent_arbitrations", []))
                     for item in cached.get("engrams", []):
-                        sal_val = float(item.get("salience", 1.0))
-                        is_core_raw = item.get("is_core_anchor")
-                        is_core = (sal_val >= 2.0) if is_core_raw is None else bool(is_core_raw)
-
-                        raw_age = float(item.get("age", 0))
-                        age_val = int(raw_age) if raw_age.is_integer() else round(raw_age, 4)
-                        e_dict = {
-                            "key": item["key"],
-                            "content": item.get("content", item.get("description", "")),
-                            "salience": sal_val,
-                            "category": item.get("category", "general"),
-                            "fidelity": float(item.get("fidelity", 0.9998)),
-                            "age": age_val,
-                            "tags": item.get("tags", []),
-                            "topic": item.get("topic", ""),
-                            "confidence": float(item.get("confidence", 0.95)),
-                            "consecutive_successes": int(item.get("consecutive_successes", 0)),
-                            "consecutive_failures": int(item.get("consecutive_failures", 0)),
-                            "total_evaluations": int(item.get("total_evaluations", 0)),
-                            "last_outcome": item.get("last_outcome", "NEUTRAL"),
-                            "drift_status": item.get("drift_status", "STABLE"),
-                            "is_core_anchor": is_core,
-                        }
-                        if "v_inh" in item:
-                            e_dict["v_inh"] = float(item["v_inh"])
-                        if "context_tags" in item:
-                            e_dict["context_tags"] = item["context_tags"]
-                        if "context_divergence" in item:
-                            e_dict["context_divergence"] = item["context_divergence"]
+                        if not isinstance(item, dict) or "key" not in item:
+                            continue
+                        e_dict = dict(item)
+                        sal_val = float(e_dict.get("salience", 1.0))
+                        e_dict["salience"] = sal_val
+                        is_core_raw = e_dict.get("is_core_anchor")
+                        e_dict["is_core_anchor"] = (
+                            (sal_val >= 2.0) if is_core_raw is None else bool(is_core_raw)
+                        )
+                        e_dict.setdefault("category", "general")
+                        e_dict.setdefault("fidelity", 0.9998)
+                        e_dict.setdefault("age", 0)
+                        e_dict.setdefault("tags", [])
+                        e_dict.setdefault("topic", "")
+                        e_dict.setdefault("confidence", 0.95)
+                        e_dict.setdefault("consecutive_successes", 0)
+                        e_dict.setdefault("consecutive_failures", 0)
+                        e_dict.setdefault("total_evaluations", 0)
+                        e_dict.setdefault("last_outcome", "NEUTRAL")
+                        e_dict.setdefault("drift_status", "STABLE")
                         mem.engrams.append(e_dict)
             except Exception:
                 pass
@@ -1367,6 +1358,8 @@ def main() -> None:
                                         "drift_status": item.get("drift_status", "STABLE"),
                                         "is_core_anchor": is_core,
                                     }
+                                    if "created_at" in item:
+                                        hydrated["created_at"] = float(item["created_at"])
                                     if "v_inh" in item:
                                         hydrated["v_inh"] = float(item["v_inh"])
                                     if "context_tags" in item:
@@ -1710,9 +1703,32 @@ def main() -> None:
             and float(e.get("fidelity", 0.0)) >= 0.70
             and e.get("category") not in ("inhibitor", "anti_pattern", "semantic_gist")
         ]
-        # Sort transient decisions by fidelity * salience descending
+        # Sort transient decisions in reverse-chronological order (newest first, t_now -> t_past)
+        now_epoch = time.time()
+        for t in transient_decisions:
+            raw_created = t.get("created_at")
+            if raw_created is not None:
+                if isinstance(raw_created, (int, float)):
+                    created_ts = float(raw_created)
+                elif isinstance(raw_created, datetime):
+                    created_ts = raw_created.timestamp()
+                else:
+                    try:
+                        created_ts = float(raw_created)
+                    except (ValueError, TypeError):
+                        created_ts = now_epoch
+            else:
+                created_ts = max(0.0, now_epoch - float(t.get("age", 0.0)) * 60.0)
+
+            dt_h = max(0.0, (now_epoch - created_ts) / 3600.0)
+            w_recency = math.exp(-0.02 * dt_h) if dt_h < 24.0 else math.exp(-0.05 * dt_h)
+            sal = float(t.get("salience", 0.0))
+            fid = float(t.get("fidelity", 0.0))
+            t["_recency_score"] = sal * fid * w_recency
+            t["_created_ts"] = created_ts
+
         transient_decisions.sort(
-            key=lambda x: float(x.get("fidelity", 0.0)) * float(x.get("salience", 0.0)),
+            key=lambda x: (x["_created_ts"], x["_recency_score"]),
             reverse=True,
         )
         selected_transient = transient_decisions[:4]

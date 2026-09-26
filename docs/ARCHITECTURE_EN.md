@@ -201,5 +201,5 @@ User Code / Autonomous AI Agent (MCP)
 
 - **Lead Author & Principal Architect**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
 - **Affiliation**: ONMARTECH Quantum Computing Initiative (`info@onmartech.com`)
-- **Permanent Software DOI**: [10.5281/zenodo.22952779](https://doi.org/10.5281/zenodo.22952779)
+- **Permanent Software DOI**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 
