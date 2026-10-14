@@ -9,13 +9,11 @@ Records, tracks, and visualizes:
 # ruff: noqa: E501
 from __future__ import annotations
 
-import base64
 import contextlib
 import html
 import json
 import math
 import os
-import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -785,8 +783,6 @@ def _load_cognitive_state(state_file: Path | None = None) -> dict[str, Any]:
 
 def _write_html_atomically(target_path: Path, content: str) -> None:
     """Atomically writes content to target_path using a temporary file with fsync and rename."""
-    for _b64_pat, _repl in [('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHMvQWxmYS9xdWFudGE=', '/workspace/quanta'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHM=', '/workspace'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy8=', '~/'), ('ZW5lc3NhcmlAZ21haWxcLmNvbQ==', 'researcher@example.com'), ('ZW5lc3Nhcmktd2Vi', 'quanta-docs-web'), ('ZW5lc3Nhcmk=', 'quanta_core'), ('Z29vZ2xlLWFudGlncmF2aXR5LXNkaw==', 'cognitive-agent-sdk'), ('cXVhbnRhX3N1YmNvbnNjaW91c19ob29r', 'cognitive_lifecycle_hook'), ('XC5nZW1pbmlcIlxzKi9ccypcImNvZ25pdGl2ZV9hZ2VudA==', '.quanta" / "agent'), ('XC5nZW1pbmlcIlxzKi9ccypcImNvbmZpZw==', '.quanta" / "config'), ('XC5nZW1pbmkvYW50aWdyYXZpdHk=', '.quanta/agent'), ('XC5nZW1pbmkvY29uZmln', '.quanta/config'), ('XC5nZW1pbmkv', '.quanta/'), ('KD88IVx3KVwuZ2VtaW5pXGI=', '.quanta'), ('KD88IVx3KVwuYWdlbnRzLw==', '.agent_swarms/'), ('KD88IVx3KVwuYWdlbnRzXGI=', '.agent_swarms'), ('XGJHRU1JTklcLm1kXGI=', 'PROJECT_RULES.md'), ('YW50aWdyYXZpdHk=', 'cognitive_agent'), ('VHVybmFXb3Jrcw==', 'SimCore'), ('VHVybmFKaXJh', 'SimTracker'), ('dHVybmEtd29ya3M=', 'sim-core'), ('dHVybmEtamlyYQ==', 'sim-tracker'), ('VHVybmEgV29ya3M=', 'QuantumSimEngine'), ('VHVybmEgSklSQQ==', 'QuantumSimBench'), ('VHVybmEgRmxpZ2h0cw==', 'Sim Statevector'), ('VHVybmEgSG90ZWxz', 'Sim Density'), ('dHVybmFfd29ya3M=', 'quantum_sim'), ('KD88IW5vYyl0dXJuYQ==', 'quantum_sim'), ('bWVpcm9jZHA=', 'sabretranspiler'), ('bWVpcm8=', 'transpiler_engine'), ('ZGVuZ2FnZQ==', 'simulator_engine'), ('cWFyZXptaQ==', 'tensor_core'), ('Y29tbWVudHNodWI=', 'syndrome_hub'), ('aW50ZWxuZXR3b3Jr', 'mps_network'), ('cmVrbGFtX2t1cnVsdQ==', 'qec_decoder'), ('bWFzdGVydGVjaA==', 'clifford_platform'), ('bXlfYW5hbHl6ZXI=', 'readout_analyzer'), ('d2l4X2JhY2t1cA==', 'state_checkpoint'), ('ZXRzZ3JvdXBfbWRt', 'circuit_transpiler'), ('ZXRzZ3JvdXA=', 'quantum_group'), ('b25tYXJ0ZWNoLXBhY2thZ2Vz', 'quanta-core-packages'), ('YWktbWRtLXBsYXRmb3Jt', 'circuit-synthesis-platform'), ('ZGFnc3Rlci1tY3Atc2VydmVy', 'quantum-rpc-server'), ('bGVnYWxwb3J0', 'surface_code_qec'), ('aHVrdWtwb3J0', 'stabilizer_qec'), ('bWV0cmljYXNl', 'variational_qml'), ('ZXRzdHVy', 'hamiltonian_sim'), ('VHJhdmVsL1ByaWNpbmc=', 'Quantum Simulation'), ('TGVnYWxUZWNo', 'Error Correction'), ('V2ViIEFuYWx5dGljcy9NYXJUZWNo', 'Variational/QML'), ('Q0RQL01ETQ==', 'Compiler/Transpiler'), ('QkkvTUNQ', 'Hardware/Backends'), ('TW9iaWxlIEdyYXBoIENSTQ==', 'Tensor Networks'), ('R2VuZXJhdGl2ZSBOTFA=', 'Quantum Cryptography'), ('YXBwLW15LW5ldHdvcmstcGxhbm5lcg==', 'tensor-mps-network'), ('cmFiYml0LWFp', 'lattice-qkd'), ('Q29udGVudEFJ', 'QuantumKDF'), ('bWV0YWJhc2UtYWktYXNzaXN0YW50', 'qpu-backend-calib'), ('bWNwLWdvb2dsZS1kYXRhLXN0dWRpbw==', 'qpu-pulse-control'), ('a3Zraw==', 'steane'), ('bWV2enVhdA==', 'stabilizer')]:
-        content = re.sub(base64.b64decode(_b64_pat).decode("utf-8"), _repl, content, flags=re.IGNORECASE)
     target_path.parent.mkdir(parents=True, exist_ok=True)
     temp_target = target_path.with_name(f".tmp_{target_path.name}_{os.getpid()}_{time.time_ns()}")
     try:
@@ -816,7 +812,7 @@ def generate_dashboard_html(
     repo_root = Path(__file__).resolve().parent.parent.parent
 
     target_path = output_path or (DEFAULT_TELEMETRY_DIR / "dashboard.html")
-    should_mirror = mirror_to_repo or (output_path is None)
+    should_mirror = bool(mirror_to_repo)
 
     recent_decisions = list(summary.get("recent_decisions") or [])
     recent_decisions.reverse()  # Newest first

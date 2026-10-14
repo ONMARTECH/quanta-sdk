@@ -54,3 +54,6 @@ dashboard.html
 quanta_dream.log
 *.pid
 
+# Auto-generated subconscious RFCs
+docs/rfcs/RFC_*.md
+quanta_dream.pid

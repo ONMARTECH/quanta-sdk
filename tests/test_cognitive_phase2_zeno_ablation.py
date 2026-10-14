@@ -101,7 +101,7 @@ class TestZenoAblationEngineCore:
                         "risk": 0.10,
                     },
                 ],
-                hard_invariant="secure_credential_vault_rule",
+                hard_invariant="unitary_norm_preservation_rule",
             ),
             AblationScenario(
                 scenario_id="creeping_context_erosion",

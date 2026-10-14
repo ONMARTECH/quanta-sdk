@@ -12,7 +12,6 @@ Runs silently and automatically on CognitiveAgent lifecycle events (PreInvocatio
 
 from __future__ import annotations
 
-import base64
 import contextlib
 import copy
 import json
@@ -37,59 +36,59 @@ LAMBDA_DOPAMINE = 1.5     # Dopaminergic protection gain factor
 DEFAULT_DIM = 64          # Effective 6-qubit minicolumn state space (was 16)
 
 CANONICAL_PROD_KEYS = frozenset({
-    'insight_hamiltonian_sim_price_tracker_architecture',
-    'insight_autonomous_quantum_resonance',
-    'insight_bloch_sphere_caching',
-    'insight_caip_evolution',
-    'insight_quantum_rem_sleep',
-    'insight_qec_decoder_tracker_architecture',
-    'insight_variational_tools_architecture',
-    'insight_sabre_realtime_routing',
-    'insight_surface_code_qec_gh_evolution',
-    'insight_pulse_schedule_caching',
-    'insight_mps_entanglement_clustering',
-    'insight_circuit_scheduler_mcp_server_evolution',
-    'insight_pulse_compiler_agent_architecture',
-    'insight_qpu_calibration_platform_architecture',
     'insight_continuous_resonance',
-    'insight_syndrome_hub_evolution',
-    'insight_qkd_key_freshness',
-    'insight_clifford_platform_evolution',
-    'insight_tensor_core_evolution',
-    'insight_ai_mdm_platform_architecture',
-    'insight_cognitive_agent_skills_evolution',
-    'insight_dynamical_decoupling_timing',
-    'insight_canonical_circuit_equivalence',
-    'insight_stabilizer_qec_evolution',
-    'insight_qasm_gate_templates',
-    'insight_onvariational_state_checkpoint_architecture',
-    'insight_amazon___scrape_evolution',
-    'insight_kraus_channel_trace_integrity',
-    'insight_calibration_drift_detection',
-    'insight_mcp_cloud_platform_architecture',
-    'insight_transpiler_engine_cdp_mcp_architecture',
-    'insight_readout_analyzer_extension_architecture',
-    'insight_bb84_channel_ai_agent_architecture',
-    'insight_onvariational_packages_architecture',
+    'insight_landauer_efficiency',
     'insight_anti_rumination_reset',
-    'insight_mps_network_architecture',
-    'insight_circuit_dag_mapping',
+    'insight_quantum_rem_sleep',
+    'insight_darwin_qos_optimization',
+    'insight_autonomous_quantum_resonance',
     'insight_concurrent_preemption',
     'insight_qos',
-    'insight_readout_mitigation_matrix',
-    'insight_landauer_efficiency',
-    'insight_darwin_qos_optimization',
-    'insight_quantum_sim_jira_architecture',
-    'insight_variational_ads_mcp_architecture',
-    'insight_unitary_gate_synthesis',
-    'insight_gcp_mcp_project_evolution',
-    'insight_onvariational_web_evolution',
-    'insight_variational_qml_architecture',
-    'insight_trotter_error_guardrails',
-    'insight_mcp_transpiler_engine_cdp_evolution',
-    'insight_ai_platform_evolution',
-    'insight_quanta_core_web_architecture',
-    'insight_spectral_relationship_clustering',
+    'insight_pauli_commutation_algebra',
+    'insight_clifford_tableau_simulation',
+    'insight_surface_code_mwpm_threshold',
+    'insight_union_find_syndrome_decoder',
+    'insight_mps_svd_truncation_bound',
+    'insight_tebd_trotter_decomposition',
+    'insight_sabre_swap_routing_heuristic',
+    'insight_kak_two_qubit_synthesis',
+    'insight_solovay_kitaev_approximation',
+    'insight_vqe_parameter_shift_gradient',
+    'insight_qaoa_maxcut_mixer_commutation',
+    'insight_barren_plateau_variance_scaling',
+    'insight_quantum_natural_gradient_fubini',
+    'insight_qsvm_fidelity_kernel_gram',
+    'insight_grover_amplitude_amplification',
+    'insight_quantum_phase_estimation_qft',
+    'insight_shor_period_finding_modular',
+    'insight_bb84_qkd_sifted_key_entropy',
+    'insight_lwe_lattice_babai_rounding',
+    'insight_lindblad_cptp_kraus_trace',
+    'insight_amplitude_damping_t1_relaxation',
+    'insight_phase_damping_t2_decoherence',
+    'insight_readout_confusion_matrix_inversion',
+    'insight_zero_noise_extrapolation_richardson',
+    'insight_probabilistic_error_cancellation',
+    'insight_dynamical_decoupling_xy4_sequence',
+    'insight_ionq_molmer_sorensen_native_compilation',
+    'insight_ibm_heavy_hex_bridge_cancellation',
+    'insight_neutral_atom_rydberg_blockade_zone',
+    'insight_magic_state_distillation_15_to_1',
+    'insight_lattice_surgery_logical_cnot',
+    'insight_floquet_honeycomb_dynamical_codes',
+    'insight_ldpc_quantum_expander_codes',
+    'insight_jordan_wigner_fermionic_mapping',
+    'insight_qubit_tapering_z2_symmetries',
+    'insight_commuting_pauli_clique_grouping',
+    'insight_classical_shadows_randomized_pauli',
+    'insight_quantum_zeno_frequent_projection',
+    'insight_anti_zeno_accelerated_transition',
+    'insight_noether_symmetry_charge_conservation',
+    'insight_hippocampal_swr_compressed_replay',
+    'insight_csf_dielectric_dephasing_shield',
+    'insight_ebbinghaus_power_law_consolidation',
+    'insight_fuzzy_trace_gist_orthogonalization',
+    'insight_contextual_resonance_top_k_filtering',
 })
 
 
@@ -909,8 +908,6 @@ def _atomic_write_single_file(target: Path, state_dict: dict) -> bool:
         target.parent.mkdir(parents=True, exist_ok=True)
         temp_path = target.with_name(f".tmp_{target.name}_{os.getpid()}_{time.time_ns()}")
         raw_json = json.dumps(state_dict, ensure_ascii=False, indent=2)
-        for _b64_pat, _repl in [('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHMvQWxmYS9xdWFudGE=', '/workspace/quanta'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHM=', '/workspace'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy8=', '~/'), ('ZW5lc3NhcmlAZ21haWxcLmNvbQ==', 'researcher@example.com'), ('ZW5lc3Nhcmktd2Vi', 'quanta-docs-web'), ('ZW5lc3Nhcmk=', 'quanta_core'), ('Z29vZ2xlLWFudGlncmF2aXR5LXNkaw==', 'cognitive-agent-sdk'), ('cXVhbnRhX3N1YmNvbnNjaW91c19ob29r', 'cognitive_lifecycle_hook'), ('XC5nZW1pbmlcIlxzKi9ccypcImNvZ25pdGl2ZV9hZ2VudA==', '.quanta" / "agent'), ('XC5nZW1pbmlcIlxzKi9ccypcImNvbmZpZw==', '.quanta" / "config'), ('XC5nZW1pbmkvYW50aWdyYXZpdHk=', '.quanta/agent'), ('XC5nZW1pbmkvY29uZmln', '.quanta/config'), ('XC5nZW1pbmkv', '.quanta/'), ('KD88IVx3KVwuZ2VtaW5pXGI=', '.quanta'), ('KD88IVx3KVwuYWdlbnRzLw==', '.agent_swarms/'), ('KD88IVx3KVwuYWdlbnRzXGI=', '.agent_swarms'), ('XGJHRU1JTklcLm1kXGI=', 'PROJECT_RULES.md'), ('YW50aWdyYXZpdHk=', 'cognitive_agent'), ('VHVybmFXb3Jrcw==', 'SimCore'), ('VHVybmFKaXJh', 'SimTracker'), ('dHVybmEtd29ya3M=', 'sim-core'), ('dHVybmEtamlyYQ==', 'sim-tracker'), ('VHVybmEgV29ya3M=', 'QuantumSimEngine'), ('VHVybmEgSklSQQ==', 'QuantumSimBench'), ('VHVybmEgRmxpZ2h0cw==', 'Sim Statevector'), ('VHVybmEgSG90ZWxz', 'Sim Density'), ('dHVybmFfd29ya3M=', 'quantum_sim'), ('KD88IW5vYyl0dXJuYQ==', 'quantum_sim'), ('bWVpcm9jZHA=', 'sabretranspiler'), ('bWVpcm8=', 'transpiler_engine'), ('ZGVuZ2FnZQ==', 'simulator_engine'), ('cWFyZXptaQ==', 'tensor_core'), ('Y29tbWVudHNodWI=', 'syndrome_hub'), ('aW50ZWxuZXR3b3Jr', 'mps_network'), ('cmVrbGFtX2t1cnVsdQ==', 'qec_decoder'), ('bWFzdGVydGVjaA==', 'clifford_platform'), ('bXlfYW5hbHl6ZXI=', 'readout_analyzer'), ('d2l4X2JhY2t1cA==', 'state_checkpoint'), ('ZXRzZ3JvdXBfbWRt', 'circuit_transpiler'), ('ZXRzZ3JvdXA=', 'quantum_group'), ('b25tYXJ0ZWNoLXBhY2thZ2Vz', 'quanta-core-packages'), ('YWktbWRtLXBsYXRmb3Jt', 'circuit-synthesis-platform'), ('ZGFnc3Rlci1tY3Atc2VydmVy', 'quantum-rpc-server'), ('bGVnYWxwb3J0', 'surface_code_qec'), ('aHVrdWtwb3J0', 'stabilizer_qec'), ('bWV0cmljYXNl', 'variational_qml'), ('ZXRzdHVy', 'hamiltonian_sim'), ('VHJhdmVsL1ByaWNpbmc=', 'Quantum Simulation'), ('TGVnYWxUZWNo', 'Error Correction'), ('V2ViIEFuYWx5dGljcy9NYXJUZWNo', 'Variational/QML'), ('Q0RQL01ETQ==', 'Compiler/Transpiler'), ('QkkvTUNQ', 'Hardware/Backends'), ('TW9iaWxlIEdyYXBoIENSTQ==', 'Tensor Networks'), ('R2VuZXJhdGl2ZSBOTFA=', 'Quantum Cryptography'), ('YXBwLW15LW5ldHdvcmstcGxhbm5lcg==', 'tensor-mps-network'), ('cmFiYml0LWFp', 'lattice-qkd'), ('Q29udGVudEFJ', 'QuantumKDF'), ('bWV0YWJhc2UtYWktYXNzaXN0YW50', 'qpu-backend-calib'), ('bWNwLWdvb2dsZS1kYXRhLXN0dWRpbw==', 'qpu-pulse-control'), ('a3Zraw==', 'steane'), ('bWV2enVhdA==', 'stabilizer')]:
-            raw_json = re.sub(base64.b64decode(_b64_pat).decode("utf-8"), _repl, raw_json, flags=re.IGNORECASE)
         with open(temp_path, "w", encoding="utf-8") as sf:
             sf.write(raw_json)
             sf.flush()
@@ -1006,6 +1003,10 @@ def _save_mirrored_state_atomically(
                         pe["is_core_anchor"] = True
                         dedup_engrams.append(pe)
                     mirror_dict["engrams"] = dedup_engrams
+                    mirror_dict["recent_arbitrations"] = []
+                    mirror_dict["pruning_history"] = []
+                    mirror_dict["outcome_history"] = []
+                    mirror_dict["last_user_query"] = ""
 
                 mirror_ok = _atomic_write_single_file(mirror_path, mirror_dict)
         except Exception:
@@ -1655,7 +1656,7 @@ def main() -> None:
 
         cwd_hint = os.getcwd().lower()
         search_targets = (real_workspace.lower(), cwd_hint, artifact_dir.lower(), user_query)
-        is_quantum_sim = any("quantum_sim" in h or "transpiler_engine" in h or "simulator_engine" in h for h in search_targets)
+        any("quantum_sim" in h or "transpiler_engine" in h or "simulator_engine" in h for h in search_targets)
 
         # Ensure foundational cognitive anchors exist in active memory
         existing_rule_keys = {e["key"] for e in mem.engrams if isinstance(e, dict) and "key" in e}
@@ -1690,61 +1691,6 @@ def main() -> None:
                     " geçmeden önce kullanıcıya sor."
                 ),
                 salience=2.8,
-                category="constraint",
-                is_core_anchor=True,
-            )
-        if is_quantum_sim and "quantum_sim_api_hierarchy_rule" not in existing_rule_keys:
-            mem.record(
-                key="quantum_sim_api_hierarchy_rule",
-                content=(
-                    "quantum_sim projelerinde simulator_engine için simulator_engine API, transpiler_engine için transpiler_engine API/mpcli, "
-                    "DenseMatrix için BQ kullan. Yetersiz kalırsa önce kullanıcıya sor."
-                ),
-                salience=3.2,
-                category="constraint",
-                is_core_anchor=True,
-            )
-        if "source_verification_rule" not in existing_rule_keys:
-            mem.record(
-                key="source_verification_rule",
-                content=(
-                    "Kaynakçalarda ASLA uydurma kaynak, sahte yazar veya sahte DOI yazma; "
-                    "Crossref/arXiv/birincil literatürden fiilen doğrula, doğrulanamayanı dürüstçe belirt."
-                ),
-                salience=3.0,
-                category="constraint",
-                is_core_anchor=True,
-            )
-        if "secure_credential_vault_rule" not in existing_rule_keys:
-            mem.record(
-                key="secure_credential_vault_rule",
-                content=(
-                    "API key, şifre ve tokenları asla Git repolarına koyma; "
-                    "merkezi güvenli kasadan (~/.quanta/agent/vault/credentials_vault.json) yönet."
-                ),
-                salience=3.2,
-                category="constraint",
-                is_core_anchor=True,
-            )
-        if "persistent_knowledge_vault_rule" not in existing_rule_keys:
-            mem.record(
-                key="persistent_knowledge_vault_rule",
-                content=(
-                    "Kullanıcının paylaştığı link ve teknik dokümanları analiz edip merkezi bilgi kasasında "
-                    "(~/.quanta/agent/vault/knowledge_vault.json) indeksle ve projeler arası yeniden kullan."
-                ),
-                salience=2.9,
-                category="constraint",
-                is_core_anchor=True,
-            )
-        if "immutable_user_assets_rule" not in existing_rule_keys:
-            mem.record(
-                key="immutable_user_assets_rule",
-                content=(
-                    "Kullanıcının paylaştığı ekran görüntüleri, raporlar ve kritik varlıklar geçici sohbete terk edilemez; "
-                    "merkezi kasaya (~/.quanta/agent/vault/assets/) kopyalanır ve ASLA budanamaz."
-                ),
-                salience=3.3,
                 category="constraint",
                 is_core_anchor=True,
             )
@@ -1855,12 +1801,8 @@ def main() -> None:
                 ws_tokens.add("quantum_sim")
 
             foreign_projects = (
-                "quantum_sim", "transpiler_engine", "sabretranspiler", "surfacecodeqec", "stabilizer_qec", "openqasm",
-                "variational", "onvariational", "hamiltoniansim", "quantum_group", "amazon", "bb84_channel",
-                "circuit_scheduler", "caip", "quanta_core", "tensor_core", "syndrome_hub", "mps_network",
-                "clifford_platform", "variationalqml", "syndrome", "jira", "dense_matrix", "pulse_schedule",
-                "bloch_viz", "mps_tensor", "readout_analyzer", "sabre_routing", "kraus_channel",
-                "mdm", "google_drive",
+                "surface_code", "stabilizer", "sabre", "kraus",
+                "clifford", "openqasm", "variational", "hamiltonian",
             )
             matched_foreign = [
                 fp for fp in foreign_projects

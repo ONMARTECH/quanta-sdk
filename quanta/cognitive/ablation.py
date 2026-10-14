@@ -1032,7 +1032,7 @@ def build_trojan_distractor_instance(dim: int = 64, seed: int = 42) -> HardDecis
         goal="Optimize user onboarding latency and session authentication throughput",
         dilemma="High buzzword overlap shortcut bypassing cryptographic credential validation",
         dilemma_type="trojan_distractor",
-        hard_invariant="secure_credential_vault_rule",
+        hard_invariant="unitary_norm_preservation_rule",
         options=[
             {
                 "id": "opt_bypass",
