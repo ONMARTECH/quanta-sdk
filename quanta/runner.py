@@ -25,7 +25,7 @@ Example:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -40,7 +40,86 @@ if TYPE_CHECKING:
     from quanta.simulator.noise import NoiseModel
 
 # -- Public API --
-__all__ = ["run", "run_async", "sweep"]
+__all__ = ["CircuitResult", "CircuitRunner", "run", "run_async", "sweep"]
+
+CircuitResult = Result
+
+
+class CircuitRunner:
+    """Configurable quantum circuit execution engine.
+
+    Supports multiple execution backends:
+      - 'auto': Chooses dense for N <= max_dense_qubits (default 27), MPS for N > max_dense_qubits.
+      - 'dense' / 'statevector': Full StateVectorSimulator (exact, max ~27 qubits).
+      - 'mps': MPSSimulator (polynomial memory O(N * chi^2), 100+ qubits, low entanglement).
+      - Hardware Backends (IBM, IonQ, Google).
+
+    Args:
+        default_method: Default simulator method ('auto', 'dense', 'mps', etc.). Default 'auto'.
+        max_dense_qubits: Threshold for auto-routing to MPS. Default 27.
+        chi_max: Default maximum bond dimension for MPS simulation. Default 64.
+        cutoff: Truncation threshold for singular values. Default 1e-12.
+        shots: Default measurement repetitions. Default 1024.
+        seed: Random seed for reproducibility.
+        backend: Optional external hardware Backend.
+        noise: Optional NoiseModel.
+        method: Optional alias for default_method.
+    """
+
+    def __init__(
+        self,
+        default_method: str = "auto",
+        max_dense_qubits: int = 27,
+        chi_max: int = 64,
+        cutoff: float = 1e-12,
+        shots: int = 1024,
+        seed: int | None = None,
+        backend: Backend | None = None,
+        noise: NoiseModel | None = None,
+        method: str | None = None,
+    ) -> None:
+        self.default_method = method if method is not None else default_method
+        self.max_dense_qubits = max_dense_qubits
+        self.chi_max = chi_max
+        self.cutoff = cutoff
+        self.shots = shots
+        self.seed = seed
+        self.backend = backend
+        self.noise = noise
+
+    def run(
+        self,
+        circuit_or_dag: CircuitDefinition | DAGCircuit | Any,
+        shots: int | None = None,
+        method: str | None = None,
+        max_bond_dim: int | None = None,
+        cutoff: float | None = None,
+        seed: int | None = None,
+        backend: Backend | None = None,
+        noise: NoiseModel | None = None,
+        **kwargs: Any,
+    ) -> Result:
+        """Executes circuit using configured parameters and routes to appropriate simulator."""
+        exec_shots = shots if shots is not None else self.shots
+        exec_method = method if method is not None else self.default_method
+        exec_seed = seed if seed is not None else self.seed
+        exec_backend = backend if backend is not None else self.backend
+        exec_noise = noise if noise is not None else self.noise
+        exec_bond_dim = max_bond_dim if max_bond_dim is not None else self.chi_max
+        exec_cutoff = cutoff if cutoff is not None else self.cutoff
+
+        return run(
+            circuit=circuit_or_dag,
+            shots=exec_shots,
+            seed=exec_seed,
+            backend=exec_backend,
+            noise=exec_noise,
+            method=exec_method,
+            max_bond_dim=exec_bond_dim,
+            cutoff=exec_cutoff,
+            max_dense_qubits=self.max_dense_qubits,
+            **kwargs,
+        )
 
 
 def run(
@@ -49,12 +128,18 @@ def run(
     seed: int | None = None,
     backend: Backend | None = None,
     noise: NoiseModel | None = None,
+    method: str = "auto",
+    max_bond_dim: int = 64,
+    cutoff: float = 1e-12,
+    max_dense_qubits: int = 27,
+    chi_max: int | None = None,
     **kwargs: float,
 ) -> Result:
     """Executes a quantum circuit and returns results.
 
     This function is the SDK's main orchestrator. When no backend is
-    specified, it runs on the built-in statevector simulator. When a
+    specified, it runs on the built-in simulator with auto-routing
+    or explicitly requested method ('auto', 'dense', 'mps'). When a
     backend is provided, the circuit is compiled to a DAG and delegated.
 
     Supports both static circuits and dynamic circuits (mid-circuit
@@ -67,9 +152,18 @@ def run(
         backend: Optional execution backend (IBM, IonQ, Google, etc.).
         noise: Optional noise model for realistic simulation.
             When provided, noise channels are applied after each gate.
+        method: Simulator method ('auto', 'dense', 'mps'). Default 'auto'.
+            When 'auto', routes to MPS for N > max_dense_qubits (default 27).
+        max_bond_dim: Maximum bond dimension for MPS simulation. Default 64.
+        cutoff: Singular value truncation threshold for MPS. Default 1e-12.
+        max_dense_qubits: Threshold for auto-routing to MPS. Default 27.
+        chi_max: Alias for max_bond_dim.
 
     Returns:
         Result: Measurement results, probabilities, and circuit metadata.
+            Note: For high-qubit circuits (N > 20) or MPS simulation,
+            statevector is set to None to safeguard against exponential
+            O(2^N) memory explosion.
 
     Raises:
         QuantaError: If circuit is invalid or simulation fails.
@@ -81,6 +175,9 @@ def run(
         >>> nm = NoiseModel().add(Depolarizing(0.01))
         >>> result = run(bell, shots=1024, noise=nm)
     """
+    if chi_max is not None:
+        max_bond_dim = chi_max
+
     if isinstance(circuit, DAGCircuit):
         dag = circuit
         circuit_name = getattr(circuit, "name", "dynamic_circuit")
@@ -116,7 +213,54 @@ def run(
         )
     )
 
+    # Resolve simulation method
+    method_str = method.lower() if isinstance(method, str) else "auto"
+    if method_str == "auto":
+        resolved_method = "mps" if dag.num_qubits > max_dense_qubits else "dense"
+    elif method_str in ("statevector", "dense"):
+        resolved_method = "dense"
+    elif method_str == "mps":
+        resolved_method = "mps"
+    else:
+        resolved_method = method_str
+
+    if is_dynamic and resolved_method == "mps":
+        raise QuantaError(
+            "MPSSimulator does not currently support dynamic mid-circuit measurements."
+        )
+
     if not is_dynamic:
+        if resolved_method == "mps":
+            from quanta.simulator.mps import MPSSimulator
+
+            simulator = MPSSimulator(
+                dag.num_qubits,
+                seed=seed,
+                chi_max=max_bond_dim,
+                cutoff=cutoff,
+            )
+
+            for op in dag.op_nodes():
+                simulator.apply(op.gate_name, op.qubits, op.params)
+
+            counts = simulator.sample(shots)
+
+            if dag.measurement and dag.measurement.qubits:
+                measured = dag.measurement.qubits
+                counts = _filter_measured_qubits(counts, measured, dag.num_qubits)
+
+            # High-qubit safeguard: When using MPS or when N > 20, do NOT call sim.state
+            # which triggers exponential O(2^N) dense statevector explosion; set statevector=None
+            return Result(
+                counts=counts,
+                shots=shots,
+                num_qubits=dag.num_qubits,
+                circuit_name=circuit_name,
+                gate_count=dag.gate_count(),
+                depth=dag.depth(),
+                statevector=None,
+            )
+
         # Stage 3a: Fast static statevector simulation
         simulator = StateVectorSimulator(dag.num_qubits, seed=seed)
         rng = np.random.default_rng(seed)
@@ -141,6 +285,9 @@ def run(
             measured = dag.measurement.qubits
             counts = _filter_measured_qubits(counts, measured, dag.num_qubits)
 
+        # High-qubit safeguard: When N > 20, do NOT call sim.state
+        statevector = simulator.state if dag.num_qubits <= 20 else None
+
         return Result(
             counts=counts,
             shots=shots,
@@ -148,7 +295,7 @@ def run(
             circuit_name=circuit_name,
             gate_count=dag.gate_count(),
             depth=dag.depth(),
-            statevector=simulator.state,
+            statevector=statevector,
         )
 
     # Stage 3b: Dynamic circuit execution (shot-by-shot with projective collapse)
@@ -236,6 +383,11 @@ def run(
             if isinstance(channel, ReadoutError):
                 counts = channel.apply_to_counts(counts, rng)
 
+    # High-qubit safeguard: When N > 20, do NOT call sim.state
+    final_state = None
+    if dag.num_qubits <= 20:
+        final_state = last_sim.state if last_sim is not None else np.array([1.0], dtype=complex)
+
     return Result(
         counts=counts,
         shots=shots,
@@ -243,7 +395,7 @@ def run(
         circuit_name=circuit_name,
         gate_count=dag.gate_count(),
         depth=dag.depth(),
-        statevector=last_sim.state if last_sim is not None else np.array([1.0], dtype=complex),
+        statevector=final_state,
     )
 
 

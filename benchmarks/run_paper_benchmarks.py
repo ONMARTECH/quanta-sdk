@@ -31,19 +31,19 @@ from typing import Any
 import numpy as np
 import torch
 
-# Quanta Simulator and Core Imports
-from quanta.simulator.pauli_frame import PauliFrameSimulator
-from quanta.simulator.mps import MPSSimulator
-from quanta.simulator.statevector import StateVectorSimulator
-from quanta.simulator.mlx import MLXSimulator, is_mlx_available
-
-# Quanta PyTorch Native Ops
-from quanta.torch.ops import daleckii_krein_spectral_derivative
+from quanta.qec.decoder import MWPMDecoder
 
 # Quanta Quantum Error Correction Imports
 from quanta.qec.qldpc import BivariateBicycleCode, BPOSDDecoder
-from quanta.qec.surface_code import SurfaceCode
-from quanta.qec.decoder import MWPMDecoder
+from quanta.simulator.mlx import MLXSimulator, is_mlx_available
+from quanta.simulator.mps import MPSSimulator
+
+# Quanta Simulator and Core Imports
+from quanta.simulator.pauli_frame import PauliFrameSimulator
+from quanta.simulator.statevector import StateVectorSimulator
+
+# Quanta PyTorch Native Ops
+from quanta.torch.ops import daleckii_krein_spectral_derivative
 
 
 def get_system_metadata() -> dict[str, Any]:
@@ -446,7 +446,7 @@ def print_terminal_report(results: dict[str, Any]) -> None:
     if c2.get("available", False):
         status2 = f"{green}[PASS - VERIFIED]{reset}" if c2["target_exceeded"] else f"{yellow}[PASS]{reset}"
         print(f"\n{bold}2. Apple Silicon Metal / MLX Zero-Copy GPU Acceleration{reset} {status2}")
-        print(f"   • Multi-Layer Tensor Contraction Scaling:")
+        print("   • Multi-Layer Tensor Contraction Scaling:")
         for row in c2["multi_layer_scaling"]:
             print(f"     - N={row['num_qubits']:2d} qubits: CPU = {row['cpu_time_ms']:>8.2f} ms | MLX GPU = {row['mlx_time_ms']:>6.2f} ms | Speedup = {magenta}{bold}{row['speedup']:>5.1f}x{reset}")
         print(f"   • Peak Speedup Achieved   : {green}{bold}{c2['peak_speedup']:>5.1f}x{reset}")

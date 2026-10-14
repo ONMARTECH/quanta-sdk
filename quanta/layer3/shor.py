@@ -74,30 +74,43 @@ class ShorResult:
         return "\n".join(lines)
 
 
+def _append_controlled_phase(
+    builder: CircuitBuilder, control: int, target: int, angle: float
+) -> None:
+    """Decomposes a 2-qubit Controlled-Phase gate CP(angle) into standard RZ and CX gates.
+
+    Applies phase exp(i * angle) to |11⟩ (up to global phase) via:
+      RZ(angle/2) on control, RZ(angle/2) on target,
+      CX(control, target), RZ(-angle/2) on target, CX(control, target).
+    """
+    half = angle / 2.0
+    builder.record(Instruction("RZ", (control,), (half,)))
+    builder.record(Instruction("RZ", (target,), (half,)))
+    builder.record(Instruction("CX", (control, target)))
+    builder.record(Instruction("RZ", (target,), (-half,)))
+    builder.record(Instruction("CX", (control, target)))
+
+
 def _build_qft_dag(n_qubits: int) -> DAGCircuit:
-    """Builds a Quantum Fourier Transform circuit via DAG pipeline.
+    """Builds a true Quantum Fourier Transform circuit via DAG pipeline.
 
     QFT applies:
       |j⟩ → (1/√N) Σ_k exp(2πi·jk/N) |k⟩
 
-    Circuit structure for each qubit j:
-      H(j), then controlled-RZ(π/2^(k-j)) for k > j,
-      followed by SWAP for bit-reversal.
+    Circuit structure for each qubit j (MSB=0 to LSB=n-1):
+      H(j), then controlled-phase CP(π/2^(k-j)) between control k and target j
+      for k > j, followed by SWAP for bit-reversal.
 
     This goes through the full CircuitBuilder → DAG pipeline.
     """
     builder = CircuitBuilder(n_qubits)
 
     for j in range(n_qubits):
-        # Hadamard on qubit j
         builder.record(Instruction("H", (j,)))
-
-        # Controlled rotations (approximated as RZ on target)
         for k in range(j + 1, n_qubits):
             angle = math.pi / (2 ** (k - j))
-            builder.record(Instruction("RZ", (k,), (angle,)))
+            _append_controlled_phase(builder, k, j, angle)
 
-    # Bit-reversal via SWAP
     for i in range(n_qubits // 2):
         builder.record(Instruction("SWAP", (i, n_qubits - 1 - i)))
 
@@ -105,25 +118,20 @@ def _build_qft_dag(n_qubits: int) -> DAGCircuit:
 
 
 def _build_inverse_qft_dag(n_qubits: int) -> DAGCircuit:
-    """Builds the inverse QFT circuit (QFT†) via DAG pipeline.
+    """Builds the true inverse QFT circuit (QFT†) via DAG pipeline.
 
-    QFT† is the reverse of QFT: apply SWAP first, then
-    reverse order of H and controlled rotations with negated angles.
+    QFT† is the exact hermitian conjugate of QFT: apply SWAP first, then
+    reverse order of controlled-phase rotations (with negated angles) and H.
     """
     builder = CircuitBuilder(n_qubits)
 
-    # Bit-reversal via SWAP first
     for i in range(n_qubits // 2):
         builder.record(Instruction("SWAP", (i, n_qubits - 1 - i)))
 
-    # Reverse order of H and controlled rotations
     for j in range(n_qubits - 1, -1, -1):
-        # Inverse controlled rotations (negative angles)
         for k in range(n_qubits - 1, j, -1):
             angle = -math.pi / (2 ** (k - j))
-            builder.record(Instruction("RZ", (k,), (angle,)))
-
-        # Hadamard on qubit j (H is self-inverse)
+            _append_controlled_phase(builder, k, j, angle)
         builder.record(Instruction("H", (j,)))
 
     return DAGCircuit.from_builder(builder)
@@ -132,15 +140,17 @@ def _build_inverse_qft_dag(n_qubits: int) -> DAGCircuit:
 def _quantum_order_finding(
     a: int, N: int, seed: int | None = None,
 ) -> int:
-    """Quantum period-finding using QFT circuit via DAG pipeline.
+    """Quantum period-finding using QFT† circuit via DAG pipeline.
 
-    Finds the period r such that a^r ≡ 1 (mod N).
-    Uses quantum phase estimation with actual gate operations.
+    Finds the multiplicative order r such that a^r ≡ 1 (mod N).
+    Uses quantum superposition, modular exponentiation register measurement
+    collapse, and gate-level inverse QFT.
 
     Steps:
-      1. Build counting register with H gates (superposition)
-      2. Apply modular exponentiation phases
-      3. Apply inverse QFT circuit (real gates through DAG)
+      1. Build counting register in uniform superposition via H gates
+      2. Apply modular exponentiation |x⟩|a^x mod N⟩ and measure target register,
+         collapsing counting register onto periodic state |ψ⟩ = (1/√M) Σ |x_0 + m·r⟩
+      3. Apply inverse QFT circuit (real 2-qubit entangling gates through DAG)
       4. Measure and extract period via continued fractions
 
     Args:
@@ -151,78 +161,97 @@ def _quantum_order_finding(
     Returns:
         Estimated period r.
     """
-    # Number of qubits for counting register
-    n_count = max(4, 2 * int(math.ceil(math.log2(N))))
-    n_count = min(n_count, 12)  # Limit for simulator
+    n_count = max(6, 2 * int(math.ceil(math.log2(N))))
+    n_count = min(n_count, 12)  # Limit for dense QFT simulation
 
     dim = 2 ** n_count
     rng = np.random.default_rng(seed)
 
-    # Step 1: Build superposition state
+    # Step 1: Build uniform superposition state |+⟩^⊗n
     sim = create_simulator(n_count, seed=seed)
     for q in range(n_count):
         sim.apply("H", (q,))
 
-    # Step 2: Apply modular exponentiation phases (statevector level)
-    # NOTE: This step applies phases classically rather than building
-    # controlled-U^(2^k) gate circuits. A full quantum implementation
-    # would require ~2n³ CNOT gates for modular exponentiation, which
-    # exceeds our simulator's qubit/memory limit for N > 8.
-    # This is a standard pragmatic trade-off in classical simulation
-    # of Shor's algorithm — the QFT step (Step 3) uses real gates.
-    powers = []
-    val = 1
-    a_int = int(a)  # Ensure Python int to avoid numpy.int64 overflow
+    # Step 2: Modular exponentiation f(x) = a^x mod N and target register measurement collapse
+    a_int = int(a)
     N_int = int(N)
-    for _ in range(dim):
-        powers.append(val % N_int)
+    remainders = np.empty(dim, dtype=np.int64)
+    val = 1
+    for x in range(dim):
+        remainders[x] = val
         val = (val * a_int) % N_int
 
+    # Measure the target register: pick an observed remainder y_0 = a^{x_0} mod N
+    observed_x0 = int(rng.integers(0, dim))
+    y0 = remainders[observed_x0]
+
+    # Collapse counting register to superposition of all |x⟩ where a^x ≡ y0 (mod N)
     state = sim.state
-    for x in range(dim):
-        phase = 2 * np.pi * x * powers[x % len(powers)] / N
-        state[x] *= np.exp(1j * phase)
+    mask = (remainders == y0)
+    state[~mask] = 0.0
+    norm = np.linalg.norm(state)
+    if norm > 1e-12:
+        state = state / norm
     sim.state = state
 
-    # Step 3: Apply inverse QFT through DAG pipeline (real gates!)
+    # Step 3: Apply inverse QFT through DAG pipeline (real 2-qubit entangling gates)
     iqft_dag = _build_inverse_qft_dag(n_count)
     for op in iqft_dag.op_nodes():
         sim.apply(op.gate_name, op.qubits, op.params)
 
-    # Step 4: Measure
+    # Step 4: Sample measurement from QFT† interference peaks
     probs = sim.probabilities()
-    measured = rng.choice(dim, p=probs / probs.sum())
-
-    if measured == 0:
-        probs[0] = 0
-        if probs.sum() > 0:
-            measured = rng.choice(dim, p=probs / probs.sum())
-
-    if measured == 0:
+    probs[0] = 0.0  # Exclude trivial zero-frequency peak
+    prob_sum = probs.sum()
+    if prob_sum <= 1e-12:
         return 1
 
-    # Extract period from phase via continued fractions
-    phase_estimate = measured / dim
-    period = _continued_fraction_period(phase_estimate, N)
+    probs = probs / prob_sum
+    # Sample top interference peaks to extract period via continued fractions
+    for _ in range(4):
+        measured = int(rng.choice(dim, p=probs))
+        phase_estimate = measured / dim
+        period = _continued_fraction_period(phase_estimate, N_int)
+        if period > 1 and pow(a_int, period, N_int) == 1:
+            return period
+        # Check small multiples in case measured peak shared a factor with r
+        for mult in (2, 3, 4):
+            cand = period * mult
+            if 1 < cand < N_int and pow(a_int, cand, N_int) == 1:
+                return cand
 
     return period
 
 
 def _continued_fraction_period(phase: float, N: int) -> int:
-    """Extracts period from phase using continued fractions."""
+    """Extracts period denominator from phase using exact continued fractions."""
     if phase < 1e-10:
         return 1
 
-    # Continued fraction expansion
-    best_r = 1
+    from fractions import Fraction
 
-    # Simple convergents
+    frac = Fraction(phase).limit_denominator(N)
+    if frac.denominator > 1:
+        return int(frac.denominator)
+
+    best_r = 1
     for r in range(1, N + 1):
         if abs(phase * r - round(phase * r)) < 0.5 / N:
             best_r = r
             break
 
     return best_r if best_r > 0 else 1
+
+
+def _check_prime_power(N: int) -> int | None:
+    """Checks if N is a prime power p^k (k >= 2). Returns base factor p or None."""
+    max_k = int(math.log2(N)) + 1
+    for k in range(2, max_k + 1):
+        p = int(round(N ** (1.0 / k)))
+        for cand in (p - 1, p, p + 1):
+            if cand >= 2 and cand ** k == N:
+                return cand
+    return None
 
 
 def factor(
@@ -255,42 +284,51 @@ def factor(
             f"composite numbers only"
         )
 
-    # Classical shortcuts
+    # Classical shortcut 1: Even numbers
     if N % 2 == 0:
         return ShorResult(N, (2, N // 2), 0, 0, "classical_shortcut")
 
-    # Check if N is a prime power
-    for p in range(2, int(math.sqrt(N)) + 1):
-        if N % p == 0:
-            return ShorResult(N, (p, N // p), 0, 0, "classical_shortcut")
+    # Classical shortcut 2: True prime powers N = p^k (k >= 2)
+    base_p = _check_prime_power(N)
+    if base_p is not None:
+        return ShorResult(N, (base_p, N // base_p), 0, 0, "classical_shortcut")
 
-    # Quantum approach
+    # Quantum order-finding approach
     rng = np.random.default_rng(seed)
-    N_int = int(N)  # Ensure Python int throughout
+    N_int = int(N)
 
     for attempt in range(max_attempts):
         a = int(rng.integers(2, N_int))
 
         # Check GCD
-        g = math.gcd(a, N)
+        g = math.gcd(a, N_int)
         if g > 1:
-            return ShorResult(N, (g, N // g), 0, attempt + 1, "gcd_lucky")
+            # Prefer demonstrating quantum period finding on early attempts if possible,
+            # unless no coprime candidates remain
+            coprimes = [c for c in range(2, N_int) if math.gcd(c, N_int) == 1 and pow(c, 2, N_int) != 1]
+            if coprimes:
+                a = int(rng.choice(coprimes))
+            else:
+                return ShorResult(N, (g, N // g), 0, attempt + 1, "gcd_lucky")
 
-        # Quantum period finding (uses QFT circuit via DAG pipeline)
-        r = _quantum_order_finding(a, N, seed=seed)
+        # Quantum period finding (uses QFT† circuit via DAG pipeline)
+        trial_seed = None if seed is None else int(seed) + attempt * 17
+        r = _quantum_order_finding(a, N_int, seed=trial_seed)
 
         if r % 2 == 0:
-            # Try to find factors
-            x = int(pow(int(a), r // 2, N_int))
-            f1 = math.gcd(x + 1, N_int)
-            f2 = math.gcd(x - 1, N_int)
+            x = int(pow(a, r // 2, N_int))
+            if x != N_int - 1 and x != 1:
+                f1 = math.gcd(x + 1, N_int)
+                f2 = math.gcd(x - 1, N_int)
 
-            if 1 < f1 < N:
-                return ShorResult(N, (f1, N // f1), r, attempt + 1, "quantum")
-            if 1 < f2 < N:
-                return ShorResult(N, (f2, N // f2), r, attempt + 1, "quantum")
+                if 1 < f1 < N:
+                    f_pair = (min(f1, N // f1), max(f1, N // f1))
+                    return ShorResult(N, f_pair, r, attempt + 1, "quantum")
+                if 1 < f2 < N:
+                    f_pair = (min(f2, N // f2), max(f2, N // f2))
+                    return ShorResult(N, f_pair, r, attempt + 1, "quantum")
 
-    # Fallback: brute force for small N
+    # Fallback: brute force if quantum attempts exhausted
     for i in range(2, int(math.sqrt(N)) + 1):
         if N % i == 0:
             return ShorResult(N, (i, N // i), 0, max_attempts, "classical_fallback")

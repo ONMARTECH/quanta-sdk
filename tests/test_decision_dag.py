@@ -13,6 +13,7 @@ Verifies:
 from __future__ import annotations
 
 import pytest
+import torch
 
 from quanta.cognitive.arbiter import (
     ConsequenceVector,
@@ -20,6 +21,10 @@ from quanta.cognitive.arbiter import (
     DecisionEdge,
     DecisionNode,
     QuantumDecisionArbiter,
+)
+from quanta.cognitive.noetherian import (
+    ConservedChargeDefinition,
+    NoetherianEngineConfig,
 )
 
 
@@ -669,3 +674,66 @@ class TestDMNLateralExplorationPreservation:
         }
         assert dil_res["winning_choice"]["id"] in ["d1", "d2", "d3", "d4", "d5"]
         assert "🔒 Bilişsel Kuantum Karar Kısıtı:" in dil_res["injected_prompt_constraint"]
+
+
+class TestNoetherianDAGArbitrationIntegration:
+    """Milestone M2 integration tests verifying Noetherian invariant mechanics in DecisionDAG."""
+
+    def test_dag_arbitration_with_noetherian_pruning_and_mizan_metrics(self) -> None:
+        """Verifies that DAG arbitration computes Mizan metrics and executes microglial pruning on rogue branch."""
+        dim = 64
+        arbiter = QuantumDecisionArbiter(dim=dim)
+
+        gen = torch.zeros(dim)
+        gen[0] = 1.0
+        charge = ConservedChargeDefinition(
+            charge_id="c_strict_0",
+            rule_name="Strict Generator",
+            generator_vector=gen,
+            target_value=0.0,
+            tolerance=0.05,
+            is_hard_constraint=True,
+        )
+        cfg = NoetherianEngineConfig(dim=dim, default_charges=[charge])
+
+        dag = DecisionDAG()
+        q_root = torch.zeros(dim)
+        q_root[1] = 1.0
+        # Compliant branch
+        q_comp = torch.zeros(dim)
+        q_comp[1] = 0.9
+        q_comp[2] = 0.4359
+        # Rogue branch breaching charge on axis 0
+        q_rogue = torch.zeros(dim)
+        q_rogue[0] = 0.7
+        q_rogue[1] = 0.7141
+
+        dag.add_node(DecisionNode(node_id="root", label="Root", depth=0, statevector=q_root))
+        dag.add_node(
+            DecisionNode(
+                node_id="comp",
+                label="Compliant Option",
+                depth=1,
+                statevector=q_comp,
+                consequence=ConsequenceVector(latency=0.3),
+            )
+        )
+        dag.add_node(
+            DecisionNode(
+                node_id="rogue",
+                label="Rogue Option",
+                depth=1,
+                statevector=q_rogue,
+                consequence=ConsequenceVector(latency=0.05),
+            )
+        )
+        dag.add_edge(DecisionEdge("root", "comp", action_label="Go Compliant"))
+        dag.add_edge(DecisionEdge("root", "rogue", action_label="Go Rogue"))
+
+        res = arbiter.arbitrate_dag(dag=dag, goal="Security Invariance", noetherian_config=cfg)
+
+        assert res["recommended_option"] == "Compliant Option"
+        assert res["winning_trajectory"]["is_pruned"] is False
+        assert res["winning_trajectory"]["mizan_score"] >= 0.85
+        assert res["pruned_count"] == 1
+        assert "Noetherian Invariant Breach" in str(res["pruned_trajectories"][0]["prune_reason"])

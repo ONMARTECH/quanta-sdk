@@ -5,12 +5,17 @@ from __future__ import annotations
 import math
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import torch
 import torch.nn.functional as F
 
 from quanta.cognitive.memory import text_to_statevector
+from quanta.cognitive.noetherian import (
+    NoetherianEngineConfig,
+    NoetherianInvariantEngine,
+)
 from quanta.cognitive.telemetry import record_decision_telemetry
 from quanta.torch.brain import QuantumZenoAttention
 
@@ -406,6 +411,9 @@ class DecisionTrajectory:
     is_speculative: bool = False
     edges: list[DecisionEdge] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    mizan_score: float = 1.0
+    noether_flux: float = 0.0
+    invariant_violations: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Serializes trajectory to dictionary."""
@@ -421,6 +429,9 @@ class DecisionTrajectory:
             "is_pruned": self.is_pruned,
             "prune_reason": self.prune_reason,
             "is_speculative": self.is_speculative,
+            "mizan_score": round(self.mizan_score, 4),
+            "noether_flux": round(self.noether_flux, 4),
+            "invariant_violations": list(self.invariant_violations),
         }
 
 
@@ -768,6 +779,8 @@ class QuantumDecisionArbiter:
         num_heads: int = 4,
         seed: int | None = 42,
         device: torch.device | str | None = "cpu",
+        noetherian_engine: Any | None = None,
+        noetherian_config: Any | None = None,
     ) -> None:
         self.dim = dim
         if seed is not None:
@@ -780,6 +793,15 @@ class QuantumDecisionArbiter:
             device=device,
             dtype=torch.float32,
         )
+        if noetherian_engine is not None:
+            self.noetherian_engine = noetherian_engine
+        elif noetherian_config is not None:
+            self.noetherian_engine = NoetherianInvariantEngine(config=noetherian_config)
+        else:
+            self.noetherian_engine = NoetherianInvariantEngine(
+                config=NoetherianEngineConfig(dim=dim),
+                auto_register_canonical=False,
+            )
 
     def arbitrate(
         self,
@@ -1233,6 +1255,9 @@ class QuantumDecisionArbiter:
         workspace: str | None = None,
         log_telemetry: bool = True,
         panel_weight: float = 0.0,
+        noetherian_engine: Any | None = None,
+        noetherian_config: Any | None = None,
+        telemetry_file: Path | str | None = None,
     ) -> dict[str, Any]:
         """Evaluates multi-branch decision trajectories through a Directed Acyclic Graph (DAG).
 
@@ -1320,6 +1345,21 @@ class QuantumDecisionArbiter:
                 edge.p_zeno = round(zeno_k, 4)
                 edge.transition_ket = f"|{edge.target_id}>"
 
+        if noetherian_engine is not None:
+            active_engine = noetherian_engine
+        elif noetherian_config is not None:
+            active_engine = NoetherianInvariantEngine(
+                config=noetherian_config,
+                auto_register_canonical=False,
+            )
+        else:
+            active_engine = getattr(self, "noetherian_engine", None)
+            if active_engine is None:
+                active_engine = NoetherianInvariantEngine(
+                    config=NoetherianEngineConfig(dim=self.dim),
+                    auto_register_canonical=False,
+                )
+
         trajectories: list[DecisionTrajectory] = []
         for idx, path_node_ids in enumerate(paths):
             traj_id = f"tau_{idx + 1}"
@@ -1377,6 +1417,38 @@ class QuantumDecisionArbiter:
                     prod_t *= max(1e-6, t_val)
                 fidelity = math.pow(prod_t, 1.0 / len(projections)) if projections else 1.0
 
+            # -------------------------------------------------------------
+            # Noetherian Invariant Evaluation (Milestone M2)
+            # -------------------------------------------------------------
+            traj_states: list[torch.Tensor] = []
+            for n in path_nodes_list:
+                if n.statevector is not None:
+                    traj_states.append(n.statevector)
+                else:
+                    vec_c = text_to_statevector(f"{effective_goal} -> {n.label}", dim=self.dim)
+                    n.statevector = vec_c.real
+                    traj_states.append(n.statevector)
+
+            if len(traj_states) == 0:
+                traj_states = [goal_vec, goal_vec]
+            elif len(traj_states) == 1:
+                traj_states = [traj_states[0], traj_states[0]]
+
+            traj_probs = (
+                [edge.alignment_score for edge in traversed_edges]
+                if traversed_edges
+                else None
+            )
+
+            mizan_eval = active_engine.evaluate_trajectory(
+                states=traj_states,
+                probs=traj_probs,
+            )
+
+            t_mizan_score = round(float(mizan_eval.mizan_score), 4)
+            t_noether_flux = round(float(mizan_eval.noether_flux), 4)
+            t_violations = [str(v) for v in mizan_eval.invariant_violations]
+
             trajectory = DecisionTrajectory(
                 trajectory_id=traj_id,
                 path_nodes=path_node_ids,
@@ -1387,7 +1459,11 @@ class QuantumDecisionArbiter:
                 quantum_fidelity=round(fidelity, 6),
                 is_speculative=is_spec,
                 edges=traversed_edges,
+                mizan_score=t_mizan_score,
+                noether_flux=t_noether_flux,
+                invariant_violations=t_violations,
             )
+            trajectory._mizan_eval = mizan_eval
             trajectories.append(trajectory)
 
         # Compute net scores and rank trajectories
@@ -1396,10 +1472,20 @@ class QuantumDecisionArbiter:
         norm_v = F.softmax(v_tensor * dim_scale, dim=-1).tolist()
 
         for i, traj in enumerate(trajectories):
-            traj.net_score = round(norm_v[i] * traj.quantum_fidelity, 4)
+            base_score = norm_v[i]
+            m_eval = getattr(traj, "_mizan_eval", None)
+            is_valid_mizan = m_eval.is_valid if m_eval is not None else True
+            mizan_factor = 0.5 + 0.5 * traj.mizan_score
+            if not is_valid_mizan or traj.mizan_score < 0.4:
+                traj.net_score = round(base_score * mizan_factor * 0.1, 4)
+            else:
+                traj.net_score = round(base_score * mizan_factor, 4)
 
         trajectories.sort(
-            key=lambda item: (item.cumulative_utility - item.cumulative_cost),
+            key=lambda item: (
+                1 if (getattr(item, "_mizan_eval", None) is None or (item._mizan_eval.is_valid and item.mizan_score >= 0.4)) else 0,
+                item.net_score,
+            ),
             reverse=True,
         )
 
@@ -1409,6 +1495,17 @@ class QuantumDecisionArbiter:
 
         # Microglial Phagocytic Pruning of Dominated Branches
         for traj in trajectories:
+            m_eval = getattr(traj, "_mizan_eval", None)
+            is_valid_mizan = m_eval.is_valid if m_eval is not None else True
+            m_score = traj.mizan_score
+            m_violations = getattr(m_eval, "violations", getattr(m_eval, "invariant_violations", [])) if m_eval is not None else []
+
+            # Invariant breach microglial pruning (Milestone M2)
+            if not is_valid_mizan or m_score < 0.4:
+                traj.is_pruned = True
+                traj.prune_reason = f"Noetherian Invariant Breach: {m_violations}"
+                continue
+
             if traj.trajectory_id == winner.trajectory_id:
                 traj.is_pruned = False
                 traj.prune_reason = None
@@ -1465,6 +1562,7 @@ class QuantumDecisionArbiter:
         )
 
         surviving = [t for t in trajectories if not t.is_pruned]
+        surviving.sort(key=lambda item: item.net_score, reverse=True)
         pruned = [t for t in trajectories if t.is_pruned]
 
         if log_telemetry:
@@ -1478,6 +1576,7 @@ class QuantumDecisionArbiter:
                 regime=regime,
                 latency_ms=latency_ms,
                 ranking=[t.to_dict() for t in trajectories],
+                tr_rho_pi={t.trajectory_id: t.net_score for t in trajectories},
                 workspace=workspace,
                 pytorch_latency_ms=pytorch_latency_ms,
                 dilemma=goal,
@@ -1485,6 +1584,10 @@ class QuantumDecisionArbiter:
                 total_trajectories=len(trajectories),
                 pruned_count=len(pruned),
                 winning_trajectory=winner.to_dict(),
+                mizan_score=winner.mizan_score,
+                noether_flux=winner.noether_flux,
+                invariant_violations=winner.invariant_violations,
+                telemetry_file=telemetry_file,
             )
 
         return {
@@ -1503,6 +1606,9 @@ class QuantumDecisionArbiter:
             "latency_ms": round(latency_ms, 2),
             "pytorch_latency_ms": round(pytorch_latency_ms, 2),
             "panel_weight": panel_weight,
+            "mizan_score": winner.mizan_score,
+            "noether_flux": winner.noether_flux,
+            "invariant_violations": winner.invariant_violations,
         }
 
     def arbitrate_multibranch(

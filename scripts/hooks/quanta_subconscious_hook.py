@@ -35,9 +35,65 @@ GAMMA_0 = 0.05            # Bare Lindblad dephasing rate
 LAMBDA_DOPAMINE = 1.5     # Dopaminergic protection gain factor
 DEFAULT_DIM = 64          # Effective 6-qubit minicolumn state space (was 16)
 
+CANONICAL_PROD_KEYS = frozenset({
+    "insight_concurrent_preemption",
+    "insight_autonomous_quantum_resonance",
+    "insight_qos",
+    "insight_golden_record_survivorship",
+    "insight_d3_viz_caching",
+    "insight_metabase_sql_templates",
+    "insight_landauer_efficiency",
+    "insight_data_lineage_mapping",
+    "insight_metabase_color_palettes",
+    "insight_anti_rumination_reset",
+    "insight_quantum_rem_sleep",
+    "insight_darwin_qos_optimization",
+    "insight_spectral_relationship_clustering",
+    "insight_ambient_touchpoint_timing",
+    "insight_dual_native_sync_integrity",
+    "insight_ai_mdm_platform_architecture",
+    "insight_ai_platform_evolution",
+    "insight_personal_crm_graph_clustering",
+    "insight_bigquery_cost_guardrails",
+    "insight_cdp_realtime_stewardship",
+    "insight_dagster_mcp_server_evolution",
+    "insight_gcp_mcp_project_evolution",
+    "insight_hukukport_evolution",
+    "insight_legalport_gh_evolution",
+    "insight_mac_automation_agent_architecture",
+    "insight_martech_ads_mcp_architecture",
+    "insight_mcp_cloud_platform_architecture",
+    "insight_looker_schema_drift",
+    "insight_mcp_meiro_cdp_evolution",
+    "insight_meiro_cdp_mcp_architecture",
+    "insight_metabase_caching",
+    "insight_outlook_ai_agent_architecture",
+    "insight_antigravity_skills_evolution",
+    "insight_caip_evolution",
+    "insight_enessari_web_architecture",
+    "insight_mdm_entity_resolution",
+    "insight_my_analyzer_extension_architecture",
+    "insight_onmartech_packages_architecture",
+    "insight_onmartech_web_evolution",
+    "insight_qarezmi_evolution",
+    "insight_turna_jira_architecture",
+    "insight_onmartech_wix_backup_architecture",
+    "insight_continuous_resonance",
+    "insight_reklam_kurulu_tracker_architecture",
+    "insight_amazon___scrape_evolution",
+    "insight_commentshub_evolution",
+    "insight_redis_prompt_freshness",
+    "insight_intelnetwork_architecture",
+    "insight_martech_tools_architecture",
+    "insight_mastertech_evolution",
+    "insight_metricase_architecture",
+    "insight_etstur_price_tracker_architecture",
+    "insight_metabase_bi_platform_architecture",
+})
+
 
 def format_fidelity(fid: float) -> str:
-    """Formats fidelity ensuring true biological precision (never flat 100.0%)."""
+    """Formats heuristic retention/priority weight (capped at 99.98%, not an empirical physical probability)."""
     pct = fid * 100.0
     if pct >= 99.99:
         return "99.98%"
@@ -583,14 +639,24 @@ class FastBiomorphicMemory:
         return pruned_records
 
     def recall_semantic_gists(self, top_k: int = 4, min_fidelity: float = 0.70) -> list[dict]:
-        """Recalls active semantic gist anchors."""
+        """Recalls active semantic gist anchors ranked by resonance and recency."""
         gists = [
             e
             for e in self.engrams
             if e.get("category") == "semantic_gist"
             and float(e.get("fidelity", 0.0)) >= min_fidelity
         ]
-        gists.sort(key=lambda x: float(x.get("salience", 1.85)), reverse=True)
+        gists.sort(
+            key=lambda x: (
+                round(
+                    float(x.get("salience", 1.85))
+                    * (0.4 + 0.6 * float(x.get("_live_resonance", 0.25))),
+                    4,
+                ),
+                -float(x.get("age", 0.0)),
+            ),
+            reverse=True,
+        )
         return gists[:top_k]
 
     def recall_vital(self, top_k: int = 3) -> list[dict]:
@@ -901,20 +967,29 @@ def _save_mirrored_state_atomically(
                 mirror_dict = state_dict
                 if is_root_target:
                     mirror_dict = copy.deepcopy(state_dict)
-                    prod_engrams = [
-                        e for e in state_dict.get("engrams", [])
-                        if isinstance(e, dict)
-                        and (
-                            e.get("category") in (
-                                "subconscious_dream",
-                                "architecture_rfc",
-                            )
-                            or str(e.get("key", "")).startswith("insight_")
-                            or e.get("key") == "architecture_rfc"
-                        )
-                        and e.get("key") != "insight_google_drive_mcp_architecture"
-                        and not str(e.get("key", "")).startswith(("gist_", "rfc_hybrid_"))
-                    ]
+                    existing_root_engrams = []
+                    if mirror_path.exists():
+                        try:
+                            with open(mirror_path, encoding="utf-8", errors="replace") as rf:
+                                existing_root_engrams = json.load(rf).get("engrams", [])
+                        except Exception:
+                            existing_root_engrams = []
+
+                    # Retain canonical production engrams from existing root file if available
+                    if len(existing_root_engrams) >= 53:
+                        prod_engrams = [
+                            e for e in existing_root_engrams
+                            if isinstance(e, dict)
+                            and e.get("key") in CANONICAL_PROD_KEYS
+                        ]
+                    else:
+                        prod_engrams = [
+                            e for e in state_dict.get("engrams", [])
+                            if isinstance(e, dict)
+                            and e.get("key") in CANONICAL_PROD_KEYS
+                            and e.get("key") != "insight_google_drive_mcp_architecture"
+                            and not str(e.get("key", "")).startswith(("gist_", "rfc_hybrid_"))
+                        ]
                     mirror_dict["engrams"] = prod_engrams
 
                 mirror_ok = _atomic_write_single_file(mirror_path, mirror_dict)
@@ -1614,6 +1689,50 @@ def main() -> None:
                 category="constraint",
                 is_core_anchor=True,
             )
+        if "source_verification_rule" not in existing_rule_keys:
+            mem.record(
+                key="source_verification_rule",
+                content=(
+                    "Kaynakçalarda ASLA uydurma kaynak, sahte yazar veya sahte DOI yazma; "
+                    "Crossref/arXiv/birincil literatürden fiilen doğrula, doğrulanamayanı dürüstçe belirt."
+                ),
+                salience=3.0,
+                category="constraint",
+                is_core_anchor=True,
+            )
+        if "secure_credential_vault_rule" not in existing_rule_keys:
+            mem.record(
+                key="secure_credential_vault_rule",
+                content=(
+                    "API key, şifre ve tokenları asla Git repolarına koyma; "
+                    "merkezi güvenli kasadan (/Users/aes/.gemini/antigravity/vault/credentials_vault.json) yönet."
+                ),
+                salience=3.2,
+                category="constraint",
+                is_core_anchor=True,
+            )
+        if "persistent_knowledge_vault_rule" not in existing_rule_keys:
+            mem.record(
+                key="persistent_knowledge_vault_rule",
+                content=(
+                    "Kullanıcının paylaştığı link ve teknik dokümanları analiz edip merkezi bilgi kasasında "
+                    "(/Users/aes/.gemini/antigravity/vault/knowledge_vault.json) indeksle ve projeler arası yeniden kullan."
+                ),
+                salience=2.9,
+                category="constraint",
+                is_core_anchor=True,
+            )
+        if "immutable_user_assets_rule" not in existing_rule_keys:
+            mem.record(
+                key="immutable_user_assets_rule",
+                content=(
+                    "Kullanıcının paylaştığı ekran görüntüleri, raporlar ve kritik varlıklar geçici sohbete terk edilemez; "
+                    "merkezi kasaya (/Users/aes/.gemini/antigravity/vault/assets/) kopyalanır ve ASLA budanamaz."
+                ),
+                salience=3.3,
+                category="constraint",
+                is_core_anchor=True,
+            )
 
         # Decouple intermediate tool continuation sub-turns from full conversational turns:
         # If continuing after a tool execution, decay was already stepped by PostToolUse (dt=0.2).
@@ -1649,36 +1768,116 @@ def main() -> None:
                 pruning_history.append(p_dict)
             pruning_history = pruning_history[-100:]
 
-        # Query Relevance Scoring for Subconscious Dream Engrams:
-        # Boost salience of subconscious dream insights that match user query context
-        query_words_set: set[str] = set()
-        if user_query:
-            query_snippet = user_query[:10000] if len(user_query) > 10000 else user_query
-            query_words_set = {w for w in query_snippet.split() if len(w) > 4}
+        # Context-Adaptive SWR Resonance Scoring (R1 Live Hook Integration)
+        # Combines C^64 deterministic statevector overlap + lexical Jaccard + workspace affinity
+        active_query_text = (user_query or last_saved_query or "").strip().lower()
+        ws_lower = (real_workspace or "").strip().lower()
+        active_context_str = f"{ws_lower} {active_query_text}".strip()
+        context_tokens = {
+            w for w in re.split(r"[^\w]+", active_context_str) if len(w) > 2
+        }
+
+        def _fast_statevector_64(text: str) -> list[complex]:
+            """Pure-stdlib C^64 unit statevector projection (<15us)."""
+            import hashlib
+
+            words = [w for w in re.split(r"[^\w]+", text.lower()) if len(w) > 1][:64]
+            if not words:
+                words = [text.lower() or "empty"]
+            re_parts = [0.0] * 64
+            im_parts = [0.0] * 64
+            for w in words:
+                digest = hashlib.sha256(w.encode("utf-8", errors="ignore")).digest()
+                for idx in range(32):
+                    b_val = digest[idx]
+                    angle = (b_val / 255.0) * 2.0 * math.pi
+                    slot = (idx * 2 + (b_val & 1)) % 64
+                    re_parts[slot] += math.cos(angle)
+                    im_parts[slot] += math.sin(angle)
+            norm_sq = sum(r * r + i * i for r, i in zip(re_parts, im_parts, strict=False))
+            norm = math.sqrt(norm_sq) if norm_sq > 1e-12 else 1.0
+            return [complex(r / norm, i / norm) for r, i in zip(re_parts, im_parts, strict=False)]
+
+        psi_ctx = _fast_statevector_64(active_context_str) if active_context_str else None
+
+        def _compute_live_resonance(engram: dict[str, Any]) -> float:
+            key_s = str(engram.get("key", "")).lower()
+            topic_s = str(engram.get("topic", "")).lower()
+            content_s = str(engram.get("content", "")).lower()
+            tags_list = [str(t).lower() for t in engram.get("tags", []) if t]
+            engram_full = f"{key_s} {topic_s} {' '.join(tags_list)} {content_s}"
+            e_tokens = {w for w in re.split(r"[^\w]+", engram_full) if len(w) > 2}
+
+            # 1. Lexical Jaccard & token hit ratio
+            if context_tokens and e_tokens:
+                inter = len(context_tokens & e_tokens)
+                union = len(context_tokens | e_tokens)
+                jaccard = inter / union if union > 0 else 0.0
+                hit_ratio = min(1.0, inter / max(1, min(len(context_tokens), 6)))
+                lex_score = 0.5 * jaccard + 0.5 * hit_ratio
+            else:
+                lex_score = 0.25
+
+            # 2. C^64 Hilbert inner-product fidelity |<psi_ctx | psi_e>|^2
+            if psi_ctx is not None:
+                psi_e = _fast_statevector_64(f"{key_s}:{topic_s}:{content_s[:240]}")
+                inner_re = sum(
+                    c.real * e.real + c.imag * e.imag for c, e in zip(psi_ctx, psi_e, strict=False)
+                )
+                inner_im = sum(
+                    c.real * e.imag - c.imag * e.real for c, e in zip(psi_ctx, psi_e, strict=False)
+                )
+                f_hilbert = min(1.0, (inner_re * inner_re + inner_im * inner_im) * 8.0)
+            else:
+                f_hilbert = 0.25
+
+            # 3. Workspace / Domain affinity boost (check key_s & topic_s, penalize off-workspace project dreams)
+            ws_tokens = {
+                w for w in re.split(r"[^\w]+", ws_lower)
+                if len(w) > 2 and w not in ("alfa", "turna", "works", "workspace", "general")
+            }
+            if "turna" in ws_lower and not ws_tokens:
+                ws_tokens.add("turna")
+
+            foreign_projects = (
+                "turna", "meiro", "meirocdp", "legalport", "hukukport", "metabase",
+                "martech", "onmartech", "etstur", "etsgroup", "amazon", "outlook",
+                "dagster", "caip", "enessari", "qarezmi", "commentshub", "intelnetwork",
+                "mastertech", "metricase", "reklam", "jira", "bigquery", "looker",
+                "d3_viz", "personal_crm", "my_analyzer", "cdp_realtime", "dual_native",
+                "mdm", "google_drive",
+            )
+            matched_foreign = [
+                fp for fp in foreign_projects
+                if fp in key_s and fp not in active_context_str
+            ]
+
+            ws_boost = 0.0
+            if matched_foreign:
+                # Engram explicitly targets another project not in current workspace or query
+                ws_boost -= 0.45
+            else:
+                if ws_tokens and any(wt in key_s or wt in topic_s for wt in ws_tokens):
+                    ws_boost += 0.45
+                if "quanta" in ws_lower and any(
+                    kw in key_s
+                    for kw in ("quantum", "quanta", "zeno", "swr", "qubit", "landauer", "rem_sleep", "resonance", "lindblad", "anti_rumination", "darwin_qos")
+                ):
+                    ws_boost += 0.45
+
+            return max(0.01, min(1.0, 0.30 * f_hilbert + 0.70 * lex_score + ws_boost))
 
         for e in mem.engrams:
-            if e.get("category") == "subconscious_dream":
-                topic = e.get("topic", "").lower()
-                tags = [t.lower() for t in e.get("tags", [])]
-                content = e.get("content", "").lower()
-
-                # If query is provided, check lexical relevance
-                if user_query:
-                    content_words = set(content.split())
-                    is_relevant = (
-                        topic in user_query
-                        or any(t in user_query for t in tags if len(t) > 2)
-                        or any(w in user_query for w in topic.split("_") if len(w) > 3)
-                        or bool(content_words & query_words_set)
-                    )
-                    if is_relevant:
-                        e["salience"] = max(e["salience"], 3.5)
+            e["_live_resonance"] = _compute_live_resonance(e)
+            if e.get("category") in ("subconscious_dream", "architecture_rfc"):
+                # Reset inflated cross-project salience to canonical baseline (2.85)
+                # and boost dynamically only when resonant with current workspace/query
+                if e["_live_resonance"] < 0.45:
+                    e["salience"] = min(float(e.get("salience", 2.85)), 2.85)
                 else:
-                    # When no prompt provided (e.g. automated turns / tests),
-                    # protect high-priority dreams
-                    e["salience"] = max(e["salience"], 2.8)
+                    e["salience"] = max(float(e.get("salience", 2.85)), 3.25)
 
-        # Recall vital engrams via SWR replay
+        # Recall vital engrams via Context-Adaptive SWR replay
         # Separate vital anchors into Core Anchors, Semantic Gists, and Contextual Decisions
         core_anchors = [
             e for e in mem.engrams
@@ -1686,13 +1885,19 @@ def main() -> None:
             and float(e.get("fidelity", 0.0)) >= 0.80
             and e.get("category") not in ("inhibitor", "anti_pattern", "semantic_gist")
         ]
-        # Sort core anchors by salience descending
-        core_anchors.sort(key=lambda x: float(x.get("salience", 0.0)), reverse=True)
-        # Prioritize invariant constraint rules
-        # (native_first_rule, scientific_integrity_rule, executive_summary_rule)
+        # 100% unconditional preservation of invariant constraint rules
         constraint_rules = [e for e in core_anchors if e.get("category") == "constraint"]
+        constraint_rules.sort(key=lambda x: float(x.get("salience", 0.0)), reverse=True)
+
+        # Context-adaptive ranking for non-constraint core insights (e.g., subconscious dreams)
         other_core = [e for e in core_anchors if e.get("category") != "constraint"]
-        selected_core = constraint_rules + other_core[:max(0, 6 - len(constraint_rules))]
+        other_core.sort(
+            key=lambda x: float(x.get("salience", 0.0))
+            * float(x.get("fidelity", 1.0))
+            * (0.25 + 0.75 * float(x.get("_live_resonance", 0.25))),
+            reverse=True,
+        )
+        selected_core = constraint_rules + other_core[:max(3, 10 - len(constraint_rules))]
 
         # Active crystallized semantic gists (category == "semantic_gist", fidelity >= 0.70)
         active_gists = mem.recall_semantic_gists(top_k=4, min_fidelity=0.70)
@@ -1703,8 +1908,9 @@ def main() -> None:
             and float(e.get("fidelity", 0.0)) >= 0.70
             and e.get("category") not in ("inhibitor", "anti_pattern", "semantic_gist")
         ]
-        # Sort transient decisions in reverse-chronological order (newest first, t_now -> t_past)
+        # Score transient decisions by combining temporal recency and contextual resonance R(C, e)
         now_epoch = time.time()
+        filtered_transient = []
         for t in transient_decisions:
             raw_created = t.get("created_at")
             if raw_created is not None:
@@ -1724,16 +1930,41 @@ def main() -> None:
             w_recency = math.exp(-0.02 * dt_h) if dt_h < 24.0 else math.exp(-0.05 * dt_h)
             sal = float(t.get("salience", 0.0))
             fid = float(t.get("fidelity", 0.0))
-            t["_recency_score"] = sal * fid * w_recency
+            res = float(t.get("_live_resonance", 0.25))
+            t["_recency_score"] = sal * fid * w_recency * (0.5 + 0.5 * res)
             t["_created_ts"] = created_ts
 
-        transient_decisions.sort(
-            key=lambda x: (x["_created_ts"], x["_recency_score"]),
+            # Filter out stale off-topic transient decisions when active context is present
+            if context_tokens and float(t.get("age", 0.0)) >= 3.0 and res < 0.08:
+                continue
+            filtered_transient.append(t)
+
+        if not filtered_transient and transient_decisions:
+            filtered_transient = transient_decisions[:2]
+
+        filtered_transient.sort(
+            key=lambda x: (x["_recency_score"], x["_created_ts"]),
             reverse=True,
         )
-        selected_transient = transient_decisions[:4]
+        selected_transient = filtered_transient[:3]
 
         active_inhibitors = mem.recall_inhibitors(top_k=3, min_v_inh=0.20)
+
+        # Read active multi-agent shared blackboard constraints if present (<0.2ms)
+        blackboard_items: list[str] = []
+        with contextlib.suppress(Exception):
+            bb_file = Path(os.path.expanduser("~/.gemini/antigravity/blackboard/shared_blackboard.json"))
+            if bb_file.exists() and bb_file.stat().st_size > 0:
+                with open(bb_file, encoding="utf-8") as bf:
+                    bb_data = json.load(bf)
+                if isinstance(bb_data, dict):
+                    for c_item in bb_data.get("constraints", []):
+                        if isinstance(c_item, dict):
+                            exp = c_item.get("expires_at")
+                            if exp is None or float(exp) >= now_epoch:
+                                c_key = str(c_item.get("key", "")).strip()
+                                if c_key:
+                                    blackboard_items.append(c_key)
 
         vital_anchors = selected_core + active_gists + selected_transient + active_inhibitors
 
@@ -1766,6 +1997,8 @@ def main() -> None:
                 lines.append(f"  🧠 Özüt: {', '.join(gist_items)}")
             if transient_items:
                 lines.append(f"  ⚡ Geçici: {', '.join(transient_items)}")
+            if blackboard_items:
+                lines.append(f"  📋 Ortak Tahta: {', '.join(blackboard_items[:4])}")
             if inhibitor_items:
                 lines.append(f"  🚫 İnhibitör / Anti-Pattern: {', '.join(inhibitor_items)}")
 

@@ -1,7 +1,9 @@
 """Quanta Cognitive Augmentation module for Antigravity AI Agents."""
 
 from quanta.cognitive import (
+    ablation,
     arbiter,
+    blackboard,
     consolidation,
     daemon,
     darwin_idle,
@@ -11,12 +13,16 @@ from quanta.cognitive import (
     memory_manager,
     middleware,
     mind_wander,
+    noetherian,
     poisson_trigger,
     telemetry,
     tom_analyzer,
+    vault_index,
     workspace_harvester,
 )
+from quanta.cognitive.ablation import AblationVariant, HardDecisionInstance, ZenoAblationEngine
 from quanta.cognitive.arbiter import QuantumDecisionArbiter
+from quanta.cognitive.blackboard import CognitiveBlackboard
 from quanta.cognitive.consolidation import (
     GlymphaticClearanceResult,
     SubconsciousConsolidator,
@@ -42,22 +48,41 @@ from quanta.cognitive.feedback import (
 from quanta.cognitive.memory import CognitiveMemoryManager, text_to_statevector
 from quanta.cognitive.middleware import QuantaCognitiveMiddleware
 from quanta.cognitive.mind_wander import DreamInsight, MindWanderEngine
+from quanta.cognitive.noetherian import (
+    ConservedChargeDefinition,
+    InvariantViolation,
+    MizanHakemi,
+    NoetherianEngineConfig,
+    NoetherianEvaluation,
+    NoetherianInvariantEngine,
+)
 from quanta.cognitive.poisson_trigger import PoissonSpindleTrigger
 from quanta.cognitive.telemetry import record_outcome_telemetry
 from quanta.cognitive.tom_analyzer import DreamSeed, TheoryOfMindAnalyzer
+from quanta.cognitive.vault_index import LocalVaultIndex
 from quanta.cognitive.workspace_harvester import WorkspaceContextHarvester
 
 __all__ = [
+    "AblationVariant",
     "ActionOutcome",
     "AdaptiveConfidenceEngine",
+    "CognitiveBlackboard",
     "CognitiveFeedbackEvaluator",
     "CognitiveFeedbackLoop",
     "CognitiveMemoryManager",
+    "ConservedChargeDefinition",
     "DarwinIdleMonitor",
     "DreamInsight",
     "DreamSeed",
     "GlymphaticClearanceResult",
+    "HardDecisionInstance",
+    "InvariantViolation",
+    "LocalVaultIndex",
     "MindWanderEngine",
+    "MizanHakemi",
+    "NoetherianEngineConfig",
+    "NoetherianEvaluation",
+    "NoetherianInvariantEngine",
     "OutcomeType",
     "OutcomeVerifier",
     "PoissonSpindleTrigger",
@@ -69,8 +94,11 @@ __all__ = [
     "SubconsciousDaemon",
     "TheoryOfMindAnalyzer",
     "WorkspaceContextHarvester",
+    "ZenoAblationEngine",
+    "ablation",
     "apply_confidence_feedback",
     "arbiter",
+    "blackboard",
     "consolidation",
     "daemon",
     "darwin_idle",
@@ -82,12 +110,13 @@ __all__ = [
     "memory_manager",
     "middleware",
     "mind_wander",
+    "noetherian",
     "poisson_trigger",
     "record_outcome_telemetry",
     "set_background_qos",
     "telemetry",
     "text_to_statevector",
     "tom_analyzer",
+    "vault_index",
     "workspace_harvester",
 ]
-

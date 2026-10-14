@@ -245,6 +245,32 @@ def distill_semantic_gist(content: str, key: str = "") -> tuple[str, str]:
     return gist_key, gist_content
 
 
+def extract_context_tokens(text: str) -> set[str]:
+    """Extracts normalized, stopword-filtered alphanumeric tokens for lexical Jaccard similarity."""
+    stopwords = {
+        "a", "an", "the", "and", "or", "in", "on", "at", "to", "for", "of", "with",
+        "by", "from", "is", "are", "was", "were", "be", "been", "being", "have", "has",
+        "had", "do", "does", "did", "not", "this", "that", "these", "those", "it",
+        "its", "as", "if", "then", "else", "when", "up", "down", "out", "over",
+        "under", "again", "further", "about", "into", "through", "before", "after",
+        "above", "below", "between", "both", "few", "more", "most", "other", "some",
+        "such", "no", "nor", "too", "very", "can", "will", "just", "should", "now",
+        "bir", "ve", "veya", "ile", "de", "da", "bu", "şu", "o", "için", "ne",
+        "gibi", "çok", "daha", "en", "kadar", "her", "ama", "fakat", "lakin", "ancak",
+        "çünkü", "ki", "mi", "mu", "mü", "mı",
+    }
+    cleaned = (
+        text.replace("_", " ")
+        .replace("-", " ")
+        .replace("/", " ")
+        .replace(":", " ")
+        .replace(".", " ")
+        .replace(",", " ")
+    )
+    words = re.findall(r"[a-zA-Z0-9\u00C0-\u017F]+", cleaned.lower())
+    return {w for w in words if len(w) > 1 and w not in stopwords}
+
+
 class CognitiveMemoryManager:
     """Episodic and working memory manager for Antigravity AI agents.
 
@@ -1401,4 +1427,358 @@ class CognitiveMemoryManager:
         self.buffer.buffer = data["buffer"]
         self.dim = data.get("dim", self.dim)
         self.total_pruned_count = data.get("total_pruned_count", 0)
+
+    def compute_context_resonance(
+        self, context: str, engram: dict[str, Any] | int, alpha: float = 0.6
+    ) -> float:
+        """Computes composite Hilbert-space inner product overlap and token Jaccard similarity.
+
+        Mathematical formulation:
+            1. psi_context = text_to_statevector(context, dim=self.dim)
+            2. F_hilbert(C, e) = |<psi_context | psi_engram>|^2 in [0.0, 1.0]
+            3. J(C, e) = |T(C) cap T(e)| / |T(C) cup T(e)| in [0.0, 1.0]
+            4. R(C, e) = alpha * F_hilbert(C, e) + (1.0 - alpha) * J(C, e)
+
+        Args:
+            context: Active prompt or task context string.
+            engram: Engram dictionary or buffer index.
+            alpha: Weight for Hilbert overlap (default: 0.6; 1 - alpha for Jaccard).
+
+        Returns:
+            Composite contextual resonance score R(C, e) in [0.0, 1.0].
+        """
+        if isinstance(engram, int):
+            if 0 <= engram < len(self.buffer.buffer):
+                e = self.buffer.buffer[engram]
+            else:
+                return 0.0
+        elif isinstance(engram, dict):
+            e = engram
+        else:
+            return 0.0
+
+        # 1. Statevector mapping & Hilbert-space inner product overlap
+        psi_e = e.get("degraded_state")
+        if psi_e is None:
+            psi_e = e.get("pristine_state")
+        if psi_e is None:
+            meta = e.get("metadata") if isinstance(e.get("metadata"), dict) else e
+            key = str(meta.get("key", e.get("key", "")))
+            content = str(meta.get("content", e.get("content", "")))
+            psi_e = text_to_statevector(f"{key}:{content}", dim=self.dim)
+
+        psi_context = text_to_statevector(context, dim=self.dim)
+        psi_context = psi_context.to(device=psi_e.device, dtype=psi_e.dtype)
+        overlap = torch.vdot(psi_context, psi_e)
+        f_hilbert = float((torch.abs(overlap) ** 2).item())
+        f_hilbert = max(0.0, min(1.0, f_hilbert))
+
+        # 2. Lexical keyword Jaccard similarity
+        meta = e.get("metadata") if isinstance(e.get("metadata"), dict) else e
+        key = str(meta.get("key", e.get("key", "")))
+        content = str(meta.get("content", e.get("content", "")))
+        cat = str(meta.get("category", e.get("category", "")))
+        tags = meta.get("tags") or e.get("tags") or []
+        tags_str = " ".join(tags) if isinstance(tags, (list, tuple)) else str(tags)
+        engram_text = f"{key} {content} {cat} {tags_str}"
+
+        t_context = extract_context_tokens(context)
+        t_engram = extract_context_tokens(engram_text)
+        union = t_context | t_engram
+        jaccard = 0.0 if not union else float(len(t_context & t_engram) / len(union))
+        jaccard = max(0.0, min(1.0, jaccard))
+
+        # 3. Composite contextual resonance
+        clamped_alpha = max(0.0, min(1.0, float(alpha)))
+        res = clamped_alpha * f_hilbert + (1.0 - clamped_alpha) * jaccard
+        return float(max(0.0, min(1.0, res)))
+
+    def recall_context_adaptive_swr(
+        self,
+        context: str = "",
+        top_k_transient: int = 3,
+        min_resonance: float = 0.12,
+        min_fidelity: float = 0.40,
+        context_prompt: str | None = None,
+    ) -> dict[str, list[dict[str, Any]]]:
+        """Recalls memories via context-adaptive Sharp-Wave Ripple (SWR) resonance.
+
+        Guarantees 100% unconditional preservation of Core Anchors (is_core_anchor=True,
+        salience >= 2.0, or category in {'system_core', 'semantic_gist', 'constraint'}).
+        Dynamically filters transient engrams to top-K resonant elements with priority
+        P(C, e) = R(C, e) * salience * F(t).
+
+        Args:
+            context: Active prompt or task context string.
+            top_k_transient: Maximum number of transient resonant engrams to return.
+            min_resonance: Minimum contextual resonance threshold for transient engrams.
+            min_fidelity: Minimum biological retention fidelity threshold for transient engrams.
+            context_prompt: Optional alias for context.
+
+        Returns:
+            Dict containing lists: 'core_anchors', 'semantic_gists', 'transient_decisions', 'inhibitors'.
+        """
+        ctx = context or (context_prompt or "")
+        if not self.buffer.buffer:
+            return {
+                "core_anchors": [],
+                "semantic_gists": [],
+                "transient_decisions": [],
+                "inhibitors": [],
+            }
+
+        core_anchors: list[dict[str, Any]] = []
+        semantic_gists: list[dict[str, Any]] = []
+        inhibitors: list[dict[str, Any]] = []
+        transient_candidates: list[dict[str, Any]] = []
+
+        for idx, engram in enumerate(self.buffer.buffer):
+            psi_0 = engram["pristine_state"]
+            psi_t = engram["degraded_state"]
+            overlap = torch.vdot(psi_0, psi_t)
+            fidelity = float((torch.abs(overlap) ** 2).item())
+
+            meta = engram.get("metadata") or {}
+            key = str(meta.get("key", ""))
+            content = str(meta.get("content", ""))
+            cat = str(meta.get("category", ""))
+            salience = float(engram.get("dopamine_tag", 1.0))
+            age_turns = round(float(engram.get("age", 0.0)), 1)
+            is_core_flag = bool(meta.get("is_core_anchor", False) or engram.get("is_core_anchor", False))
+            is_sys_core = bool(meta.get("is_system_core", False) or engram.get("is_system_core", False))
+
+            # Core Anchor criterion
+            is_core = bool(
+                is_core_flag
+                or is_sys_core
+                or salience >= 2.0
+                or cat in ("system_core", GIST_CATEGORY, "constraint")
+                or key.startswith("system_")
+            )
+
+            status = (
+                "pristine"
+                if fidelity >= 0.999
+                else (
+                    "consolidated"
+                    if fidelity >= 0.95
+                    else ("decaying" if fidelity >= 0.70 else "obsolete")
+                )
+            )
+
+            res = self.compute_context_resonance(ctx, engram, alpha=0.6)
+            priority = res * salience * fidelity
+
+            entry: dict[str, Any] = {
+                "index": idx,
+                "key": key,
+                "content": content,
+                "category": cat,
+                "salience": round(salience, 2),
+                "age_turns": age_turns,
+                "retention_fidelity": round(fidelity, 5),
+                "fidelity": round(fidelity, 5),
+                "retention_pct": round(fidelity * 100.0, 2),
+                "status": status,
+                "is_core_anchor": is_core,
+                "resonance": round(res, 5),
+                "resonance_score": round(res, 5),
+                "priority": round(priority, 5),
+            }
+
+            if cat in ("inhibitor", "anti_pattern"):
+                v_inh = float(meta.get("v_inh", V_INH_DEFAULT))
+                entry["v_inh"] = round(v_inh, 4)
+                entry["context_tags"] = dict(meta.get("context_tags", {}))
+                entry["consecutive_failures"] = int(meta.get("consecutive_failures", 0))
+                if (v_inh >= 0.20 and fidelity >= min_fidelity) or is_core:
+                    inhibitors.append(entry)
+                continue
+
+            if is_core:
+                if cat == GIST_CATEGORY:
+                    semantic_gists.append(entry)
+                else:
+                    core_anchors.append(entry)
+                continue
+
+            # Transient engram filtering
+            if fidelity < min_fidelity:
+                continue
+            if res < min_resonance:
+                continue
+
+            transient_candidates.append(entry)
+
+        # Sort groups
+        core_anchors.sort(key=lambda x: x["salience"] * x["retention_fidelity"], reverse=True)
+        semantic_gists.sort(key=lambda x: x["salience"] * x["retention_fidelity"], reverse=True)
+        inhibitors.sort(key=lambda x: float(x.get("v_inh", 0.5)) * x["salience"], reverse=True)
+
+        transient_candidates.sort(key=lambda x: x["priority"], reverse=True)
+        selected_transient = transient_candidates[:top_k_transient]
+
+        return {
+            "core_anchors": core_anchors,
+            "semantic_gists": semantic_gists,
+            "transient_decisions": selected_transient,
+            "inhibitors": inhibitors,
+        }
+
+    def recall_contextual_resonance(
+        self,
+        context_prompt: str = "",
+        top_k_transient: int = 3,
+        min_resonance: float = 0.12,
+        min_fidelity: float = 0.40,
+        context: str = "",
+    ) -> list[dict[str, Any]]:
+        """Convenience method returning a combined flat list of all recalled engrams."""
+        ctx = context_prompt or context
+        structured = self.recall_context_adaptive_swr(
+            context=ctx,
+            top_k_transient=top_k_transient,
+            min_resonance=min_resonance,
+            min_fidelity=min_fidelity,
+        )
+        result: list[dict[str, Any]] = []
+        result.extend(structured.get("core_anchors", []))
+        result.extend(structured.get("semantic_gists", []))
+        result.extend(structured.get("transient_decisions", []))
+        result.extend(structured.get("inhibitors", []))
+        return result
+
+    def format_context_adaptive_swr_prompt(
+        self,
+        context: str = "",
+        top_k_transient: int = 3,
+        min_resonance: float = 0.12,
+        min_fidelity: float = 0.40,
+        context_prompt: str | None = None,
+    ) -> str:
+        """Formats context-adaptive [Quanta Bilişsel Çıpa | SWR Replay] prompt string.
+
+        Guarantees 100% preservation of core anchors and semantic gists while pruning
+        off-topic transient items to reduce prompt token footprint.
+        """
+        ctx = context or (context_prompt or "")
+        recalled = self.recall_context_adaptive_swr(
+            context=ctx,
+            top_k_transient=top_k_transient,
+            min_resonance=min_resonance,
+            min_fidelity=min_fidelity,
+        )
+
+        def _fmt_fid(fid: float) -> str:
+            pct = fid * 100.0
+            if pct >= 99.98:
+                return "99.98%"
+            return f"{pct:.2f}%"
+
+        core_items = [
+            f"{c['key']} ({_fmt_fid(float(c.get('retention_fidelity', c.get('fidelity', 1.0))))})"
+            for c in recalled.get("core_anchors", [])
+        ]
+        gist_items = [
+            f"{g['key']} ({_fmt_fid(float(g.get('retention_fidelity', g.get('fidelity', 1.0))))})"
+            for g in recalled.get("semantic_gists", [])
+        ]
+        transient_items = [
+            f"{t['key']} ({_fmt_fid(float(t.get('retention_fidelity', t.get('fidelity', 1.0))))})"
+            for t in recalled.get("transient_decisions", [])
+        ]
+        inhibitor_items = []
+        for inh in recalled.get("inhibitors", []):
+            v_val = float(inh.get("v_inh", 0.50))
+            fid_val = float(inh.get("retention_fidelity", inh.get("fidelity", 0.9998)))
+            inhibitor_items.append(f"{inh['key']} (V_inh={v_val:.2f}, {_fmt_fid(fid_val)})")
+
+        lines = ["[Quanta Bilişsel Çıpa | SWR Replay]:"]
+        if core_items:
+            lines.append(f"  🔒 Çekirdek: {', '.join(core_items)}")
+        if gist_items:
+            lines.append(f"  🧠 Özüt: {', '.join(gist_items)}")
+        if transient_items:
+            lines.append(f"  ⚡ Geçici: {', '.join(transient_items)}")
+        if inhibitor_items:
+            lines.append(f"  🚫 İnhibitör / Anti-Pattern: {', '.join(inhibitor_items)}")
+
+        return "\n".join(lines)
+
+    def prune_off_topic_transient(
+        self,
+        context: str = "",
+        min_resonance: float = 0.08,
+        min_age_turns: float = 2.0,
+        context_prompt: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Actively evicts transient engrams that are completely irrelevant to active context.
+
+        Core anchors and semantic gists are strictly immune to off-topic pruning.
+
+        Args:
+            context: Active prompt or task context string.
+            min_resonance: Threshold below which transient engrams are evicted (default: 0.08).
+            min_age_turns: Minimum turn age before off-topic eviction applies (default: 2.0).
+            context_prompt: Optional alias for context.
+
+        Returns:
+            List of pruned engram diagnostic dictionaries.
+        """
+        ctx = context or (context_prompt or "")
+        if not self.buffer.buffer:
+            return []
+
+        survivors = []
+        pruned_records: list[dict[str, Any]] = []
+
+        for engram in self.buffer.buffer:
+            meta = engram.get("metadata") or {}
+            salience = float(engram.get("dopamine_tag", 1.0))
+            cat = str(meta.get("category", ""))
+            key = str(meta.get("key", "unnamed"))
+            content = str(meta.get("content", ""))
+            age = float(engram.get("age", 0.0))
+
+            is_core = bool(
+                meta.get("is_core_anchor", False)
+                or engram.get("is_core_anchor", False)
+                or salience >= 2.0
+                or cat in ("system_core", GIST_CATEGORY, "constraint")
+                or meta.get("is_system_core", False)
+                or engram.get("is_system_core", False)
+                or key.startswith("system_")
+            )
+
+            if is_core:
+                survivors.append(engram)
+                continue
+
+            # Transient / non-core engram
+            res = self.compute_context_resonance(ctx, engram, alpha=0.6)
+            if age >= min_age_turns and res < min_resonance:
+                psi_0 = engram["pristine_state"]
+                psi_t = engram["degraded_state"]
+                overlap = torch.vdot(psi_0, psi_t)
+                fid = float((torch.abs(overlap) ** 2).item())
+
+                pruned_records.append(
+                    {
+                        "key": key,
+                        "content": content,
+                        "salience": round(salience, 2),
+                        "age_turns": round(age, 1),
+                        "retention_fidelity": round(fid, 5),
+                        "resonance": round(res, 5),
+                        "reason": f"off_topic_resonance ({res:.3f} < {min_resonance})",
+                        "is_core_anchor": False,
+                    }
+                )
+            else:
+                survivors.append(engram)
+
+        self.buffer.buffer = survivors
+        self.total_pruned_count += len(pruned_records)
+        return pruned_records
+
 

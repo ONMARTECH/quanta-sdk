@@ -159,6 +159,7 @@ def run_circuit(
     code: str,
     shots: int = 1024,
     seed: int | None = None,
+    method: str = "statevector",
 ) -> str:
     """Execute a quantum circuit and return measurement results.
 
@@ -171,10 +172,11 @@ def run_circuit(
               All 31 gates pre-loaded: H,X,Y,Z,S,T,I,SDG,TDG,SX,SXdg,
               RX,RY,RZ,P,U,CX,CY,CZ,SWAP,RXX,RZZ,CCX,RCCX,RC3X,
               ECR,iSWAP,CSWAP,CH,CP,MS.
-              Also: circuit, measure, run, math, np, pi, sqrt.
+              Also: circuit, measure, run, math, np, pi, sqrt, MPSSimulator, CircuitRunner.
                Only 'from quanta ...' imports are allowed.
         shots: Number of measurement repetitions.
         seed: Random seed for reproducibility.
+        method: Simulator method ('statevector', 'mps', 'auto'). Default 'statevector'.
 
     Returns:
         JSON with counts, probabilities, most_frequent, and metadata.
@@ -221,6 +223,8 @@ def run_circuit(
             measure,
             run,
         )
+        from quanta.runner import CircuitResult, CircuitRunner
+        from quanta.simulator.mps import MPSSimulator
 
         # Security: validate code before execution
         _validate_code(code)
@@ -237,6 +241,9 @@ def run_circuit(
             "RXX": RXX, "RZZ": RZZ, "RCCX": RCCX, "RC3X": RC3X,
             # Measurement + execution
             "measure": measure, "run": run,
+            "MPSSimulator": MPSSimulator,
+            "CircuitRunner": CircuitRunner,
+            "CircuitResult": CircuitResult,
             # Math (pre-injected for convenience)
             "math": math_mod, "np": np,
             "pi": math_mod.pi, "sqrt": math_mod.sqrt,
@@ -250,7 +257,8 @@ def run_circuit(
                 "hint": "Add: circ = your_circuit_function (or name it 'circ')",
             })
 
-        result = run(namespace["circ"], shots=shots, seed=seed)
+        sim_method = "dense" if method.lower() in ("statevector", "dense") else method
+        result = run(namespace["circ"], shots=shots, seed=seed, method=sim_method)
 
         return json.dumps({
             "counts": result.counts,
@@ -261,6 +269,165 @@ def run_circuit(
             "circuit_name": result.circuit_name,
             "gate_count": result.gate_count,
             "depth": result.depth,
+        })
+
+    except Exception as e:
+        return _safe_error(e)
+
+
+# ═══════════════════════════════════════════
+#  Tool: MPS Circuit Simulation (High-Qubit)
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def mps_circuit_simulate(
+    code: str,
+    num_qubits: int = 15,
+    chi_max: int = 64,
+    shots: int = 1024,
+    seed: int | None = None,
+) -> str:
+    """Execute a high-qubit (15-30+ qubits) 1D quantum circuit using Matrix Product States.
+
+    Tensor-network simulator with O(N * chi^2) memory containment, capable of
+    simulating 15 to 30+ qubits without dense statevector exponential O(2^N) explosion.
+
+    Args:
+        code: Python code defining a quantum circuit. Can define variable 'circ'
+              using @circuit or build an MPSSimulator directly.
+        num_qubits: Number of qubits in the circuit (default 15).
+        chi_max: Maximum MPS bond dimension (default 64).
+        shots: Number of measurement repetitions (default 1024).
+        seed: Random seed for reproducibility.
+
+    Returns:
+        JSON with counts, bond_dimensions, max_bond_dim, truncation_error,
+        entanglement_entropy, memory_bytes, num_qubits, shots, and execution_time_ms.
+    """
+    try:
+        import time as time_mod
+
+        t0 = time_mod.perf_counter()
+
+        _validate_code(code)
+
+        import math as math_mod  # noqa: F811
+
+        import numpy as np  # noqa: F811
+
+        from quanta import (  # noqa: I001
+            CCX,
+            CX,
+            CY,
+            CZ,
+            RC3X,  # noqa: F401
+            RCCX,  # noqa: F401
+            RX,
+            RXX,  # noqa: F401
+            RY,
+            RZ,
+            RZZ,  # noqa: F401
+            SDG,  # noqa: F401
+            SWAP,
+            SX,  # noqa: F401
+            TDG,  # noqa: F401
+            H,
+            I,  # noqa: E741, F401
+            P,  # noqa: F401
+            S,
+            SXdg,  # noqa: F401
+            T,
+            U,  # noqa: F401
+            X,
+            Y,
+            Z,
+            circuit,
+            measure,
+            run,
+        )
+        from quanta.core.circuit import CircuitDefinition
+        from quanta.dag.dag_circuit import DAGCircuit
+        from quanta.runner import CircuitResult, CircuitRunner, _filter_measured_qubits
+        from quanta.simulator.mps import MPSSimulator
+
+        namespace: dict[str, Any] = {
+            "__builtins__": _SAFE_BUILTINS,
+            "circuit": circuit, "H": H, "X": X, "Y": Y, "Z": Z,
+            "S": S, "T": T, "CX": CX, "CZ": CZ, "CY": CY,
+            "SWAP": SWAP, "CCX": CCX, "RX": RX, "RY": RY, "RZ": RZ,
+            "I": I, "SDG": SDG, "TDG": TDG, "P": P,
+            "SX": SX, "SXdg": SXdg, "U": U,
+            "RXX": RXX, "RZZ": RZZ, "RCCX": RCCX, "RC3X": RC3X,
+            "measure": measure, "run": run,
+            "MPSSimulator": MPSSimulator,
+            "CircuitRunner": CircuitRunner,
+            "CircuitResult": CircuitResult,
+            "math": math_mod, "np": np,
+            "pi": math_mod.pi, "sqrt": math_mod.sqrt,
+            "num_qubits": num_qubits,
+            "chi_max": chi_max,
+        }
+
+        exec(code, namespace)  # noqa: S102
+
+        sim: MPSSimulator | None = None
+        counts: dict[str, int] = {}
+        nq = num_qubits
+
+        if "circ" in namespace:
+            target = namespace["circ"]
+            if isinstance(target, CircuitDefinition):
+                nq = getattr(target, "num_qubits", num_qubits)
+                builder = target.build()
+                sim = MPSSimulator(nq, seed=seed, chi_max=chi_max)
+                for inst in builder.instructions:
+                    sim.apply(inst.gate_name, inst.qubits, inst.params)
+                counts = sim.sample(shots)
+                if builder.measurement and builder.measurement.qubits:
+                    counts = _filter_measured_qubits(counts, builder.measurement.qubits, nq)
+            elif isinstance(target, DAGCircuit):
+                nq = target.num_qubits
+                sim = MPSSimulator(nq, seed=seed, chi_max=chi_max)
+                for op in target.op_nodes():
+                    sim.apply(op.gate_name, op.qubits, op.params)
+                counts = sim.sample(shots)
+                if target.measurement and target.measurement.qubits:
+                    counts = _filter_measured_qubits(counts, target.measurement.qubits, nq)
+            elif isinstance(target, MPSSimulator):
+                sim = target
+                nq = sim.num_qubits
+                counts = sim.sample(shots)
+        elif "sim" in namespace and isinstance(namespace["sim"], MPSSimulator):
+            sim = namespace["sim"]
+            nq = sim.num_qubits
+            counts = sim.sample(shots)
+        else:
+            return json.dumps({
+                "error": "Code must define a circuit 'circ' (@circuit) or MPSSimulator 'sim'.",
+            })
+
+        execution_time_ms = round((time_mod.perf_counter() - t0) * 1000.0, 3)
+
+        entropy = 0.0
+        if nq >= 2 and sim is not None:
+            try:
+                entropy = round(float(sim.entanglement_entropy(cut=nq // 2)), 6)
+            except Exception:
+                entropy = 0.0
+
+        if sim is None:
+            return json.dumps({"error": "Failed to initialize MPSSimulator."})
+
+        return json.dumps({
+            "num_qubits": nq,
+            "shots": shots,
+            "counts": counts,
+            "bond_dimensions": sim.bond_dimensions,
+            "max_bond_dim": sim.max_bond_dim,
+            "truncation_error": float(sim.truncation_error),
+            "entanglement_entropy": entropy,
+            "memory_bytes": sim.memory_bytes,
+            "execution_time_ms": execution_time_ms,
         })
 
     except Exception as e:

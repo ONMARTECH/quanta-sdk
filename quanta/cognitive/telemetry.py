@@ -102,6 +102,9 @@ def record_decision_telemetry(
     counterfactual_ab: dict[str, Any] | None = None,
     current_zeno_pinning: float | None = None,
     mean_zeno_pinning: float | None = None,
+    mizan_score: float | None = None,
+    noether_flux: float | None = None,
+    invariant_violations: list[str] | None = None,
     **kwargs: Any,
 ) -> None:
     """Appends an arbitration decision record to the persistent telemetry ledger.
@@ -115,7 +118,12 @@ def record_decision_telemetry(
 
         if tr_rho_pi is None:
             if ranking:
-                tr_rho_pi = {r["option"]: r.get("tr_rho_pi", r.get("score", 0.0)) for r in ranking}
+                tr_rho_pi = {
+                    str(r.get("option") or r.get("trajectory_id") or f"traj_{i}"): float(
+                        r.get("tr_rho_pi", r.get("score", r.get("net_score", 0.0)))
+                    )
+                    for i, r in enumerate(ranking)
+                }
             elif options:
                 tr_rho_pi = {
                     opt: (
@@ -193,6 +201,37 @@ def record_decision_telemetry(
             record["injected_prompt_constraint"] = injected_prompt_constraint
         if counterfactual_ab:
             record["counterfactual_ab"] = counterfactual_ab
+
+        # Invariant and Mizan metrics persistence (Milestone M2)
+        resolved_mizan = mizan_score if mizan_score is not None else kwargs.get("mizan_score")
+        if resolved_mizan is not None:
+            try:
+                record["mizan_score"] = round(float(resolved_mizan), 4) if math.isfinite(float(resolved_mizan)) else 0.0
+            except (ValueError, TypeError):
+                record["mizan_score"] = 0.0
+
+        resolved_flux = noether_flux if noether_flux is not None else kwargs.get("noether_flux")
+        if resolved_flux is not None:
+            try:
+                record["noether_flux"] = round(float(resolved_flux), 4) if math.isfinite(float(resolved_flux)) else 0.0
+            except (ValueError, TypeError):
+                record["noether_flux"] = 0.0
+
+        resolved_violations = (
+            invariant_violations
+            if invariant_violations is not None
+            else kwargs.get("invariant_violations")
+        )
+        if resolved_violations is not None:
+            if isinstance(resolved_violations, list):
+                record["invariant_violations"] = [str(v) for v in resolved_violations]
+            else:
+                record["invariant_violations"] = [str(resolved_violations)]
+
+        # Persist unhandled kwargs
+        for k, v in kwargs.items():
+            if v is not None and k not in record:
+                record[k] = v
 
         with open(log_file, "a", encoding="utf-8") as f:
             if _HAS_FCNTL:
@@ -646,6 +685,39 @@ def get_telemetry_summary(telemetry_file: Path | None = None) -> dict[str, Any]:
     )
     mean_anti_zeno = 1.0 - mean_zeno_pinning
 
+    # Noetherian Invariant & Mizan metrics summary (Milestone M2)
+    valid_mizan = [
+        float(d["mizan_score"])
+        for d in decisions
+        if isinstance(d.get("mizan_score"), (int, float))
+        and not isinstance(d.get("mizan_score"), bool)
+        and math.isfinite(d["mizan_score"])
+    ]
+    avg_mizan_score = round(sum(valid_mizan) / len(valid_mizan), 4) if valid_mizan else 1.0
+
+    valid_fluxes = [
+        float(d["noether_flux"])
+        for d in decisions
+        if isinstance(d.get("noether_flux"), (int, float))
+        and not isinstance(d.get("noether_flux"), bool)
+        and math.isfinite(d["noether_flux"])
+    ]
+    if valid_fluxes:
+        sorted_fluxes = sorted(valid_fluxes)
+        idx = int(math.ceil(0.95 * len(sorted_fluxes))) - 1
+        idx = max(0, min(len(sorted_fluxes) - 1, idx))
+        noether_flux_p95 = round(sorted_fluxes[idx], 4)
+    else:
+        noether_flux_p95 = 0.0
+
+    total_invariant_violations = 0
+    for d in decisions:
+        v = d.get("invariant_violations")
+        if isinstance(v, list):
+            total_invariant_violations += len(v)
+        elif isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v):
+            total_invariant_violations += int(v)
+
     return {
         "total_decisions": total_decisions,
         "total_hook_steps": total_hook_steps,
@@ -662,6 +734,9 @@ def get_telemetry_summary(telemetry_file: Path | None = None) -> dict[str, Any]:
         "mean_zeno_pinning": round(mean_zeno_pinning, 4),
         "current_zeno_pinning": round(current_zeno_pinning, 4),
         "mean_anti_zeno": round(mean_anti_zeno, 4),
+        "avg_mizan_score": avg_mizan_score,
+        "total_invariant_violations": total_invariant_violations,
+        "noether_flux_p95": noether_flux_p95,
     }
 
 

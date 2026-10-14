@@ -14,6 +14,7 @@ import collections
 import json
 import logging
 import math
+import random
 import re
 import sqlite3
 import subprocess
@@ -1020,9 +1021,32 @@ class WorkspaceContextHarvester:
 
         crystallized = self._get_crystallized_topics()
 
-        # Group candidates by primary project key
+        # Circadian Recency Bias ("Günün Bakiyesi" İlkesi):
+        # 70% of dream deliberations prioritize today's / yesterday's active work and recent sessions.
+        # 30% draw from the deeper historical project matrix for unexpected cross-domain bisociative sparks.
+        daily_residue_seeds = [
+            s
+            for s in candidates
+            if any(k in ("today", "yesterday", "live_git_commit", "idrak", "quanta") for k in s.context_keys)
+            or s.urgency >= 2.0
+        ]
+        historical_seeds = [s for s in candidates if s not in daily_residue_seeds]
+
+        target_pool = candidates
+        if daily_residue_seeds and random.random() < 0.70:
+            target_pool = daily_residue_seeds
+        elif historical_seeds:
+            target_pool = historical_seeds
+
+        # Anti-rumination safeguard: preserve multi-project diversity if candidates span multiple projects
+        cand_projects = {s.context_keys[0] for s in candidates if s.context_keys}
+        pool_projects = {s.context_keys[0] for s in target_pool if s.context_keys}
+        if len(pool_projects) < 2 and len(cand_projects) > 1:
+            target_pool = candidates
+
+        # Group targeted candidates by primary project key
         by_project: dict[str, list[DreamSeed]] = collections.defaultdict(list)
-        for seed in candidates:
+        for seed in target_pool:
             proj = seed.context_keys[0] if seed.context_keys else "general"
             by_project[proj].append(seed)
 

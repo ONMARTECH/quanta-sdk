@@ -690,7 +690,7 @@ class SubconsciousDaemon:
 
             if self._foreground:
                 print(
-                    f"🧹 [NREM SWS Tamamlandı]: {result.glymphatic_files_cleared} geçici dosya temizlendi, "
+                    f"🧹 [Zihin Tasfiyesi / NREM SWS Tamamlandı]: {result.glymphatic_files_cleared} geçici dosya temizlendi, "
                     f"{result.depotentiated_inhibitors_pruned} inhibitör budandı, "
                     f"{result.ephemeral_engrams_downscaled} bellek dengelendi ({dur_ms:.1f}ms).\n",
                     flush=True,
@@ -781,7 +781,7 @@ class SubconsciousDaemon:
             p_b_name = seed.secondary_project.name
             if self._foreground:
                 print(
-                    f"\n🌙 [REM Hibrit Rüya Başladı] Çapraz Proje: '{p_a_name}' x '{p_b_name}'",
+                    f"\n🌙 [Tefekkür Âlemi / REM Hibrit Rüya] İmtizaç (Çapraz Proje): '{p_a_name}' x '{p_b_name}'",
                     flush=True,
                 )
                 print(
@@ -790,7 +790,7 @@ class SubconsciousDaemon:
                 )
                 print(f"   Soru: '{seed.speculative_question}'", flush=True)
                 print(
-                    "   DMN (T=0.92) ile Rahatlatılmış Zeno Kapısı (T=0.50) müzakere ediyor...",
+                    "   DMN (T=0.92) ile Sebat Kilidi / Zeno Kapısı (T=0.50) müzakere ediyor...",
                     flush=True,
                 )
 
@@ -878,9 +878,9 @@ class SubconsciousDaemon:
         )
 
         if self._foreground:
-            print(f"\n🌙 [REM Rüya Başladı] Proje: '{proj_label}' | Konu: '{seed.topic}'", flush=True)
+            print(f"\n🌙 [Tefekkür Âlemi / REM Rüya] Proje: '{proj_label}' | Konu: '{seed.topic}'", flush=True)
             print(f"   Soru: '{seed.speculative_question}'", flush=True)
-            print("   DMN (T=0.92) ile Rahatlatılmış Zeno Kapısı (T=0.50) müzakere ediyor...", flush=True)
+            print("   DMN (T=0.92) ile Sebat Kilidi / Zeno Kapısı (T=0.50) müzakere ediyor...", flush=True)
 
         try:
             insight = self.wander_engine.execute_dream_cycle(
@@ -946,9 +946,9 @@ class SubconsciousDaemon:
 
                 if self._foreground:
                     conf = insight.confidence * 100.0
-                    print(f"💡 [Uzlaşı Sağlandı - Güven: %{conf:.1f}]:", flush=True)
+                    print(f"💡 [Uzlaşı / Sebat Kilidi - Güven: %{conf:.1f}]:", flush=True)
                     print(f"   {insight.synthesis[:120]}...", flush=True)
-                    print(f"🧠 [SWR Mühürlendi]: insight_{seed.topic} (%100)\n", flush=True)
+                    print(f"🧠 [Yâd-ı Cemil / SWR Mühürlendi]: insight_{seed.topic} (%100)\n", flush=True)
 
                 return result
             else:
@@ -956,8 +956,8 @@ class SubconsciousDaemon:
                 self._preempted_count += 1
                 if self._foreground:
                     print(
-                        "⚡ [Uyanma Refleksi] Kullanıcı aktivitesi (klavye/fare) algılandı; "
-                        "rüya anında kesildi.\n",
+                        "⚡ [Teyakkuz Hali / Preemption Reflex] Kullanıcı aktivitesi (klavye/fare) algılandı; "
+                        "uyanış sağlandı (<1.5ms).\n",
                         flush=True,
                     )
                 return None
