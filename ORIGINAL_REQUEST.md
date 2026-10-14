@@ -65,7 +65,7 @@ Integrity mode: development
 
 ## 2026-09-24T20:14:23Z
 
-Implement Plastic Biomorphic Cognitive Immunity (LTP/LTD-governed Negative Engrams) and Multi-Branch Decision Tree Deliberation (DAG Rollouts) in Quanta SDK with seamless Antigravity hook integration.
+Implement Plastic Biomorphic Cognitive Immunity (LTP/LTD-governed Negative Engrams) and Multi-Branch Decision Tree Deliberation (DAG Rollouts) in Quanta SDK with seamless CognitiveAgent hook integration.
 
 Working directory: /workspace/quanta
 Integrity mode: development
@@ -77,7 +77,7 @@ Implement an adaptive inhibitory memory layer in `FastBiomorphicMemory` and `Cog
 - Negative engrams (`category="inhibitor"` or `"anti_pattern"`) must feature dynamic synaptic weights ($V_{\text{inh}}$) and context tags (`runtime`, `library`, `os`, etc.).
 - **Long-Term Potentiation (LTP)**: Repeated failure in the same context progressively deepens the inhibition strength and increases salience.
 - **Long-Term Depression (LTD) & Context Switching**: If an operation succeeds under a different or updated context, the inhibitor relaxes its weight and documents the contextual divergence.
-- SWR Replay serialization in `quanta_subconscious_hook.py` must include a designated `🚫 İnhibitör / Anti-Pattern` line alongside `🔒 Çekirdek` and `⚡ Geçici`.
+- SWR Replay serialization in `cognitive_lifecycle_hook.py` must include a designated `🚫 İnhibitör / Anti-Pattern` line alongside `🔒 Çekirdek` and `⚡ Geçici`.
 
 ### R2. Non-Binary Multi-Branch Decision Manifold (DAG Rollouts)
 Extend Quanta's cognitive deliberation to support multi-option branching ($A, B, C, D, E \to \text{sub-branches}$):
@@ -85,9 +85,9 @@ Extend Quanta's cognitive deliberation to support multi-option branching ($A, B,
 - Provide biomorphic evaluation that cascades through downstream consequences (e.g. secondary trade-offs, maintenance costs, latency).
 - Prefrontal Zeno Arbiter prunes dominated sub-branches while Generative Dreamer (DMN) maintains exploratory lateral paths.
 
-### R3. Antigravity Hook & Feedback Pipeline Integration
-Wire up bidirectional telemetry between Antigravity and Quanta:
-- Add a fail-safe `PostToolUse` handler to `scripts/hooks/quanta_subconscious_hook.py` (and update `~/.gemini/config/hooks.json`).
+### R3. CognitiveAgent Hook & Feedback Pipeline Integration
+Wire up bidirectional telemetry between CognitiveAgent and Quanta:
+- Add a fail-safe `PostToolUse` handler to `scripts/hooks/cognitive_lifecycle_hook.py` (and update `~/.quanta/config/hooks.json`).
 - When a tool emits an error (`error` in payload or non-zero exit), automatically register or potentiate the corresponding negative engram.
 - When subsequent tools succeed in related tasks, depress or clear temporary inhibitory blocks.
 
@@ -127,7 +127,7 @@ Integrity mode: development
 ## Authorship & Identity Metadata
 - **Lead Author & Principal Architect**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
 - **Affiliation**: ONMARTECH Quantum Computing Initiative, Istanbul, Turkey (`info@onmartech.com`)
-- **Co-Author & Peer Inspection Board**: Quanta Quantum Research Group & Antigravity Agentic AI Board
+- **Co-Author & Peer Inspection Board**: Quanta Quantum Research Group & CognitiveAgent Agentic AI Board
 - **Target Venues**:
   1. **arXiv.org**: Category `quant-ph` (Quantum Physics) / `cs.MS` (Mathematical Software)
   2. **Journal of Open Source Software (JOSS)**: Open-source research software track

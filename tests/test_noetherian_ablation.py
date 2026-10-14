@@ -13,7 +13,7 @@ Adversarial Boundary Scenarios Verified:
   3. Conflicting Pareto Dilemmas (high nominal utility vs invariant compliance)
   4. Deep Combinatorial DAG Confluence (depth-5 branching DAG)
 
-Scientific Integrity Protocol (GEMINI.md):
+Scientific Integrity Protocol (PROJECT_RULES.md):
   - Hermetic test isolation: Uses pytest `tmp_path` fixture for all I/O.
   - Zero benchmark leakage, zero cherry-picking, genuine ablation evaluation.
 """

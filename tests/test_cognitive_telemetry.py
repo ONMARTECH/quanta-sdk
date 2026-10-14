@@ -500,7 +500,7 @@ class TestCognitiveTelemetry:
 
     def test_subconscious_hook_swr_consolidation(self) -> None:
         """Verifies that SWR replay active consolidation restores degraded engram fidelity."""
-        from scripts.hooks.quanta_subconscious_hook import FastBiomorphicMemory
+        from scripts.hooks.cognitive_lifecycle_hook import FastBiomorphicMemory
 
         mem = FastBiomorphicMemory(capacity=10)
         mem.record("critical_rule", "Never bypass user consent", salience=2.8, category="constraint")
@@ -636,7 +636,7 @@ class TestCognitiveTelemetry:
         import re
         import stat
 
-        from scripts.hooks.quanta_subconscious_hook import _save_state_atomically
+        from scripts.hooks.cognitive_lifecycle_hook import _save_state_atomically
 
         # Safe sanitization of path traversal conversation IDs
         dangerous_id = "../../etc/passwd"
@@ -720,7 +720,7 @@ class TestCognitiveTelemetry:
 
     def test_subconscious_hook_negative_salience_resilience(self) -> None:
         """Adversarial test: negative or non-finite salience must not trigger ZeroDivisionError or fidelity explosion."""
-        from scripts.hooks.quanta_subconscious_hook import FastBiomorphicMemory
+        from scripts.hooks.cognitive_lifecycle_hook import FastBiomorphicMemory
 
         mem = FastBiomorphicMemory(capacity=5)
         # Salience that would cause 1.0 + 1.5 * salience = 0.0 without safeguard

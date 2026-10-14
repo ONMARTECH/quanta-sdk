@@ -34,7 +34,7 @@ try:
 except ImportError:
     _HAS_FCNTL = False
 
-DEFAULT_BLACKBOARD_DIR = Path(os.path.expanduser("~/.gemini/antigravity/blackboard"))
+DEFAULT_BLACKBOARD_DIR = Path(os.path.expanduser("~/.quanta/agent/blackboard"))
 DEFAULT_BLACKBOARD_FILE = DEFAULT_BLACKBOARD_DIR / "shared_blackboard.json"
 
 
@@ -54,7 +54,7 @@ class CognitiveBlackboard:
 
         Args:
             file_path: Optional custom path to JSON storage. Defaults to
-                `~/.gemini/antigravity/blackboard/shared_blackboard.json`.
+                `~/.quanta/agent/blackboard/shared_blackboard.json`.
         """
         if file_path is None:
             self.storage_path = DEFAULT_BLACKBOARD_FILE.resolve()

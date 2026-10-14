@@ -10,7 +10,7 @@ Tiers Tested:
 - Tier 4: Real-World Adversarial Scenarios (Creeping drift, periphrastic rule erosion,
           Pareto dilemmas, deep DAG trajectory discrimination, hermetic tmp_path isolation).
 
-Integrity Protocol (GEMINI.md):
+Integrity Protocol (PROJECT_RULES.md):
 - Strictly hermetic: No dependency on live `quanta_cognitive_state.json`.
 - Zero benchmark leakage, zero cherry-picking, mathematically sound assertions.
 """

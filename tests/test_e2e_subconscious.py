@@ -179,7 +179,7 @@ class TestSubconsciousE2E:
             Path(__file__).resolve().parent.parent
             / "scripts"
             / "hooks"
-            / "quanta_subconscious_hook.py"
+            / "cognitive_lifecycle_hook.py"
         )
         assert hook_script.exists()
 

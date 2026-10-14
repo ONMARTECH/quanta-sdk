@@ -281,8 +281,8 @@ class TestInstantPreemption:
         assert cosine_similarity([0.0, 0.0], [1.0, 1.0]) == 0.0
         assert cosine_similarity([1.0, 0.0], [1.0, 0.0]) == 1.0
 
-    def test_antigravity_sdk_mock_dialectic(self) -> None:
-        """Covers _execute_antigravity_sdk_dialectic and SDK integration branch."""
+    def test_cognitive_sdk_mock_dialectic(self) -> None:
+        """Covers _execute_cognitive_sdk_dialectic and SDK integration branch."""
         from unittest.mock import MagicMock, patch
 
         from quanta.cognitive.mind_wander import DreamSeed, MindWanderEngine
@@ -293,10 +293,10 @@ class TestInstantPreemption:
         mock_agent = MagicMock()
         mock_convo = MagicMock()
         mock_convo.send.return_value = MagicMock(
-            content="Synthetic consensus from Antigravity agents"
+            content="Synthetic consensus from CognitiveAgent agents"
         )
 
-        with patch("quanta.cognitive.mind_wander.ANTIGRAVITY_SDK_AVAILABLE", True), \
+        with patch("quanta.cognitive.mind_wander.COGNITIVE_SDK_AVAILABLE", True), \
              patch("quanta.cognitive.mind_wander.Agent", return_value=mock_agent), \
              patch("quanta.cognitive.mind_wander.Conversation", return_value=mock_convo), \
              patch("quanta.cognitive.mind_wander.LocalAgentConfig", return_value=MagicMock()), \

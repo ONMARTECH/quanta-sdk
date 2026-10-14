@@ -2,7 +2,7 @@
 """benchmarks/noetherian_ablation_benchmark.py — 3-Way Ablation Benchmark for Mizan Hakemi.
 
 Formal empirical benchmark comparing three decision arbitration paradigms under
-Quanta SDK's Scientific Integrity Protocol (GEMINI.md):
+Quanta SDK's Scientific Integrity Protocol (PROJECT_RULES.md):
   1. Baseline (Unconstrained): Standard quantum Zeno / utility optimization without invariant bounds.
   2. Naive Heuristic: Static penalty clipping and simple step-wise Euclidean thresholding.
   3. Noetherian Arbiter: Full variational mechanics (Action Integral, Epistemic Entropy,

@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 
 # Default parent workspace directory on macOS
 DEFAULT_PROJECTS_DIR = Path(__file__).resolve().parents[4]
-DEFAULT_BRAIN_DIR = Path.home() / ".gemini" / "antigravity" / "brain"
-DEFAULT_SUMMARIES_DB = Path.home() / ".gemini" / "antigravity" / "conversation_summaries.db"
+DEFAULT_BRAIN_DIR = Path.home() / ".gemini" / "cognitive_agent" / "brain"
+DEFAULT_SUMMARIES_DB = Path.home() / ".gemini" / "cognitive_agent" / "conversation_summaries.db"
 
 
 @dataclass
@@ -142,7 +142,7 @@ CANONICAL_DOMAINS: list[str] = [
 DOMAIN_KEYWORDS: list[list[str]] = [
     # 0: Travel/Pricing
     [
-        "turna", "etstur", "flight", "ticket", "hotel", "travel", "pricing",
+        "turna", "voyagebooking", "flight", "ticket", "hotel", "travel", "pricing",
         "fare", "reprice", "airline", "booking", "room", "yield", "reservation",
         "ota", "destinations", "pax", "gds",
     ],
@@ -160,7 +160,7 @@ DOMAIN_KEYWORDS: list[list[str]] = [
     ],
     # 3: Web Analytics/MarTech
     [
-        "metricase", "martech", "cortex", "analytics", "auditor", "audit",
+        "cortexanalytics", "martech", "cortex", "analytics", "auditor", "audit",
         "tag", "tracking", "cwv", "core web vitals", "lcp", "gtm", "ga4",
         "seo", "web audit", "datalayer", "consent",
     ],
@@ -238,11 +238,11 @@ def classify_project_domain(
     # Project-specific explicit mappings for high precision
     explicit_exact_mappings: dict[str, int] = {
         "turna": 0,
-        "etstur": 0,
+        "voyagebooking": 0,
         "quanta": 1,
-        "legalport": 2,
-        "hukukport": 2,
-        "metricase": 3,
+        "lexcompliance": 2,
+        "lexportal": 2,
+        "cortexanalytics": 3,
         "meiro": 4,
         "mdm": 4,
         "metabase": 5,
@@ -296,7 +296,7 @@ def classify_project_domain(
 
 
 class WorkspaceContextHarvester:
-    """Discovers and mines multi-project context across the Antigravity ecosystem.
+    """Discovers and mines multi-project context across the CognitiveAgent ecosystem.
 
     Provides a rich, rotating stream of DreamSeeds spanning disparate projects,
     grounded in actual git activity and recent conversation transcripts, ensuring
@@ -373,7 +373,7 @@ class WorkspaceContextHarvester:
                 ),
             },
         ],
-        "etsgroup_mdm": [
+        "enterprise_mdm": [
             {
                 "topic": "mdm_entity_resolution",
                 "question": (
@@ -467,7 +467,7 @@ class WorkspaceContextHarvester:
 
         Args:
             projects_dir: Directory containing user workspace projects.
-            brain_dir: Directory containing Antigravity session brain transcripts.
+            brain_dir: Directory containing CognitiveAgent session brain transcripts.
             summaries_db: Path to conversation_summaries.db SQLite database.
             state_file: Path to quanta_cognitive_state.json.
             history_len: Max recent topics retained to prevent repetition.
@@ -659,7 +659,7 @@ class WorkspaceContextHarvester:
     def harvest_conversation_history(
         self, max_sessions: int = 20
     ) -> list[EpisodicTrace]:
-        """Harvest recent user prompts, decisions, and messages from Antigravity session substrate.
+        """Harvest recent user prompts, decisions, and messages from CognitiveAgent session substrate.
 
         Queries the read-only SQLite conversation index (file:...mode=ro) and parses
         tail JSONL transcripts, categorizing traces across four temporal horizons:
@@ -736,7 +736,7 @@ class WorkspaceContextHarvester:
                         parts = p_str.rstrip("/").split("/")
                         if parts:
                             cand = parts[-1].replace("%20", " ")
-                            if cand and cand != "Antigravity Projects":
+                            if cand and cand != "Workspace Projects":
                                 project = cand
                 except Exception:
                     pass
@@ -1185,7 +1185,7 @@ class WorkspaceContextHarvester:
         Filters:
         1. Delta_domain = 1.0 - (d_A . d_B) / (||d_A|| ||d_B||) >= min_domain_distance (0.50).
         2. Rejects same-project pairs (P_A == P_B).
-        3. Excludes pairs with shared project prefixes (e.g. Turna Works vs Turna JIRA).
+        3. Excludes pairs with shared project prefixes (e.g. Enterprise OTA vs Enterprise Issue Tracker).
         4. Prioritizes pairs not in recent hybrid history (anti-rumination pair buffer).
 
         Args:
@@ -1224,7 +1224,7 @@ class WorkspaceContextHarvester:
                 if dom_a in {"General", "Unclassified"} or dom_b in {"General", "Unclassified"}:
                     continue
 
-                # 2. Exclude shared project prefixes (e.g. Turna Works vs Turna JIRA, TurnaWorks vs TurnaJira)
+                # 2. Exclude shared project prefixes (e.g. Enterprise OTA vs Enterprise Issue Tracker, TurnaWorks vs TurnaJira)
                 name_a_clean = p_a.name.strip()
                 name_b_clean = p_b.name.strip()
 

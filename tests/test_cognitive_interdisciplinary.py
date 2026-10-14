@@ -37,7 +37,7 @@ from quanta.cognitive.tom_analyzer import (
 from quanta.cognitive.tom_analyzer import (
     _safe_int as tom_safe_int,
 )
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     FastBiomorphicMemory,
     distill_semantic_gist,
     is_actionable_resolution,

@@ -3,7 +3,7 @@
 Adversarially tests and independently verifies Milestone M3:
 1. Challenge 1 (Sandbox Immutability):
    - Cryptographic pre- and post-SHA256 tree hashing of sibling project trees.
-   - Empirically verifies zero mutations across both synthetic trees and real workspace projects (LegalPort, Metricase).
+   - Empirically verifies zero mutations across both synthetic trees and real workspace projects (LexCompliance, CortexAnalytics).
    - Verifies compliance with read-only directory/file permissions (chmod 0555 / 0444).
    - Verifies path traversal sanitization in RFC filename generation.
 
@@ -11,7 +11,7 @@ Adversarially tests and independently verifies Milestone M3:
    - Randomized project matrices (60+ project combinations across all 8 canonical domains).
    - Mathematical verification that all pairs satisfy Delta_domain >= 0.50.
    - Rejection of self-pairing (P_A == P_B).
-   - Exclusion of shared project prefixes (e.g. Turna Works vs Turna JIRA).
+   - Exclusion of shared project prefixes (e.g. Enterprise OTA vs Enterprise Issue Tracker).
    - Empirical tracking of anti-rumination buffer rotation and capacity assessment.
    - Boundary condition testing for monolithic domain workspaces.
 
@@ -140,23 +140,23 @@ class TestEmpiricalChallenge1SandboxImmutability:
         if not DEFAULT_PROJECTS_DIR.exists():
             pytest.skip(f"Workspace directory {DEFAULT_PROJECTS_DIR} not present.")
 
-        lp_dir = DEFAULT_PROJECTS_DIR / "LegalPort"
-        mc_dir = DEFAULT_PROJECTS_DIR / "Metricase"
+        lp_dir = DEFAULT_PROJECTS_DIR / "LexCompliance"
+        mc_dir = DEFAULT_PROJECTS_DIR / "CortexAnalytics"
 
         if not lp_dir.exists() or not mc_dir.exists():
-            pytest.skip("LegalPort or Metricase project directories missing.")
+            pytest.skip("LexCompliance or CortexAnalytics project directories missing.")
 
         lp_before = compute_tree_hashes(lp_dir)
         mc_before = compute_tree_hashes(mc_dir)
 
         harvester = WorkspaceContextHarvester(projects_dir=DEFAULT_PROJECTS_DIR)
         projects = harvester.scan_workspace_projects()
-        p_lp = next((p for p in projects if p.name == "LegalPort"), None)
-        p_mc = next((p for p in projects if p.name == "Metricase"), None)
+        p_lp = next((p for p in projects if p.name == "LexCompliance"), None)
+        p_mc = next((p for p in projects if p.name == "CortexAnalytics"), None)
         assert p_lp is not None and p_mc is not None
 
         seed = HybridDreamSeed(
-            topic="legalport_x_metricase_challenger_test",
+            topic="lexcompliance_x_cortexanalytics_challenger_test",
             speculative_question="How can legal compliance tags automate web analytics auditing?",
             primary_project=p_lp,
             secondary_project=p_mc,
@@ -178,8 +178,8 @@ class TestEmpiricalChallenge1SandboxImmutability:
             lp_after = compute_tree_hashes(lp_dir)
             mc_after = compute_tree_hashes(mc_dir)
 
-            assert lp_before == lp_after, "Real LegalPort directory suffered byte-level modification!"
-            assert mc_before == mc_after, "Real Metricase directory suffered byte-level modification!"
+            assert lp_before == lp_after, "Real LexCompliance directory suffered byte-level modification!"
+            assert mc_before == mc_after, "Real CortexAnalytics directory suffered byte-level modification!"
         finally:
             if rfc_path.exists():
                 rfc_path.unlink()
@@ -308,10 +308,10 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
     def test_strict_exclusion_of_shared_project_prefixes(self) -> None:
         """Verifies projects with identical prefix tokens are never paired together."""
         pairs_to_test = [
-            ("Turna Works", "Turna JIRA"),
+            ("Enterprise OTA", "Enterprise Issue Tracker"),
             ("Turna Flights", "Turna Hotels"),
-            ("LegalPort Search", "LegalPort Contracts"),
-            ("Metricase Web", "Metricase Mobile"),
+            ("LexCompliance Search", "LexCompliance Contracts"),
+            ("CortexAnalytics Web", "CortexAnalytics Mobile"),
             ("Qarezmi Core", "Qarezmi Analytics"),
         ]
 
@@ -381,11 +381,11 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
     def test_anti_rumination_buffer_capacity_and_rotation(self) -> None:
         """Evaluates anti-rumination pair tracking, rotation dynamics, and buffer capacity."""
         names = [
-            ("Turna Works", "Travel/Pricing", ["flight"]),
-            ("LegalPort", "LegalTech", ["legal"]),
-            ("Metricase", "Web Analytics/MarTech", ["analytics"]),
+            ("Enterprise OTA", "Travel/Pricing", ["flight"]),
+            ("LexCompliance", "LegalTech", ["legal"]),
+            ("CortexAnalytics", "Web Analytics/MarTech", ["analytics"]),
             ("quanta", "Quantum/Brain", ["quantum"]),
-            ("MeiroCDP", "CDP/MDM", ["cdp"]),
+            ("EnterpriseCDP", "CDP/MDM", ["cdp"]),
             ("metabase-ai-assistant", "BI/MCP", ["metabase"]),
             ("app-my-network-planner", "Mobile Graph CRM", ["crm"]),
             ("ContentAI", "Generative NLP", ["content"]),
@@ -436,8 +436,8 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
     def test_unachievable_distance_threshold_returns_empty(self) -> None:
         """Verifies unachievable min_domain_distance (e.g. 1.50) returns empty list without error."""
         projects = [
-            ProjectContext(name="Turna Works", path=Path("/mock/turna"), domain="Travel/Pricing"),
-            ProjectContext(name="LegalPort", path=Path("/mock/legal"), domain="LegalTech"),
+            ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing"),
+            ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech"),
         ]
         harvester = WorkspaceContextHarvester(projects_dir=Path("/mock"))
         harvester._cached_projects = projects
@@ -452,14 +452,14 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
     def test_yaml_frontmatter_strict_parsing_and_schema(self, tmp_path: Path) -> None:
         """Empirically parses YAML frontmatter using yaml.safe_load and asserts all fields."""
         p_a = ProjectContext(
-            name="Turna Works",
+            name="Enterprise OTA",
             path=Path("/mock/turna"),
             domain="Travel/Pricing",
             tech_stack=["MSSQL", "BigQuery"],
             summary="Airline ticket pricing engine.",
         )
         p_b = ProjectContext(
-            name="LegalPort",
+            name="LexCompliance",
             path=Path("/mock/legal"),
             domain="LegalTech",
             tech_stack=["Python", "FastAPI"],
@@ -484,12 +484,12 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
             relaxed_prefrontal=True,
             prefrontal_temperature=0.50,
             dreamer_temperature=0.92,
-            primary_project="Turna Works",
-            secondary_project="LegalPort",
+            primary_project="Enterprise OTA",
+            secondary_project="LexCompliance",
             domain_pair="Travel/Pricing x LegalTech",
             domain_distance=0.9150,
             bisociation_theme=seed.bisociation_theme,
-            abstract_architecture="[Turna Works] <---> [Compliance Bus] <---> [LegalPort]",
+            abstract_architecture="[Enterprise OTA] <---> [Compliance Bus] <---> [LexCompliance]",
             failure_modes=[{"mode": "Schema Drift", "cause": "Field drift", "mitigation": "Adapter"}],
         )
 
@@ -519,8 +519,8 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
             assert "projects" in parsed_fm
             assert isinstance(parsed_fm["projects"], list)
             assert len(parsed_fm["projects"]) == 2
-            assert "Turna Works" in parsed_fm["projects"]
-            assert "LegalPort" in parsed_fm["projects"]
+            assert "Enterprise OTA" in parsed_fm["projects"]
+            assert "LexCompliance" in parsed_fm["projects"]
 
             assert parsed_fm.get("hybrid_type") == "cross_domain_bisociation"
             assert parsed_fm.get("domain_pair") == "Travel/Pricing x LegalTech"
@@ -543,7 +543,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
 
     def test_architectural_sections_rigor_and_completeness(self, tmp_path: Path) -> None:
         """Verifies presence of all required sections, Mermaid diagram, and failure modes table."""
-        p_a = ProjectContext(name="Turna Works", path=Path("/mock/turna"), domain="Travel/Pricing")
+        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing")
         p_b = ProjectContext(name="app-my-network-planner", path=Path("/mock/net"), domain="Mobile Graph CRM")
         seed = HybridDreamSeed(
             topic="turna_x_net_sections",
@@ -612,8 +612,8 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
         state_file = tmp_path / "quanta_cognitive_state.json"
         daemon = SubconsciousDaemon(state_file=state_file)
 
-        p_a = ProjectContext(name="Turna Works", path=Path("/mock/turna"), domain="Travel/Pricing")
-        p_b = ProjectContext(name="LegalPort", path=Path("/mock/legal"), domain="LegalTech")
+        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing")
+        p_b = ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech")
         seed = HybridDreamSeed(
             topic="turna_x_legal_engram",
             speculative_question="Question?",
@@ -644,14 +644,14 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
 
             matching_engrams = [
                 e for e in engrams
-                if e.get("category") == "architecture_rfc" and "turna_works" in e.get("key", "")
+                if e.get("category") == "architecture_rfc" and "enterprise_ota" in e.get("key", "")
             ]
             assert len(matching_engrams) >= 1
             e = matching_engrams[-1]
             assert e["salience"] == 2.8
             assert e["salience"] >= 2.5, "Engram must have dopaminergic protection S >= 2.5"
-            assert "Turna Works" in e["content"]
-            assert "LegalPort" in e["content"]
+            assert "Enterprise OTA" in e["content"]
+            assert "LexCompliance" in e["content"]
             assert "Compliance Gateway" in e["content"]
         finally:
             if rfc_path.exists():
@@ -662,8 +662,8 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
         state_file = tmp_path / "quanta_cognitive_state.json"
         daemon = SubconsciousDaemon(state_file=state_file)
 
-        p_a = ProjectContext(name="Turna Works", path=Path("/mock/turna"), domain="Travel/Pricing")
-        p_b = ProjectContext(name="LegalPort", path=Path("/mock/legal"), domain="LegalTech")
+        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing")
+        p_b = ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech")
         seed = HybridDreamSeed(
             topic="turna_x_legal_telemetry_unique",
             speculative_question="Telemetry test question unique?",
@@ -676,7 +676,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
         res = daemon.run_rem_cycle(seed=seed)
         assert res is not None
         assert isinstance(res, REMExecutionResult)
-        assert res.projects_paired == ["Turna Works", "LegalPort"]
+        assert res.projects_paired == ["Enterprise OTA", "LexCompliance"]
         assert res.phase == SleepPhase.REM_DREAM
 
         assert res.rfc_path is not None
@@ -693,7 +693,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
             ev = matching_events[-1]
             metrics = ev["metrics"]
             assert metrics["hybrid"] is True
-            assert metrics["projects_paired"] == ["Turna Works", "LegalPort"]
+            assert metrics["projects_paired"] == ["Enterprise OTA", "LexCompliance"]
             assert metrics["domain_distance"] == 0.93
             assert metrics["rfc_path"] == str(rfc_file)
         finally:

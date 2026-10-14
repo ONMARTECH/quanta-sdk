@@ -1,4 +1,4 @@
-"""Quanta Cognitive Augmentation module for Antigravity AI Agents."""
+"""Quanta Cognitive Augmentation module for CognitiveAgent AI Agents."""
 
 from quanta.cognitive import (
     ablation,

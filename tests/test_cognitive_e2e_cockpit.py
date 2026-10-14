@@ -29,7 +29,7 @@ import pytest
 
 from quanta.cognitive.arbiter import QuantumDecisionArbiter
 from quanta.cognitive.telemetry import generate_dashboard_html, record_decision_telemetry
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     FastBiomorphicMemory,
     PrunedEngram,
     _atomic_write_single_file,

@@ -272,7 +272,7 @@ def extract_context_tokens(text: str) -> set[str]:
 
 
 class CognitiveMemoryManager:
-    """Episodic and working memory manager for Antigravity AI agents.
+    """Episodic and working memory manager for CognitiveAgent AI agents.
 
     Integrates:
     1. Biologically realistic hippocampal buffering (CA3-CA1) with Lindblad phase diffusion.

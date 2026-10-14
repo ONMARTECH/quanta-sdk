@@ -20,12 +20,12 @@ import math
 import sys
 from pathlib import Path
 
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     FastBiomorphicMemory,
     format_fidelity,
     handle_post_tool_use,
 )
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     main as hook_main,
 )
 

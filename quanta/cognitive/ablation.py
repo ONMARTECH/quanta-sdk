@@ -9,7 +9,7 @@ against classical decision-making baselines:
   4. Quantum Zeno Arbiter (6-qubit Hilbert projection, dynamic P_zeno pinning,
      multi-disciplinary cognitive panel, and Noetherian invariant conservation)
 
-Strictly complies with the Quanta Scientific Integrity Protocol (GEMINI.md):
+Strictly complies with the Quanta Scientific Integrity Protocol (PROJECT_RULES.md):
 - Zero-tolerance anti-metric hacking & zero benchmark leakage
 - Hard adversarial testbed (near-degenerate ties, Trojan distractor traps,
   Pareto multi-objective conflicts, cascading regret DAGs, stochastic jitter)

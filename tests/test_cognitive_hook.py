@@ -1,4 +1,4 @@
-"""Unit tests for Quanta Autonomous Subconscious Hook (quanta_subconscious_hook.py)."""
+"""Unit tests for Quanta Autonomous Subconscious Hook (cognitive_lifecycle_hook.py)."""
 
 import json
 import subprocess
@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 
 HOOK_DIR = (Path(__file__).resolve().parent.parent / "scripts/hooks")
-HOOK_PATH = HOOK_DIR / "quanta_subconscious_hook.py"
+HOOK_PATH = HOOK_DIR / "cognitive_lifecycle_hook.py"
 
 
 class TestQuantaSubconsciousHook:

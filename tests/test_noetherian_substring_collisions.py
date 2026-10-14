@@ -1,6 +1,6 @@
 """Empirical Stress Test Suite for Milestone M1 Iteration 2: Substring Collision Testing.
 
-Conducted by Challenger 2 under Quanta SDK Scientific Integrity Protocol (GEMINI.md).
+Conducted by Challenger 2 under Quanta SDK Scientific Integrity Protocol (PROJECT_RULES.md).
 
 Adversarial Dimensions Tested:
 1. Explicit Substring Overlap Pairs (DISPATCH.md):

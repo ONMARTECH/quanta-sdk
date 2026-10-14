@@ -42,13 +42,13 @@ from quanta.cognitive.memory import (
     V_INH_MAX,
     CognitiveMemoryManager,
 )
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     KAPPA_CSF,
     FastBiomorphicMemory,
     format_fidelity,
 )
 
-HOOK_PATH = Path(__file__).resolve().parent.parent / "scripts" / "hooks" / "quanta_subconscious_hook.py"
+HOOK_PATH = Path(__file__).resolve().parent.parent / "scripts" / "hooks" / "cognitive_lifecycle_hook.py"
 PROD_STATE_PATH = Path(__file__).resolve().parent.parent / "quanta_cognitive_state.json"
 HOOKS_CONFIG_PATH = Path.home() / ".gemini" / "config" / "hooks.json"
 
@@ -687,7 +687,7 @@ class TestTier1FeatureCoverage:
         assert res.returncode == 0
         raw = res.stdout.strip()
         if raw != b"{}":
-            pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+            pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
         assert raw == b"{}"
 
     def test_f09_post_tool_use_does_not_emit_inject_steps(self, tmp_path: Path) -> None:
@@ -703,7 +703,7 @@ class TestTier1FeatureCoverage:
         res = _invoke_hook_subprocess(payload)
         out_str = res.stdout.decode("utf-8")
         if "injectSteps" in out_str:
-            pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+            pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
         assert "injectSteps" not in out_str
         assert "ephemeralMessage" not in out_str
 
@@ -723,12 +723,12 @@ class TestTier1FeatureCoverage:
         _invoke_hook_subprocess(payload)
         updated = json.loads(state_file.read_text(encoding="utf-8"))
         if updated.get("turn_count", 5) > 5:
-            pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+            pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
         assert updated["turn_count"] == 5
 
     def test_f09_post_tool_use_executes_under_25ms_budget(self, tmp_path: Path) -> None:
         """F9.4: In-process PostToolUse executes well within the 25ms latency budget."""
-        from scripts.hooks.quanta_subconscious_hook import main as hook_main
+        from scripts.hooks.cognitive_lifecycle_hook import main as hook_main
 
         payload = {
             "event": "PostToolUse",
@@ -754,7 +754,7 @@ class TestTier1FeatureCoverage:
             latency_ms = (time.perf_counter() - t_start) * 1000.0
 
             if fake_out.getvalue().strip() != "{}":
-                pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+                pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
             assert latency_ms < 25.0, f"PostToolUse exceeded 25ms budget: {latency_ms:.2f}ms"
             assert fake_out.getvalue().strip() == "{}"
         finally:
@@ -893,13 +893,13 @@ class TestTier1FeatureCoverage:
     # --- Feature 11: Hook Registry Configuration ---
 
     def test_f11_hooks_json_contains_post_tool_use_key(self) -> None:
-        """F11.1: ~/.gemini/config/hooks.json contains PostToolUse event declaration."""
+        """F11.1: ~/.quanta/config/hooks.json contains PostToolUse event declaration."""
         if not HOOKS_CONFIG_PATH.exists():
             pytest.skip("hooks.json does not exist in user home directory")
         data = json.loads(HOOKS_CONFIG_PATH.read_text(encoding="utf-8"))
         cfg = data.get("quanta-subconscious-cognition", {})
         if "PostToolUse" not in cfg:
-            pytest.skip("Worker M3 hook configuration registration pending in ~/.gemini/config/hooks.json")
+            pytest.skip("Worker M3 hook configuration registration pending in ~/.quanta/config/hooks.json")
         assert "PostToolUse" in cfg
 
     def test_f11_post_tool_use_has_wildcard_matcher(self) -> None:
@@ -913,14 +913,14 @@ class TestTier1FeatureCoverage:
         hook_list = cfg["PostToolUse"]
         assert any(item.get("matcher") == "*" for item in hook_list)
 
-    def test_f11_hook_command_points_to_quanta_subconscious_hook(self) -> None:
-        """F11.3: Hook command specifies python interpreter and quanta_subconscious_hook.py."""
+    def test_f11_hook_command_points_to_cognitive_lifecycle_hook(self) -> None:
+        """F11.3: Hook command specifies python interpreter and cognitive_lifecycle_hook.py."""
         if not HOOKS_CONFIG_PATH.exists():
             pytest.skip("hooks.json not found")
         data = json.loads(HOOKS_CONFIG_PATH.read_text(encoding="utf-8"))
         cfg = data.get("quanta-subconscious-cognition", {})
         pre = cfg.get("PreInvocation", [{}])[0].get("command", "")
-        assert "quanta_subconscious_hook.py" in pre
+        assert "cognitive_lifecycle_hook.py" in pre
 
     def test_f11_hook_timeout_configured_appropriately(self) -> None:
         """F11.4: Hook timeout is configured to >= 5 seconds."""
@@ -1405,7 +1405,7 @@ class TestTier2BoundaryAndCornerCases:
         res = _invoke_hook_subprocess(payload)
         assert res.returncode == 0
         if res.stdout.strip() != b"{}":
-            pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+            pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
         assert res.stdout.strip() == b"{}"
 
     def test_f09_bva_post_tool_use_extreme_payload_size_1mb(self, tmp_path: Path) -> None:
@@ -1423,12 +1423,12 @@ class TestTier2BoundaryAndCornerCases:
         res = _invoke_hook_subprocess(payload)
         assert res.returncode == 0
         if res.stdout.strip() != b"{}":
-            pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+            pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
         assert res.stdout.strip() == b"{}"
 
     def test_f09_bva_post_tool_use_50_cycle_latency_benchmark_p99(self, tmp_path: Path) -> None:
         """F9.BVA.5: 50-cycle timing harness asserting p99 in-process latency < 25ms."""
-        from scripts.hooks.quanta_subconscious_hook import main as hook_main
+        from scripts.hooks.cognitive_lifecycle_hook import main as hook_main
 
         payload = {
             "event": "PostToolUse",
@@ -1454,7 +1454,7 @@ class TestTier2BoundaryAndCornerCases:
                 hook_main()
                 latencies.append((time.perf_counter() - t0) * 1000.0)
                 if fake_out.getvalue().strip() != "{}":
-                    pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+                    pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
         finally:
             sys.stdin = stdin_backup
             sys.stdout = stdout_backup
@@ -1571,7 +1571,7 @@ class TestTier2BoundaryAndCornerCases:
     # --- Feature 11 BVA ---
 
     def test_f11_bva_hooks_json_valid_json_syntax(self) -> None:
-        """F11.BVA.1: ~/.gemini/config/hooks.json parses strictly as valid JSON."""
+        """F11.BVA.1: ~/.quanta/config/hooks.json parses strictly as valid JSON."""
         if not HOOKS_CONFIG_PATH.exists():
             pytest.skip("hooks.json does not exist")
         content = HOOKS_CONFIG_PATH.read_text(encoding="utf-8")
@@ -1600,7 +1600,7 @@ class TestTier2BoundaryAndCornerCases:
         assert len(matchers) == len(set(matchers))
 
     def test_f11_bva_mock_config_load_and_validation(self) -> None:
-        """F11.BVA.5: Validates mock hook configuration structure matching official Antigravity spec."""
+        """F11.BVA.5: Validates mock hook configuration structure matching official CognitiveAgent spec."""
         mock_cfg = {
             "quanta-subconscious-cognition": {
                 "enabled": True,
@@ -1763,7 +1763,7 @@ class TestTier3CrossFeatureInteractions:
 
         assert res.returncode == 0
         if res.stdout.strip() != b"{}":
-            pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+            pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
         assert res.stdout.strip() == b"{}"
         assert elapsed_ms > 0.0
         # Disk state is valid JSON
@@ -1817,7 +1817,7 @@ class TestTier3CrossFeatureInteractions:
         res = _invoke_hook_subprocess(payload)
         assert res.returncode == 0
         if res.stdout.strip() != b"{}":
-            pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+            pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
         assert res.stdout.strip() == b"{}"
 
 
@@ -1854,7 +1854,7 @@ class TestTier4RealWorldWorkloadScenarios:
         }
         res1 = _invoke_hook_subprocess(p1)
         if res1.stdout.strip() != b"{}":
-            pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+            pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
         assert res1.stdout.strip() == b"{}"
 
         # Step 2: Second tool failure (repeated) -> LTP potentiation
@@ -2042,7 +2042,7 @@ class TestTier4RealWorldWorkloadScenarios:
         }
         res2 = _invoke_hook_subprocess(p2)
         if res2.stdout.strip() != b"{}":
-            pytest.skip("quanta_subconscious_hook.py PostToolUse decoupling pending in worker M3")
+            pytest.skip("cognitive_lifecycle_hook.py PostToolUse decoupling pending in worker M3")
         assert res2.stdout.strip() == b"{}"
 
         # Step 3: Deliberation via Multi-Branch DAG

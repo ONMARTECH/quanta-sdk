@@ -1,6 +1,6 @@
-"""Local Offline Vector & Lexical Retrieval Index for Antigravity Central Vaults.
+"""Local Offline Vector & Lexical Retrieval Index for CognitiveAgent Central Vaults.
 
-This module implements a zero-external-dependency local search indexer for Antigravity's
+This module implements a zero-external-dependency local search indexer for CognitiveAgent's
 central knowledge and assets vaults (`knowledge_vault.json` and `assets_vault.json`).
 Features:
 - 100% offline execution using local PyTorch statevectors in C^64 and BM25 lexical ranking.
@@ -39,7 +39,7 @@ SECURITY_BLACKLIST_KEYWORDS: tuple[str, ...] = (
     "id_ed25519",
 )
 ALLOWED_VAULT_FILES: set[str] = {"knowledge_vault.json", "assets_vault.json"}
-DEFAULT_VAULT_DIR: Path = Path("~/.gemini/antigravity/vault").expanduser()
+DEFAULT_VAULT_DIR: Path = Path("~/.quanta/agent/vault").expanduser()
 
 
 def validate_vault_security(path: str | Path) -> None:
@@ -126,7 +126,7 @@ class LocalVaultIndex:
         """Initializes the LocalVaultIndex.
 
         Args:
-            vault_dir: Directory containing vault JSON files. Defaults to ~/.gemini/antigravity/vault.
+            vault_dir: Directory containing vault JSON files. Defaults to ~/.quanta/agent/vault.
             auto_build: If True, automatically builds index upon initialization.
             vector_dim: Dimension of complex statevector embedding (default: 64).
             alpha: Weight for vector similarity in [0.0, 1.0]; (1 - alpha) is lexical weight.

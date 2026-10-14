@@ -746,7 +746,7 @@ class TestOutcomeVerification:
         verifier = OutcomeVerifier()
         tool_args = {"command": "bq query 'SELECT * FROM dengage_users LIMIT 10'"}
         tool_output = {"exit_code": 0, "output": "Query results..."}
-        context = {"workspace": "Turna Works", "last_user_query": "Dengage contact lookup"}
+        context = {"workspace": "Enterprise OTA", "last_user_query": "Dengage contact lookup"}
 
         outcome = verifier.evaluate_tool_result(
             tool_name="run_command",
@@ -1228,7 +1228,7 @@ class TestFeedbackLoopIntegration:
         assert res["processed_count"] == 3
 
     def test_closed_loop_pre_invocation_to_feedback(self, tmp_path: Path) -> None:
-        hook_path = Path("scripts/hooks/quanta_subconscious_hook.py")
+        hook_path = Path("scripts/hooks/cognitive_lifecycle_hook.py")
         state_file = tmp_path / "quanta_cognitive_state.json"
 
         payload = {

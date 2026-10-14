@@ -20,7 +20,7 @@ import sys
 import time
 from pathlib import Path
 
-HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/quanta_subconscious_hook.py")
+HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/cognitive_lifecycle_hook.py")
 DASHBOARD_PATH = (Path(__file__).resolve().parent.parent / "quanta/cognitive/dashboard/index.html")
 PYTHON_EXE = sys.executable
 
@@ -253,7 +253,7 @@ class TestSubconsciousHookFailSafe:
 
     def test_hook_latency_performance_profile(self, tmp_path: Path) -> None:
         """Measures in-process execution latency of hook logic to verify < 25ms speed."""
-        spec = importlib.util.spec_from_file_location("quanta_subconscious_hook", str(HOOK_PATH))
+        spec = importlib.util.spec_from_file_location("cognitive_lifecycle_hook", str(HOOK_PATH))
         assert spec and spec.loader
         hook_mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(hook_mod)

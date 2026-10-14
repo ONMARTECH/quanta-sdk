@@ -1,4 +1,4 @@
-"""Demonstration of Quanta SDK & Antigravity Cognitive Integration."""
+"""Demonstration of Quanta SDK & CognitiveAgent Cognitive Integration."""
 
 import json
 

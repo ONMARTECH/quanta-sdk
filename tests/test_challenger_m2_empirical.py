@@ -270,7 +270,7 @@ class TestSubconsciousHookLatencyUnderLoad:
             Path(__file__).resolve().parent.parent
             / "scripts"
             / "hooks"
-            / "quanta_subconscious_hook.py"
+            / "cognitive_lifecycle_hook.py"
         )
         python_exe = sys.executable
         state_file = tmp_path / "quanta_cognitive_state.json"

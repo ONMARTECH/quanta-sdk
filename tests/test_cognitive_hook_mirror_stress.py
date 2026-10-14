@@ -32,7 +32,7 @@ from unittest.mock import patch
 
 import pytest
 
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     QUANTA_ROOT,
     _atomic_write_single_file,
     _save_mirrored_state_atomically,
@@ -156,7 +156,7 @@ import sys
 import json
 import time
 from pathlib import Path
-from scripts.hooks.quanta_subconscious_hook import _atomic_write_single_file
+from scripts.hooks.cognitive_lifecycle_hook import _atomic_write_single_file
 
 target_path = Path(sys.argv[1])
 worker_id = int(sys.argv[2])
@@ -476,7 +476,7 @@ class TestSaveMirroredStateAtomically:
         mock_root.mkdir()
         mock_root_file = mock_root / "quanta_cognitive_state.json"
 
-        monkeypatch.setattr("scripts.hooks.quanta_subconscious_hook.QUANTA_ROOT", mock_root)
+        monkeypatch.setattr("scripts.hooks.cognitive_lifecycle_hook.QUANTA_ROOT", mock_root)
 
         primary_path = tmp_path / "artifact" / "quanta_cognitive_state.json"
 
@@ -508,7 +508,7 @@ class TestSaveMirroredStateAtomically:
 
         # Must ensure is_hermetic_test_env() returns False for this mock root test
         monkeypatch.setattr(
-            "scripts.hooks.quanta_subconscious_hook.is_hermetic_test_env",
+            "scripts.hooks.cognitive_lifecycle_hook.is_hermetic_test_env",
             lambda payload=None: False,
         )
 

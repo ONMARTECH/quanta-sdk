@@ -33,7 +33,7 @@ from quanta.cognitive.memory import (
 from quanta.cognitive.memory import (
     is_actionable_resolution as is_actionable_torch,
 )
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     DEFAULT_DIM,
     FastBiomorphicMemory,
     _atomic_write_single_file,

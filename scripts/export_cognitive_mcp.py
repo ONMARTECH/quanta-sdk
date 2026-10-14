@@ -1,4 +1,4 @@
-"""Export Quanta MCP server tools and register with Antigravity."""
+"""Export Quanta MCP server tools and register with CognitiveAgent."""
 
 import asyncio
 import json
@@ -6,17 +6,17 @@ from pathlib import Path
 
 from quanta.mcp_server import mcp
 
-ANTIGRAVITY_MCP_DIR = Path.home() / ".gemini/antigravity/mcp/quanta"
-ANTIGRAVITY_CONFIG_FILE = Path.home() / ".gemini/antigravity/mcp_config.json"
+COGNITIVE_MCP_DIR = Path.home() / ".quanta/agent/mcp/quanta"
+COGNITIVE_CONFIG_FILE = Path.home() / ".quanta/agent/mcp_config.json"
 VENV_PYTHON = str(Path(__file__).resolve().parent.parent / ".venv/bin/python")
 QUANTA_DIR = str(Path(__file__).resolve().parent.parent)
 
 
 async def export_tools() -> None:
-    ANTIGRAVITY_MCP_DIR.mkdir(parents=True, exist_ok=True)
+    COGNITIVE_MCP_DIR.mkdir(parents=True, exist_ok=True)
 
     tools = await mcp.list_tools()
-    print(f"Exporting {len(tools)} Quanta tools to {ANTIGRAVITY_MCP_DIR}...")
+    print(f"Exporting {len(tools)} Quanta tools to {COGNITIVE_MCP_DIR}...")
 
     for tool in tools:
         tool_data = {
@@ -28,7 +28,7 @@ async def export_tools() -> None:
                 "additionalProperties": False,
             },
         }
-        tool_file = ANTIGRAVITY_MCP_DIR / f"{tool.name}.json"
+        tool_file = COGNITIVE_MCP_DIR / f"{tool.name}.json"
         with open(tool_file, "w", encoding="utf-8") as f:
             json.dump(tool_data, f, indent=2)
         print(f"  ✓ {tool.name}.json")
@@ -40,13 +40,13 @@ async def export_tools() -> None:
         "fault-tolerant cost estimation (`estimate_fault_tolerant_cost`), QEC simulation, "
         "and Apple Silicon Metal GPU acceleration.\n"
     )
-    with open(ANTIGRAVITY_MCP_DIR / "instructions.md", "w", encoding="utf-8") as f:
+    with open(COGNITIVE_MCP_DIR / "instructions.md", "w", encoding="utf-8") as f:
         f.write(instructions_content)
     print("  ✓ instructions.md written.")
 
     # Register in mcp_config.json if not already present
-    if ANTIGRAVITY_CONFIG_FILE.exists():
-        with open(ANTIGRAVITY_CONFIG_FILE, encoding="utf-8") as f:
+    if COGNITIVE_CONFIG_FILE.exists():
+        with open(COGNITIVE_CONFIG_FILE, encoding="utf-8") as f:
             config = json.load(f)
 
         mcp_servers = config.setdefault("mcpServers", {})
@@ -58,9 +58,9 @@ async def export_tools() -> None:
             },
         }
 
-        with open(ANTIGRAVITY_CONFIG_FILE, "w", encoding="utf-8") as f:
+        with open(COGNITIVE_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
-        print(f"  ✓ Successfully registered 'quanta' in {ANTIGRAVITY_CONFIG_FILE}")
+        print(f"  ✓ Successfully registered 'quanta' in {COGNITIVE_CONFIG_FILE}")
 
 
 if __name__ == "__main__":

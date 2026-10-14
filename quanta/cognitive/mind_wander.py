@@ -14,7 +14,7 @@ Implements Pillar 3 of the Quanta Cognitive Architecture:
    - Strict token ceilings (default <= 2500 tokens).
    - Instant preemption reflex (< 20ms latency) yielding execution to foreground user turns.
 4. Dual-Engine Architecture:
-   - Google Antigravity SDK (Agent, Conversation, LocalAgentConfig, BudgetConfig)
+   - Google CognitiveAgent SDK (Agent, Conversation, LocalAgentConfig, BudgetConfig)
      for production runtime with zero prompt leakage.
    - Built-in offline BiomorphicDialecticSimulator providing 100% test and CI execution
      without external API keys or network dependencies.
@@ -38,22 +38,22 @@ from quanta.cognitive.workspace_harvester import HybridDreamSeed
 logger = logging.getLogger(__name__)
 AGY_CLI_PATH = Path.home() / ".local" / "bin" / "agy"
 
-# Feature-flagged Google Antigravity SDK import
+# Feature-flagged Google CognitiveAgent SDK import
 try:
-    from google.antigravity import (  # type: ignore[import-untyped, import-not-found]
+    from cognitive_agent_sdk import (  # type: ignore[import-untyped, import-not-found]
         Agent,
         BudgetConfig,
         Conversation,
         LocalAgentConfig,
     )
 
-    ANTIGRAVITY_SDK_AVAILABLE = True
+    COGNITIVE_SDK_AVAILABLE = True
 except ImportError:
     Agent = None  # type: ignore[assignment, misc]
     BudgetConfig = None  # type: ignore[assignment, misc]
     Conversation = None  # type: ignore[assignment, misc]
     LocalAgentConfig = None  # type: ignore[assignment, misc]
-    ANTIGRAVITY_SDK_AVAILABLE = False
+    COGNITIVE_SDK_AVAILABLE = False
 
 
 @dataclass
@@ -468,8 +468,8 @@ class MindWanderEngine:
             max_turns: Maximum dialectic turns allowed per dream cycle (hard ceiling <= 5).
             max_tokens: Maximum cumulative tokens permitted per cycle (hard ceiling <= 2500).
             rumination_threshold: Cosine similarity threshold triggering reset (0.95).
-            use_sdk_if_available: When True, uses Antigravity SDK if configured.
-            use_agy_cli: When True, uses Antigravity CLI (agy -p) for genuine agent reasoning.
+            use_sdk_if_available: When True, uses CognitiveAgent SDK if configured.
+            use_agy_cli: When True, uses CognitiveAgent CLI (agy -p) for genuine agent reasoning.
         """
         self.max_turns = max_turns
         self.max_tokens = max_tokens
@@ -493,7 +493,7 @@ class MindWanderEngine:
         preemption_check: Callable[[], bool] | None = None,
         relaxed_prefrontal: bool = False,
     ) -> DreamInsight | None:
-        """Execute headless dialectic using Antigravity Agent Engine CLI (agy -p)."""
+        """Execute headless dialectic using CognitiveAgent Agent Engine CLI (agy -p)."""
         if self.max_tokens <= 0 or self.max_turns <= 0:
             return None
 
@@ -567,7 +567,7 @@ class MindWanderEngine:
                 dreamer_temperature=t_dreamer,
             )
         except Exception as e:
-            logger.warning("Antigravity CLI dream execution failed: %s", e)
+            logger.warning("CognitiveAgent CLI dream execution failed: %s", e)
             return None
 
     def _execute_with_sdk(
@@ -576,8 +576,8 @@ class MindWanderEngine:
         preemption_check: Callable[[], bool] | None = None,
         relaxed_prefrontal: bool = False,
     ) -> DreamInsight | None:
-        """Execute headless dialectic using Google Antigravity SDK if configured."""
-        if not ANTIGRAVITY_SDK_AVAILABLE or Agent is None or Conversation is None:
+        """Execute headless dialectic using Google CognitiveAgent SDK if configured."""
+        if not COGNITIVE_SDK_AVAILABLE or Agent is None or Conversation is None:
             return None
 
         t_dreamer = 0.92 if relaxed_prefrontal else 0.85
@@ -669,7 +669,7 @@ class MindWanderEngine:
         if preemption_check and preemption_check():
             return None
 
-        # 1. Antigravity Agent Engine (agy CLI) if available, enabled, and no simulated vector overrides
+        # 1. CognitiveAgent Agent Engine (agy CLI) if available, enabled, and no simulated vector overrides
         if (
             self.use_agy_cli
             and simulated_thought_vectors is None
@@ -686,7 +686,7 @@ class MindWanderEngine:
 
         # 2. SDK production branch if available, enabled, and no simulated vector overrides
         if (
-            ANTIGRAVITY_SDK_AVAILABLE
+            COGNITIVE_SDK_AVAILABLE
             and self.use_sdk_if_available
             and os.environ.get("GEMINI_API_KEY")
             and simulated_thought_vectors is None

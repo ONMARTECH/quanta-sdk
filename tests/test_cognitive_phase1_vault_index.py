@@ -51,15 +51,15 @@ def isolated_vault_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
         "links": [
             {
                 "url": "https://www.figma.com/design/test-figma-key",
-                "project_id": "Metricase",
+                "project_id": "CortexAnalytics",
                 "domain": "UI/UX & Design System",
-                "title": "Metricase v2 — Core Design System & UI Kit",
+                "title": "CortexAnalytics v2 — Core Design System & UI Kit",
                 "file_key": "c3a3IQloD7hfo9row3JL40",
                 "summary": "Canonical Figma design file tracking Design Tokens and atomic components.",
             },
             {
                 "url": "https://support.atlassian.com/atlassian-ai-gateway/docs/mcp",
-                "project_id": "Turna JIRA",
+                "project_id": "Enterprise Issue Tracker",
                 "domain": "AI Agent MCP & Ecosystem",
                 "title": "Atlassian Remote MCP Server v2 Documentation",
                 "summary": "Official setup and specification for Atlassian Remote MCP Server v2.",
@@ -93,7 +93,7 @@ def isolated_vault_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
             {
                 "file_name": "dagster_turna_observability_job_ui.png",
                 "path": "/mock/path/dagster_turna_observability_job_ui.png",
-                "project_id": "Turna Works",
+                "project_id": "Enterprise OTA",
                 "domain": "Data Platform / Dagster UI",
                 "title": "Dagster turna_observability_job UI & Asset Graph",
                 "description": "Screenshot showing turna_observability_job in Dagster UI.",
@@ -276,7 +276,7 @@ class TestLocalVaultIndexOfflineAndPerformance:
             "date filter bug",
             "billing table layout",
             "Turna Dengage API",
-            "Metricase merchant screen",
+            "CortexAnalytics merchant screen",
             "knowledge vault persistent links",
         ]
 
@@ -317,7 +317,7 @@ class TestLocalVaultIndexTopKRecall:
         res_figma = indexer.search("Figma design system tokens components", top_k=3)
         assert len(res_figma) > 0
         top_titles = [r["title"] for r in res_figma]
-        assert any("Metricase" in t or "Figma" in t for t in top_titles)
+        assert any("CortexAnalytics" in t or "Figma" in t for t in top_titles)
         assert any(r["id"] == "c3a3IQloD7hfo9row3JL40" for r in res_figma)
 
         # 2. Query: date filters not working
@@ -338,14 +338,14 @@ class TestLocalVaultIndexTopKRecall:
     ) -> None:
         """Verifies recall on actual central vaults if present on machine."""
         if not DEFAULT_VAULT_DIR.exists():
-            pytest.skip("Central vault dir ~/.gemini/antigravity/vault not present")
+            pytest.skip("Central vault dir ~/.quanta/agent/vault not present")
 
         indexer = LocalVaultIndex(auto_build=True)
         assert indexer.document_count >= 40
 
         # Query 1: Figma design kit
         res_figma = indexer.search("Figma design system tokens components", top_k=3)
-        assert any("Metricase" in r.get("title", "") or "Figma" in r.get("title", "") for r in res_figma)
+        assert any("CortexAnalytics" in r.get("title", "") or "Figma" in r.get("title", "") for r in res_figma)
 
         # Query 2: Date filter feedback
         res_date = indexer.search("date filters not working", top_k=3)

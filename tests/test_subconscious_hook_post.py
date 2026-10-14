@@ -1,4 +1,4 @@
-"""Unit and integration test suite for Antigravity PostToolUse hook decoupling.
+"""Unit and integration test suite for CognitiveAgent PostToolUse hook decoupling.
 
 Validates payload parsing, automated LTP/LTD inhibitor plasticity,
 fail-safe fault tolerance, and strict sub-25ms latency budget.
@@ -15,19 +15,19 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     extract_context_tags,
     handle_post_tool_use,
 )
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     main as hook_main,
 )
 
-HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/quanta_subconscious_hook.py")
+HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/cognitive_lifecycle_hook.py")
 
 
 def _invoke_hook_subprocess(payload: dict[str, Any]) -> subprocess.CompletedProcess[bytes]:
-    """Helper to invoke quanta_subconscious_hook.py as an isolated subprocess."""
+    """Helper to invoke cognitive_lifecycle_hook.py as an isolated subprocess."""
     raw_input = json.dumps(payload).encode("utf-8")
     return subprocess.run(
         [sys.executable, str(HOOK_PATH)],
@@ -38,7 +38,7 @@ def _invoke_hook_subprocess(payload: dict[str, Any]) -> subprocess.CompletedProc
 
 
 class TestPostToolUsePayloadParsing:
-    """Validates handling and parsing of Antigravity PostToolUse payload structures."""
+    """Validates handling and parsing of CognitiveAgent PostToolUse payload structures."""
 
     def test_valid_tool_result_payload_extraction(self, tmp_path: Path) -> None:
         """Verifies standard toolCall and result payload extracts name, args, output."""
@@ -315,7 +315,7 @@ class TestFailSafeShielding:
         }
 
         with patch(
-            "scripts.hooks.quanta_subconscious_hook._save_mirrored_state_atomically",
+            "scripts.hooks.cognitive_lifecycle_hook._save_mirrored_state_atomically",
             side_effect=RuntimeError("Simulated disk fault"),
         ):
             res = handle_post_tool_use(payload)

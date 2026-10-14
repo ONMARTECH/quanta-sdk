@@ -1,7 +1,7 @@
-# Project: Quanta SDK & Antigravity 5 Advanced Cognitive-Quantum Architectural Enhancements
+# Project: Quanta SDK & CognitiveAgent 5 Advanced Cognitive-Quantum Architectural Enhancements
 
 ## Architecture
-Comprehensive architectural expansion implementing 5 advanced cognitive-quantum enhancements across Quanta SDK and Antigravity multi-agent systems, structured in a disciplined two-phase rollout:
+Comprehensive architectural expansion implementing 5 advanced cognitive-quantum enhancements across Quanta SDK and CognitiveAgent multi-agent systems, structured in a disciplined two-phase rollout:
 
 - **Phase 1: Cognitive Memory & Multi-Agent Collaboration Infrastructure**
   - **Dynamic Context-Adaptive SWR Resonance (`quanta/cognitive/memory.py`)**:

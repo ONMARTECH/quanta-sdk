@@ -3,7 +3,7 @@
 Implements Pillar 3 of the Quanta Cognitive Architecture:
 1. Low-level QoS pinning (QOS_CLASS_BACKGROUND = 0x09, IOPOL_THROTTLE) to Apple Silicon E-cores.
 2. Stochastic coordination between Darwin quiescence, Poisson spindle triggers,
-   Theory of Mind analysis, headless Antigravity dialectic, and SWR memory consolidation.
+   Theory of Mind analysis, headless CognitiveAgent dialectic, and SWR memory consolidation.
 3. Sub-20ms instant preemption reflex via SIGUSR1 and thread event signaling.
 4. PID lifecycle tracking (quanta_dream.pid) and inspection telemetry.
 """

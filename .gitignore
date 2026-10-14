@@ -47,8 +47,7 @@ site/
 *20gb*.json
 
 # Multi-agent swarm traces and legacy agent configs
-.agent/
-.agents/
+.agent*/
 docs/rfcs/
 dashboard.html
 # Subconscious Mind-Wandering Daemon

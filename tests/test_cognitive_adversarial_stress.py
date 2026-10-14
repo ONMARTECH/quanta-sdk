@@ -24,7 +24,7 @@ from quanta.cognitive.feedback import (
     OutcomeType,
 )
 from quanta.cognitive.memory import CognitiveMemoryManager
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     FastBiomorphicMemory,
 )
 

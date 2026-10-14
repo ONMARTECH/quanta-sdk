@@ -17,7 +17,7 @@ Validates the Zeno Arbiter Telemetry & Programmatic Ablation Engine (`quanta.cog
    - Invariant violations == 0 for Zeno Arbiter vs > 0 for classical baselines
    - Decision consensus score >= 0.85 and entropy contraction
 4. Hermetic, thread-safe atomic telemetry persistence to JSONL
-5. Quanta Scientific Integrity Protocol compliance (GEMINI.md)
+5. Quanta Scientific Integrity Protocol compliance (PROJECT_RULES.md)
 """
 
 from __future__ import annotations
@@ -312,7 +312,7 @@ class TestSpecificAdversarialInstances:
 
 
 class TestScientificIntegrityAndAblationTruth:
-    """Verifies compliance with GEMINI.md Scientific Integrity Protocol."""
+    """Verifies compliance with PROJECT_RULES.md Scientific Integrity Protocol."""
 
     def test_deterministic_reproducibility(self, rng_seed: None) -> None:
         """Re-running the benchmark with identical seed produces identical results."""

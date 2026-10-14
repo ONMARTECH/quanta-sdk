@@ -1,4 +1,4 @@
-"""Quanta Cognitive Middleware for Antigravity and Autonomous AI Agents.
+"""Quanta Cognitive Middleware for CognitiveAgent and Autonomous AI Agents.
 
 Provides seamless, subconscious, and automatic biological memory tracking,
 Lindblad phase dephasing attenuation (CSF shielding), active microglial pruning,

@@ -180,7 +180,7 @@ class TestUserIdleReflex:
 
 
 class TestEpisodicSessionHarvester:
-    """Test suite for Feature 7: Antigravity Session Substrate Harvester."""
+    """Test suite for Feature 7: CognitiveAgent Session Substrate Harvester."""
 
     def _create_mock_session_environment(self, tmp_path: Path) -> tuple[Path, Path]:
         """Creates a mock SQLite conversation database and mock brain transcripts."""
@@ -209,7 +209,7 @@ class TestEpisodicSessionHarvester:
             ("conv_today_1", "Today Active Session", 10, now - timedelta(hours=2), "quanta"),
             ("conv_yesterday_1", "Yesterday Milestone Session", 25, now - timedelta(hours=30), "turna"),
             ("conv_sprint_1", "Previous Sprint Feature Work", 40, now - timedelta(days=4), "quanta"),
-            ("conv_longterm_1", "Foundational Architecture Session", 80, now - timedelta(days=10), "etsgroup_mdm"),
+            ("conv_longterm_1", "Foundational Architecture Session", 80, now - timedelta(days=10), "enterprise_mdm"),
         ]
 
         for cid, title, steps, dt_val, proj in sessions_meta:

@@ -1,6 +1,6 @@
 """Empirical Stress Test Suite for Milestone M1 Noetherian Invariant Cognitive Arbiter.
 
-Conducted by Challenger 1 under Quanta SDK Scientific Integrity Protocol (GEMINI.md).
+Conducted by Challenger 1 under Quanta SDK Scientific Integrity Protocol (PROJECT_RULES.md).
 Adversarial dimensions tested:
 1. 1000 Random Drift Vectors with magnitudes ||Delta q|| in [0.01, 10.0] (strict drift reduction & zero NaN/Inf).
 2. Degenerate Gram Matrices: 16 collinear generators (C_i = C_0 + 10^-7 N(0, 1)), exact duplicates, latency < 5ms.

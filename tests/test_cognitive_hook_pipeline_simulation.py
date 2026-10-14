@@ -20,16 +20,16 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     FastBiomorphicMemory,
     _save_mirrored_state_atomically,
     handle_post_tool_use,
 )
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     main as hook_main,
 )
 
-HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/quanta_subconscious_hook.py")
+HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/cognitive_lifecycle_hook.py")
 
 
 def _run_inprocess_hook(payload: dict[str, Any], sim_time: float | None = None) -> dict[str, Any]:

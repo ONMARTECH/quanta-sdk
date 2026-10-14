@@ -224,7 +224,7 @@ def build_parser() -> argparse.ArgumentParser:
         "-o",
         type=str,
         default=None,
-        help="Target output file path for the HTML dashboard (default: ~/.gemini/antigravity/telemetry/dashboard.html)",
+        help="Target output file path for the HTML dashboard (default: ~/.quanta/agent/telemetry/dashboard.html)",
     )
     monitor_parser.add_argument(
         "--watch",
@@ -589,7 +589,7 @@ def handle_monitor(args: argparse.Namespace) -> int:
         last_pruned_records: list[dict] = []
         state_candidates = [
             Path("quanta_cognitive_state.json"),
-            Path(os.path.expanduser("~/.gemini/antigravity/quanta_cognitive_state.json")),
+            Path(os.path.expanduser("~/.quanta/agent/quanta_cognitive_state.json")),
         ]
         for sp in state_candidates:
             if sp.exists():

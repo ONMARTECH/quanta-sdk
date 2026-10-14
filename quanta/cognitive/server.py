@@ -30,7 +30,7 @@ def find_latest_state_file() -> Path:
     if ROOT_STATE_FILE.exists():
         candidates.append(ROOT_STATE_FILE)
 
-    brain_base = Path.home() / ".gemini" / "antigravity" / "brain"
+    brain_base = Path.home() / ".gemini" / "cognitive_agent" / "brain"
     if brain_base.exists():
         for state_path in brain_base.glob("*/quanta_cognitive_state.json"):
             candidates.append(state_path)

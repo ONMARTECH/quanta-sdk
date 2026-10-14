@@ -35,12 +35,12 @@ from quanta.cognitive.feedback import (
 )
 from quanta.cognitive.memory import CognitiveMemoryManager
 from quanta.cognitive.telemetry import generate_dashboard_html
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     KAPPA_CSF,
     FastBiomorphicMemory,
 )
 
-HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/quanta_subconscious_hook.py")
+HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/cognitive_lifecycle_hook.py")
 PROD_STATE_PATH = (Path(__file__).resolve().parent.parent / "quanta_cognitive_state.json")
 
 

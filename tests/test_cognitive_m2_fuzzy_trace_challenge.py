@@ -27,13 +27,13 @@ from quanta.cognitive.memory import (
 from quanta.cognitive.memory import (
     is_actionable_resolution as cmem_is_actionable,
 )
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     FastBiomorphicMemory,
 )
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     distill_semantic_gist as hook_distill_gist,
 )
-from scripts.hooks.quanta_subconscious_hook import (
+from scripts.hooks.cognitive_lifecycle_hook import (
     is_actionable_resolution as hook_is_actionable,
 )
 
