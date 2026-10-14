@@ -66,9 +66,9 @@ def isolated_vault_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
             },
         ],
         "booking_tracking_architecture_1791164740": {
-            "title": "Turna Booking Conversion and Click Tracking Architecture",
+            "title": "voyage_ota Booking Conversion and Click Tracking Architecture",
             "purpose": "End-to-end pixel and server-side tracking architecture for flight booking funnel.",
-            "topics": ["tracking", "gtm", "turna", "analytics"],
+            "topics": ["tracking", "gtm", "voyage_ota", "analytics"],
         },
     }
     with open(vault_dir / "knowledge_vault.json", "w", encoding="utf-8") as f:
@@ -91,12 +91,12 @@ def isolated_vault_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
         },
         "assets": [
             {
-                "file_name": "dagster_turna_observability_job_ui.png",
-                "path": "/mock/path/dagster_turna_observability_job_ui.png",
+                "file_name": "dagster_voyage_ota_observability_job_ui.png",
+                "path": "/mock/path/dagster_voyage_ota_observability_job_ui.png",
                 "project_id": "Enterprise OTA",
                 "domain": "Data Platform / Dagster UI",
-                "title": "Dagster turna_observability_job UI & Asset Graph",
-                "description": "Screenshot showing turna_observability_job in Dagster UI.",
+                "title": "Dagster voyage_ota_observability_job UI & Asset Graph",
+                "description": "Screenshot showing voyage_ota_observability_job in Dagster UI.",
             }
         ],
     }
@@ -255,7 +255,7 @@ class TestLocalVaultIndexOfflineAndPerformance:
         res1 = indexer.search("Figma design system", top_k=5)
         assert len(res1) > 0
 
-        res2 = indexer.search_knowledge("Turna tracking architecture", top_k=3)
+        res2 = indexer.search_knowledge("voyage_ota tracking architecture", top_k=3)
         assert len(res2) > 0
 
         res3 = indexer.search_assets("date filters", top_k=3)
@@ -275,7 +275,7 @@ class TestLocalVaultIndexOfflineAndPerformance:
             "Figma design system tokens",
             "date filter bug",
             "billing table layout",
-            "Turna Dengage API",
+            "voyage_ota crm_engine API",
             "CortexAnalytics merchant screen",
             "knowledge vault persistent links",
         ]

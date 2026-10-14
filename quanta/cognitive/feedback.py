@@ -281,7 +281,7 @@ class OutcomeVerifier:
             # Tag implicated rule on success for native platform tools
             implicated_success = None
             combined_desc = f"{clean_tool_name} {str(args_dict)}"
-            for kw in ("gcloud", "api", "dengage", "meiro"):
+            for kw in ("gcloud", "api", "crm_engine", "cdp_engine"):
                 if kw in combined_desc.lower():
                     implicated_success = "native_first_rule"
                     break
@@ -431,9 +431,9 @@ class OutcomeVerifier:
 
         # Rule 1: native_first_rule
         if "native_first_rule" in active_rule_keys:
-            platform_keywords = ("turna", "meiro", "dengage", "contact", "crm", "cdp")
+            platform_keywords = ("voyage_ota", "cdp_engine", "crm_engine", "contact", "crm", "cdp")
             is_platform_context = (
-                context_dict.get("is_turna", False)
+                context_dict.get("is_voyage_ota", False)
                 or any(kw in str(context_dict).lower() for kw in platform_keywords)
                 or any(kw in cmd.lower() for kw in platform_keywords)
                 or any(kw in str(args_dict).lower() for kw in platform_keywords)
@@ -1118,7 +1118,7 @@ class CognitiveFeedbackLoop:
             if not rule_key:
                 rule_key = outcome.details.get("rule_key")
             if not rule_key:
-                if outcome.tool_name in ("run_command", "bash", "gcloud", "dengage", "mcp"):
+                if outcome.tool_name in ("run_command", "bash", "gcloud", "crm_engine", "mcp"):
                     rule_key = "native_first_rule"
                 else:
                     rule_key = "scientific_integrity_rule"

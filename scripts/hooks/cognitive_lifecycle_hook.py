@@ -42,7 +42,7 @@ CANONICAL_PROD_KEYS = frozenset({
     'insight_golden_record_survivorship',
     'insight_data_lineage_mapping',
     'insight_darwin_qos_optimization',
-    'insight_enterprise_ota_jira_architecture',
+    'insight_voyage_ota_jira_architecture',
     'insight_concurrent_preemption',
     'insight_autonomous_quantum_resonance',
     'insight_qos',
@@ -60,34 +60,34 @@ CANONICAL_PROD_KEYS = frozenset({
     'insight_cdp_realtime_stewardship',
     'insight_dagster_mcp_server_evolution',
     'insight_lex_portal_evolution',
-    'insight_enterprise_portal_gh_evolution',
+    'insight_lex_compliance_gh_evolution',
     'insight_mac_automation_agent_architecture',
     'insight_martech_ads_mcp_architecture',
     'insight_mcp_cloud_platform_architecture',
     'insight_looker_schema_drift',
-    'insight_mcp_meiro_cdp_evolution',
-    'insight_meiro_cdp_mcp_architecture',
+    'insight_mcp_cdp_engine_cdp_evolution',
+    'insight_cdp_engine_cdp_mcp_architecture',
     'insight_metabase_caching',
     'insight_outlook_ai_agent_architecture',
-    'insight_agent_skills_evolution',
+    'insight_cognitive_agent_skills_evolution',
     'insight_caip_evolution',
     'insight_quantum_portal_web_architecture',
     'insight_mdm_entity_resolution',
-    'insight_my_analyzer_extension_architecture',
+    'insight_telemetry_analyzer_extension_architecture',
     'insight_onmartech_packages_architecture',
     'insight_onmartech_web_evolution',
-    'insight_qarezmi_evolution',
-    'insight_onmartech_wix_backup_architecture',
+    'insight_quant_core_evolution',
+    'insight_onmartech_cloud_backup_architecture',
     'insight_continuous_resonance',
-    'insight_reklam_kurulu_tracker_architecture',
+    'insight_ad_compliance_tracker_architecture',
     'insight_amazon___scrape_evolution',
-    'insight_commentshub_evolution',
+    'insight_feedback_hub_evolution',
     'insight_redis_prompt_freshness',
-    'insight_intelnetwork_architecture',
+    'insight_graph_network_architecture',
     'insight_martech_tools_architecture',
-    'insight_mastertech_evolution',
-    'insight_analytics_platform_architecture',
-    'insight_voyage_price_tracker_architecture',
+    'insight_core_platform_evolution',
+    'insight_cortex_analytics_architecture',
+    'insight_voyage_booking_price_tracker_architecture',
     'insight_metabase_bi_platform_architecture',
     'insight_gcp_mcp_project_evolution',
 })
@@ -909,7 +909,7 @@ def _atomic_write_single_file(target: Path, state_dict: dict) -> bool:
         target.parent.mkdir(parents=True, exist_ok=True)
         temp_path = target.with_name(f".tmp_{target.name}_{os.getpid()}_{time.time_ns()}")
         raw_json = json.dumps(state_dict, ensure_ascii=False, indent=2)
-        for _b64_pat, _repl in [('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHMvQWxmYS9xdWFudGE=', '/workspace/quanta'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHM=', '/workspace'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy8=', '~/'), ('ZW5lc3NhcmlAZ21haWxcLmNvbQ==', 'researcher@example.com'), ('ZW5lc3Nhcmktd2Vi', 'quantum-portal-web'), ('ZW5lc3Nhcmk=', 'quantum_portal'), ('Z29vZ2xlLWFudGlncmF2aXR5LXNkaw==', 'cognitive-agent-sdk'), ('cXVhbnRhX3N1YmNvbnNjaW91c19ob29r', 'cognitive_lifecycle_hook'), ('XC5nZW1pbmkvYW50aWdyYXZpdHk=', '.quanta/agent'), ('XC5nZW1pbmkvY29uZmln', '.quanta/config'), ('XC5nZW1pbmkv', '.quanta/'), ('XC5hZ2VudHMv', '.agent_swarms/'), ('XGJHRU1JTklcLm1kXGI=', 'PROJECT_RULES.md'), ('XGJhbnRpZ3Jhdml0eVxi', 'cognitive_agent'), ('XGIoZXRzZ3JvdXBfbWRtfG9ubWFydGVjaC1wYWNrYWdlc3xhaS1tZG0tcGxhdGZvcm18ZGFnc3Rlci1tY3Atc2VydmVyfFR1cm5hIFdvcmtzfFR1cm5hIEpJUkF8dHVybmFfd29ya3N8TWVpcm9DRFB8bWVpcm9jZHB8TGVnYWxQb3J0fGxlZ2FscG9ydHxIdWt1a1BvcnR8aHVrdWtwb3J0fE1ldHJpY2FzZXxtZXRyaWNhc2V8RXRzdHVyfGV0c3R1cilcYg==', 'enterprise_module')]:
+        for _b64_pat, _repl in [('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHMvQWxmYS9xdWFudGE=', '/workspace/quanta'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHM=', '/workspace'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy8=', '~/'), ('ZW5lc3NhcmlAZ21haWxcLmNvbQ==', 'researcher@example.com'), ('ZW5lc3Nhcmktd2Vi', 'quantum-portal-web'), ('ZW5lc3Nhcmk=', 'quantum_portal'), ('Z29vZ2xlLWFudGlncmF2aXR5LXNkaw==', 'cognitive-agent-sdk'), ('cXVhbnRhX3N1YmNvbnNjaW91c19ob29r', 'cognitive_lifecycle_hook'), ('XC5nZW1pbmlcIlxzKi9ccypcImNvZ25pdGl2ZV9hZ2VudA==', '.quanta" / "agent'), ('XC5nZW1pbmlcIlxzKi9ccypcImNvbmZpZw==', '.quanta" / "config'), ('XC5nZW1pbmkvYW50aWdyYXZpdHk=', '.quanta/agent'), ('XC5nZW1pbmkvY29uZmln', '.quanta/config'), ('XC5nZW1pbmkv', '.quanta/'), ('KD88IVx3KVwuZ2VtaW5pXGI=', '.quanta'), ('KD88IVx3KVwuYWdlbnRzLw==', '.agent_swarms/'), ('KD88IVx3KVwuYWdlbnRzXGI=', '.agent_swarms'), ('XGJHRU1JTklcLm1kXGI=', 'PROJECT_RULES.md'), ('YW50aWdyYXZpdHk=', 'cognitive_agent'), ('VHVybmFXb3Jrcw==', 'VoyageCore'), ('VHVybmFKaXJh', 'VoyageTracker'), ('dHVybmEtd29ya3M=', 'voyage-core'), ('dHVybmEtamlyYQ==', 'voyage-tracker'), ('VHVybmEgV29ya3M=', 'Enterprise OTA'), ('VHVybmEgSklSQQ==', 'Enterprise Issue Tracker'), ('VHVybmEgRmxpZ2h0cw==', 'Voyage Flights'), ('VHVybmEgSG90ZWxz', 'Voyage Hotels'), ('dHVybmFfd29ya3M=', 'enterprise_ota'), ('KD88IW5vYyl0dXJuYQ==', 'voyage_ota'), ('bWVpcm9jZHA=', 'enterprisecdp'), ('bWVpcm8=', 'cdp_engine'), ('ZGVuZ2FnZQ==', 'crm_engine'), ('cWFyZXptaQ==', 'quant_core'), ('Y29tbWVudHNodWI=', 'feedback_hub'), ('aW50ZWxuZXR3b3Jr', 'graph_network'), ('cmVrbGFtX2t1cnVsdQ==', 'ad_compliance'), ('bWFzdGVydGVjaA==', 'core_platform'), ('bXlfYW5hbHl6ZXI=', 'telemetry_analyzer'), ('d2l4X2JhY2t1cA==', 'cloud_backup'), ('ZXRzZ3JvdXBfbWRt', 'enterprise_mdm'), ('ZXRzZ3JvdXA=', 'enterprise_group'), ('b25tYXJ0ZWNoLXBhY2thZ2Vz', 'core-sdk-packages'), ('YWktbWRtLXBsYXRmb3Jt', 'enterprise-mdm-platform'), ('ZGFnc3Rlci1tY3Atc2VydmVy', 'orchestrator-mcp-server'), ('bGVnYWxwb3J0', 'lex_compliance'), ('aHVrdWtwb3J0', 'lex_portal'), ('bWV0cmljYXNl', 'cortex_analytics'), ('ZXRzdHVy', 'voyage_booking')]:
             raw_json = re.sub(base64.b64decode(_b64_pat).decode("utf-8"), _repl, raw_json, flags=re.IGNORECASE)
         with open(temp_path, "w", encoding="utf-8") as sf:
             sf.write(raw_json)
@@ -994,11 +994,18 @@ def _save_mirrored_state_atomically(
                             and e.get("key") != "insight_google_drive_mcp_architecture"
                             and not str(e.get("key", "")).startswith(("gist_", "rfc_hybrid_"))
                         ]
+                    dedup_engrams = []
+                    _seen_k: set[str] = set()
                     for pe in prod_engrams:
+                        _k = str(pe.get("key", ""))
+                        if _k in _seen_k:
+                            continue
+                        _seen_k.add(_k)
                         if float(pe.get("salience", 0.0)) < 2.0:
                             pe["salience"] = 2.5
                         pe["is_core_anchor"] = True
-                    mirror_dict["engrams"] = prod_engrams
+                        dedup_engrams.append(pe)
+                    mirror_dict["engrams"] = dedup_engrams
 
                 mirror_ok = _atomic_write_single_file(mirror_path, mirror_dict)
         except Exception:
@@ -1648,7 +1655,7 @@ def main() -> None:
 
         cwd_hint = os.getcwd().lower()
         search_targets = (real_workspace.lower(), cwd_hint, artifact_dir.lower(), user_query)
-        is_turna = any("turna" in h or "meiro" in h or "dengage" in h for h in search_targets)
+        is_voyage_ota = any("voyage_ota" in h or "cdp_engine" in h or "crm_engine" in h for h in search_targets)
 
         # Ensure foundational cognitive anchors exist in active memory
         existing_rule_keys = {e["key"] for e in mem.engrams if isinstance(e, dict) and "key" in e}
@@ -1686,11 +1693,11 @@ def main() -> None:
                 category="constraint",
                 is_core_anchor=True,
             )
-        if is_turna and "turna_api_hierarchy_rule" not in existing_rule_keys:
+        if is_voyage_ota and "voyage_ota_api_hierarchy_rule" not in existing_rule_keys:
             mem.record(
-                key="turna_api_hierarchy_rule",
+                key="voyage_ota_api_hierarchy_rule",
                 content=(
-                    "Turna projelerinde Dengage için Dengage API, Meiro için Meiro API/mpcli, "
+                    "voyage_ota projelerinde crm_engine için crm_engine API, cdp_engine için cdp_engine API/mpcli, "
                     "BigQuery için BQ kullan. Yetersiz kalırsa önce kullanıcıya sor."
                 ),
                 salience=3.2,
@@ -1842,17 +1849,17 @@ def main() -> None:
             # 3. Workspace / Domain affinity boost (check key_s & topic_s, penalize off-workspace project dreams)
             ws_tokens = {
                 w for w in re.split(r"[^\w]+", ws_lower)
-                if len(w) > 2 and w not in ("alfa", "turna", "works", "workspace", "general")
+                if len(w) > 2 and w not in ("alfa", "voyage_ota", "works", "workspace", "general")
             }
-            if "turna" in ws_lower and not ws_tokens:
-                ws_tokens.add("turna")
+            if "voyage_ota" in ws_lower and not ws_tokens:
+                ws_tokens.add("voyage_ota")
 
             foreign_projects = (
-                "turna", "meiro", "enterprisecdp", "lexcompliance", "lex_portal", "metabase",
-                "martech", "onmartech", "voyagebooking", "etsgroup", "amazon", "outlook",
-                "dagster", "caip", "quantum_portal", "qarezmi", "commentshub", "intelnetwork",
-                "mastertech", "cortexanalytics", "reklam", "jira", "bigquery", "looker",
-                "d3_viz", "personal_crm", "my_analyzer", "cdp_realtime", "dual_native",
+                "voyage_ota", "cdp_engine", "enterprisecdp", "lexcompliance", "lex_portal", "metabase",
+                "martech", "onmartech", "voyagebooking", "enterprise_group", "amazon", "outlook",
+                "dagster", "caip", "quantum_portal", "quant_core", "feedback_hub", "graph_network",
+                "core_platform", "cortexanalytics", "reklam", "jira", "bigquery", "looker",
+                "d3_viz", "personal_crm", "telemetry_analyzer", "cdp_realtime", "dual_native",
                 "mdm", "google_drive",
             )
             matched_foreign = [

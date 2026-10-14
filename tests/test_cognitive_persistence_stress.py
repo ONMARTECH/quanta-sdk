@@ -475,7 +475,7 @@ class TestExistingEngramPreservationAdversarial:
         for step in range(1, 11):
             outcome = ActionOutcome(
                 step_idx=step,
-                tool_name="dengage",
+                tool_name="crm_engine",
                 outcome_type=OutcomeType.RULE_VIOLATION,
                 rule_violated="native_first_rule",
             )

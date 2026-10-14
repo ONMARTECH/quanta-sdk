@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 
 # Default parent workspace directory on macOS
 DEFAULT_PROJECTS_DIR = Path(__file__).resolve().parents[4]
-DEFAULT_BRAIN_DIR = Path.home() / ".gemini" / "cognitive_agent" / "brain"
-DEFAULT_SUMMARIES_DB = Path.home() / ".gemini" / "cognitive_agent" / "conversation_summaries.db"
+DEFAULT_BRAIN_DIR = Path.home() / ".quanta" / "agent" / "brain"
+DEFAULT_SUMMARIES_DB = Path.home() / ".quanta" / "agent" / "conversation_summaries.db"
 
 
 @dataclass
@@ -142,7 +142,7 @@ CANONICAL_DOMAINS: list[str] = [
 DOMAIN_KEYWORDS: list[list[str]] = [
     # 0: Travel/Pricing
     [
-        "turna", "voyagebooking", "flight", "ticket", "hotel", "travel", "pricing",
+        "voyage_ota", "voyagebooking", "flight", "ticket", "hotel", "travel", "pricing",
         "fare", "reprice", "airline", "booking", "room", "yield", "reservation",
         "ota", "destinations", "pax", "gds",
     ],
@@ -166,7 +166,7 @@ DOMAIN_KEYWORDS: list[list[str]] = [
     ],
     # 4: CDP/MDM
     [
-        "cdp", "mdm", "meiro", "customer", "golden record", "identity",
+        "cdp", "mdm", "cdp_engine", "customer", "golden record", "identity",
         "cdc", "streaming", "survivorship", "profile", "segment", "master data",
         "deduplication", "unification",
     ],
@@ -237,21 +237,21 @@ def classify_project_domain(
 
     # Project-specific explicit mappings for high precision
     explicit_exact_mappings: dict[str, int] = {
-        "turna": 0,
+        "voyage_ota": 0,
         "voyagebooking": 0,
         "quanta": 1,
         "lexcompliance": 2,
         "lexportal": 2,
         "cortexanalytics": 3,
-        "meiro": 4,
+        "cdp_engine": 4,
         "mdm": 4,
         "metabase": 5,
         "looker": 5,
         "app-my-network-planner": 6,
-        "intelnetwork": 6,
-        "qarezmi": 6,
+        "graph_network": 6,
+        "quant_core": 6,
         "contentai": 7,
-        "commentshub": 7,
+        "feedback_hub": 7,
         "rabbit-ai": 7,
     }
     for key, c_idx in explicit_exact_mappings.items():
@@ -1224,7 +1224,7 @@ class WorkspaceContextHarvester:
                 if dom_a in {"General", "Unclassified"} or dom_b in {"General", "Unclassified"}:
                     continue
 
-                # 2. Exclude shared project prefixes (e.g. Enterprise OTA vs Enterprise Issue Tracker, TurnaWorks vs TurnaJira)
+                # 2. Exclude shared project prefixes (e.g. Enterprise OTA vs Enterprise Issue Tracker, VoyageCore vs VoyageTracker)
                 name_a_clean = p_a.name.strip()
                 name_b_clean = p_b.name.strip()
 

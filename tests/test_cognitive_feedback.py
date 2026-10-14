@@ -107,9 +107,9 @@ except ImportError:
 
             # 1. Semantic Rule Violations take priority
             cmd = str(args_dict.get("command", args_dict.get("CommandLine", ""))).strip()
-            is_turna = context.get("is_turna", False) or "turna" in str(context).lower()
+            is_voyage_ota = context.get("is_voyage_ota", False) or "voyage_ota" in str(context).lower()
             if "native_first_rule" in str(active_rules) and "bq query" in cmd and (
-                "dengage" in cmd or "meiro" in cmd or "contact" in cmd or is_turna
+                "crm_engine" in cmd or "cdp_engine" in cmd or "contact" in cmd or is_voyage_ota
             ):
                 return ActionOutcome(
                     step_idx=step_idx,
@@ -175,8 +175,8 @@ except ImportError:
                 if (
                     "gcloud" in str(args_dict)
                     or "api" in str(args_dict)
-                    or "dengage" in str(args_dict)
-                    or "meiro" in str(args_dict)
+                    or "crm_engine" in str(args_dict)
+                    or "cdp_engine" in str(args_dict)
                 )
                 else None
             )
@@ -478,7 +478,7 @@ except ImportError:
             for outcome in outcomes:
                 rule_key = outcome.rule_violated or (
                     "native_first_rule"
-                    if outcome.tool_name in ("run_command", "bash", "gcloud", "dengage")
+                    if outcome.tool_name in ("run_command", "bash", "gcloud", "crm_engine")
                     else "native_first_rule"
                 )
                 engram = next(
@@ -744,16 +744,16 @@ class TestOutcomeVerification:
 
     def test_verify_rule_violation_native_first(self) -> None:
         verifier = OutcomeVerifier()
-        tool_args = {"command": "bq query 'SELECT * FROM dengage_users LIMIT 10'"}
+        tool_args = {"command": "bq query 'SELECT * FROM crm_engine_users LIMIT 10'"}
         tool_output = {"exit_code": 0, "output": "Query results..."}
-        context = {"workspace": "Enterprise OTA", "last_user_query": "Dengage contact lookup"}
+        context = {"workspace": "Enterprise OTA", "last_user_query": "crm_engine contact lookup"}
 
         outcome = verifier.evaluate_tool_result(
             tool_name="run_command",
             tool_args=tool_args,
             tool_output=tool_output,
             context=context,
-            details={"workspace": "Turna"},
+            details={"workspace": "voyage_ota"},
         )
         assert outcome.outcome_type == OutcomeType.RULE_VIOLATION
         assert outcome.rule_violated == "native_first_rule"
@@ -773,16 +773,16 @@ class TestOutcomeVerification:
         assert outcome.outcome_type == OutcomeType.RULE_VIOLATION
         assert outcome.rule_violated == "executive_summary_rule"
 
-    def test_verify_turna_api_hierarchy_adherence(self) -> None:
+    def test_verify_voyage_ota_api_hierarchy_adherence(self) -> None:
         verifier = OutcomeVerifier()
-        tool_args = {"command": "python3 scripts/dengage_api.py get_contacts"}
+        tool_args = {"command": "python3 scripts/crm_engine_api.py get_contacts"}
         tool_output = {"exit_code": 0, "output": "200 OK - 5 contacts retrieved"}
 
         outcome = verifier.evaluate_tool_result(
             tool_name="run_command",
             tool_args=tool_args,
             tool_output=tool_output,
-            context={"is_turna": True},
+            context={"is_voyage_ota": True},
         )
         assert outcome.outcome_type == OutcomeType.SUCCESS
         assert outcome.is_violation is False

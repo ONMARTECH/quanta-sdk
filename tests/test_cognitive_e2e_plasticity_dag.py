@@ -50,7 +50,7 @@ from scripts.hooks.cognitive_lifecycle_hook import (
 
 HOOK_PATH = Path(__file__).resolve().parent.parent / "scripts" / "hooks" / "cognitive_lifecycle_hook.py"
 PROD_STATE_PATH = Path(__file__).resolve().parent.parent / "quanta_cognitive_state.json"
-HOOKS_CONFIG_PATH = Path.home() / ".gemini" / "config" / "hooks.json"
+HOOKS_CONFIG_PATH = Path.home() / ".quanta" / "config" / "hooks.json"
 
 
 # ============================================================================

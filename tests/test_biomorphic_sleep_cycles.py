@@ -114,7 +114,7 @@ class TestSleepPhaseStateMachine:
             relaxed_prefrontal=True,
             prefrontal_temperature=0.50,
             dreamer_temperature=0.92,
-            projects_paired=["quanta", "turna"],
+            projects_paired=["quanta", "voyage_ota"],
             rfc_path="/docs/RFC_BISOCIATION.md",
             duration_ms=45.2,
             success=True,
@@ -123,7 +123,7 @@ class TestSleepPhaseStateMachine:
         assert res.topic == "bisociation_test"
         assert res.prefrontal_temperature == 0.50
         assert res.dreamer_temperature == 0.92
-        assert res.projects_paired == ["quanta", "turna"]
+        assert res.projects_paired == ["quanta", "voyage_ota"]
         assert res.rfc_path == "/docs/RFC_BISOCIATION.md"
         assert res.success is True
 
@@ -1021,7 +1021,7 @@ class TestCrossProjectDomainClustering:
         """Verifies each canonical cluster is classified accurately with unit norm."""
         assert len(CANONICAL_DOMAINS) == 8
         test_cases = [
-            (Path("/mock/Enterprise OTA"), ["MSSQL", "GCP BigQuery", "Dengage"], "Travel/Pricing", 0),
+            (Path("/mock/Enterprise OTA"), ["MSSQL", "GCP BigQuery", "crm_engine"], "Travel/Pricing", 0),
             (Path("/mock/Alfa/quanta"), ["Python", "PyTorch", "MPS"], "Quantum/Brain", 1),
             (Path("/mock/LexCompliance"), ["Python", "KVKK", "GDPR", "hukuk"], "LegalTech", 2),
             (Path("/mock/CortexAnalytics"), ["TypeScript", "Core Web Vitals", "LCP"], "Web Analytics/MarTech", 3),
@@ -1055,7 +1055,7 @@ class TestCrossProjectDomainClustering:
         )
         _, vec_travel_2 = classify_project_domain(
             Path("/mock/Enterprise Issue Tracker"),
-            tech_stack=["turna", "ticket", "hotel", "reservation"],
+            tech_stack=["voyage_ota", "ticket", "hotel", "reservation"],
         )
 
         # Delta_domain = 1.0 - (d_A . d_B) / (||d_A|| ||d_B||)
@@ -1074,11 +1074,11 @@ class TestOrthogonalProjectPairing:
 
     def test_hybrid_dream_seed_attributes_and_post_init(self) -> None:
         """Verifies HybridDreamSeed fields, typing, and automatic context_keys initialization."""
-        proj_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing")
+        proj_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing")
         proj_b = ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech")
 
         seed = HybridDreamSeed(
-            topic="turna_x_lexcompliance",
+            topic="voyage_ota_x_lexcompliance",
             speculative_question="How to cross-synthesize?",
             primary_project=proj_a,
             secondary_project=proj_b,
@@ -1087,7 +1087,7 @@ class TestOrthogonalProjectPairing:
             urgency=2.2,
         )
 
-        assert seed.topic == "turna_x_lexcompliance"
+        assert seed.topic == "voyage_ota_x_lexcompliance"
         assert seed.primary_project.name == "Enterprise OTA"
         assert seed.secondary_project.name == "LexCompliance"
         assert seed.domain_distance == 0.92
@@ -1102,7 +1102,7 @@ class TestOrthogonalProjectPairing:
         # Create mock projects directory with diverse projects
         (tmp_path / "Enterprise OTA").mkdir()
         (tmp_path / "Enterprise OTA" / "package.json").write_text(
-            json.dumps({"name": "turna", "description": "airline ticket repricing"}),
+            json.dumps({"name": "voyage_ota", "description": "airline ticket repricing"}),
             encoding="utf-8",
         )
 
@@ -1131,25 +1131,25 @@ class TestOrthogonalProjectPairing:
         """Verifies projects sharing prefix (including PascalCase) are never paired."""
         (tmp_path / "Enterprise OTA").mkdir()
         (tmp_path / "Enterprise OTA" / "package.json").write_text(
-            json.dumps({"name": "turna-works", "description": "flight ticket engine"}),
+            json.dumps({"name": "voyage-core", "description": "flight ticket engine"}),
             encoding="utf-8",
         )
 
         (tmp_path / "Enterprise Issue Tracker").mkdir()
         (tmp_path / "Enterprise Issue Tracker" / "package.json").write_text(
-            json.dumps({"name": "turna-jira", "description": "flight ticket jira integration"}),
+            json.dumps({"name": "voyage-tracker", "description": "flight ticket jira integration"}),
             encoding="utf-8",
         )
 
-        (tmp_path / "TurnaWorks").mkdir()
-        (tmp_path / "TurnaWorks" / "package.json").write_text(
-            json.dumps({"name": "turna-works-app", "description": "flight ticket engine mobile"}),
+        (tmp_path / "VoyageCore").mkdir()
+        (tmp_path / "VoyageCore" / "package.json").write_text(
+            json.dumps({"name": "voyage-core-app", "description": "flight ticket engine mobile"}),
             encoding="utf-8",
         )
 
-        (tmp_path / "TurnaJira").mkdir()
-        (tmp_path / "TurnaJira" / "package.json").write_text(
-            json.dumps({"name": "turna-jira-app", "description": "flight ticket jira integration mobile"}),
+        (tmp_path / "VoyageTracker").mkdir()
+        (tmp_path / "VoyageTracker" / "package.json").write_text(
+            json.dumps({"name": "voyage-tracker-app", "description": "flight ticket jira integration mobile"}),
             encoding="utf-8",
         )
 
@@ -1165,13 +1165,13 @@ class TestOrthogonalProjectPairing:
         for p in pairs:
             names = {p.primary_project.name, p.secondary_project.name}
             assert names != {"Enterprise OTA", "Enterprise Issue Tracker"}, "Enterprise OTA and Enterprise Issue Tracker must NOT be paired together!"
-            assert names != {"TurnaWorks", "TurnaJira"}, "TurnaWorks and TurnaJira must NOT be paired together!"
+            assert names != {"VoyageCore", "VoyageTracker"}, "VoyageCore and VoyageTracker must NOT be paired together!"
 
     def test_anti_rumination_pair_buffer(self, tmp_path: Path) -> None:
         """Verifies the anti-rumination pair buffer tracks recent pairs and diversifies seeds."""
         (tmp_path / "Enterprise OTA").mkdir()
         (tmp_path / "Enterprise OTA" / "package.json").write_text(
-            json.dumps({"name": "turna-works", "description": "flight ticket engine"}),
+            json.dumps({"name": "voyage-core", "description": "flight ticket engine"}),
             encoding="utf-8",
         )
 
@@ -1224,7 +1224,7 @@ class TestHybridDreamCycleExecution:
         """Verifies execute_hybrid_dream_cycle uses T_dreamer >= 0.90 and T_arbiter in [0.45, 0.55]."""
         proj_a = ProjectContext(
             name="Enterprise OTA",
-            path=Path("/mock/turna"),
+            path=Path("/mock/voyage_ota"),
             domain="Travel/Pricing",
             tech_stack=["MSSQL", "BigQuery"],
             summary="Airline ticket pricing engine.",
@@ -1237,7 +1237,7 @@ class TestHybridDreamCycleExecution:
             summary="Spectral graph partitioning and offline sync.",
         )
         seed = HybridDreamSeed(
-            topic="turna_x_network",
+            topic="voyage_ota_x_network",
             speculative_question="How can spectral graphs optimize dynamic ticket pricing?",
             primary_project=proj_a,
             secondary_project=proj_b,
@@ -1264,10 +1264,10 @@ class TestHybridDreamCycleExecution:
 
     def test_execute_hybrid_dream_cycle_instant_preemption(self) -> None:
         """Verifies hybrid dream cycle aborts instantly when preemption is signaled."""
-        proj_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing")
+        proj_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing")
         proj_b = ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech")
         seed = HybridDreamSeed(
-            topic="turna_x_legal",
+            topic="voyage_ota_x_legal",
             speculative_question="How to arbitrate disputes?",
             primary_project=proj_a,
             secondary_project=proj_b,
@@ -1295,7 +1295,7 @@ class TestPersistHybridRFCAndSandboxSafety:
 
         proj_a = ProjectContext(
             name="Enterprise OTA",
-            path=Path("/mock/turna"),
+            path=Path("/mock/voyage_ota"),
             domain="Travel/Pricing",
             tech_stack=["MSSQL", "GCP BigQuery"],
             summary="Airline pricing engine.",
@@ -1367,10 +1367,10 @@ class TestPersistHybridRFCAndSandboxSafety:
         pid_file = tmp_path / "quanta_dream.pid"
         daemon = SubconsciousDaemon(state_file=state_file, pid_file=pid_file)
 
-        proj_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing")
+        proj_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing")
         proj_b = ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech")
         seed = HybridDreamSeed(
-            topic="turna_x_legal",
+            topic="voyage_ota_x_legal",
             speculative_question="Speculative test?",
             primary_project=proj_a,
             secondary_project=proj_b,
@@ -1500,7 +1500,7 @@ class TestDaemonREMIntegrationWithHybridSeed:
 
         proj_a = ProjectContext(
             name="Enterprise OTA",
-            path=Path("/mock/turna"),
+            path=Path("/mock/voyage_ota"),
             domain="Travel/Pricing",
             summary="Airline dynamic ticket repricing.",
         )
@@ -1634,7 +1634,7 @@ class TestHoelStochasticNoiseInjection:
         """Verifies execute_hybrid_dream_cycle records noise injection in MindWanderResult."""
         engine = MindWanderEngine(max_turns=3, use_sdk_if_available=False, use_agy_cli=False)
         proj_a = ProjectContext(
-            name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing"
+            name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing"
         )
         proj_b = ProjectContext(
             name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech"
@@ -1837,7 +1837,7 @@ class TestEndToEndTwoPhaseSleep:
 
         # Phase 2: REM Paradoxical Dreaming
         proj_a = ProjectContext(
-            name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing"
+            name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing"
         )
         proj_b = ProjectContext(
             name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech"

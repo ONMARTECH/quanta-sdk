@@ -53,7 +53,7 @@ from quanta.cognitive.workspace_harvester import (
 
 def compute_tree_hashes(
     p: Path,
-    exclude_dirs: tuple[str, ...] = (".git", ".agents", "node_modules", "vendor", ".DS_Store"),
+    exclude_dirs: tuple[str, ...] = (".git", ".agent_swarms", "node_modules", "vendor", ".DS_Store"),
 ) -> dict[str, str]:
     """Computes a mapping of relative file paths to SHA-256 hashes, ignoring build/agent artifacts."""
     hashes: dict[str, str] = {}
@@ -309,10 +309,10 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
         """Verifies projects with identical prefix tokens are never paired together."""
         pairs_to_test = [
             ("Enterprise OTA", "Enterprise Issue Tracker"),
-            ("Turna Flights", "Turna Hotels"),
+            ("Voyage Flights", "Voyage Hotels"),
             ("LexCompliance Search", "LexCompliance Contracts"),
             ("CortexAnalytics Web", "CortexAnalytics Mobile"),
-            ("Qarezmi Core", "Qarezmi Analytics"),
+            ("quant_core Core", "quant_core Analytics"),
         ]
 
         projects: list[ProjectContext] = []
@@ -420,7 +420,7 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
                 name=f"Flight_Agency_{i}",
                 path=Path(f"/mock/fa_{i}"),
                 domain="Travel/Pricing",
-                tech_stack=["flight", "airline", "pricing", "turna"],
+                tech_stack=["flight", "airline", "pricing", "voyage_ota"],
                 summary="Dynamic ticket repricing and flight bookings.",
             )
             for i in range(10)
@@ -436,7 +436,7 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
     def test_unachievable_distance_threshold_returns_empty(self) -> None:
         """Verifies unachievable min_domain_distance (e.g. 1.50) returns empty list without error."""
         projects = [
-            ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing"),
+            ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing"),
             ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech"),
         ]
         harvester = WorkspaceContextHarvester(projects_dir=Path("/mock"))
@@ -453,7 +453,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
         """Empirically parses YAML frontmatter using yaml.safe_load and asserts all fields."""
         p_a = ProjectContext(
             name="Enterprise OTA",
-            path=Path("/mock/turna"),
+            path=Path("/mock/voyage_ota"),
             domain="Travel/Pricing",
             tech_stack=["MSSQL", "BigQuery"],
             summary="Airline ticket pricing engine.",
@@ -466,7 +466,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
             summary="Legal compliance.",
         )
         seed = HybridDreamSeed(
-            topic="turna_x_legal_rfc_test",
+            topic="voyage_ota_x_legal_rfc_test",
             speculative_question="How can legal compliance arbitrate airline pricing?",
             primary_project=p_a,
             secondary_project=p_b,
@@ -543,10 +543,10 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
 
     def test_architectural_sections_rigor_and_completeness(self, tmp_path: Path) -> None:
         """Verifies presence of all required sections, Mermaid diagram, and failure modes table."""
-        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing")
+        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing")
         p_b = ProjectContext(name="app-my-network-planner", path=Path("/mock/net"), domain="Mobile Graph CRM")
         seed = HybridDreamSeed(
-            topic="turna_x_net_sections",
+            topic="voyage_ota_x_net_sections",
             speculative_question="Spectral fare optimization?",
             primary_project=p_a,
             secondary_project=p_b,
@@ -565,7 +565,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
             secondary_project=p_b.name,
             domain_distance=0.95,
             bisociation_theme=seed.bisociation_theme,
-            abstract_architecture="[Turna] <---> [Spectral Graph CRM]",
+            abstract_architecture="[voyage_ota] <---> [Spectral Graph CRM]",
             failure_modes=[
                 {"mode": "Graph Partition Divergence", "cause": "Network partition", "mitigation": "CRDT replay"}
             ],
@@ -593,7 +593,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
 
             # Section 3
             assert "## 3. Abstract Architecture" in content
-            assert "[Turna] <---> [Spectral Graph CRM]" in content
+            assert "[voyage_ota] <---> [Spectral Graph CRM]" in content
 
             # Section 4
             assert "## 4. Failure Modes & Mitigations" in content
@@ -612,10 +612,10 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
         state_file = tmp_path / "quanta_cognitive_state.json"
         daemon = SubconsciousDaemon(state_file=state_file)
 
-        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing")
+        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing")
         p_b = ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech")
         seed = HybridDreamSeed(
-            topic="turna_x_legal_engram",
+            topic="voyage_ota_x_legal_engram",
             speculative_question="Question?",
             primary_project=p_a,
             secondary_project=p_b,
@@ -662,10 +662,10 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
         state_file = tmp_path / "quanta_cognitive_state.json"
         daemon = SubconsciousDaemon(state_file=state_file)
 
-        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/turna"), domain="Travel/Pricing")
+        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing")
         p_b = ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech")
         seed = HybridDreamSeed(
-            topic="turna_x_legal_telemetry_unique",
+            topic="voyage_ota_x_legal_telemetry_unique",
             speculative_question="Telemetry test question unique?",
             primary_project=p_a,
             secondary_project=p_b,

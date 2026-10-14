@@ -207,7 +207,7 @@ class TestEpisodicSessionHarvester:
         now = datetime.now(timezone.utc)
         sessions_meta = [
             ("conv_today_1", "Today Active Session", 10, now - timedelta(hours=2), "quanta"),
-            ("conv_yesterday_1", "Yesterday Milestone Session", 25, now - timedelta(hours=30), "turna"),
+            ("conv_yesterday_1", "Yesterday Milestone Session", 25, now - timedelta(hours=30), "voyage_ota"),
             ("conv_sprint_1", "Previous Sprint Feature Work", 40, now - timedelta(days=4), "quanta"),
             ("conv_longterm_1", "Foundational Architecture Session", 80, now - timedelta(days=10), "enterprise_mdm"),
         ]
