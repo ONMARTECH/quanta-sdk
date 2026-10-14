@@ -1,0 +1,60 @@
+% TikZ Figure: 2026 FTQC Dual-Track Fault-Tolerance Engine
+\begin{tikzpicture}[
+    scale=0.88, every node/.style={transform shape},
+    box/.style={rectangle, draw=black!70, rounded corners=3pt, thick, align=center, inner sep=5pt},
+    trackA/.style={box, fill=blue!10, draw=blue!70},
+    trackB/.style={box, fill=purple!10, draw=purple!70},
+    defect/.style={circle, fill=red!70, draw=red!90, inner sep=2pt},
+    bndry/.style={circle, fill=black!40, draw=black!70, inner sep=2pt}
+]
+
+% Panel (a): Track A - 2D Rotated Surface Code & 3D Spacetime Defect Graph
+\node[font=\bfseries] at (-2.6, 3.2) {(a) Track A: Rotated Surface Code + 3D Spacetime Graph};
+\draw[dashed, draw=blue!40, rounded corners=4pt] (-5.0, -2.4) rectangle (-0.2, 2.8);
+
+% 2D Surface grid representation
+\draw[step=0.8cm, gray!40, very thin] (-4.5, 0.4) grid (-2.1, 2.0);
+\node[font=\footnotesize] at (-3.3, 2.3) {Rotated Lattice $[[d^2, 1, d]]$};
+
+% Data and syndrome nodes
+\fill[blue!70] (-4.5, 0.4) circle (2pt);
+\fill[blue!70] (-3.7, 0.4) circle (2pt);
+\fill[blue!70] (-2.9, 0.4) circle (2pt);
+\fill[blue!70] (-2.1, 0.4) circle (2pt);
+
+% Spacetime extrusion
+\draw[->, thick, draw=black!60] (-4.5, -0.2) -- (-4.5, -1.8) node[midway, left, font=\scriptsize] {Time $t$};
+\node[font=\scriptsize, align=left] at (-2.4, -0.6) {
+    Temporal Syndromes:\\
+    $\Delta s_t = s_t \oplus s_{t-1}$\\
+    $w_s = -\ln\left(\frac{p}{1-p}\right)$
+};
+\node[trackA, minimum width=4.2cm] at (-2.6, -1.8) {
+    \textbf{Edmonds Blossom MWPM}\\
+    \small Virtual Boundary Matching $O(V^3)$
+};
+
+% Panel (b): Track B - Gross [[144, 12, 12]] Bivariate Bicycle qLDPC Code
+\node[font=\bfseries] at (2.6, 3.2) {(b) Track B: Bivariate Bicycle $[[144, 12, 12]]$ qLDPC};
+\draw[dashed, draw=purple!40, rounded corners=4pt] (0.4, -2.4) rectangle (4.8, 2.8);
+
+\node[box, fill=amber!15, draw=amber!80, minimum width=4.0cm] at (2.6, 1.8) {
+    \textbf{Bivariate Group Ring}\\
+    \small $R = \mathbb{F}_2[x, y] / \langle x^{12}-1, y^6-1 \rangle$\\
+    \small $A(x,y) = x^3 + y + y^2, \ B(x,y) = y^3 + x + x^2$
+};
+
+\node[box, fill=purple!15, draw=purple!80, minimum width=4.0cm] at (2.6, 0.3) {
+    \textbf{CSS Orthogonality}\\
+    \small $H_X = [A \mid B], \ H_Z = [B^T \mid A^T]$\\
+    \small $H_X H_Z^T = 2AB \equiv 0 \pmod 2$\\
+    \small \textbf{12$\times$ Physical Qubit Savings vs 2D}
+};
+
+\node[trackB, minimum width=4.0cm] at (2.6, -1.6) {
+    \textbf{Normalized Min-Sum BP + OSD-0}\\
+    \small Attenuation $\alpha = 0.75$, GF(2) Pivot Inversion\\
+    \small \textbf{1.54 ms} Latency, 100\% Clearance
+};
+
+\end{tikzpicture}
