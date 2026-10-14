@@ -1,6 +1,6 @@
 # Quanta SDK: September 2026 Competitive Positioning Matrix & Multi-Year Strategic Roadmap (2026 – 2028)
 **Lead Author & Chief Architect**: [Abdullah Enes SARI](https://orcid.org/0000-0002-8827-0587) [![ORCID](https://orcid.org/sites/default/files/images/orcid_16x16.png)](https://orcid.org/0000-0002-8827-0587) (<info@onmartech.com>) — ONMARTECH  
-**Co-Author & Strategic Planning**: Quanta Quantum Research Group & Antigravity Agentic AI Board  
+**Co-Author & Strategic Planning**: Quanta Quantum Research Group (ONMARTECH Quantum Computing Initiative)  
 **Publication**: ONMARTECH Strategic Whitepaper Series (v1.2.0 Edition)  
 **Date**: September 2026  
 **Scope**: Competitive Benchmark Analysis vs. September 2026 Quantum Frontier & Actionable Multi-Year Roadmap (Q4 2026 – 2028)  
@@ -243,12 +243,12 @@ By bridging exact mathematical rigor with hardware-accelerated computation and f
   </div>
 </div>
 
-**Co-Author & Strategic Planning Board**: Quanta Quantum Research Group & Antigravity Agentic AI Board
+**Co-Author & Strategic Planning Board**: Quanta Quantum Research Group (ONMARTECH Quantum Computing Initiative)
 
 ```bibtex
 @article{sari2026quanta_roadmap,
   title={Quanta SDK: Multi-Year Strategic Roadmap (2026-2028) and Competitive Positioning in Fault-Tolerant Quantum Computing},
-  author={SARI, Abdullah Enes and Antigravity Quantum Research Team},
+  author={SARI, Abdullah Enes and {Quanta Quantum Research Group}},
   journal={ONMARTECH Strategic Reports},
   year={2026},
   month={September},

@@ -1,10 +1,9 @@
 """quanta/cognitive/workspace_harvester.py — Multi-Project Context Harvester.
 
 Pillar 3 Subconscious Mind-Wandering Extension:
-Scans the user's workspace ecosystem (/Users/aes/Antigravity Projects), discovers
-sibling projects (metabase-ai-assistant, mcp-google-data-studio, app-my-network-planner,
-etsgroup_mdm, ContentAI, bigquery-mcp-server, quanta, etc.), extracts real git commits,
-recent tasks, and Antigravity brain transcripts, and synthesizes dynamic, diverse
+Scans the user's multi-project workspace ecosystem, discovers
+sibling repositories, extracts git commits,
+recent tasks, and session transcripts, and synthesizes dynamic, diverse
 DreamSeeds across multiple projects while strictly preventing cognitive rumination.
 """
 
@@ -29,9 +28,9 @@ from quanta.cognitive.tom_analyzer import DreamSeed
 logger = logging.getLogger(__name__)
 
 # Default parent workspace directory on macOS
-DEFAULT_PROJECTS_DIR = Path("/Users/aes/Antigravity Projects")
-DEFAULT_BRAIN_DIR = Path("/Users/aes/.gemini/antigravity/brain")
-DEFAULT_SUMMARIES_DB = Path("/Users/aes/.gemini/antigravity/conversation_summaries.db")
+DEFAULT_PROJECTS_DIR = Path(__file__).resolve().parents[4]
+DEFAULT_BRAIN_DIR = Path.home() / ".gemini" / "antigravity" / "brain"
+DEFAULT_SUMMARIES_DB = Path.home() / ".gemini" / "antigravity" / "conversation_summaries.db"
 
 
 @dataclass

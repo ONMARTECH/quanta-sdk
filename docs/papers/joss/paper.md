@@ -179,10 +179,10 @@ Decoding the Gross $[[144, 12, 12]]$ Bivariate Bicycle qLDPC code with native No
 
 # Software Architecture, Rigor & Testing Standards
 
-Quanta enforces a strict zero-mocking falsifiable empiricism mandate. The complete verification suite comprises **2,076 automated tests** executing under `pytest`:
+Quanta enforces a strict zero-mocking falsifiable empiricism mandate. The complete verification suite comprises **2,711 automated tests** executing under `pytest`:
 
 ```
-======================== 2076 tests collected in 4.77s =========================
+======================== 2711 tests collected in 3.48s =========================
 ```
 
 The test architecture is structured across dedicated validation domains:
@@ -192,11 +192,12 @@ The test architecture is structured across dedicated validation domains:
 - `tests/test_torch_continuous.py`: Validates PyTorch gradient checking (`torch.autograd.gradcheck`), analytical Ehrenfest time derivatives, and non-linear XOR classification convergence.
 - `tests/test_mlx_simulator.py`: Validates Apple Silicon Metal GPU tensor contraction kernels, lazy graph synchronization, and large statevector allocations.
 - `tests/test_mps_simulator.py`: Verifies SVD Schmidt truncation renormalization and 250-qubit GHZ entanglement synthesis.
+- `tests/test_noetherian_arbiter.py` & `tests/test_cognitive_phase2_ablation_mps.py`: Validates Noetherian symmetry conservation (`MizanHakemi`), label-leakage-free Quantum Zeno decision arbitration ablation, context-adaptive SWR memory resonance, and concurrent multi-agent blackboard state synchronization.
 
-All 2,076 tests execute with 100% green pass status and zero regressions. Code quality is enforced through complete type annotations adhering to `mypy quanta/ --ignore-missing-imports`, formatting conforming to Ruff, and Google-style docstrings across all public APIs.
+All 2,711 tests execute with 100% green pass status and zero regressions. Code quality is enforced through complete type annotations adhering to `mypy quanta/ --ignore-missing-imports`, formatting conforming to Ruff, and Google-style docstrings across all public APIs.
 
 # Acknowledgements
 
-The authors express their sincere gratitude to the ONMARTECH Quantum Computing Initiative and the Google Antigravity Multi-Agent Research Consortium for computational infrastructure, research support, and architectural review. We acknowledge foundational contributions from the broader open-source quantum computing community whose seminal theoretical works provided benchmarks for rigorous differential verification.
+The authors express their sincere gratitude to the ONMARTECH Quantum Computing Initiative for computational infrastructure, research support, and architectural review. We acknowledge foundational contributions from the broader open-source quantum computing community whose seminal theoretical works provided benchmarks for rigorous differential verification.
 
 # References

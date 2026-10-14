@@ -29,7 +29,7 @@ from scripts.hooks.quanta_subconscious_hook import (
     main as hook_main,
 )
 
-HOOK_PATH = Path("/Users/aes/Antigravity Projects/Alfa/quanta/scripts/hooks/quanta_subconscious_hook.py")
+HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/quanta_subconscious_hook.py")
 
 
 def _run_inprocess_hook(payload: dict[str, Any], sim_time: float | None = None) -> dict[str, Any]:

@@ -85,10 +85,7 @@
 \author{Quanta Quantum Research Group}
 \affiliation{ONMARTECH Quantum Computing Initiative, Istanbul, Turkey}
 
-\author{Antigravity Agentic AI Board}
-\affiliation{Google Antigravity Multi-Agent Research Consortium}
-
-\date{September 25, 2026}
+\date{October 14, 2026}
 
 % -----------------------------------------------------------------------------
 % Abstract
@@ -99,7 +96,7 @@ The prevailing software ecosystem for quantum computing suffers from significant
 (2) hardware-native zero-copy GPU acceleration on Apple Silicon unified memory architectures via Metal Performance Shaders and Apple MLX, completely eliminating PCIe data transfer overhead ($\Delta t_{\text{PCIe}} \equiv 0$) and yielding up to $52.1\times$ GPU acceleration over CPU NumPy, paired with a vectorized SIMD Aaronson-Gottesman binary tableau simulator achieving peak throughputs exceeding $3.1 \times 10^6$ Clifford gates/second;
 (3) continuous Hilbert space automatic differentiation (\texttt{quanta.torch}) governed by the Daleckii-Krein spectral Fr\'echet formula with an exact cardinal sine kernel, achieving IEEE 754 double-precision gradient evaluation ($9.99 \times 10^{-16}$ error against analytical parameter shifts) without Pad\'e norm drift ($>1.3 \times 10^{-6}$), combined with analytical Dynamical Lie Algebra (DLA) closure $\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$ and Barren Plateau variance bounds $\Var[\partial_\theta \langle O \rangle] \le 1/\dim(\mathfrak{g})$;
 (4) an end-to-end 2026 Dual-Track Fault-Tolerant Quantum Computing (FTQC) engine featuring Track~A (Edmonds Blossom minimum-weight perfect matching on rotated $[[d^2, 1, d]]$ surface codes with Google Willow-compatible 3D spacetime defect graphs $\Delta s_t = s_t \oplus s_{t-1}$) and Track~B (the canonical Gross $[[144, 12, 12]]$ Bivariate Bicycle quantum Low-Density Parity-Check code delivering a $12\times$ physical qubit memory compression over 2D surface codes, decoded via a native Normalized Min-Sum Belief Propagation and Ordered Statistics Decoder with an average decode latency of $1.54$~ms and $100\%$ clearance), alongside 15-to-1 Bravyi-Kitaev magic state distillation ($\epsilon_{\text{out}} \le 35 p^3$) and planar lattice surgery; and
-(5) certified mathematical rigor, where runtime conservation invariant guards enforce spectral unitarity ($\norm{U^\dagger U - I}_\infty < 10^{-14}$) and completely positive trace-preserving (CPTP) dynamics ($|\Tr(\rho) - 1| < 10^{-12}$) across a regression-free verification suite of 2,076 automated tests.
+(5) certified mathematical rigor, where runtime conservation invariant guards enforce spectral unitarity ($\norm{U^\dagger U - I}_\infty < 10^{-14}$), Noetherian symmetry conservation, and completely positive trace-preserving (CPTP) dynamics ($|\Tr(\rho) - 1| < 10^{-12}$) across a regression-free verification suite of 2,711 automated tests.
 We present an exhaustive 10-vector comparative analysis against leading quantum frameworks (Qiskit, Cirq, PennyLane, Stim, PyMatching, QuTiP, Julia QuantumClifford) alongside empirical microbenchmarks validating the framework's mathematical fidelity and computational throughput.
 \end{abstract}
 
@@ -809,7 +806,7 @@ Quanta SDK v1.2.0 establishes a new standard for quantum computing software arch
 % ACKNOWLEDGEMENTS
 % -----------------------------------------------------------------------------
 \begin{acknowledgments}
-The authors express their gratitude to the ONMARTECH Quantum Computing Initiative and the Google Antigravity Multi-Agent Research Consortium for computing resources and architectural peer review. We acknowledge foundational contributions from the broader open-source quantum computing community whose seminal theoretical works provided benchmarks for rigorous differential verification.
+The authors express their gratitude to the ONMARTECH Quantum Computing Initiative for computing resources and architectural peer review. We acknowledge foundational contributions from the broader open-source quantum computing community whose seminal theoretical works provided benchmarks for rigorous differential verification.
 \end{acknowledgments}
 
 % -----------------------------------------------------------------------------

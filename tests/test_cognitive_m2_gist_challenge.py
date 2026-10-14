@@ -54,11 +54,11 @@ class TestActionableResolutionAndDistillation:
     @pytest.mark.parametrize(
         "chatter",
         [
-            "view_file /Users/aes/quanta/quanta/cognitive/memory.py line 42",
+            "view_file /workspace/quanta/quanta/cognitive/memory.py line 42",
             "run_command .venv/bin/pytest tests/test_core.py",
             "grep_search 'def is_actionable' in scripts/",
-            "find_by_name *.json in /Users/aes/",
-            "list_dir /Users/aes/Antigravity Projects",
+            "find_by_name *.json in /workspace/",
+            "list_dir /workspace",
             "checked line 120 of memory.py for changes",
             "reading file contents for inspection",
             "listing directory children for audit",
@@ -180,7 +180,7 @@ class TestCognitiveMemoryManagerFTTConsolidation:
         cmem = CognitiveMemoryManager(capacity=16, dim=DEFAULT_DIM)
         cmem.record_transient_decision(
             key="decision_tool_call_5",
-            content="view_file /Users/aes/quanta/quanta/cognitive/memory.py line 42",
+            content="view_file /workspace/quanta/quanta/cognitive/memory.py line 42",
             salience=0.50,
         )
 

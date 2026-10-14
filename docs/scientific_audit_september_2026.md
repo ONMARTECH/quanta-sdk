@@ -1,6 +1,6 @@
 # Quanta SDK: Comprehensive Scientific Audit & Theoretical Physics Inspection Report
 **Lead Author & Principal Architect**: [Abdullah Enes SARI](https://orcid.org/0000-0002-8827-0587) [![ORCID](https://orcid.org/sites/default/files/images/orcid_16x16.png)](https://orcid.org/0000-0002-8827-0587) (<info@onmartech.com>) — ONMARTECH  
-**Co-Author & Peer Inspection**: Quanta Quantum Research Group & Antigravity Agentic AI Board  
+**Co-Author & Peer Inspection**: Quanta Quantum Research Group (ONMARTECH Quantum Computing Initiative)  
 **Publication**: ONMARTECH Quantum Computing Technical Whitepaper Series (v1.2.0 Release)  
 **Date**: September 2026  
 **Scope**: Fault-Tolerant Quantum Computing (FTQC), Google Willow 3D QEC, Gross [[144, 12, 12]] qLDPC, Daleckii-Krein Autograd, and Hardware Acceleration Limits  
@@ -525,12 +525,12 @@ The comprehensive academic and engineering audit confirms that Quanta SDK has su
   </div>
 </div>
 
-**Co-Author & Scientific Review Board**: Quanta Quantum Research Group & Antigravity Agentic AI Board
+**Co-Author & Scientific Review Board**: Quanta Quantum Research Group (ONMARTECH Quantum Computing Initiative)
 
 ```bibtex
 @article{sari2026quanta_audit,
   title={Quanta SDK: Comprehensive Scientific Audit, Mathematical Verification, and 2026 Fault-Tolerant Quantum Computing Architecture},
-  author={SARI, Abdullah Enes and Antigravity Quantum Research Team},
+  author={SARI, Abdullah Enes and {Quanta Quantum Research Group}},
   journal={ONMARTECH Research Publications},
   year={2026},
   month={September},

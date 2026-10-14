@@ -346,7 +346,7 @@ def run_hippocampal_benchmark() -> dict[str, Any]:
     print(f"  Figure saved to: {fig_path}")
 
     # Copy to artifacts directory
-    artifact_dir = Path("/Users/aes/.gemini/antigravity/brain/5551c804-c729-424c-a867-fd3c7b746f0c")
+    artifact_dir = Path.home() / ".gemini/antigravity/brain/5551c804-c729-424c-a867-fd3c7b746f0c"
     if artifact_dir.exists():
         shutil.copy(fig_path, artifact_dir / "fig7_hippocampal_buffer.png")
 

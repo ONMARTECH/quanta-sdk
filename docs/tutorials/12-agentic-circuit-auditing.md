@@ -4,7 +4,7 @@
 
 ---
 
-> **Bu tutorialda öğrenecekleriniz:** Claude, Cursor veya Antigravity gibi otonom yapay zeka ajanlarının Quanta SDK'nın 23 adet MCP aracını kullanarak kuantum devrelerini nasıl otonom olarak denetlediğini, sadeleştirdiğini, uniter eşdeğerliğini matematiksel olarak doğruladığını ve gürültülü donanımlar için QEC koruması eklediğini inceleyeceksiniz.
+> **Bu tutorialda öğrenecekleriniz:** MCP (Model Context Protocol) destekli otonom yapay zeka ajanlarının Quanta SDK'nın 23 adet kuantum aracını kullanarak kuantum devrelerini nasıl otonom olarak denetlediğini, sadeleştirdiğini, uniter eşdeğerliğini matematiksel olarak doğruladığını ve gürültülü donanımlar için QEC koruması eklediğini inceleyeceksiniz.
 
 ---
 

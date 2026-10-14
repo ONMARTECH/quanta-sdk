@@ -20,12 +20,8 @@ import sys
 import time
 from pathlib import Path
 
-HOOK_PATH = Path(
-    "/Users/aes/Antigravity Projects/Alfa/quanta/scripts/hooks/quanta_subconscious_hook.py"
-)
-DASHBOARD_PATH = Path(
-    "/Users/aes/Antigravity Projects/Alfa/quanta/quanta/cognitive/dashboard/index.html"
-)
+HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/quanta_subconscious_hook.py")
+DASHBOARD_PATH = (Path(__file__).resolve().parent.parent / "quanta/cognitive/dashboard/index.html")
 PYTHON_EXE = sys.executable
 
 
@@ -302,9 +298,7 @@ class TestSubconsciousHookFailSafe:
         # Read recorded hook telemetry to check telemetry.latency_ms
         telemetry_file = tmp_path / "quanta_cognitive_telemetry.jsonl"
         if not telemetry_file.exists():
-            telemetry_file = Path(
-                "/Users/aes/Antigravity Projects/Alfa/quanta/quanta_cognitive_telemetry.jsonl"
-            )
+            telemetry_file = (Path(__file__).resolve().parent.parent / "quanta_cognitive_telemetry.jsonl")
 
         if telemetry_file.exists():
             last_lines = telemetry_file.read_text(encoding="utf-8").strip().splitlines()[-10:]

@@ -414,7 +414,7 @@ At standard microprocessor ambient junction temperature ($T \approx 315.15\,\tex
 $$Q_{\text{Landauer}} \ge (1.380649 \times 10^{-23}\,\text{J/K}) \cdot (315.15\,\text{K}) \cdot (0.693147) \approx 3.016 \times 10^{-21}\,\text{Joules/bit}$$
 
 #### Irreversible State Transitions in Subconscious LLM Generation
-Each step of an autoregressive token generation in an Antigravity subconscious conversation involves mapping a high-dimensional transformer hidden state $\mathbf{h} \in \mathbb{R}^{d_{\text{model}}}$ ($d_{\text{model}} \approx 4096$) through projection matrices and a softmax operator over vocabulary $\mathcal{V}$ ($|\mathcal{V}| \approx 32000$), followed by token sampling. 
+Each step of an autoregressive token generation in an autonomous subconscious deliberation involves mapping a high-dimensional transformer hidden state $\mathbf{h} \in \mathbb{R}^{d_{\text{model}}}$ ($d_{\text{model}} \approx 4096$) through projection matrices and a softmax operator over vocabulary $\mathcal{V}$ ($|\mathcal{V}| \approx 32000$), followed by token sampling. 
 
 Because many continuous internal activation states collapse onto a single discrete token index $w_t \in \mathcal{V}$, this process is fundamentally logically irreversible. The information loss per token generation is bounded below by:
 
@@ -677,15 +677,16 @@ Modern cognitive neuroscience grounds Wallas's stages in the dynamic competition
 
 ---
 
-### 5.3 Google Antigravity SDK Headless Dialectical Architecture
+### 5.3 Headless Multi-Agent Dialectical Architecture & Noetherian Arbitration
 
-In Quanta, the Wallas tri-network interaction is realized via a headless, isolated multi-agent dialectic powered by the **Google Antigravity SDK (`google-antigravity-sdk`)** (`quanta.cognitive.mind_wander`):
+In Quanta, the Wallas tri-network interaction is realized via a headless, isolated multi-agent dialectic orchestrated by the **Quanta Cognitive Engine** (`quanta.cognitive.mind_wander`, `quanta.cognitive.noetherian_arbiter`, and `quanta.cognitive.ablation`):
 
-- **Dual-Persona Antigravity Agent Configuration:**  
-  The engine instantiates two specialized internal agents communicating within a private, headless `Conversation`:
+- **Dual-Persona Dialectical Configuration:**  
+  The engine instantiates two specialized internal personas communicating within a private, headless deliberation channel:
   - **The Generative Dreamer (DMN Incubator):** Instantiated with elevated temperature ($T = 0.85$). Generates divergent associations, proposes cross-module refactors, and explores speculative architectural bridges.
-  - **The Evaluative Arbiter (Zeno Prefrontal Critic):** Instantiated with low temperature ($T = 0.20$). Employs Quantum Zeno Attention to challenge leaps of logic, run virtual mental rollouts, test edge cases, and prune invalid hypotheses.
-- **Transcript Isolation:** The internal conversation is decoupled from the user's primary conversational stream, preventing speculative internal chatter from contaminating the user's UI.
+  - **The Evaluative Arbiter (Zeno & Noetherian Prefrontal Critic):** Instantiated with low temperature ($T = 0.20$). Employs Quantum Zeno Attention (`QuantumDecisionArbiter`) and continuous Noetherian symmetry invariants (`NoetherianInvariantEngine` / `MizanHakemi`) to challenge leaps of logic, run virtual mental rollouts, test edge cases, and prune hypotheses that violate structural conservation laws.
+- **Label-Leakage-Free Ablation Verification (`ZenoAblationEngine`):** To prevent Goodhart's Law and benchmark leakage, candidate decision policies are benchmarked exclusively via observable structural features against naive classical baselines (greedy, random, rule-based) before consensus promotion.
+- **Transcript Isolation & Concurrent Blackboard (`CognitiveBlackboard`):** The internal deliberation is decoupled from the user's primary stream, exchanging validated architectural constraints across concurrent workers via POSIX `fcntl`-locked atomic state transitions.
 - **Consensus & Illumination:** When the Dreamer and Arbiter converge on a consensual solution satisfying $F \ge 0.95$ and token entropy gain $\Delta H > \theta_H$, the Salience filter triggers Illumination, translocating the solution into `quanta_cognitive_state.json`.
 
 ---
@@ -897,13 +898,13 @@ The following diagram illustrates the complete end-to-end integration of Pillar 
                                                                                          |
 =========================================================================================|===========
                                 SUBCONSCIOUS DOMAIN (BACKGROUND / E-CORES)               v
- [Memory Consolidation] <--- [SWR Replay (150-250 Hz)] <--- [Wallas Stage 3: Illumination]
-  quanta_cognitive_state.json   CA3-CA1 Compressed Replay     Consensus Fidelity F >= 0.95
-         |                                                                      ^
+ [Memory Consolidation] <--- [Context-Adaptive SWR Replay] <--- [Wallas Stage 3: Illumination]
+  quanta_cognitive_state.json   CA3-CA1 Compressed Replay        Consensus Fidelity F >= 0.95
+         |                      + Top-K Semantic Resonance                      ^
          v                                                                      |
- [Subconscious Hook]                                                 [Antigravity Dialectic]
-  scripts/hooks/                                                      DMN Generative Dreamer (T=0.85)
-  Serves answers on turn k+1                                          Zeno Prefrontal Critic (T=0.20)
+ [Cognitive Context Gate]                                            [Quanta DMN-Zeno Dialectic]
+  quanta.cognitive.memory                                             DMN Generative Dreamer (T=0.85)
+  Serves resonant anchors on turn k+1                                 Zeno / Noetherian Critic (T=0.20)
                                                                                 ^
                                                                                 |
                                                                      [Anti-Rumination Safeguard]
@@ -944,8 +945,8 @@ The following diagram illustrates the complete end-to-end integration of Pillar 
 | $S(\bar{\rho}_W)$ | von Neumann spectral entropy | Subspace dimensionality | Spectral dispersion of thoughts | $> 0.5 \ln(\min(W, d))$ | `quanta.cognitive.mind_wander` |
 | $\mathcal{C}_k$ | Consecutive thought cosine similarity| Rumination attractor basin | Statevector alignment | $\le 0.95$ | `quanta.cognitive.mind_wander` |
 | $\Delta T_{\text{NA}}$ | Noradrenaline temperature boost| Locus Coeruleus phasic burst | LLM temperature kick | $+0.50$ | `quanta.cognitive.mind_wander` |
-| $N_{\text{turns}}$ | Maximum turns per dream cycle | Cognitive turn horizon | Antigravity max_turns | $\le 5$ turns | `quanta.cognitive.mind_wander` |
-| $N_{\text{tokens}}$ | Maximum tokens per dream cycle| Metabolic ceiling per cycle | Antigravity token ceiling | $\le 2500$ tokens | `quanta.cognitive.mind_wander` |
+| $N_{\text{turns}}$ | Maximum turns per dream cycle | Cognitive turn horizon | Dialectical max_turns | $\le 5$ turns | `quanta.cognitive.mind_wander` |
+| $N_{\text{tokens}}$ | Maximum tokens per dream cycle| Metabolic ceiling per cycle | Dialectical token ceiling | $\le 2500$ tokens | `quanta.cognitive.mind_wander` |
 | $t_{\text{preempt}}$ | Preemption interrupt latency | Microsecond sensory override | Mach thread yield latency | $< 20\,\text{ms}$ | `quanta.cognitive.darwin_idle` |
 | $Q_{\text{Landauer}}$| Thermodynamic dissipation bound| Metabolic heat production | Landauer dissipation limit | $\ge k_B T \ln 2$ | Section 3.5 |
 

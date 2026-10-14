@@ -28,7 +28,7 @@ from scripts.hooks.quanta_subconscious_hook import (
     FastBiomorphicMemory,
 )
 
-PROD_STATE_PATH = Path("/Users/aes/Antigravity Projects/Alfa/quanta/quanta_cognitive_state.json")
+PROD_STATE_PATH = (Path(__file__).resolve().parent.parent / "quanta_cognitive_state.json")
 
 
 class TestCoreAnchorImmunityStress:

@@ -6,10 +6,10 @@ from pathlib import Path
 
 from quanta.mcp_server import mcp
 
-ANTIGRAVITY_MCP_DIR = Path("/Users/aes/.gemini/antigravity/mcp/quanta")
-ANTIGRAVITY_CONFIG_FILE = Path("/Users/aes/.gemini/antigravity/mcp_config.json")
-VENV_PYTHON = "/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/python"
-QUANTA_DIR = "/Users/aes/Antigravity Projects/Alfa/quanta"
+ANTIGRAVITY_MCP_DIR = Path.home() / ".gemini/antigravity/mcp/quanta"
+ANTIGRAVITY_CONFIG_FILE = Path.home() / ".gemini/antigravity/mcp_config.json"
+VENV_PYTHON = str(Path(__file__).resolve().parent.parent / ".venv/bin/python")
+QUANTA_DIR = str(Path(__file__).resolve().parent.parent)
 
 
 async def export_tools() -> None:

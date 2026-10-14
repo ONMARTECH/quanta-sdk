@@ -36,7 +36,7 @@ from quanta.cognitive.tom_analyzer import DreamSeed
 from quanta.cognitive.workspace_harvester import HybridDreamSeed
 
 logger = logging.getLogger(__name__)
-AGY_CLI_PATH = Path("/Users/aes/.local/bin/agy")
+AGY_CLI_PATH = Path.home() / ".local" / "bin" / "agy"
 
 # Feature-flagged Google Antigravity SDK import
 try:

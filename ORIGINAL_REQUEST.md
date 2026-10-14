@@ -6,7 +6,7 @@ Use a very large team of agents. Ekibi akademisyenler, teorik fizikçiler, uygul
 
 Quanta SDK ve framework mimarisini baştan sona denetle; 2026 Eylül ayı kuantum bilişim literatürü, endüstriyel standartları ve kuramsal atılımları doğrultusunda eksiklikleri, kuramsal zayıflıkları ve sıçrama yapılabilecek gelişim alanlarını tespit et, her bulguyu kesin matematiksel ve deneysel testlerle doğrula.
 
-Working directory: /Users/aes/Antigravity Projects/Alfa/quanta
+Working directory: /workspace/quanta
 Integrity mode: development
 
 ## Core Architecture Principles (Zero-Dependency & First-Principles)
@@ -60,14 +60,14 @@ Integrity mode: development
 
 ### Test Bütünlüğü ve Falsifiability
 - [ ] Hiçbir iddia testi olmadan raporlanamaz: Her eksiklik veya gelişim alanı için `tests/` dizininde çalıştırılabilir bir test, kıyaslama (benchmark) veya property-based test (Hypothesis) yazılmış olmalıdır.
-- [ ] Tüm yeni testler `/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/python -m pytest` altında %100 başarıyla geçmeli, mevcut 1600+ testte hiçbir regresyon oluşmamalıdır.
+- [ ] Tüm yeni testler `/workspace/quanta/.venv/bin/python -m pytest` altında %100 başarıyla geçmeli, mevcut 1600+ testte hiçbir regresyon oluşmamalıdır.
 
 
 ## 2026-09-24T20:14:23Z
 
 Implement Plastic Biomorphic Cognitive Immunity (LTP/LTD-governed Negative Engrams) and Multi-Branch Decision Tree Deliberation (DAG Rollouts) in Quanta SDK with seamless Antigravity hook integration.
 
-Working directory: /Users/aes/Antigravity Projects/Alfa/quanta
+Working directory: /workspace/quanta
 Integrity mode: development
 
 ## Requirements
@@ -110,7 +110,7 @@ Maintain 100% adherence to Quanta's framework standards:
 
 ### Quality & Test Suite
 - [ ] `ruff check quanta/` and `mypy quanta/ --ignore-missing-imports` pass with zero errors.
-- [ ] All new tests pass via `/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/pytest`.
+- [ ] All new tests pass via `/workspace/quanta/.venv/bin/pytest`.
 - [ ] Existing cognitive test suites (`test_cognitive_*.py`, `test_subconscious*.py`) suffer zero regressions.
 
 ## 2026-09-24T21:14:19Z
@@ -119,7 +119,7 @@ Use a very large team of agents. Ekibi kıdemli kuantum yazılım mimarları, te
 
 Quanta SDK için uluslararası hakemli dergi ve preprint standartlarında (**arXiv `quant-ph`**, **Zenodo**, ve **Journal of Open Source Software - JOSS**) kapsamlı bir **Akademik Yazılım Mimarisi Makalesi (Software Architecture Paper)** ve eksiksiz yayın paketi üret. Makale, Quanta'nın özgün felsefesini, metodolojisini, diğer framework'lerden (Qiskit, Cirq, PennyLane, Stim, PyMatching, QuTiP) yapısal farklarını ve ampirik başarılarını sıfır halüsinasyon ve kesin matematiksel/deneysel temellerle ortaya koymalıdır.
 
-Working directory: /Users/aes/Antigravity Projects/Alfa/quanta  
+Working directory: /workspace/quanta  
 Integrity mode: development  
 
 ---
@@ -215,7 +215,7 @@ Quanta SDK'nın akademik özgünlüğü, piyasadaki mevcut araçların kopyası 
 
 Implement Two-Phase Biomorphic Sleep Architecture (NREM Deep-Sleep Synaptic Scaling & REM Hyper-Associative Cross-Project Dreaming) with Reverse-Chronological Replay in Quanta SDK.
 
-Working directory: /Users/aes/Antigravity Projects/Alfa/quanta
+Working directory: /workspace/quanta
 Integrity mode: development
 
 ## Requirements
@@ -233,7 +233,7 @@ Structure dream and consolidation triggers using a temporal decay cascade:
 
 ### R3. Cross-Project Hyper-Associative Synthesis ("Bisociation")
 Break project isolation barriers during REM dream generation:
-- Randomly and semantically pair disparate projects across `/Users/aes/Antigravity Projects` (e.g., flight booking engine x CRM graph clustering, or modern web frontend x BigQuery cost guardrails).
+- Randomly and semantically pair disparate projects across `/workspace` (e.g., flight booking engine x CRM graph clustering, or modern web frontend x BigQuery cost guardrails).
 - Generate novel cross-domain architectural insights ("bisociations") and document them as emergent hybrid RFCs (`RFC_HYBRID_*.md`).
 - Ensure sandbox safety: hybrid dreaming analyzes patterns without mutating underlying project production code.
 
@@ -252,7 +252,7 @@ Incorporate computational sleep theory (Hoel's Overfitted Brain Hypothesis & Hin
 ### Quality, Stability & Test Suite
 - [ ] Zero Ruff lint errors and passing `mypy quanta/ --ignore-missing-imports`.
 - [ ] Automated test suite in `tests/test_biomorphic_sleep_cycles.py` verifying state transitions, recency replay ordering, and cross-project synthesis safety.
-- [ ] 100% pass rate across the full Quanta test suite (559+ tests) via `/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/pytest`.
+- [ ] 100% pass rate across the full Quanta test suite (559+ tests) via `/workspace/quanta/.venv/bin/pytest`.
 
 ## 2026-09-25T21:42:58Z
 
@@ -260,7 +260,7 @@ Use a very large team of agents.
 
 Kafes tabanlı kuantum sonrası kriptografinin (Post-Quantum Cryptography - LWE/Kyber/Dilithium) temelini oluşturan En Yakın Vektör Problemini (Closest Vector Problem - CVP) çözmek ve sınırlarını test etmek üzere; mevcut durumdaki literatürü ve algoritmaları derinlemesine inceleyen, yetersizlikleri tespit eden ve Quanta SDK'nın Bilişsel Mimarisi (Zeno Karar Hakemi, SWR Engram Hafızası, CSF Kalkanı) ile güçlendirilmiş hibrit kuantum çözücü (QAOA-Cognitive) geliştiren kapsamlı araştırma ve mühendislik çalışması.
 
-Working directory: /Users/aes/Antigravity Projects/Alfa/quanta
+Working directory: /workspace/quanta
 Integrity mode: development
 
 ## Requirements
@@ -288,7 +288,7 @@ Integrity mode: development
 
 ### Doğruluk ve Çalışabilirlik
 - [ ] Test setlerindeki sentetik CVP örnekleri için doğru en yakın vektör mesafesi matematiksel olarak doğrulanabilir olmalıdır.
-- [ ] Geliştirilen çözücü script veya modülü `/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/python` ortamında hatasız çalışmalıdır.
+- [ ] Geliştirilen çözücü script veya modülü `/workspace/quanta/.venv/bin/python` ortamında hatasız çalışmalıdır.
 
 ### Kıyaslama ve Metrik Raporu
 - [ ] En az 3 farklı boyut kademesinde ($n=4, 8, 12+$) klasik vs standart QAOA vs bilişsel QAOA karşılaştırmalı sayısal sonuç tablosu üretilmelidir.

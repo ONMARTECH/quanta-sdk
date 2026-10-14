@@ -5,7 +5,7 @@ topic: continuous_resonance
 confidence: 0.98
 created_at: '2026-09-25 16:04:49 UTC'
 generated_by: Quanta Subconscious Mind-Wandering Daemon
-engine: Antigravity Agent Engine (DMN-Zeno Dialectic)
+engine: Quanta Cognitive Dialectic Engine (DMN-Zeno Arbiter)
 ---
 
 # RFC: CONTINUOUS_RESONANCE

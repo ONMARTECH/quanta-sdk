@@ -1580,7 +1580,7 @@ class TestTier2BoundaryAndCornerCases:
 
     def test_f11_bva_python_interpreter_path_executable(self) -> None:
         """F11.BVA.2: Python interpreter declared in hook command exists and is executable."""
-        venv_py = Path("/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/python")
+        venv_py = (Path(__file__).resolve().parent.parent / ".venv/bin/python")
         if venv_py.exists():
             assert os.access(venv_py, os.X_OK)
 

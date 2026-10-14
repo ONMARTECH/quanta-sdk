@@ -6,7 +6,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-HOOK_DIR = Path("/Users/aes/Antigravity Projects/Alfa/quanta/scripts/hooks")
+HOOK_DIR = (Path(__file__).resolve().parent.parent / "scripts/hooks")
 HOOK_PATH = HOOK_DIR / "quanta_subconscious_hook.py"
 
 
@@ -18,7 +18,7 @@ class TestQuantaSubconsciousHook:
             payload = {
                 "conversationId": "test_conv_auto",
                 "artifactDirectoryPath": tmp_dir,
-                "workspacePaths": ["/Users/aes/Antigravity Projects/Alfa/quanta"],
+                "workspacePaths": [str(Path(__file__).resolve().parent.parent)],
             }
             raw_input = json.dumps(payload).encode("utf-8")
 

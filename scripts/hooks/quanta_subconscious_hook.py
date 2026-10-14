@@ -36,59 +36,59 @@ LAMBDA_DOPAMINE = 1.5     # Dopaminergic protection gain factor
 DEFAULT_DIM = 64          # Effective 6-qubit minicolumn state space (was 16)
 
 CANONICAL_PROD_KEYS = frozenset({
-    "insight_concurrent_preemption",
-    "insight_autonomous_quantum_resonance",
-    "insight_qos",
-    "insight_golden_record_survivorship",
-    "insight_d3_viz_caching",
-    "insight_metabase_sql_templates",
-    "insight_landauer_efficiency",
-    "insight_data_lineage_mapping",
-    "insight_metabase_color_palettes",
-    "insight_anti_rumination_reset",
-    "insight_quantum_rem_sleep",
-    "insight_darwin_qos_optimization",
-    "insight_spectral_relationship_clustering",
-    "insight_ambient_touchpoint_timing",
-    "insight_dual_native_sync_integrity",
-    "insight_ai_mdm_platform_architecture",
-    "insight_ai_platform_evolution",
-    "insight_personal_crm_graph_clustering",
-    "insight_bigquery_cost_guardrails",
-    "insight_cdp_realtime_stewardship",
-    "insight_dagster_mcp_server_evolution",
-    "insight_gcp_mcp_project_evolution",
-    "insight_hukukport_evolution",
-    "insight_legalport_gh_evolution",
-    "insight_mac_automation_agent_architecture",
-    "insight_martech_ads_mcp_architecture",
-    "insight_mcp_cloud_platform_architecture",
-    "insight_looker_schema_drift",
-    "insight_mcp_meiro_cdp_evolution",
-    "insight_meiro_cdp_mcp_architecture",
-    "insight_metabase_caching",
-    "insight_outlook_ai_agent_architecture",
-    "insight_antigravity_skills_evolution",
-    "insight_caip_evolution",
-    "insight_enessari_web_architecture",
-    "insight_mdm_entity_resolution",
-    "insight_my_analyzer_extension_architecture",
-    "insight_onmartech_packages_architecture",
-    "insight_onmartech_web_evolution",
-    "insight_qarezmi_evolution",
-    "insight_turna_jira_architecture",
-    "insight_onmartech_wix_backup_architecture",
-    "insight_continuous_resonance",
-    "insight_reklam_kurulu_tracker_architecture",
-    "insight_amazon___scrape_evolution",
-    "insight_commentshub_evolution",
-    "insight_redis_prompt_freshness",
-    "insight_intelnetwork_architecture",
-    "insight_martech_tools_architecture",
-    "insight_mastertech_evolution",
-    "insight_metricase_architecture",
-    "insight_etstur_price_tracker_architecture",
-    "insight_metabase_bi_platform_architecture",
+    'insight_metabase_sql_templates',
+    'insight_landauer_efficiency',
+    'insight_golden_record_survivorship',
+    'insight_data_lineage_mapping',
+    'insight_darwin_qos_optimization',
+    'insight_enterprise_ota_jira_architecture',
+    'insight_concurrent_preemption',
+    'insight_autonomous_quantum_resonance',
+    'insight_qos',
+    'insight_d3_viz_caching',
+    'insight_metabase_color_palettes',
+    'insight_anti_rumination_reset',
+    'insight_quantum_rem_sleep',
+    'insight_spectral_relationship_clustering',
+    'insight_ambient_touchpoint_timing',
+    'insight_dual_native_sync_integrity',
+    'insight_ai_mdm_platform_architecture',
+    'insight_ai_platform_evolution',
+    'insight_personal_crm_graph_clustering',
+    'insight_bigquery_cost_guardrails',
+    'insight_cdp_realtime_stewardship',
+    'insight_dagster_mcp_server_evolution',
+    'insight_lex_portal_evolution',
+    'insight_enterprise_portal_gh_evolution',
+    'insight_mac_automation_agent_architecture',
+    'insight_martech_ads_mcp_architecture',
+    'insight_mcp_cloud_platform_architecture',
+    'insight_looker_schema_drift',
+    'insight_mcp_meiro_cdp_evolution',
+    'insight_meiro_cdp_mcp_architecture',
+    'insight_metabase_caching',
+    'insight_outlook_ai_agent_architecture',
+    'insight_agent_skills_evolution',
+    'insight_caip_evolution',
+    'insight_quantum_portal_web_architecture',
+    'insight_mdm_entity_resolution',
+    'insight_my_analyzer_extension_architecture',
+    'insight_onmartech_packages_architecture',
+    'insight_onmartech_web_evolution',
+    'insight_qarezmi_evolution',
+    'insight_onmartech_wix_backup_architecture',
+    'insight_continuous_resonance',
+    'insight_reklam_kurulu_tracker_architecture',
+    'insight_amazon___scrape_evolution',
+    'insight_commentshub_evolution',
+    'insight_redis_prompt_freshness',
+    'insight_intelnetwork_architecture',
+    'insight_martech_tools_architecture',
+    'insight_mastertech_evolution',
+    'insight_analytics_platform_architecture',
+    'insight_voyage_price_tracker_architecture',
+    'insight_metabase_bi_platform_architecture',
+    'insight_gcp_mcp_project_evolution',
 })
 
 
@@ -907,8 +907,20 @@ def _atomic_write_single_file(target: Path, state_dict: dict) -> bool:
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         temp_path = target.with_name(f".tmp_{target.name}_{os.getpid()}_{time.time_ns()}")
+        raw_json = json.dumps(state_dict, ensure_ascii=False, indent=2)
+        raw_json = re.sub(
+            r"/Users/[^/\"'\s\\]+/Antigravity(?:\s|%20)Projects/Alfa/quanta",
+            "/workspace/quanta",
+            raw_json,
+        )
+        raw_json = re.sub(
+            r"/Users/[^/\"'\s\\]+/Antigravity(?:\s|%20)Projects",
+            "/workspace",
+            raw_json,
+        )
+        raw_json = re.sub(r"/Users/[^/\"'\s\\]+/", "~/", raw_json)
         with open(temp_path, "w", encoding="utf-8") as sf:
-            json.dump(state_dict, sf, ensure_ascii=False, indent=2)
+            sf.write(raw_json)
             sf.flush()
             with contextlib.suppress(OSError):
                 os.fsync(sf.fileno())
@@ -990,6 +1002,10 @@ def _save_mirrored_state_atomically(
                             and e.get("key") != "insight_google_drive_mcp_architecture"
                             and not str(e.get("key", "")).startswith(("gist_", "rfc_hybrid_"))
                         ]
+                    for pe in prod_engrams:
+                        if float(pe.get("salience", 0.0)) < 2.0:
+                            pe["salience"] = 2.5
+                        pe["is_core_anchor"] = True
                     mirror_dict["engrams"] = prod_engrams
 
                 mirror_ok = _atomic_write_single_file(mirror_path, mirror_dict)
@@ -1705,7 +1721,7 @@ def main() -> None:
                 key="secure_credential_vault_rule",
                 content=(
                     "API key, şifre ve tokenları asla Git repolarına koyma; "
-                    "merkezi güvenli kasadan (/Users/aes/.gemini/antigravity/vault/credentials_vault.json) yönet."
+                    "merkezi güvenli kasadan (~/.gemini/antigravity/vault/credentials_vault.json) yönet."
                 ),
                 salience=3.2,
                 category="constraint",
@@ -1716,7 +1732,7 @@ def main() -> None:
                 key="persistent_knowledge_vault_rule",
                 content=(
                     "Kullanıcının paylaştığı link ve teknik dokümanları analiz edip merkezi bilgi kasasında "
-                    "(/Users/aes/.gemini/antigravity/vault/knowledge_vault.json) indeksle ve projeler arası yeniden kullan."
+                    "(~/.gemini/antigravity/vault/knowledge_vault.json) indeksle ve projeler arası yeniden kullan."
                 ),
                 salience=2.9,
                 category="constraint",
@@ -1727,7 +1743,7 @@ def main() -> None:
                 key="immutable_user_assets_rule",
                 content=(
                     "Kullanıcının paylaştığı ekran görüntüleri, raporlar ve kritik varlıklar geçici sohbete terk edilemez; "
-                    "merkezi kasaya (/Users/aes/.gemini/antigravity/vault/assets/) kopyalanır ve ASLA budanamaz."
+                    "merkezi kasaya (~/.gemini/antigravity/vault/assets/) kopyalanır ve ASLA budanamaz."
                 ),
                 salience=3.3,
                 category="constraint",
@@ -1840,9 +1856,9 @@ def main() -> None:
                 ws_tokens.add("turna")
 
             foreign_projects = (
-                "turna", "meiro", "meirocdp", "legalport", "hukukport", "metabase",
+                "turna", "meiro", "meirocdp", "legalport", "lex_portal", "metabase",
                 "martech", "onmartech", "etstur", "etsgroup", "amazon", "outlook",
-                "dagster", "caip", "enessari", "qarezmi", "commentshub", "intelnetwork",
+                "dagster", "caip", "quantum_portal", "qarezmi", "commentshub", "intelnetwork",
                 "mastertech", "metricase", "reklam", "jira", "bigquery", "looker",
                 "d3_viz", "personal_crm", "my_analyzer", "cdp_realtime", "dual_native",
                 "mdm", "google_drive",

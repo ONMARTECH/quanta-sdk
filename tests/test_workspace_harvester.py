@@ -214,7 +214,7 @@ class TestEpisodicSessionHarvester:
 
         for cid, title, steps, dt_val, proj in sessions_meta:
             iso_time = dt_val.isoformat()
-            uris = json.dumps([f"file:///Users/aes/Antigravity%20Projects/{proj}"])
+            uris = json.dumps([f"file:///workspace/{proj}"])
             cur.execute(
                 """
                 INSERT INTO conversation_summaries

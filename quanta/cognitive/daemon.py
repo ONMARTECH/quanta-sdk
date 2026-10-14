@@ -349,9 +349,7 @@ class SubconsciousDaemon:
 
     def _get_central_rfc_dir(self) -> Path:
         """Return the centralized Quanta RFC directory, ensuring sandbox isolation."""
-        docs_dir = Path("/Users/aes/Antigravity Projects/Alfa/quanta/docs/rfcs")
-        if not docs_dir.parent.exists():
-            docs_dir = Path(__file__).resolve().parent.parent.parent / "docs" / "rfcs"
+        docs_dir = Path(__file__).resolve().parent.parent.parent / "docs" / "rfcs"
         docs_dir.mkdir(parents=True, exist_ok=True)
         return docs_dir
 
@@ -382,7 +380,7 @@ class SubconsciousDaemon:
                 f"confidence: {insight.confidence:.2f}\n"
                 f"created_at: '{timestamp}'\n"
                 f"generated_by: Quanta Subconscious Mind-Wandering Daemon\n"
-                f"engine: Antigravity Agent Engine (DMN-Zeno Dialectic)\n"
+                f"engine: Quanta Cognitive Dialectic Engine (DMN-Zeno Arbiter)\n"
                 f"---\n\n"
                 f"{insight.synthesis}\n"
             )
@@ -402,7 +400,7 @@ class SubconsciousDaemon:
 
         Enforces SANDBOX IMMUTABILITY:
         - NEVER writes to external sibling project directories.
-        - Writes strictly to /Users/aes/Antigravity Projects/Alfa/quanta/docs/rfcs/
+        - Writes strictly to quanta/docs/rfcs/
         - Filename follows pattern: RFC_HYBRID_<timestamp>_<slug_a>_<slug_b>.md
         - Stamped with production YAML frontmatter and comprehensive architectural content.
         - Stored as high-salience engram (S >= 2.5) in quanta_cognitive_state.json.
@@ -451,7 +449,7 @@ class SubconsciousDaemon:
             f"confidence: {hybrid_result.confidence:.2f}\n"
             f"created_at: '{ts_frontmatter}'\n"
             f"generated_by: Quanta Subconscious Mind-Wandering Daemon (REM Bisociation)\n"
-            f"engine: Antigravity Agent Engine (DMN-Zeno Dialectic)\n"
+            f"engine: Quanta Cognitive Dialectic Engine (DMN-Zeno Arbiter)\n"
             f"tags:\n"
             f"  - architecture\n"
             f"  - rfc\n"
@@ -505,7 +503,7 @@ class SubconsciousDaemon:
             "\n## 5. Sandbox Safety & Isolation Verification\n\n"
             "- **Zero Mutation Guarantee**: All external sibling project trees were accessed "
             "via read-only descriptors (`mode='r'`). Zero writes, touches, or deletions occurred "
-            "outside `/Users/aes/Antigravity Projects/Alfa/quanta`.\n"
+            "outside the Quanta repository sandbox.\n"
             "- **Centralized Documentation**: This RFC artifact is stored strictly inside `quanta/docs/rfcs/`.\n"
             "- **Production Integrity**: External project codebases remain pristine and unaffected.\n"
         )

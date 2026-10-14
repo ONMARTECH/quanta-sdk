@@ -136,7 +136,7 @@ class TestEmpiricalChallenge1SandboxImmutability:
                 rfc_path.unlink()
 
     def test_real_workspace_sibling_projects_sha256_immutability(self, tmp_path: Path) -> None:
-        """Verifies bit-for-bit SHA-256 immutability on actual workspace projects under /Users/aes/Antigravity Projects."""
+        """Verifies bit-for-bit SHA-256 immutability on actual workspace projects under /workspace."""
         if not DEFAULT_PROJECTS_DIR.exists():
             pytest.skip(f"Workspace directory {DEFAULT_PROJECTS_DIR} not present.")
 

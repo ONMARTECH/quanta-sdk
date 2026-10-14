@@ -1002,9 +1002,7 @@ class TestMultiHorizonSWRHookLatency:
         # Verify internal hook execution latency budget (< 25ms)
         telem_file = tmp_path / "quanta_cognitive_telemetry.jsonl"
         if not telem_file.exists():
-            telem_file = Path(
-                "/Users/aes/Antigravity Projects/Alfa/quanta/quanta_cognitive_telemetry.jsonl"
-            )
+            telem_file = (Path(__file__).resolve().parent.parent / "quanta_cognitive_telemetry.jsonl")
         if telem_file.exists():
             last_lines = telem_file.read_text(encoding="utf-8").strip().splitlines()[-10:]
             for line in reversed(last_lines):

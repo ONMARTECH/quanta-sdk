@@ -63,12 +63,12 @@ tests/e2e/
 
 ### Standard Pytest Execution
 ```bash
-/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/python -m pytest tests/e2e/ -v --no-cov
+/workspace/quanta/.venv/bin/python -m pytest tests/e2e/ -v --no-cov
 ```
 
 ### Standalone E2E Runner Execution
 ```bash
-/Users/aes/Antigravity\ Projects/Alfa/quanta/.venv/bin/python tests/e2e/runner.py
+/workspace/quanta/.venv/bin/python tests/e2e/runner.py
 ```
 
 ### Quality Gates

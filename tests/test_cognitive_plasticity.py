@@ -40,8 +40,8 @@ from scripts.hooks.quanta_subconscious_hook import (
     FastBiomorphicMemory,
 )
 
-HOOK_PATH = Path("/Users/aes/Antigravity Projects/Alfa/quanta/scripts/hooks/quanta_subconscious_hook.py")
-PROD_STATE_PATH = Path("/Users/aes/Antigravity Projects/Alfa/quanta/quanta_cognitive_state.json")
+HOOK_PATH = (Path(__file__).resolve().parent.parent / "scripts/hooks/quanta_subconscious_hook.py")
+PROD_STATE_PATH = (Path(__file__).resolve().parent.parent / "quanta_cognitive_state.json")
 
 
 # ============================================================================
@@ -221,7 +221,7 @@ class TestTier1FeatureCoverage:
         payload = {
             "conversationId": "test_conv_plasticity",
             "artifactDirectoryPath": str(tmp_path),
-            "workspacePaths": ["/Users/aes/Antigravity Projects/Alfa/quanta"],
+            "workspacePaths": [str(Path(__file__).resolve().parent.parent)],
             "stepIdx": 1,
         }
         res = subprocess.run(
@@ -364,7 +364,7 @@ class TestTier2BoundaryAndCornerCases:
         payload = {
             "conversationId": "test_debounce",
             "artifactDirectoryPath": str(tmp_path),
-            "workspacePaths": ["/Users/aes/Antigravity Projects/Alfa/quanta"],
+            "workspacePaths": [str(Path(__file__).resolve().parent.parent)],
             "stepIdx": 5,
         }
         raw_input = json.dumps(payload).encode("utf-8")

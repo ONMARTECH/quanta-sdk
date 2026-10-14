@@ -374,9 +374,9 @@ def handle_dream(args: argparse.Namespace) -> int:
 
 LAUNCHAGENT_LABEL = "com.quanta.mindwander"
 LAUNCHAGENT_PLIST = Path.home() / "Library" / "LaunchAgents" / f"{LAUNCHAGENT_LABEL}.plist"
-DEFAULT_LOG_FILE = Path("/Users/aes/Antigravity Projects/Alfa/quanta/quanta_dream.log")
-PYTHON_EXEC = Path("/Users/aes/Antigravity Projects/Alfa/quanta/.venv/bin/python")
-WORKSPACE_DIR = Path("/Users/aes/Antigravity Projects/Alfa/quanta")
+WORKSPACE_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_LOG_FILE = WORKSPACE_DIR / "quanta_dream.log"
+PYTHON_EXEC = WORKSPACE_DIR / ".venv" / "bin" / "python"
 
 
 def handle_service(args: argparse.Namespace) -> int:

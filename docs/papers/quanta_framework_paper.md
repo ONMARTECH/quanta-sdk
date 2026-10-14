@@ -30,8 +30,8 @@ date: "2026-09-25"
   <div style="flex: 1; min-width: 280px;">
     <ul style="margin: 0; padding-left: 20px;">
       <li><strong>Lead Author & Principal Architect:</strong> <strong>Abdullah Enes SARI</strong> (<a href="https://orcid.org/0000-0002-8827-0587" target="_blank">ORCID: 0000-0002-8827-0587</a>) &mdash; <em>ONMARTECH Quantum Computing Initiative</em>, Istanbul, Turkey (<a href="mailto:info@onmartech.com">info@onmartech.com</a>)</li>
-      <li><strong>Co-Author & Peer Inspection Board:</strong> <strong>Quanta Quantum Research Group</strong> (<em>ONMARTECH Quantum Computing Initiative</em>) &amp; <strong>Antigravity Agentic AI Board</strong> (<em>Google Antigravity Multi-Agent Research Consortium</em>)</li>
-      <li><strong>Release Designation:</strong> <code>Quanta SDK v1.2.0-production</code> | <strong>Date:</strong> September 25, 2026</li>
+      <li><strong>Co-Author & Peer Inspection Board:</strong> <strong>Quanta Quantum Research Group</strong> (<em>ONMARTECH Quantum Computing Initiative</em>)</li>
+      <li><strong>Release Designation:</strong> <code>Quanta SDK v1.2.0-production</code> | <strong>Date:</strong> October 14, 2026</li>
       <li><strong>Target Archives:</strong> arXiv:quant-ph / cs.MS; Journal of Open Source Software (JOSS); Zenodo / CERN (<a href="https://doi.org/Pending Registration">DOI: Pending Registration</a>)</li>
       <li><strong>Official Repository:</strong> <a href="https://github.com/ONMARTECH/quanta-sdk">github.com/ONMARTECH/quanta-sdk</a> | <strong>Documentation:</strong> <a href="https://quanta.onmartech.com/">quanta.onmartech.com</a></li>
     </ul>
@@ -51,7 +51,7 @@ In this work, we introduce **Quanta** (version 1.2.0), a local-first, zero-depen
 2. **Apple Silicon Metal / MLX Zero-Copy GPU Acceleration**: Hardware-native acceleration on Apple Silicon unified memory architectures via Metal Performance Shaders and Apple MLX, completely eliminating PCIe data transfer overhead ($\Delta t_{\text{PCIe}} \equiv 0$) and yielding up to $52.1\times$ GPU acceleration over CPU NumPy, paired with a vectorized SIMD Aaronson-Gottesman binary tableau simulator achieving peak throughputs exceeding $3.1 \times 10^6$ Clifford gates/second and a norm-preserving Matrix Product State (MPS) simulator.
 3. **Continuous Hilbert Gradients & Daleckii-Krein Spectral Autograd (`quanta.torch`)**: Continuous-time quantum neural network autograd governed by the Daleckii-Krein spectral Fréchet formula with an exact cardinal sine kernel, achieving IEEE 754 double-precision gradient evaluation ($9.99 \times 10^{-16}$ error against analytical parameter shifts) without Padé norm drift ($>1.3 \times 10^{-6}$), combined with analytical Dynamical Lie Algebra (DLA) closure $\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$ and Barren Plateau variance bounds $\operatorname{Var}[\partial_\theta \langle O \rangle] \le 1/\dim(\mathfrak{g})$.
 4. **2026 Dual-Track Fault-Tolerance Engine (FTQC)**: An end-to-end fault-tolerance runtime featuring **Track A** (Edmonds Blossom minimum-weight perfect matching on rotated $[[d^2, 1, d]]$ surface codes with Google Willow-compatible 3D spacetime defect graphs $\Delta s_t = s_t \oplus s_{t-1}$) and **Track B** (the canonical Gross $[[144, 12, 12]]$ Bivariate Bicycle quantum Low-Density Parity-Check code delivering a $12\times$ physical qubit memory compression over 2D surface codes, decoded via a native Normalized Min-Sum Belief Propagation and Ordered Statistics Decoder with an average decode latency of $1.54$ ms and $100\%$ clearance), alongside 15-to-1 Bravyi-Kitaev magic state distillation ($\epsilon_{\text{out}} \le 35 p^3$) and planar lattice surgery.
-5. **Certified Mathematical Rigor**: Runtime conservation invariant guards enforcing spectral unitarity ($\|U^\dagger U - I\|_\infty < 10^{-14}$) and completely positive trace-preserving (CPTP) dynamics ($|\operatorname{Tr}(\rho) - 1| < 10^{-12}$) across a regression-free verification suite of 2,076 automated tests.
+5. **Certified Mathematical Rigor**: Runtime conservation invariant guards enforcing spectral unitarity ($\|U^\dagger U - I\|_\infty < 10^{-14}$), Noetherian symmetry conservation, and completely positive trace-preserving (CPTP) dynamics ($|\operatorname{Tr}(\rho) - 1| < 10^{-12}$) across a regression-free verification suite of 2,711 automated tests.
 
 We present an exhaustive 10-vector comparative analysis against leading quantum frameworks (Qiskit, Cirq, PennyLane, Stim, PyMatching, QuTiP, Julia QuantumClifford) alongside empirical microbenchmarks validating the framework's mathematical fidelity and computational throughput.
 
@@ -818,7 +818,7 @@ Quanta's 2026 Dual-Track FTQC engine bridges the gap between near-term 2D planar
 
 ## Acknowledgements
 
-The authors express their gratitude to the **ONMARTECH Quantum Computing Initiative** and the **Google Antigravity Multi-Agent Research Consortium** for computing resources, benchmark telemetry, and architectural peer review. We acknowledge foundational contributions from the broader open-source quantum computing community whose seminal theoretical works provided benchmarks for rigorous differential verification.
+The authors express their gratitude to the **ONMARTECH Quantum Computing Initiative** for computing resources, benchmark telemetry, and architectural peer review. We acknowledge foundational contributions from the broader open-source quantum computing community whose seminal theoretical works provided benchmarks for rigorous differential verification.
 
 ---
 
@@ -828,7 +828,7 @@ The authors express their gratitude to the **ONMARTECH Quantum Computing Initiat
 2. **Steane, A. M.** (1996). Error correcting codes in quantum theory. *Physical Review Letters*, 77(5), 793. [DOI: 10.1103/PhysRevLett.77.793](https://doi.org/10.1103/PhysRevLett.77.793)
 3. **Kitaev, A. Y.** (2003). Fault-tolerant quantum computation by anyons. *Annals of Physics*, 303(1), 2–30. [DOI: 10.1016/S0003-4916(02)00018-0](https://doi.org/10.1016/S0003-4916(02)00018-0)
 4. **Fowler, A. G., Mariantoni, M., Martinis, J. M., & Cleland, A. N.** (2012). Surface codes: Towards practical large-scale quantum computation. *Physical Review A*, 86(3), 032324. [DOI: 10.1103/PhysRevA.86.032324](https://doi.org/10.1103/PhysRevA.86.032324)
-5. **Google Quantum AI.** (2024). Quantum error correction below the surface code threshold with the Willow architecture. *arXiv preprint arXiv:2412.xxxx* / Nature.
+5. **Google Quantum AI and Collaborators.** (2025). Quantum error correction below the surface code threshold. *Nature*, 638(8052), 920–926. [DOI: 10.1038/s41586-024-08449-y](https://doi.org/10.1038/s41586-024-08449-y)
 6. **Google Quantum AI.** (2023). Suppressing quantum errors by scaling a quantum error-correcting code. *Nature*, 614(7949), 676–681. [DOI: 10.1038/s41586-022-05434-1](https://doi.org/10.1038/s41586-022-05434-1)
 7. **Google Quantum AI.** (2021). Exponential suppression of bit or phase flip errors with repetitive error correction. *Nature*, 595(7867), 383–387. [DOI: 10.1038/s41586-021-03588-y](https://doi.org/10.1038/s41586-021-03588-y)
 8. **Bravyi, S., Cross, A. W., Gambetta, J. M., Maslov, D., Rall, P., & Yoder, T. J.** (2024). High-threshold and low-overhead fault-tolerant quantum memory. *Nature*, 627(8005), 778–782. [DOI: 10.1038/s41586-024-07107-7](https://doi.org/10.1038/s41586-024-07107-7)
@@ -844,7 +844,7 @@ The authors express their gratitude to the **ONMARTECH Quantum Computing Initiat
 18. **Daleckii, J. L., & Krein, M. G.** (1974). *Stability of Solutions of Differential Equations in Banach Space*. American Mathematical Society, Providence, RI.
 19. **Mathias, R.** (1996). A chain rule for matrix functions and applications. *SIAM Journal on Matrix Analysis and Applications*, 17(3), 610–620. [DOI: 10.1137/0617036](https://doi.org/10.1137/0617036)
 20. **McClean, J. R., Boixo, S., Smelyanskiy, V. N., Babbush, R., & Neven, H.** (2018). Barren plateaus in quantum neural network training landscapes. *Nature Communications*, 9(1), 4812. [DOI: 10.1038/s41467-018-07090-4](https://doi.org/10.1038/s41467-018-07090-4)
-21. **Fontana, E., Herman, D., Erbanni, S., Perdomo-Ortiz, A., & Cincio, L.** (2024). The adjoint representation of dynamical Lie algebras and barren plateaus. *Nature Communications*, 15, 3421. [DOI: 10.1038/s41467-024-47805-4](https://doi.org/10.1038/s41467-024-47805-4)
+21. **Fontana, E., Herman, D., Chakrabarti, S., Kumar, N., Yalovetzky, R., Heredge, J., Sureshbabu, S. H., & Pistoia, M.** (2024). Characterizing barren plateaus in quantum ansätze with the adjoint representation. *Nature Communications*, 15(1), 6088. [DOI: 10.1038/s41467-024-49910-w](https://doi.org/10.1038/s41467-024-49910-w)
 22. **Vidal, G.** (2003). Efficient classical simulation of slightly entangled quantum computations. *Physical Review Letters*, 91(14), 147902. [DOI: 10.1103/PhysRevLett.91.147902](https://doi.org/10.1103/PhysRevLett.91.147902)
 23. **Schollwöck, U.** (2011). The density-matrix renormalization group in the age of matrix product states. *Annals of Physics*, 326(1), 96–192. [DOI: 10.1016/j.aop.2010.09.012](https://doi.org/10.1016/j.aop.2010.09.012)
 24. **Aaronson, S., & Gottesman, D.** (2004). Improved simulation of stabilizer circuits. *Physical Review A*, 70(5), 052328. [DOI: 10.1103/PhysRevA.70.052328](https://doi.org/10.1103/PhysRevA.70.052328)
