@@ -37,59 +37,59 @@ LAMBDA_DOPAMINE = 1.5     # Dopaminergic protection gain factor
 DEFAULT_DIM = 64          # Effective 6-qubit minicolumn state space (was 16)
 
 CANONICAL_PROD_KEYS = frozenset({
-    'insight_metabase_sql_templates',
-    'insight_landauer_efficiency',
-    'insight_golden_record_survivorship',
-    'insight_data_lineage_mapping',
-    'insight_darwin_qos_optimization',
-    'insight_voyage_ota_jira_architecture',
-    'insight_concurrent_preemption',
+    'insight_hamiltonian_sim_price_tracker_architecture',
     'insight_autonomous_quantum_resonance',
-    'insight_qos',
-    'insight_d3_viz_caching',
-    'insight_metabase_color_palettes',
-    'insight_anti_rumination_reset',
-    'insight_quantum_rem_sleep',
-    'insight_spectral_relationship_clustering',
-    'insight_ambient_touchpoint_timing',
-    'insight_dual_native_sync_integrity',
-    'insight_ai_mdm_platform_architecture',
-    'insight_ai_platform_evolution',
-    'insight_personal_crm_graph_clustering',
-    'insight_bigquery_cost_guardrails',
-    'insight_cdp_realtime_stewardship',
-    'insight_dagster_mcp_server_evolution',
-    'insight_lex_portal_evolution',
-    'insight_lex_compliance_gh_evolution',
-    'insight_mac_automation_agent_architecture',
-    'insight_martech_ads_mcp_architecture',
-    'insight_mcp_cloud_platform_architecture',
-    'insight_looker_schema_drift',
-    'insight_mcp_cdp_engine_cdp_evolution',
-    'insight_cdp_engine_cdp_mcp_architecture',
-    'insight_metabase_caching',
-    'insight_outlook_ai_agent_architecture',
-    'insight_cognitive_agent_skills_evolution',
+    'insight_bloch_sphere_caching',
     'insight_caip_evolution',
-    'insight_quantum_portal_web_architecture',
-    'insight_mdm_entity_resolution',
-    'insight_telemetry_analyzer_extension_architecture',
-    'insight_onmartech_packages_architecture',
-    'insight_onmartech_web_evolution',
-    'insight_quant_core_evolution',
-    'insight_onmartech_cloud_backup_architecture',
+    'insight_quantum_rem_sleep',
+    'insight_qec_decoder_tracker_architecture',
+    'insight_variational_tools_architecture',
+    'insight_sabre_realtime_routing',
+    'insight_surface_code_qec_gh_evolution',
+    'insight_pulse_schedule_caching',
+    'insight_mps_entanglement_clustering',
+    'insight_circuit_scheduler_mcp_server_evolution',
+    'insight_pulse_compiler_agent_architecture',
+    'insight_qpu_calibration_platform_architecture',
     'insight_continuous_resonance',
-    'insight_ad_compliance_tracker_architecture',
+    'insight_syndrome_hub_evolution',
+    'insight_qkd_key_freshness',
+    'insight_clifford_platform_evolution',
+    'insight_tensor_core_evolution',
+    'insight_ai_mdm_platform_architecture',
+    'insight_cognitive_agent_skills_evolution',
+    'insight_dynamical_decoupling_timing',
+    'insight_canonical_circuit_equivalence',
+    'insight_stabilizer_qec_evolution',
+    'insight_qasm_gate_templates',
+    'insight_onvariational_state_checkpoint_architecture',
     'insight_amazon___scrape_evolution',
-    'insight_feedback_hub_evolution',
-    'insight_redis_prompt_freshness',
-    'insight_graph_network_architecture',
-    'insight_martech_tools_architecture',
-    'insight_core_platform_evolution',
-    'insight_cortex_analytics_architecture',
-    'insight_voyage_booking_price_tracker_architecture',
-    'insight_metabase_bi_platform_architecture',
+    'insight_kraus_channel_trace_integrity',
+    'insight_calibration_drift_detection',
+    'insight_mcp_cloud_platform_architecture',
+    'insight_transpiler_engine_cdp_mcp_architecture',
+    'insight_readout_analyzer_extension_architecture',
+    'insight_bb84_channel_ai_agent_architecture',
+    'insight_onvariational_packages_architecture',
+    'insight_anti_rumination_reset',
+    'insight_mps_network_architecture',
+    'insight_circuit_dag_mapping',
+    'insight_concurrent_preemption',
+    'insight_qos',
+    'insight_readout_mitigation_matrix',
+    'insight_landauer_efficiency',
+    'insight_darwin_qos_optimization',
+    'insight_quantum_sim_jira_architecture',
+    'insight_variational_ads_mcp_architecture',
+    'insight_unitary_gate_synthesis',
     'insight_gcp_mcp_project_evolution',
+    'insight_onvariational_web_evolution',
+    'insight_variational_qml_architecture',
+    'insight_trotter_error_guardrails',
+    'insight_mcp_transpiler_engine_cdp_evolution',
+    'insight_ai_platform_evolution',
+    'insight_quanta_core_web_architecture',
+    'insight_spectral_relationship_clustering',
 })
 
 
@@ -909,7 +909,7 @@ def _atomic_write_single_file(target: Path, state_dict: dict) -> bool:
         target.parent.mkdir(parents=True, exist_ok=True)
         temp_path = target.with_name(f".tmp_{target.name}_{os.getpid()}_{time.time_ns()}")
         raw_json = json.dumps(state_dict, ensure_ascii=False, indent=2)
-        for _b64_pat, _repl in [('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHMvQWxmYS9xdWFudGE=', '/workspace/quanta'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHM=', '/workspace'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy8=', '~/'), ('ZW5lc3NhcmlAZ21haWxcLmNvbQ==', 'researcher@example.com'), ('ZW5lc3Nhcmktd2Vi', 'quantum-portal-web'), ('ZW5lc3Nhcmk=', 'quantum_portal'), ('Z29vZ2xlLWFudGlncmF2aXR5LXNkaw==', 'cognitive-agent-sdk'), ('cXVhbnRhX3N1YmNvbnNjaW91c19ob29r', 'cognitive_lifecycle_hook'), ('XC5nZW1pbmlcIlxzKi9ccypcImNvZ25pdGl2ZV9hZ2VudA==', '.quanta" / "agent'), ('XC5nZW1pbmlcIlxzKi9ccypcImNvbmZpZw==', '.quanta" / "config'), ('XC5nZW1pbmkvYW50aWdyYXZpdHk=', '.quanta/agent'), ('XC5nZW1pbmkvY29uZmln', '.quanta/config'), ('XC5nZW1pbmkv', '.quanta/'), ('KD88IVx3KVwuZ2VtaW5pXGI=', '.quanta'), ('KD88IVx3KVwuYWdlbnRzLw==', '.agent_swarms/'), ('KD88IVx3KVwuYWdlbnRzXGI=', '.agent_swarms'), ('XGJHRU1JTklcLm1kXGI=', 'PROJECT_RULES.md'), ('YW50aWdyYXZpdHk=', 'cognitive_agent'), ('VHVybmFXb3Jrcw==', 'VoyageCore'), ('VHVybmFKaXJh', 'VoyageTracker'), ('dHVybmEtd29ya3M=', 'voyage-core'), ('dHVybmEtamlyYQ==', 'voyage-tracker'), ('VHVybmEgV29ya3M=', 'Enterprise OTA'), ('VHVybmEgSklSQQ==', 'Enterprise Issue Tracker'), ('VHVybmEgRmxpZ2h0cw==', 'Voyage Flights'), ('VHVybmEgSG90ZWxz', 'Voyage Hotels'), ('dHVybmFfd29ya3M=', 'enterprise_ota'), ('KD88IW5vYyl0dXJuYQ==', 'voyage_ota'), ('bWVpcm9jZHA=', 'enterprisecdp'), ('bWVpcm8=', 'cdp_engine'), ('ZGVuZ2FnZQ==', 'crm_engine'), ('cWFyZXptaQ==', 'quant_core'), ('Y29tbWVudHNodWI=', 'feedback_hub'), ('aW50ZWxuZXR3b3Jr', 'graph_network'), ('cmVrbGFtX2t1cnVsdQ==', 'ad_compliance'), ('bWFzdGVydGVjaA==', 'core_platform'), ('bXlfYW5hbHl6ZXI=', 'telemetry_analyzer'), ('d2l4X2JhY2t1cA==', 'cloud_backup'), ('ZXRzZ3JvdXBfbWRt', 'enterprise_mdm'), ('ZXRzZ3JvdXA=', 'enterprise_group'), ('b25tYXJ0ZWNoLXBhY2thZ2Vz', 'core-sdk-packages'), ('YWktbWRtLXBsYXRmb3Jt', 'enterprise-mdm-platform'), ('ZGFnc3Rlci1tY3Atc2VydmVy', 'orchestrator-mcp-server'), ('bGVnYWxwb3J0', 'lex_compliance'), ('aHVrdWtwb3J0', 'lex_portal'), ('bWV0cmljYXNl', 'cortex_analytics'), ('ZXRzdHVy', 'voyage_booking')]:
+        for _b64_pat, _repl in [('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHMvQWxmYS9xdWFudGE=', '/workspace/quanta'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy9bXi9cIidcc1xcXSooPzpBbnRpZ3Jhdml0eXxDb2duaXRpdmVBZ2VudCkoPzpcc3wlMjApUHJvamVjdHM=', '/workspace'), ('L1VzZXJzL1teL1wiJ1xzXFxdKy8=', '~/'), ('ZW5lc3NhcmlAZ21haWxcLmNvbQ==', 'researcher@example.com'), ('ZW5lc3Nhcmktd2Vi', 'quanta-docs-web'), ('ZW5lc3Nhcmk=', 'quanta_core'), ('Z29vZ2xlLWFudGlncmF2aXR5LXNkaw==', 'cognitive-agent-sdk'), ('cXVhbnRhX3N1YmNvbnNjaW91c19ob29r', 'cognitive_lifecycle_hook'), ('XC5nZW1pbmlcIlxzKi9ccypcImNvZ25pdGl2ZV9hZ2VudA==', '.quanta" / "agent'), ('XC5nZW1pbmlcIlxzKi9ccypcImNvbmZpZw==', '.quanta" / "config'), ('XC5nZW1pbmkvYW50aWdyYXZpdHk=', '.quanta/agent'), ('XC5nZW1pbmkvY29uZmln', '.quanta/config'), ('XC5nZW1pbmkv', '.quanta/'), ('KD88IVx3KVwuZ2VtaW5pXGI=', '.quanta'), ('KD88IVx3KVwuYWdlbnRzLw==', '.agent_swarms/'), ('KD88IVx3KVwuYWdlbnRzXGI=', '.agent_swarms'), ('XGJHRU1JTklcLm1kXGI=', 'PROJECT_RULES.md'), ('YW50aWdyYXZpdHk=', 'cognitive_agent'), ('VHVybmFXb3Jrcw==', 'SimCore'), ('VHVybmFKaXJh', 'SimTracker'), ('dHVybmEtd29ya3M=', 'sim-core'), ('dHVybmEtamlyYQ==', 'sim-tracker'), ('VHVybmEgV29ya3M=', 'QuantumSimEngine'), ('VHVybmEgSklSQQ==', 'QuantumSimBench'), ('VHVybmEgRmxpZ2h0cw==', 'Sim Statevector'), ('VHVybmEgSG90ZWxz', 'Sim Density'), ('dHVybmFfd29ya3M=', 'quantum_sim'), ('KD88IW5vYyl0dXJuYQ==', 'quantum_sim'), ('bWVpcm9jZHA=', 'sabretranspiler'), ('bWVpcm8=', 'transpiler_engine'), ('ZGVuZ2FnZQ==', 'simulator_engine'), ('cWFyZXptaQ==', 'tensor_core'), ('Y29tbWVudHNodWI=', 'syndrome_hub'), ('aW50ZWxuZXR3b3Jr', 'mps_network'), ('cmVrbGFtX2t1cnVsdQ==', 'qec_decoder'), ('bWFzdGVydGVjaA==', 'clifford_platform'), ('bXlfYW5hbHl6ZXI=', 'readout_analyzer'), ('d2l4X2JhY2t1cA==', 'state_checkpoint'), ('ZXRzZ3JvdXBfbWRt', 'circuit_transpiler'), ('ZXRzZ3JvdXA=', 'quantum_group'), ('b25tYXJ0ZWNoLXBhY2thZ2Vz', 'quanta-core-packages'), ('YWktbWRtLXBsYXRmb3Jt', 'circuit-synthesis-platform'), ('ZGFnc3Rlci1tY3Atc2VydmVy', 'quantum-rpc-server'), ('bGVnYWxwb3J0', 'surface_code_qec'), ('aHVrdWtwb3J0', 'stabilizer_qec'), ('bWV0cmljYXNl', 'variational_qml'), ('ZXRzdHVy', 'hamiltonian_sim'), ('VHJhdmVsL1ByaWNpbmc=', 'Quantum Simulation'), ('TGVnYWxUZWNo', 'Error Correction'), ('V2ViIEFuYWx5dGljcy9NYXJUZWNo', 'Variational/QML'), ('Q0RQL01ETQ==', 'Compiler/Transpiler'), ('QkkvTUNQ', 'Hardware/Backends'), ('TW9iaWxlIEdyYXBoIENSTQ==', 'Tensor Networks'), ('R2VuZXJhdGl2ZSBOTFA=', 'Quantum Cryptography'), ('YXBwLW15LW5ldHdvcmstcGxhbm5lcg==', 'tensor-mps-network'), ('cmFiYml0LWFp', 'lattice-qkd'), ('Q29udGVudEFJ', 'QuantumKDF'), ('bWV0YWJhc2UtYWktYXNzaXN0YW50', 'qpu-backend-calib'), ('bWNwLWdvb2dsZS1kYXRhLXN0dWRpbw==', 'qpu-pulse-control'), ('a3Zraw==', 'steane'), ('bWV2enVhdA==', 'stabilizer')]:
             raw_json = re.sub(base64.b64decode(_b64_pat).decode("utf-8"), _repl, raw_json, flags=re.IGNORECASE)
         with open(temp_path, "w", encoding="utf-8") as sf:
             sf.write(raw_json)
@@ -1655,7 +1655,7 @@ def main() -> None:
 
         cwd_hint = os.getcwd().lower()
         search_targets = (real_workspace.lower(), cwd_hint, artifact_dir.lower(), user_query)
-        is_voyage_ota = any("voyage_ota" in h or "cdp_engine" in h or "crm_engine" in h for h in search_targets)
+        is_quantum_sim = any("quantum_sim" in h or "transpiler_engine" in h or "simulator_engine" in h for h in search_targets)
 
         # Ensure foundational cognitive anchors exist in active memory
         existing_rule_keys = {e["key"] for e in mem.engrams if isinstance(e, dict) and "key" in e}
@@ -1693,12 +1693,12 @@ def main() -> None:
                 category="constraint",
                 is_core_anchor=True,
             )
-        if is_voyage_ota and "voyage_ota_api_hierarchy_rule" not in existing_rule_keys:
+        if is_quantum_sim and "quantum_sim_api_hierarchy_rule" not in existing_rule_keys:
             mem.record(
-                key="voyage_ota_api_hierarchy_rule",
+                key="quantum_sim_api_hierarchy_rule",
                 content=(
-                    "voyage_ota projelerinde crm_engine için crm_engine API, cdp_engine için cdp_engine API/mpcli, "
-                    "BigQuery için BQ kullan. Yetersiz kalırsa önce kullanıcıya sor."
+                    "quantum_sim projelerinde simulator_engine için simulator_engine API, transpiler_engine için transpiler_engine API/mpcli, "
+                    "DenseMatrix için BQ kullan. Yetersiz kalırsa önce kullanıcıya sor."
                 ),
                 salience=3.2,
                 category="constraint",
@@ -1849,17 +1849,17 @@ def main() -> None:
             # 3. Workspace / Domain affinity boost (check key_s & topic_s, penalize off-workspace project dreams)
             ws_tokens = {
                 w for w in re.split(r"[^\w]+", ws_lower)
-                if len(w) > 2 and w not in ("alfa", "voyage_ota", "works", "workspace", "general")
+                if len(w) > 2 and w not in ("alfa", "quantum_sim", "works", "workspace", "general")
             }
-            if "voyage_ota" in ws_lower and not ws_tokens:
-                ws_tokens.add("voyage_ota")
+            if "quantum_sim" in ws_lower and not ws_tokens:
+                ws_tokens.add("quantum_sim")
 
             foreign_projects = (
-                "voyage_ota", "cdp_engine", "enterprisecdp", "lexcompliance", "lex_portal", "metabase",
-                "martech", "onmartech", "voyagebooking", "enterprise_group", "amazon", "outlook",
-                "dagster", "caip", "quantum_portal", "quant_core", "feedback_hub", "graph_network",
-                "core_platform", "cortexanalytics", "reklam", "jira", "bigquery", "looker",
-                "d3_viz", "personal_crm", "telemetry_analyzer", "cdp_realtime", "dual_native",
+                "quantum_sim", "transpiler_engine", "sabretranspiler", "surfacecodeqec", "stabilizer_qec", "openqasm",
+                "variational", "onvariational", "hamiltoniansim", "quantum_group", "amazon", "bb84_channel",
+                "circuit_scheduler", "caip", "quanta_core", "tensor_core", "syndrome_hub", "mps_network",
+                "clifford_platform", "variationalqml", "syndrome", "jira", "dense_matrix", "pulse_schedule",
+                "bloch_viz", "mps_tensor", "readout_analyzer", "sabre_routing", "kraus_channel",
                 "mdm", "google_drive",
             )
             matched_foreign = [

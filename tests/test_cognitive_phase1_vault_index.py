@@ -51,24 +51,24 @@ def isolated_vault_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
         "links": [
             {
                 "url": "https://www.figma.com/design/test-figma-key",
-                "project_id": "CortexAnalytics",
+                "project_id": "VariationalQML",
                 "domain": "UI/UX & Design System",
-                "title": "CortexAnalytics v2 — Core Design System & UI Kit",
+                "title": "VariationalQML v2 — Core Design System & UI Kit",
                 "file_key": "c3a3IQloD7hfo9row3JL40",
                 "summary": "Canonical Figma design file tracking Design Tokens and atomic components.",
             },
             {
                 "url": "https://support.atlassian.com/atlassian-ai-gateway/docs/mcp",
-                "project_id": "Enterprise Issue Tracker",
+                "project_id": "QuantumSimBench",
                 "domain": "AI Agent MCP & Ecosystem",
                 "title": "Atlassian Remote MCP Server v2 Documentation",
                 "summary": "Official setup and specification for Atlassian Remote MCP Server v2.",
             },
         ],
         "booking_tracking_architecture_1791164740": {
-            "title": "voyage_ota Booking Conversion and Click Tracking Architecture",
+            "title": "quantum_sim Booking Conversion and Click Tracking Architecture",
             "purpose": "End-to-end pixel and server-side tracking architecture for flight booking funnel.",
-            "topics": ["tracking", "gtm", "voyage_ota", "analytics"],
+            "topics": ["tracking", "vqe_ansatz", "quantum_sim", "analytics"],
         },
     }
     with open(vault_dir / "knowledge_vault.json", "w", encoding="utf-8") as f:
@@ -91,12 +91,12 @@ def isolated_vault_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
         },
         "assets": [
             {
-                "file_name": "dagster_voyage_ota_observability_job_ui.png",
-                "path": "/mock/path/dagster_voyage_ota_observability_job_ui.png",
-                "project_id": "Enterprise OTA",
-                "domain": "Data Platform / Dagster UI",
-                "title": "Dagster voyage_ota_observability_job UI & Asset Graph",
-                "description": "Screenshot showing voyage_ota_observability_job in Dagster UI.",
+                "file_name": "circuit_scheduler_quantum_sim_observability_job_ui.png",
+                "path": "/mock/path/circuit_scheduler_quantum_sim_observability_job_ui.png",
+                "project_id": "Quantum_Sim_Engine",
+                "domain": "Data Platform / CircuitScheduler UI",
+                "title": "CircuitScheduler quantum_sim_observability_job UI & Asset Graph",
+                "description": "Screenshot showing quantum_sim_observability_job in CircuitScheduler UI.",
             }
         ],
     }
@@ -255,7 +255,7 @@ class TestLocalVaultIndexOfflineAndPerformance:
         res1 = indexer.search("Figma design system", top_k=5)
         assert len(res1) > 0
 
-        res2 = indexer.search_knowledge("voyage_ota tracking architecture", top_k=3)
+        res2 = indexer.search_knowledge("quantum_sim tracking architecture", top_k=3)
         assert len(res2) > 0
 
         res3 = indexer.search_assets("date filters", top_k=3)
@@ -275,8 +275,8 @@ class TestLocalVaultIndexOfflineAndPerformance:
             "Figma design system tokens",
             "date filter bug",
             "billing table layout",
-            "voyage_ota crm_engine API",
-            "CortexAnalytics merchant screen",
+            "quantum_sim simulator_engine API",
+            "VariationalQML merchant screen",
             "knowledge vault persistent links",
         ]
 
@@ -317,7 +317,7 @@ class TestLocalVaultIndexTopKRecall:
         res_figma = indexer.search("Figma design system tokens components", top_k=3)
         assert len(res_figma) > 0
         top_titles = [r["title"] for r in res_figma]
-        assert any("CortexAnalytics" in t or "Figma" in t for t in top_titles)
+        assert any("VariationalQML" in t or "Figma" in t for t in top_titles)
         assert any(r["id"] == "c3a3IQloD7hfo9row3JL40" for r in res_figma)
 
         # 2. Query: date filters not working
@@ -345,7 +345,7 @@ class TestLocalVaultIndexTopKRecall:
 
         # Query 1: Figma design kit
         res_figma = indexer.search("Figma design system tokens components", top_k=3)
-        assert any("CortexAnalytics" in r.get("title", "") or "Figma" in r.get("title", "") for r in res_figma)
+        assert any("VariationalQML" in r.get("title", "") or "Figma" in r.get("title", "") for r in res_figma)
 
         # Query 2: Date filter feedback
         res_date = indexer.search("date filters not working", top_k=3)

@@ -34,17 +34,17 @@ class TestWorkspaceHarvester:
     def test_harvester_discovers_workspace_projects(self, tmp_path: Path) -> None:
         """Verify project scanning finds directories and reads manifests."""
         # Create mock sibling projects
-        proj_a = tmp_path / "metabase-ai-assistant"
+        proj_a = tmp_path / "qpu-backend-calib"
         proj_a.mkdir()
         (proj_a / "package.json").write_text(
-            json.dumps({"name": "metabase-ai-assistant", "description": "Metabase MCP Server"}),
+            json.dumps({"name": "qpu-backend-calib", "description": "OpenQASM MCP Server"}),
             encoding="utf-8",
         )
 
-        proj_b = tmp_path / "app-my-network-planner"
+        proj_b = tmp_path / "tensor-mps-network"
         proj_b.mkdir()
         (proj_b / "pyproject.toml").write_text(
-            '[project]\nname = "app-my-network-planner"\ndescription = "Network Graph Routing"',
+            '[project]\nname = "tensor-mps-network"\ndescription = "Network Graph Routing"',
             encoding="utf-8",
         )
 
@@ -53,14 +53,14 @@ class TestWorkspaceHarvester:
 
         assert len(projects) == 2
         names = {p.name for p in projects}
-        assert "metabase-ai-assistant" in names
-        assert "app-my-network-planner" in names
+        assert "qpu-backend-calib" in names
+        assert "tensor-mps-network" in names
 
     def test_candidate_seeds_spanning_multiple_projects(self, tmp_path: Path) -> None:
         """Verify candidate seeds are synthesized across distinct project domains."""
         # Create mock project dirs
-        (tmp_path / "metabase-ai-assistant").mkdir()
-        (tmp_path / "mcp-google-data-studio").mkdir()
+        (tmp_path / "qpu-backend-calib").mkdir()
+        (tmp_path / "qpu-pulse-control").mkdir()
         (tmp_path / "quanta").mkdir()
 
         harvester = WorkspaceContextHarvester(projects_dir=tmp_path)
@@ -68,14 +68,14 @@ class TestWorkspaceHarvester:
 
         assert len(seeds) >= 5
         projects_represented = {s.context_keys[0] for s in seeds if s.context_keys}
-        assert "metabase-ai-assistant" in projects_represented
-        assert "mcp-google-data-studio" in projects_represented
+        assert "qpu-backend-calib" in projects_represented
+        assert "qpu-pulse-control" in projects_represented
         assert "quanta" in projects_represented
 
     def test_anti_rumination_rotation(self, tmp_path: Path) -> None:
         """Ensure consecutive seeds rotate across different projects and never duplicate topics."""
-        (tmp_path / "metabase-ai-assistant").mkdir()
-        (tmp_path / "app-my-network-planner").mkdir()
+        (tmp_path / "qpu-backend-calib").mkdir()
+        (tmp_path / "tensor-mps-network").mkdir()
         (tmp_path / "quanta").mkdir()
 
         state_file = tmp_path / "quanta_cognitive_state.json"
@@ -207,9 +207,9 @@ class TestEpisodicSessionHarvester:
         now = datetime.now(timezone.utc)
         sessions_meta = [
             ("conv_today_1", "Today Active Session", 10, now - timedelta(hours=2), "quanta"),
-            ("conv_yesterday_1", "Yesterday Milestone Session", 25, now - timedelta(hours=30), "voyage_ota"),
+            ("conv_yesterday_1", "Yesterday Milestone Session", 25, now - timedelta(hours=30), "quantum_sim"),
             ("conv_sprint_1", "Previous Sprint Feature Work", 40, now - timedelta(days=4), "quanta"),
-            ("conv_longterm_1", "Foundational Architecture Session", 80, now - timedelta(days=10), "enterprise_mdm"),
+            ("conv_longterm_1", "Foundational Architecture Session", 80, now - timedelta(days=10), "circuit_transpiler"),
         ]
 
         for cid, title, steps, dt_val, proj in sessions_meta:

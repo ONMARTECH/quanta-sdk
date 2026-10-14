@@ -12,7 +12,7 @@ Pipeline:
   1. Classical: Compute fuzzy similarity scores
   2. Classical: Blocking (group likely matches)
   3. QUANTUM: QAOA optimizes merge within blocks
-  4. Classical: Merge and produce golden records
+  4. Classical: Merge and produce canonical unitarys
 
 Running:
     python -m quanta.examples.11_entity_resolution
@@ -77,11 +77,11 @@ RECORDS = [
      "address": "", "channel": "agency"},
 
     # Cluster E: Zeynep Aksoy (2 records)
-    {"name": "Zeynep Aksoy",  "phone": "542-333-5566", "email": "zaksoy@outlook.com",
+    {"name": "Zeynep Aksoy",  "phone": "542-333-5566", "email": "zaksoy@bb84_channel.com",
      "tc": "99988877766", "birth_date": "1995-05-20", "city": "Ankara",
      "address": "Kızılay Atatürk Blv.", "channel": "web"},
 
-    {"name": "Z. Aksoy",      "phone": "542-333-5566", "email": "zaksoy@outlook.com",
+    {"name": "Z. Aksoy",      "phone": "542-333-5566", "email": "zaksoy@bb84_channel.com",
      "tc": "", "birth_date": "", "city": "Ankara",
      "address": "", "channel": "mobile"},
 

@@ -1020,7 +1020,7 @@ class QuantumDecisionArbiter:
                     ),
                     "with_quanta": (
                         f"Quanta 6-qubit hakemi P_zeno={zeno_pin:.4f} Zeno kitlemesiyle "
-                        f"'{opt_name}' hipotezine kilitlendi; deterministik icra sağlandı."
+                        f"'{opt_name}' hipotezine kilitlendi; deterministik recovery sağlandı."
                     ),
                     "effect_verified": True,
                 }
@@ -1181,7 +1181,7 @@ class QuantumDecisionArbiter:
                 ),
                 "with_quanta": (
                     f"Quanta 6-qubit hakemi P_zeno={p_zeno:.4f} Zeno kitlemesiyle '{w_label}' "
-                    "hipotezine bağlandı; deterministik, doğrulanmış ve tutarlı icra sağlandı."
+                    "hipotezine bağlandı; deterministik, doğrulanmış ve tutarlı recovery sağlandı."
                 ),
                 "effect_verified": True,
             }

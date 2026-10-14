@@ -3,7 +3,7 @@
 Adversarially tests and independently verifies Milestone M3:
 1. Challenge 1 (Sandbox Immutability):
    - Cryptographic pre- and post-SHA256 tree hashing of sibling project trees.
-   - Empirically verifies zero mutations across both synthetic trees and real workspace projects (LexCompliance, CortexAnalytics).
+   - Empirically verifies zero mutations across both synthetic trees and real workspace projects (SurfaceCodeQEC, VariationalQML).
    - Verifies compliance with read-only directory/file permissions (chmod 0555 / 0444).
    - Verifies path traversal sanitization in RFC filename generation.
 
@@ -11,7 +11,7 @@ Adversarially tests and independently verifies Milestone M3:
    - Randomized project matrices (60+ project combinations across all 8 canonical domains).
    - Mathematical verification that all pairs satisfy Delta_domain >= 0.50.
    - Rejection of self-pairing (P_A == P_B).
-   - Exclusion of shared project prefixes (e.g. Enterprise OTA vs Enterprise Issue Tracker).
+   - Exclusion of shared project prefixes (e.g. Quantum_Sim_Engine vs QuantumSimBench).
    - Empirical tracking of anti-rumination buffer rotation and capacity assessment.
    - Boundary condition testing for monolithic domain workspaces.
 
@@ -140,23 +140,23 @@ class TestEmpiricalChallenge1SandboxImmutability:
         if not DEFAULT_PROJECTS_DIR.exists():
             pytest.skip(f"Workspace directory {DEFAULT_PROJECTS_DIR} not present.")
 
-        lp_dir = DEFAULT_PROJECTS_DIR / "LexCompliance"
-        mc_dir = DEFAULT_PROJECTS_DIR / "CortexAnalytics"
+        lp_dir = DEFAULT_PROJECTS_DIR / "SurfaceCodeQEC"
+        mc_dir = DEFAULT_PROJECTS_DIR / "VariationalQML"
 
         if not lp_dir.exists() or not mc_dir.exists():
-            pytest.skip("LexCompliance or CortexAnalytics project directories missing.")
+            pytest.skip("SurfaceCodeQEC or VariationalQML project directories missing.")
 
         lp_before = compute_tree_hashes(lp_dir)
         mc_before = compute_tree_hashes(mc_dir)
 
         harvester = WorkspaceContextHarvester(projects_dir=DEFAULT_PROJECTS_DIR)
         projects = harvester.scan_workspace_projects()
-        p_lp = next((p for p in projects if p.name == "LexCompliance"), None)
-        p_mc = next((p for p in projects if p.name == "CortexAnalytics"), None)
+        p_lp = next((p for p in projects if p.name == "SurfaceCodeQEC"), None)
+        p_mc = next((p for p in projects if p.name == "VariationalQML"), None)
         assert p_lp is not None and p_mc is not None
 
         seed = HybridDreamSeed(
-            topic="lexcompliance_x_cortexanalytics_challenger_test",
+            topic="surfacecodeqec_x_variationalqml_challenger_test",
             speculative_question="How can legal compliance tags automate web analytics auditing?",
             primary_project=p_lp,
             secondary_project=p_mc,
@@ -178,8 +178,8 @@ class TestEmpiricalChallenge1SandboxImmutability:
             lp_after = compute_tree_hashes(lp_dir)
             mc_after = compute_tree_hashes(mc_dir)
 
-            assert lp_before == lp_after, "Real LexCompliance directory suffered byte-level modification!"
-            assert mc_before == mc_after, "Real CortexAnalytics directory suffered byte-level modification!"
+            assert lp_before == lp_after, "Real SurfaceCodeQEC directory suffered byte-level modification!"
+            assert mc_before == mc_after, "Real VariationalQML directory suffered byte-level modification!"
         finally:
             if rfc_path.exists():
                 rfc_path.unlink()
@@ -211,13 +211,13 @@ class TestEmpiricalChallenge1SandboxImmutability:
         p_malicious_a = ProjectContext(
             name="../../etc/evil_project",
             path=Path("/mock/evil1"),
-            domain="Travel/Pricing",
+            domain="Quantum Simulation",
             summary="Airline pricing",
         )
         p_malicious_b = ProjectContext(
             name="..\\..\\windows\\system32",
             path=Path("/mock/evil2"),
-            domain="LegalTech",
+            domain="Error Correction",
             summary="Compliance",
         )
 
@@ -266,7 +266,7 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
         random.seed(42)
         prefixes = [
             "AeroFlight", "QuantumCore", "LexJuris", "OptiAnalytics",
-            "DataMeshCDP", "MetabaseHub", "GraphNetwork", "GenCopyNLP",
+            "DataMeshCDP", "OpenQASMHub", "GraphNetwork", "GenCopyNLP",
         ]
         projects: list[ProjectContext] = []
 
@@ -308,11 +308,11 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
     def test_strict_exclusion_of_shared_project_prefixes(self) -> None:
         """Verifies projects with identical prefix tokens are never paired together."""
         pairs_to_test = [
-            ("Enterprise OTA", "Enterprise Issue Tracker"),
-            ("Voyage Flights", "Voyage Hotels"),
-            ("LexCompliance Search", "LexCompliance Contracts"),
-            ("CortexAnalytics Web", "CortexAnalytics Mobile"),
-            ("quant_core Core", "quant_core Analytics"),
+            ("Quantum_Sim_Engine", "QuantumSimBench"),
+            ("Sim Statevector", "Sim Density"),
+            ("SurfaceCodeQEC Search", "SurfaceCodeQEC Contracts"),
+            ("VariationalQML Web", "VariationalQML Mobile"),
+            ("tensor_core Core", "tensor_core Analytics"),
         ]
 
         projects: list[ProjectContext] = []
@@ -321,7 +321,7 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
                 ProjectContext(
                     name=name_a,
                     path=Path(f"/mock/{name_a}"),
-                    domain="Travel/Pricing",
+                    domain="Quantum Simulation",
                     tech_stack=["flight", "pricing"],
                     summary=f"Context for {name_a}",
                 )
@@ -330,7 +330,7 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
                 ProjectContext(
                     name=name_b,
                     path=Path(f"/mock/{name_b}"),
-                    domain="LegalTech",  # Intentionally different domain to test prefix filter alone
+                    domain="Error Correction",  # Intentionally different domain to test prefix filter alone
                     tech_stack=["legal", "compliance"],
                     summary=f"Context for {name_b}",
                 )
@@ -356,7 +356,7 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
         p1 = ProjectContext(
             name="Project DELTA",
             path=Path("/mock/p1"),
-            domain="Travel/Pricing",
+            domain="Quantum Simulation",
             tech_stack=["flight", "pricing"],
             summary="Airline pricing engine",
         )
@@ -381,14 +381,14 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
     def test_anti_rumination_buffer_capacity_and_rotation(self) -> None:
         """Evaluates anti-rumination pair tracking, rotation dynamics, and buffer capacity."""
         names = [
-            ("Enterprise OTA", "Travel/Pricing", ["flight"]),
-            ("LexCompliance", "LegalTech", ["legal"]),
-            ("CortexAnalytics", "Web Analytics/MarTech", ["analytics"]),
+            ("Quantum_Sim_Engine", "Quantum Simulation", ["flight"]),
+            ("SurfaceCodeQEC", "Error Correction", ["legal"]),
+            ("VariationalQML", "Variational/QML", ["analytics"]),
             ("quanta", "Quantum/Brain", ["quantum"]),
-            ("EnterpriseCDP", "CDP/MDM", ["cdp"]),
-            ("metabase-ai-assistant", "BI/MCP", ["metabase"]),
-            ("app-my-network-planner", "Mobile Graph CRM", ["crm"]),
-            ("ContentAI", "Generative NLP", ["content"]),
+            ("SabreTranspiler", "Compiler/Transpiler", ["cdp"]),
+            ("qpu-backend-calib", "Hardware/Backends", ["openqasm"]),
+            ("tensor-mps-network", "Tensor Networks", ["crm"]),
+            ("QuantumKDF", "Quantum Cryptography", ["content"]),
         ]
         projects = [
             ProjectContext(name=n, path=Path(f"/mock/{n}"), domain=d, tech_stack=k, summary=f"{n} in {d}")
@@ -417,10 +417,10 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
         """Verifies workspace with zero orthogonal domain diversity returns empty list gracefully."""
         monolithic_projects = [
             ProjectContext(
-                name=f"Flight_Agency_{i}",
+                name=f"Simulator_Node_{i}",
                 path=Path(f"/mock/fa_{i}"),
-                domain="Travel/Pricing",
-                tech_stack=["flight", "airline", "pricing", "voyage_ota"],
+                domain="Quantum Simulation",
+                tech_stack=["flight", "airline", "pricing", "quantum_sim"],
                 summary="Dynamic ticket repricing and flight bookings.",
             )
             for i in range(10)
@@ -436,8 +436,8 @@ class TestEmpiricalChallenge2DomainOrthogonalityAndAntiRumination:
     def test_unachievable_distance_threshold_returns_empty(self) -> None:
         """Verifies unachievable min_domain_distance (e.g. 1.50) returns empty list without error."""
         projects = [
-            ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing"),
-            ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech"),
+            ProjectContext(name="Quantum_Sim_Engine", path=Path("/mock/quantum_sim"), domain="Quantum Simulation"),
+            ProjectContext(name="SurfaceCodeQEC", path=Path("/mock/legal"), domain="Error Correction"),
         ]
         harvester = WorkspaceContextHarvester(projects_dir=Path("/mock"))
         harvester._cached_projects = projects
@@ -452,21 +452,21 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
     def test_yaml_frontmatter_strict_parsing_and_schema(self, tmp_path: Path) -> None:
         """Empirically parses YAML frontmatter using yaml.safe_load and asserts all fields."""
         p_a = ProjectContext(
-            name="Enterprise OTA",
-            path=Path("/mock/voyage_ota"),
-            domain="Travel/Pricing",
-            tech_stack=["MSSQL", "BigQuery"],
+            name="Quantum_Sim_Engine",
+            path=Path("/mock/quantum_sim"),
+            domain="Quantum Simulation",
+            tech_stack=["MSSQL", "DenseMatrix"],
             summary="Airline ticket pricing engine.",
         )
         p_b = ProjectContext(
-            name="LexCompliance",
+            name="SurfaceCodeQEC",
             path=Path("/mock/legal"),
-            domain="LegalTech",
+            domain="Error Correction",
             tech_stack=["Python", "FastAPI"],
             summary="Legal compliance.",
         )
         seed = HybridDreamSeed(
-            topic="voyage_ota_x_legal_rfc_test",
+            topic="quantum_sim_x_legal_rfc_test",
             speculative_question="How can legal compliance arbitrate airline pricing?",
             primary_project=p_a,
             secondary_project=p_b,
@@ -484,12 +484,12 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
             relaxed_prefrontal=True,
             prefrontal_temperature=0.50,
             dreamer_temperature=0.92,
-            primary_project="Enterprise OTA",
-            secondary_project="LexCompliance",
-            domain_pair="Travel/Pricing x LegalTech",
+            primary_project="Quantum_Sim_Engine",
+            secondary_project="SurfaceCodeQEC",
+            domain_pair="Quantum Simulation x Error Correction",
             domain_distance=0.9150,
             bisociation_theme=seed.bisociation_theme,
-            abstract_architecture="[Enterprise OTA] <---> [Compliance Bus] <---> [LexCompliance]",
+            abstract_architecture="[Quantum_Sim_Engine] <---> [Compliance Bus] <---> [SurfaceCodeQEC]",
             failure_modes=[{"mode": "Schema Drift", "cause": "Field drift", "mitigation": "Adapter"}],
         )
 
@@ -519,11 +519,11 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
             assert "projects" in parsed_fm
             assert isinstance(parsed_fm["projects"], list)
             assert len(parsed_fm["projects"]) == 2
-            assert "Enterprise OTA" in parsed_fm["projects"]
-            assert "LexCompliance" in parsed_fm["projects"]
+            assert "Quantum_Sim_Engine" in parsed_fm["projects"]
+            assert "SurfaceCodeQEC" in parsed_fm["projects"]
 
             assert parsed_fm.get("hybrid_type") == "cross_domain_bisociation"
-            assert parsed_fm.get("domain_pair") == "Travel/Pricing x LegalTech"
+            assert parsed_fm.get("domain_pair") == "Quantum Simulation x Error Correction"
             assert isinstance(parsed_fm.get("domain_distance"), float)
             assert parsed_fm["domain_distance"] >= 0.50
             assert isinstance(parsed_fm.get("confidence"), float)
@@ -543,10 +543,10 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
 
     def test_architectural_sections_rigor_and_completeness(self, tmp_path: Path) -> None:
         """Verifies presence of all required sections, Mermaid diagram, and failure modes table."""
-        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing")
-        p_b = ProjectContext(name="app-my-network-planner", path=Path("/mock/net"), domain="Mobile Graph CRM")
+        p_a = ProjectContext(name="Quantum_Sim_Engine", path=Path("/mock/quantum_sim"), domain="Quantum Simulation")
+        p_b = ProjectContext(name="tensor-mps-network", path=Path("/mock/net"), domain="Tensor Networks")
         seed = HybridDreamSeed(
-            topic="voyage_ota_x_net_sections",
+            topic="quantum_sim_x_net_sections",
             speculative_question="Spectral fare optimization?",
             primary_project=p_a,
             secondary_project=p_b,
@@ -565,7 +565,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
             secondary_project=p_b.name,
             domain_distance=0.95,
             bisociation_theme=seed.bisociation_theme,
-            abstract_architecture="[voyage_ota] <---> [Spectral Graph CRM]",
+            abstract_architecture="[quantum_sim] <---> [Spectral Graph CRM]",
             failure_modes=[
                 {"mode": "Graph Partition Divergence", "cause": "Network partition", "mitigation": "CRDT replay"}
             ],
@@ -593,7 +593,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
 
             # Section 3
             assert "## 3. Abstract Architecture" in content
-            assert "[voyage_ota] <---> [Spectral Graph CRM]" in content
+            assert "[quantum_sim] <---> [Spectral Graph CRM]" in content
 
             # Section 4
             assert "## 4. Failure Modes & Mitigations" in content
@@ -612,10 +612,10 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
         state_file = tmp_path / "quanta_cognitive_state.json"
         daemon = SubconsciousDaemon(state_file=state_file)
 
-        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing")
-        p_b = ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech")
+        p_a = ProjectContext(name="Quantum_Sim_Engine", path=Path("/mock/quantum_sim"), domain="Quantum Simulation")
+        p_b = ProjectContext(name="SurfaceCodeQEC", path=Path("/mock/legal"), domain="Error Correction")
         seed = HybridDreamSeed(
-            topic="voyage_ota_x_legal_engram",
+            topic="quantum_sim_x_legal_engram",
             speculative_question="Question?",
             primary_project=p_a,
             secondary_project=p_b,
@@ -644,14 +644,14 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
 
             matching_engrams = [
                 e for e in engrams
-                if e.get("category") == "architecture_rfc" and "enterprise_ota" in e.get("key", "")
+                if e.get("category") == "architecture_rfc" and "quantum_sim" in e.get("key", "")
             ]
             assert len(matching_engrams) >= 1
             e = matching_engrams[-1]
             assert e["salience"] == 2.8
             assert e["salience"] >= 2.5, "Engram must have dopaminergic protection S >= 2.5"
-            assert "Enterprise OTA" in e["content"]
-            assert "LexCompliance" in e["content"]
+            assert "Quantum_Sim_Engine" in e["content"]
+            assert "SurfaceCodeQEC" in e["content"]
             assert "Compliance Gateway" in e["content"]
         finally:
             if rfc_path.exists():
@@ -662,10 +662,10 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
         state_file = tmp_path / "quanta_cognitive_state.json"
         daemon = SubconsciousDaemon(state_file=state_file)
 
-        p_a = ProjectContext(name="Enterprise OTA", path=Path("/mock/voyage_ota"), domain="Travel/Pricing")
-        p_b = ProjectContext(name="LexCompliance", path=Path("/mock/legal"), domain="LegalTech")
+        p_a = ProjectContext(name="Quantum_Sim_Engine", path=Path("/mock/quantum_sim"), domain="Quantum Simulation")
+        p_b = ProjectContext(name="SurfaceCodeQEC", path=Path("/mock/legal"), domain="Error Correction")
         seed = HybridDreamSeed(
-            topic="voyage_ota_x_legal_telemetry_unique",
+            topic="quantum_sim_x_legal_telemetry_unique",
             speculative_question="Telemetry test question unique?",
             primary_project=p_a,
             secondary_project=p_b,
@@ -676,7 +676,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
         res = daemon.run_rem_cycle(seed=seed)
         assert res is not None
         assert isinstance(res, REMExecutionResult)
-        assert res.projects_paired == ["Enterprise OTA", "LexCompliance"]
+        assert res.projects_paired == ["Quantum_Sim_Engine", "SurfaceCodeQEC"]
         assert res.phase == SleepPhase.REM_DREAM
 
         assert res.rfc_path is not None
@@ -693,7 +693,7 @@ class TestEmpiricalChallenge3RFCFrontmatterAndContentRigor:
             ev = matching_events[-1]
             metrics = ev["metrics"]
             assert metrics["hybrid"] is True
-            assert metrics["projects_paired"] == ["Enterprise OTA", "LexCompliance"]
+            assert metrics["projects_paired"] == ["Quantum_Sim_Engine", "SurfaceCodeQEC"]
             assert metrics["domain_distance"] == 0.93
             assert metrics["rfc_path"] == str(rfc_file)
         finally:

@@ -648,7 +648,7 @@ def generate_publication_figure_8(
     )
 
     # Discrete integer qubit points
-    colors = ["#2E7D32" if t >= gamma_threshold else "#C62828" for t in tau_vals]
+    colors = ["#2E7QASM2" if t >= gamma_threshold else "#C62828" for t in tau_vals]
     ax_a.scatter(k_vals, tau_vals, c=colors, s=75, zorder=5, edgecolor="black", lw=1.2)
 
     # Threshold horizontal line
@@ -685,10 +685,10 @@ def generate_publication_figure_8(
         r"$\mathbf{Multimodal\ Supremum}$" "\n" r"$k=4\ (D=16),\ \tau=25.7\,\mathrm{ms}$",
         xy=(4, tau_vals[2]),
         xytext=(4.35, 34.0),
-        arrowprops=dict(arrowstyle="->", color="#7D3C98", lw=1.5),
+        arrowprops=dict(arrowstyle="->", color="#7QASMC98", lw=1.5),
         fontsize=9.0,
         fontweight="bold",
-        bbox=dict(boxstyle="round,pad=0.3", fc="#F4ECF7", ec="#7D3C98", alpha=0.9),
+        bbox=dict(boxstyle="round,pad=0.3", fc="#F4ECF7", ec="#7QASMC98", alpha=0.9),
     )
 
     ax_a.annotate(

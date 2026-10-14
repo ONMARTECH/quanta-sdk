@@ -129,20 +129,20 @@ class HybridDreamSeed:
 
 
 CANONICAL_DOMAINS: list[str] = [
-    "Travel/Pricing",
+    "Quantum Simulation",
     "Quantum/Brain",
-    "LegalTech",
-    "Web Analytics/MarTech",
-    "CDP/MDM",
-    "BI/MCP",
-    "Mobile Graph CRM",
-    "Generative NLP",
+    "Error Correction",
+    "Variational/QML",
+    "Compiler/Transpiler",
+    "Hardware/Backends",
+    "Tensor Networks",
+    "Quantum Cryptography",
 ]
 
 DOMAIN_KEYWORDS: list[list[str]] = [
-    # 0: Travel/Pricing
+    # 0: Quantum Simulation
     [
-        "voyage_ota", "voyagebooking", "flight", "ticket", "hotel", "travel", "pricing",
+        "quantum_sim", "hamiltoniansim", "flight", "ticket", "hotel", "travel", "pricing",
         "fare", "reprice", "airline", "booking", "room", "yield", "reservation",
         "ota", "destinations", "pax", "gds",
     ],
@@ -152,41 +152,41 @@ DOMAIN_KEYWORDS: list[list[str]] = [
         "biomorphic", "swr", "synaptic", "hippocampal", "zeno", "lindblad",
         "qubit", "unitary", "mps", "brain", "cognitive", "neuro", "plasticity",
     ],
-    # 2: LegalTech
+    # 2: Error Correction
     [
-        "legal", "hukuk", "mevzuat", "jurisprudence", "kvkk", "gdpr", "contract",
-        "reklam-kurulu", "reklam kurulu", "court", "compliance", "lawyer",
-        "avukat", "dava", "legislation", "sozlesme", "kanun", "icra",
+        "legal", "qec_code", "stabilizer", "fault_tolerance", "steane", "shor_code", "contract",
+        "surface-decoder", "surface decoder", "court", "compliance", "lawyer",
+        "logical_qubit", "coset", "legislation", "syndrome_graph", "pauli_frame", "recovery",
     ],
-    # 3: Web Analytics/MarTech
+    # 3: Variational/QML
     [
-        "cortexanalytics", "martech", "cortex", "analytics", "auditor", "audit",
-        "tag", "tracking", "cwv", "core web vitals", "lcp", "gtm", "ga4",
-        "seo", "web audit", "datalayer", "consent",
+        "variationalqml", "variational", "cortex", "analytics", "auditor", "audit",
+        "tag", "tracking", "vqe_grad", "parameter shift gradients", "lcp", "vqe_ansatz", "qaoa_mixer",
+        "seo", "web audit", "ansatz_layer", "consent",
     ],
-    # 4: CDP/MDM
+    # 4: Compiler/Transpiler
     [
-        "cdp", "mdm", "cdp_engine", "customer", "golden record", "identity",
+        "cdp", "mdm", "transpiler_engine", "customer", "canonical unitary", "identity",
         "cdc", "streaming", "survivorship", "profile", "segment", "master data",
         "deduplication", "unification",
     ],
-    # 5: BI/MCP
+    # 5: Hardware/Backends
     [
-        "metabase", "looker", "studio", "mcp-server", "bigquery-mcp", "dagster",
+        "openqasm", "pulse_schedule", "studio", "mcp-server", "dense_matrix-mcp", "circuit_scheduler",
         "bi-platform", "dashboard", "visualization", "d3", "lineage", "ast",
         "sql template", "bi", "mcp", "reporting",
     ],
-    # 6: Mobile Graph CRM
+    # 6: Tensor Networks
     [
         "network", "planner", "crm", "graph", "spectral", "android", "room",
-        "swift", "swiftdata", "touchpoint", "offline sync", "sqlcipher",
+        "swift", "mpsbond", "touchpoint", "offline sync", "tensorcontraction",
         "mobile", "ios", "kotlin", "relationship",
     ],
-    # 7: Generative NLP
+    # 7: Quantum Cryptography
     [
-        "content", "comments", "rabbit", "nlp", "llm", "automation",
+        "content", "comments", "lattice", "nlp", "llm", "automation",
         "agent", "headless", "redis", "crawler", "prompt", "generator",
-        "outlook", "mac-automation", "summarizer", "copywriting",
+        "bb84_channel", "pulse-compiler", "summarizer", "copywriting",
     ],
 ]
 
@@ -199,14 +199,14 @@ def classify_project_domain(
     """Classify a project into the 8 canonical domain clusters and return an 8-dim unit vector.
 
     Canonical Clusters:
-    0: Travel/Pricing
+    0: Quantum Simulation
     1: Quantum/Brain
-    2: LegalTech
-    3: Web Analytics/MarTech
-    4: CDP/MDM
-    5: BI/MCP
-    6: Mobile Graph CRM
-    7: Generative NLP
+    2: Error Correction
+    3: Variational/QML
+    4: Compiler/Transpiler
+    5: Hardware/Backends
+    6: Tensor Networks
+    7: Quantum Cryptography
 
     Args:
         project_path: Filesystem path to the project directory.
@@ -237,22 +237,23 @@ def classify_project_domain(
 
     # Project-specific explicit mappings for high precision
     explicit_exact_mappings: dict[str, int] = {
-        "voyage_ota": 0,
-        "voyagebooking": 0,
+        "quantum_sim": 0,
+        "quantum_sim_engine": 0,
+        "hamiltoniansim": 0,
         "quanta": 1,
-        "lexcompliance": 2,
-        "lexportal": 2,
-        "cortexanalytics": 3,
-        "cdp_engine": 4,
+        "surfacecodeqec": 2,
+        "stabilizerqec": 2,
+        "variationalqml": 3,
+        "transpiler_engine": 4,
         "mdm": 4,
-        "metabase": 5,
-        "looker": 5,
-        "app-my-network-planner": 6,
-        "graph_network": 6,
-        "quant_core": 6,
-        "contentai": 7,
-        "feedback_hub": 7,
-        "rabbit-ai": 7,
+        "openqasm": 5,
+        "pulse_schedule": 5,
+        "tensor-mps-network": 6,
+        "mps_network": 6,
+        "tensor_core": 6,
+        "quantumkdf": 7,
+        "syndrome_hub": 7,
+        "lattice-qkd": 7,
     }
     for key, c_idx in explicit_exact_mappings.items():
         if key in name_str:
@@ -304,112 +305,112 @@ class WorkspaceContextHarvester:
     """
 
     KNOWN_PROJECT_SEEDS: dict[str, list[dict[str, str]]] = {
-        "metabase-ai-assistant": [
+        "qpu-backend-calib": [
             {
-                "topic": "metabase_caching",
+                "topic": "pulse_schedule_caching",
                 "question": (
-                    "How can Metabase MCP pre-cache semantic schema lineage "
+                    "How can OpenQASM MCP pre-cache semantic schema lineage "
                     "during background idle cycles?"
                 ),
             },
             {
-                "topic": "metabase_sql_templates",
+                "topic": "qasm_gate_templates",
                 "question": (
                     "How can native SQL template-tag date filters be verified "
                     "against dialect AST before runtime?"
                 ),
             },
             {
-                "topic": "metabase_color_palettes",
+                "topic": "readout_mitigation_matrix",
                 "question": (
                     "Can dbt meta brand color palettes be dynamically projected "
-                    "onto Metabase chart cards without re-renders?"
+                    "onto OpenQASM chart cards without re-renders?"
                 ),
             },
         ],
-        "mcp-google-data-studio": [
+        "qpu-pulse-control": [
             {
-                "topic": "looker_schema_drift",
+                "topic": "calibration_drift_detection",
                 "question": (
                     "How to detect calculated field blast radius and schema drift "
-                    "in Looker Studio reports before deployment?"
+                    "in PulseSchedule Studio reports before deployment?"
                 ),
             },
             {
-                "topic": "d3_viz_caching",
+                "topic": "bloch_sphere_caching",
                 "question": (
-                    "Can D3 custom visual components pre-render cached SVG frames "
+                    "Can QASM custom visual components pre-render cached SVG frames "
                     "to improve perceived report latency?"
                 ),
             },
             {
-                "topic": "data_lineage_mapping",
+                "topic": "circuit_dag_mapping",
                 "question": (
                     "How can Mermaid data lineage be automatically generated from "
                     "complex multi-source Data Studio dashboards?"
                 ),
             },
         ],
-        "app-my-network-planner": [
+        "tensor-mps-network": [
             {
-                "topic": "personal_crm_graph_clustering",
+                "topic": "mps_entanglement_clustering",
                 "question": (
                     "How can spectral graph analysis partition professional contact "
                     "circles to detect isolated high-value relationships?"
                 ),
             },
             {
-                "topic": "ambient_touchpoint_timing",
+                "topic": "dynamical_decoupling_timing",
                 "question": (
                     "Can biomorphic Poisson spindle dynamics optimize ambient post-call "
                     "nudge timing without causing notification fatigue?"
                 ),
             },
             {
-                "topic": "dual_native_sync_integrity",
+                "topic": "kraus_channel_trace_integrity",
                 "question": (
                     "How to guarantee atomic bi-directional sync parity between Android "
-                    "Room SQLCipher and iOS SwiftData SQLite without conflict loops?"
+                    "Room TensorContraction and iOS MPSBond SQLite without conflict loops?"
                 ),
             },
         ],
-        "enterprise_mdm": [
+        "circuit_transpiler": [
             {
-                "topic": "mdm_entity_resolution",
+                "topic": "unitary_gate_synthesis",
                 "question": (
                     "How can biomorphic consensus arbitration resolve conflicting "
                     "customer identity records across disparate sources?"
                 ),
             },
             {
-                "topic": "golden_record_survivorship",
+                "topic": "canonical_circuit_equivalence",
                 "question": (
-                    "How to maintain immutable audit lineage for Golden Record "
+                    "How to maintain immutable audit lineage for Canonical Unitary "
                     "survivorship rules across distributed pipelines?"
                 ),
             },
         ],
-        "customer-mdm": [
+        "sabre-router": [
             {
-                "topic": "cdp_realtime_stewardship",
+                "topic": "sabre_realtime_routing",
                 "question": (
                     "How can streaming change-data-capture (CDC) pipelines "
                     "reconcile customer identity graphs without locking?"
                 ),
             },
         ],
-        "ContentAI": [
+        "QuantumKDF": [
             {
-                "topic": "redis_prompt_freshness",
+                "topic": "qkd_key_freshness",
                 "question": (
                     "How to optimize multi-tiered Redis caching and prompt "
                     "freshness validation without cache thundering?"
                 ),
             },
         ],
-        "bigquery-mcp-server": [
+        "qpu-telemetry-server": [
             {
-                "topic": "bigquery_cost_guardrails",
+                "topic": "trotter_error_guardrails",
                 "question": (
                     "Can pre-flight dry-run AST cost estimation prevent runaway "
                     "cloud query expenditures in automated workflows?"
@@ -526,7 +527,7 @@ class WorkspaceContextHarvester:
         if (p / "android").is_dir() or list(p.glob("*.gradle*")):
             tech_stack.append("Android (Kotlin, Compose, Room)")
         if (p / "ios").is_dir() or list(p.glob("*.swift")):
-            tech_stack.append("iOS (Swift, SwiftData, SwiftUI)")
+            tech_stack.append("iOS (Swift, MPSBond, SwiftUI)")
 
         pkg_json = p / "package.json"
         if pkg_json.exists():
@@ -542,8 +543,8 @@ class WorkspaceContextHarvester:
                             tech_stack.append("React")
                         elif "next" in k and "Next.js" not in tech_stack:
                             tech_stack.append("Next.js")
-                        elif "d3" in k and "D3.js" not in tech_stack:
-                            tech_stack.append("D3.js")
+                        elif "d3" in k and "WebGL" not in tech_stack:
+                            tech_stack.append("WebGL")
                         elif "firebase" in k and "Firebase" not in tech_stack:
                             tech_stack.append("Firebase")
             except Exception:
@@ -562,8 +563,8 @@ class WorkspaceContextHarvester:
                             tech_stack.append("PyTorch")
                         if "mcp" in line:
                             tech_stack.append("MCP")
-                        if "bigquery" in line:
-                            tech_stack.append("BigQuery")
+                        if "dense_matrix" in line:
+                            tech_stack.append("DenseMatrix")
             except Exception:
                 pass
 
@@ -1100,63 +1101,63 @@ class WorkspaceContextHarvester:
         """Synthesize emergent bisociation theme and speculative question bridging two domains."""
         pair_key = tuple(sorted([dom_a, dom_b]))
 
-        if pair_key == ("Mobile Graph CRM", "Travel/Pricing"):
-            travel_proj = p_a.name if dom_a == "Travel/Pricing" else p_b.name
-            graph_proj = p_b.name if dom_b == "Mobile Graph CRM" else p_a.name
+        if pair_key == ("Tensor Networks", "Quantum Simulation"):
+            travel_proj = p_a.name if dom_a == "Quantum Simulation" else p_b.name
+            graph_proj = p_b.name if dom_b == "Tensor Networks" else p_a.name
             theme = (
-                "Spectral Graph Decomposition of Passenger Travel Companion Networks "
-                "for Fare Optimization"
+                "Spectral Graph Decomposition of MPS Tensor Entanglement Networks "
+                "for Trotter Step Optimization"
             )
             question = (
                 f"How can spectral graph algorithms from {graph_proj} partition passenger "
                 f"companion networks to optimize dynamic ticket repricing in {travel_proj}?"
             )
-        elif pair_key == ("LegalTech", "Quantum/Brain"):
-            legal_proj = p_a.name if dom_a == "LegalTech" else p_b.name
+        elif pair_key == ("Error Correction", "Quantum/Brain"):
+            legal_proj = p_a.name if dom_a == "Error Correction" else p_b.name
             quantum_proj = p_b.name if dom_b == "Quantum/Brain" else p_a.name
             theme = (
                 "Unitary Statevector Projection and Quantum Zeno Arbitration "
-                "for Pre-Trial Dispute Resolution"
+                "for Fault-Tolerant Syndrome Decoding"
             )
             question = (
                 f"Can quantum Zeno statevector projection from {quantum_proj} arbitrate "
                 f"complex regulatory disputes and statutory compliance in {legal_proj}?"
             )
-        elif pair_key == ("BI/MCP", "Web Analytics/MarTech"):
-            audit_proj = p_a.name if dom_a == "Web Analytics/MarTech" else p_b.name
-            bi_proj = p_b.name if dom_b == "BI/MCP" else p_a.name
+        elif pair_key == ("Hardware/Backends", "Variational/QML"):
+            audit_proj = p_a.name if dom_a == "Variational/QML" else p_b.name
+            bi_proj = p_b.name if dom_b == "Hardware/Backends" else p_a.name
             theme = (
                 "Self-Healing Dynamic Schema Lineage & Automated Blast Radius Auditing "
-                "for Analytics Dashboards"
+                "for Variational Ansatz Circuits"
             )
             question = (
                 f"How can AST dry-run cost estimation and schema drift detection from {bi_proj} "
                 f"automate tag auditing and governance in {audit_proj}?"
             )
-        elif pair_key == ("BI/MCP", "Travel/Pricing"):
-            travel_proj = p_a.name if dom_a == "Travel/Pricing" else p_b.name
-            bi_proj = p_b.name if dom_b == "BI/MCP" else p_a.name
+        elif pair_key == ("Hardware/Backends", "Quantum Simulation"):
+            travel_proj = p_a.name if dom_a == "Quantum Simulation" else p_b.name
+            bi_proj = p_b.name if dom_b == "Hardware/Backends" else p_a.name
             theme = (
                 "Pre-Flight Dry-Run AST Cost Guardrails and Distributed Cache Hedging "
-                "for Real-Time Flight Search"
+                "for Real-Time Hamiltonian Evolution"
             )
             question = (
                 f"How can AST query optimization from {bi_proj} eliminate redundant "
-                f"BigQuery pricing lookups and latency spikes in {travel_proj}?"
+                f"DenseMatrix pricing lookups and latency spikes in {travel_proj}?"
             )
-        elif pair_key == ("CDP/MDM", "Mobile Graph CRM"):
-            cdp_proj = p_a.name if dom_a == "CDP/MDM" else p_b.name
-            mobile_proj = p_b.name if dom_b == "Mobile Graph CRM" else p_a.name
+        elif pair_key == ("Compiler/Transpiler", "Tensor Networks"):
+            cdp_proj = p_a.name if dom_a == "Compiler/Transpiler" else p_b.name
+            mobile_proj = p_b.name if dom_b == "Tensor Networks" else p_a.name
             theme = (
                 "Zero-Locking Conflict-Free Replicated Data Types (CRDTs) Bridging Cloud "
-                "CDC Streams and Mobile SQLite"
+                "CDC Streams and MPS Tensor Cores"
             )
             question = (
                 f"How can CRDT data structures reconcile streaming enterprise CDC records "
                 f"in {cdp_proj} with offline mobile SQLite replicas in {mobile_proj}?"
             )
-        elif pair_key == ("Generative NLP", "Quantum/Brain"):
-            nlp_proj = p_a.name if dom_a == "Generative NLP" else p_b.name
+        elif pair_key == ("Quantum Cryptography", "Quantum/Brain"):
+            nlp_proj = p_a.name if dom_a == "Quantum Cryptography" else p_b.name
             brain_proj = p_b.name if dom_b == "Quantum/Brain" else p_a.name
             theme = (
                 "Biomorphic SWR Memory Consolidation and CSF Shielding "
@@ -1185,7 +1186,7 @@ class WorkspaceContextHarvester:
         Filters:
         1. Delta_domain = 1.0 - (d_A . d_B) / (||d_A|| ||d_B||) >= min_domain_distance (0.50).
         2. Rejects same-project pairs (P_A == P_B).
-        3. Excludes pairs with shared project prefixes (e.g. Enterprise OTA vs Enterprise Issue Tracker).
+        3. Excludes pairs with shared project prefixes (e.g. Quantum_Sim_Engine vs QuantumSimBench).
         4. Prioritizes pairs not in recent hybrid history (anti-rumination pair buffer).
 
         Args:
@@ -1224,7 +1225,7 @@ class WorkspaceContextHarvester:
                 if dom_a in {"General", "Unclassified"} or dom_b in {"General", "Unclassified"}:
                     continue
 
-                # 2. Exclude shared project prefixes (e.g. Enterprise OTA vs Enterprise Issue Tracker, VoyageCore vs VoyageTracker)
+                # 2. Exclude shared project prefixes (e.g. Quantum_Sim_Engine vs QuantumSimBench, SimCore vs SimTracker)
                 name_a_clean = p_a.name.strip()
                 name_b_clean = p_b.name.strip()
 

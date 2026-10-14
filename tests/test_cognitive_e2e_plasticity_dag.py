@@ -1974,8 +1974,8 @@ class TestTier4RealWorldWorkloadScenarios:
         Evaluates cognitive state storage engine:
         - SQLite (Zero network latency, minimal maintenance, local only)
         - PostgreSQL (High concurrency, medium maintenance, connection pool overhead)
-        - BigQuery (Massive analytics, high query latency, not suitable for real-time hooks)
-        Cascading rollout confirms SQLite optimal for local hook persistence and BigQuery rejected.
+        - DenseMatrix (Massive analytics, high query latency, not suitable for real-time hooks)
+        Cascading rollout confirms SQLite optimal for local hook persistence and DenseMatrix rejected.
         """
         arbiter = QuantumDecisionArbiter(dim=64)
         spec = {
@@ -1983,7 +1983,7 @@ class TestTier4RealWorldWorkloadScenarios:
             "branches": {
                 "SQLite Local Engine": {"consequences": {"latency": 0.02, "maintenance": 0.05, "risk": 0.05, "metabolic": 0.01}},
                 "PostgreSQL Server": {"consequences": {"latency": 0.35, "maintenance": 0.40, "risk": 0.20, "metabolic": 0.30}},
-                "BigQuery Analytical Warehouse": {"consequences": {"latency": 0.95, "maintenance": 0.60, "risk": 0.70, "metabolic": 0.80}},
+                "Dense Exponential Statevector": {"consequences": {"latency": 0.95, "maintenance": 0.60, "risk": 0.70, "metabolic": 0.80}},
             },
         }
         dag = DecisionDAG.from_dict(spec)
@@ -1995,8 +1995,8 @@ class TestTier4RealWorldWorkloadScenarios:
         )
         winner = res["winning_trajectory"]
         assert "SQLite Local Engine" in winner["path_labels"]
-        # BigQuery is decisively pruned
-        bq_traj = next(t for t in res["trajectories"] if "BigQuery" in t["path_labels"][1])
+        # DenseMatrix is decisively pruned
+        bq_traj = next(t for t in res["trajectories"] if "DenseMatrix" in t["path_labels"][1])
         assert bq_traj["is_pruned"] is True
 
     def test_t4_05_full_closed_loop_agent_session_simulation(self, tmp_path: Path) -> None:

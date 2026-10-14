@@ -25,7 +25,7 @@ class TestCognitiveTelemetry:
 
         # Record a decision
         record_decision_telemetry(
-            goal="voyage_ota cdp_engine Synchronization",
+            goal="quantum_sim transpiler_engine Synchronization",
             options=["Option A (Sync)", "Option B (Async)"],
             winner="Option A (Sync)",
             confidence=0.85,
@@ -33,7 +33,7 @@ class TestCognitiveTelemetry:
             anti_zeno_kickback=0.08,
             regime="Zeno Pinning",
             latency_ms=1.45,
-            workspace="voyage_ota-test-ws",
+            workspace="quantum_sim-test-ws",
             telemetry_file=telemetry_file,
         )
 
@@ -53,7 +53,7 @@ class TestCognitiveTelemetry:
             rules_replayed=["rule1", "rule2"],
             pruned_count=1,
             latency_ms=0.25,
-            workspace="voyage_ota-test-ws",
+            workspace="quantum_sim-test-ws",
             telemetry_file=telemetry_file,
         )
 
@@ -63,7 +63,7 @@ class TestCognitiveTelemetry:
         assert summary["total_hook_steps"] == 1
         assert summary["avg_decision_latency_ms"] == 1.45
         assert summary["avg_confidence_pct"] == 85.0
-        assert "voyage_ota-test-ws" in summary["active_workspaces"]
+        assert "quantum_sim-test-ws" in summary["active_workspaces"]
         assert len(summary["recent_decisions"]) == 1
         assert summary["recent_decisions"][0]["winner"] == "Option A (Sync)"
 

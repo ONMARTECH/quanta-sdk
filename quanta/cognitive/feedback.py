@@ -281,7 +281,7 @@ class OutcomeVerifier:
             # Tag implicated rule on success for native platform tools
             implicated_success = None
             combined_desc = f"{clean_tool_name} {str(args_dict)}"
-            for kw in ("gcloud", "api", "crm_engine", "cdp_engine"):
+            for kw in ("gcloud", "api", "simulator_engine", "transpiler_engine"):
                 if kw in combined_desc.lower():
                     implicated_success = "native_first_rule"
                     break
@@ -431,18 +431,18 @@ class OutcomeVerifier:
 
         # Rule 1: native_first_rule
         if "native_first_rule" in active_rule_keys:
-            platform_keywords = ("voyage_ota", "cdp_engine", "crm_engine", "contact", "crm", "cdp")
+            platform_keywords = ("quantum_sim", "transpiler_engine", "simulator_engine", "contact", "crm", "cdp")
             is_platform_context = (
-                context_dict.get("is_voyage_ota", False)
+                context_dict.get("is_quantum_sim", False)
                 or any(kw in str(context_dict).lower() for kw in platform_keywords)
                 or any(kw in cmd.lower() for kw in platform_keywords)
                 or any(kw in str(args_dict).lower() for kw in platform_keywords)
             )
 
             is_secondary_bypass = (
-                "mcp_bigquery" in tool_str
-                or "bigquery" in tool_str
-                or ("bq query" in cmd and is_platform_context)
+                "mcp_dense_matrix" in tool_str
+                or "dense_matrix" in tool_str
+                or ("dense_sim run" in cmd and is_platform_context)
             )
 
             bypass_flag = bool(args_dict.get("bypass_native") or details_dict.get("bypass_native"))
@@ -1118,7 +1118,7 @@ class CognitiveFeedbackLoop:
             if not rule_key:
                 rule_key = outcome.details.get("rule_key")
             if not rule_key:
-                if outcome.tool_name in ("run_command", "bash", "gcloud", "crm_engine", "mcp"):
+                if outcome.tool_name in ("run_command", "bash", "gcloud", "simulator_engine", "mcp"):
                     rule_key = "native_first_rule"
                 else:
                     rule_key = "scientific_integrity_rule"

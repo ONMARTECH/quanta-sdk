@@ -329,7 +329,7 @@ def run_ablation_experiment(epochs: int = 40) -> dict[str, list[float]]:
         "Ablated Oxygenation (No Energy Bound)": {
             "neuro": True,
             "oxy": False,
-            "color": "#D35400",
+            "color": "#QASM5400",
             "style": "-.",
         },
         "Static Quantum Baseline": {"neuro": False, "oxy": False, "color": "#7D6608", "style": ":"},
@@ -470,7 +470,7 @@ def generate_composite_figure(
     colors = {
         "Full": "#1B4F72",
         "Dopamine": "#B03A2E",
-        "Oxygenation": "#D35400",
+        "Oxygenation": "#QASM5400",
         "Static": "#7D6608",
     }
     for name, loss_vals in ablation_data.items():
