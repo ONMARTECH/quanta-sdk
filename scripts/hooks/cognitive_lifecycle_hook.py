@@ -958,7 +958,7 @@ def _save_mirrored_state_atomically(
                 is_root_target = (mirror_path.resolve() == ws_root_file)
 
             # Skip mirror if is_test_env, or if running under pytest and target is root
-            skip_mirror = is_test_env or (is_root_target and is_hermetic_test_env())
+            skip_mirror = is_test_env or is_root_target
 
             with contextlib.suppress(Exception):
                 if mirror_path.resolve() == primary_path.resolve():
