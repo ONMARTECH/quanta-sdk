@@ -7,25 +7,13 @@ mid-circuit measurement and classical feedforward condition execution.
 
 Supports:
   - QASM 2.0 (qelib1.inc gates) and QASM 3.0 (stdgates.inc)
-  - Standard gates: h, x, y, z, s, t, cx, cz, swap, ccx, rx, ry, rz
+  - All 34 SDK gates: h, x, y, z, s, t, sdg, tdg, sx, sxdg, id, p, u, u1, u2, u3,
+    cx, cz, cy, ch, swap, iswap, ecr, ccx, cswap, rccx, rc3x, rx, ry, rz, rxx, rzz,
+    crx, cry, crz, cp, ms
   - Qubit and bit register declarations (qubit[N], bit[N], qreg, creg)
-  - Parametric gates with float params
+  - Parametric gates with safe arithmetic expressions over pi
   - Mid-circuit measurements: c[i] = measure q[j]; and measure q[j] -> c[i];
   - Conditional gate execution: if (c[i] == 1) { gate q; } and if (c == 1) gate q;
-
-Example:
-    >>> from quanta.export.qasm_import import from_qasm
-    >>> dag = from_qasm('''
-    ...     OPENQASM 3.0;
-    ...     include "stdgates.inc";
-    ...     qubit[2] q;
-    ...     bit[1] c;
-    ...     h q[0];
-    ...     c[0] = measure q[0];
-    ...     if (c[0] == 1) { x q[1]; }
-    ... ''')
-    >>> print(dag.gate_count())
-    3
 """
 
 from __future__ import annotations
@@ -34,36 +22,81 @@ import math
 import re
 
 from quanta.core.circuit import CircuitBuilder
-from quanta.core.types import Instruction, MeasureSpec
+from quanta.core.gates import GATE_REGISTRY, Gate, MultiParametricGate, ParametricGate
+from quanta.core.types import Instruction, MeasureSpec, QuantaError
 from quanta.dag.dag_circuit import DAGCircuit
 from quanta.dag.node import OpNode, OutputNode
 
-__all__ = ["ConditionalOpNode", "DynamicDAGCircuit", "from_qasm", "from_qasm_file"]
+__all__ = [
+    "ConditionalOpNode",
+    "DynamicDAGCircuit",
+    "QASMImportError",
+    "from_qasm",
+    "from_qasm_file",
+]
 
 
-# QASM gate name -> Quanta gate name
+class QASMImportError(QuantaError):
+    """Raised when an OpenQASM statement, gate, or parameter cannot be parsed."""
+
+
+# QASM gate name (lowercase) -> Quanta canonical gate name
 _QASM_TO_QUANTA: dict[str, str] = {
-    "h": "H", "x": "X", "y": "Y", "z": "Z",
-    "s": "S", "t": "T",
-    "sdg": "RZ", "tdg": "RZ",  # S† = RZ(-π/2), T† = RZ(-π/4)
-    "cx": "CX", "cnot": "CX", "CX": "CX",
-    "cz": "CZ", "cy": "CY",
+    # 1-qubit fixed gates
+    "h": "H",
+    "x": "X",
+    "y": "Y",
+    "z": "Z",
+    "s": "S",
+    "t": "T",
+    "sdg": "SDG",
+    "tdg": "TDG",
+    "sx": "SX",
+    "sxdg": "SXdg",
+    "id": "I",
+    "i": "I",
+    # 2-qubit fixed gates
+    "cx": "CX",
+    "cnot": "CX",
+    "cz": "CZ",
+    "cy": "CY",
+    "ch": "CH",
     "swap": "SWAP",
-    "ccx": "CCX", "toffoli": "CCX",
-    "rx": "RX", "ry": "RY", "rz": "RZ",
-    "u1": "RZ", "p": "RZ",  # u1 and p are equivalent to RZ
-    "id": "I", "i": "I",
-}
-
-# sdg/tdg implicit parameter values (Hermitian conjugates)
-_IMPLICIT_PARAMS: dict[str, tuple[float, ...]] = {
-    "sdg": (-math.pi / 2,),  # S† = RZ(-π/2)
-    "tdg": (-math.pi / 4,),  # T† = RZ(-π/4)
+    "iswap": "iSWAP",
+    "ecr": "ECR",
+    # 3-qubit & 4-qubit fixed gates
+    "ccx": "CCX",
+    "toffoli": "CCX",
+    "cswap": "CSWAP",
+    "fredkin": "CSWAP",
+    "rccx": "RCCX",
+    "rc3x": "RC3X",
+    # 1-qubit parametric gates
+    "rx": "RX",
+    "ry": "RY",
+    "rz": "RZ",
+    "p": "P",
+    "phase": "P",
+    "u1": "P",
+    "u": "U",
+    "u2": "U",
+    "u3": "U",
+    # 2-qubit parametric gates
+    "rxx": "RXX",
+    "rzz": "RZZ",
+    "crx": "CRX",
+    "cry": "CRY",
+    "crz": "CRZ",
+    "cp": "CP",
+    "cphase": "CP",
+    "cu1": "CP",
+    "ms": "MS",
 }
 
 
 class ConditionalOpNode(OpNode):
     """OpNode extended with condition and cbit fields for dynamic circuits."""
+
     __slots__ = ("condition", "cbit")
 
     def __init__(
@@ -82,6 +115,7 @@ class ConditionalOpNode(OpNode):
 
 class DynamicDAGCircuit(DAGCircuit):
     """DAGCircuit supporting dynamic circuits with classical conditions and registers."""
+
     __slots__ = ("num_clbits", "conditions", "instructions")
 
     def __init__(self, num_qubits: int, num_clbits: int = 0) -> None:
@@ -101,11 +135,13 @@ def _safe_parse_param(expr: str) -> float:
     import operator
 
     expr = expr.strip()
+    if not expr:
+        raise QASMImportError("Empty QASM parameter expression.")
 
     if not re.match(r"^[\d\s.+\-*/()pieE]+$", expr):
-        raise ValueError(f"Unsafe QASM parameter expression: {expr!r}")
+        raise QASMImportError(f"Unsafe or invalid QASM parameter expression: {expr!r}")
 
-    safe_expr = expr.replace("pi", str(math.pi))
+    safe_expr = re.sub(r"\bpi\b", repr(math.pi), expr)
 
     _OPS = {
         ast.Add: operator.add,
@@ -127,13 +163,15 @@ def _safe_parse_param(expr: str) -> float:
             return _OPS[type(node.op)](left, right)
         if isinstance(node, ast.UnaryOp) and type(node.op) in _OPS:
             return _OPS[type(node.op)](_eval_node(node.operand))
-        raise ValueError(f"Disallowed AST node: {type(node).__name__}")
+        raise QASMImportError(f"Disallowed AST node in QASM parameter: {type(node).__name__}")
 
     try:
         tree = ast.parse(safe_expr, mode="eval")
         return float(_eval_node(tree))
-    except (SyntaxError, TypeError, ZeroDivisionError) as e:
-        raise ValueError(f"Cannot parse QASM parameter: {expr!r}") from e
+    except QASMImportError:
+        raise
+    except (SyntaxError, TypeError, ZeroDivisionError, ValueError) as e:
+        raise QASMImportError(f"Cannot parse QASM parameter: {expr!r}") from e
 
 
 def _parse_measure_line(
@@ -147,16 +185,14 @@ def _parse_measure_line(
       - QASM 3.0: c[i] = measure q[j]
       - QASM 2.0: measure q[j] -> c[i]
     """
-    # QASM 3.0: c[i] = measure q[j]
-    m3 = re.match(r"(\w+)\[(\d+)\]\s*=\s*measure\s+(\w+)\[(\d+)\]", line)
+    m3 = re.match(r"^(\w+)\s*\[\s*(\d+)\s*\]\s*=\s*measure\s+(\w+)\s*\[\s*(\d+)\s*\]$", line)
     if m3:
         c_reg, c_i, q_reg, q_j = m3.groups()
         q_idx = qubit_offset.get(q_reg, 0) + int(q_j)
         c_idx = cbit_offset.get(c_reg, 0) + int(c_i)
         return ((q_idx,), c_idx)
 
-    # QASM 2.0: measure q[j] -> c[i]
-    m2 = re.match(r"measure\s+(\w+)\[(\d+)\]\s*->\s*(\w+)\[(\d+)\]", line)
+    m2 = re.match(r"^measure\s+(\w+)\s*\[\s*(\d+)\s*\]\s*->\s*(\w+)\s*\[\s*(\d+)\s*\]$", line)
     if m2:
         q_reg, q_j, c_reg, c_i = m2.groups()
         q_idx = qubit_offset.get(q_reg, 0) + int(q_j)
@@ -166,9 +202,20 @@ def _parse_measure_line(
     return None
 
 
+def _is_full_register_measure(line: str) -> bool:
+    """Checks whether ``line`` is a whole-register measurement statement."""
+    return bool(
+        re.match(
+            r"^(?:(\w+)\s*=\s*measure\s+(\w+)|measure\s+(\w+)\s*->\s*(\w+)|measure\s+(\w+)(?:\s*\[\s*\d+\s*\])?)$",
+            line,
+        )
+    )
+
+
 def _split_qasm_statements(qasm: str) -> list[str]:
     """Tokenizes QASM statements delimited by ';', '{', or '}'."""
-    qasm_clean = re.sub(r"//.*", "", qasm)
+    qasm_no_block = re.sub(r"/\*.*?\*/", "", qasm, flags=re.DOTALL)
+    qasm_clean = re.sub(r"//.*", "", qasm_no_block)
     tokens = re.split(r"([;{}])", qasm_clean)
     stmts: list[str] = []
     curr = ""
@@ -193,6 +240,9 @@ def from_qasm(qasm_str: str) -> DAGCircuit:
 
     Returns:
         DAGCircuit ready for simulation or compilation.
+
+    Raises:
+        QASMImportError: On unrecognized gate names, malformed statements, or invalid arities.
     """
     statements = _split_qasm_statements(qasm_str)
 
@@ -214,41 +264,50 @@ def from_qasm(qasm_str: str) -> DAGCircuit:
             continue
 
         # Skip headers
-        if clean.startswith(("OPENQASM", "include")):
+        if re.match(r"^(?:OPENQASM|include)\b", clean):
             continue
 
         # QASM 2.0: qreg q[N];
-        m_q2 = re.match(r"qreg\s+(\w+)\s*\[\s*(\d+)\s*\]", clean)
+        m_q2 = re.match(r"^qreg\s+(\w+)\s*\[\s*(\d+)\s*\]$", clean)
         if m_q2:
             reg_name, size = m_q2.group(1), int(m_q2.group(2))
             qubit_offset[reg_name] = num_qubits
             num_qubits += size
             continue
 
-        # QASM 3.0: qubit[N] q;
-        m_q3 = re.match(r"qubit\s*\[\s*(\d+)\s*\]\s+(\w+)", clean)
+        # QASM 3.0: qubit[N] q; or qubit q;
+        m_q3 = re.match(r"^qubit(?:\s*\[\s*(\d+)\s*\])?\s+(\w+)$", clean)
         if m_q3:
-            size, reg_name = int(m_q3.group(1)), m_q3.group(2)
+            size_str, reg_name = m_q3.group(1), m_q3.group(2)
+            size = int(size_str) if size_str is not None else 1
             qubit_offset[reg_name] = num_qubits
             num_qubits += size
             continue
 
-        # Classical registers: creg c[N]; or bit[N] c; or bit c;
-        m_c = re.match(r"(?:creg|bit)\s*(?:\[\s*(\d+)\s*\])?\s*(\w+)", clean)
-        if m_c and (clean.startswith("creg") or clean.startswith("bit")):
-            size_str, reg_name = m_c.group(1), m_c.group(2)
+        # QASM 2.0 classical register: creg c[N];
+        m_c2 = re.match(r"^creg\s+(\w+)\s*\[\s*(\d+)\s*\]$", clean)
+        if m_c2:
+            reg_name, size = m_c2.group(1), int(m_c2.group(2))
+            cbit_offset[reg_name] = num_cbits
+            num_cbits += size
+            continue
+
+        # QASM 3.0 classical register: bit[N] c; or bit c;
+        m_c3 = re.match(r"^bit(?:\s*\[\s*(\d+)\s*\])?\s+(\w+)$", clean)
+        if m_c3:
+            size_str, reg_name = m_c3.group(1), m_c3.group(2)
             size = int(size_str) if size_str is not None else 1
             cbit_offset[reg_name] = num_cbits
             num_cbits += size
             continue
 
-        # Barrier (skip)
-        if clean.startswith("barrier"):
+        # Barrier (no-op directive)
+        if re.match(r"^barrier\b", clean):
             continue
 
         # Conditional branch: if (c[i] == val) { ... } or if (c == val) ...
         m_if = re.match(
-            r"if\s*\(\s*(\w+)(?:\[(\d+)\])?\s*==\s*(\d+)\s*\)\s*(\{?)\s*(.*)",
+            r"^if\s*\(\s*(\w+)(?:\[\s*(\d+)\s*\])?\s*==\s*(\d+)\s*\)\s*(\{?)\s*(.*)$",
             clean,
         )
         if m_if:
@@ -265,16 +324,15 @@ def from_qasm(qasm_str: str) -> DAGCircuit:
                     raw_ops.append(("measure", pm[0], pm[1], cond))
                 else:
                     pg = _parse_gate_line(body, qubit_offset)
-                    if pg:
-                        raw_ops.append((
-                            "gate",
-                            Instruction(
-                                gate_name=pg.gate_name,
-                                qubits=pg.qubits,
-                                params=pg.params,
-                                condition=cond,
-                            ),
-                        ))
+                    raw_ops.append((
+                        "gate",
+                        Instruction(
+                            gate_name=pg.gate_name,
+                            qubits=pg.qubits,
+                            params=pg.params,
+                            condition=cond,
+                        ),
+                    ))
             continue
 
         # If inside a multi-line conditional block
@@ -284,16 +342,15 @@ def from_qasm(qasm_str: str) -> DAGCircuit:
                 raw_ops.append(("measure", pm[0], pm[1], active_condition))
             else:
                 pg = _parse_gate_line(clean, qubit_offset)
-                if pg:
-                    raw_ops.append((
-                        "gate",
-                        Instruction(
-                            gate_name=pg.gate_name,
-                            qubits=pg.qubits,
-                            params=pg.params,
-                            condition=active_condition,
-                        ),
-                    ))
+                raw_ops.append((
+                    "gate",
+                    Instruction(
+                        gate_name=pg.gate_name,
+                        qubits=pg.qubits,
+                        params=pg.params,
+                        condition=active_condition,
+                    ),
+                ))
             continue
 
         # Mid-circuit measurement targeting specific classical bit
@@ -303,22 +360,21 @@ def from_qasm(qasm_str: str) -> DAGCircuit:
             continue
 
         # Full register measurement (e.g., measure q -> c; or c = measure q;)
-        if "measure" in clean:
+        if _is_full_register_measure(clean):
             raw_ops.append(("final_measure", None))
             continue
 
-        # Regular gate line
+        # Regular gate line (strictly validated; raises QASMImportError if unrecognized)
         pg = _parse_gate_line(clean, qubit_offset)
-        if pg:
-            raw_ops.append((
-                "gate",
-                Instruction(
-                    gate_name=pg.gate_name,
-                    qubits=pg.qubits,
-                    params=pg.params,
-                    condition=None,
-                ),
-            ))
+        raw_ops.append((
+            "gate",
+            Instruction(
+                gate_name=pg.gate_name,
+                qubits=pg.qubits,
+                params=pg.params,
+                condition=None,
+            ),
+        ))
 
     has_dynamic_features = any(
         (op[0] == "measure" and any(raw_ops[j][0] == "gate" for j in range(idx + 1, len(raw_ops))))
@@ -346,11 +402,16 @@ def from_qasm(qasm_str: str) -> DAGCircuit:
     if num_qubits == 0:
         num_qubits = _infer_qubits(instructions)
 
-    # Check if this circuit uses dynamic features (conditions or mid-circuit measurements)
+    for inst in instructions:
+        for q in inst.qubits:
+            if q < 0 or q >= num_qubits:
+                raise QASMImportError(
+                    f"Qubit index {q} in gate '{inst.gate_name}' exceeds declared qubit count {num_qubits}."
+                )
+
     is_dynamic = any(inst.condition is not None or inst.cbit is not None for inst in instructions)
 
     if not is_dynamic:
-        # Static circuit: use standard CircuitBuilder & DAGCircuit for 100% backward compatibility
         builder = CircuitBuilder(num_qubits)
         for inst in instructions:
             builder.record(inst)
@@ -414,47 +475,87 @@ def from_qasm_file(filepath: str) -> DAGCircuit:
 
 def _parse_gate_line(
     line: str, qubit_offset: dict[str, int]
-) -> Instruction | None:
-    """Parses a single gate line into an Instruction."""
-    m = re.match(r"(\w+)\s*(?:\(([^)]*)\))?\s+(.*)", line)
+) -> Instruction:
+    """Parses a single gate line into an Instruction, raising QASMImportError on invalid syntax."""
+    m = re.match(r"^([A-Za-z_]\w*)\s*(?:\((.*)\))?\s+(.+)$", line)
     if not m:
-        return None
+        raise QASMImportError(f"Unrecognized QASM statement: {line!r}")
 
     gate_raw = m.group(1).lower()
     param_str = m.group(2)
-    qubit_str = m.group(3)
+    qubit_str = m.group(3).strip()
 
     quanta_gate = _QASM_TO_QUANTA.get(gate_raw)
     if quanta_gate is None:
-        return None
-
-    if quanta_gate == "I":
-        return None  # Identity gate — no-op
-
-    params: tuple[float, ...] = ()
-    if gate_raw in _IMPLICIT_PARAMS:
-        params = _IMPLICIT_PARAMS[gate_raw]
-    elif param_str:
-        try:
-            param_parts = param_str.split(",")
-            parsed_params = [_safe_parse_param(p) for p in param_parts]
-            params = tuple(parsed_params)
-        except (ValueError, Exception):
-            params = ()
-
-    qubit_matches = re.findall(r"(\w+)\[(\d+)\]", qubit_str)
-    if qubit_matches:
-        qubits = []
-        for reg_name, idx in qubit_matches:
-            offset = qubit_offset.get(reg_name, 0)
-            qubits.append(offset + int(idx))
-        return Instruction(
-            gate_name=quanta_gate,
-            qubits=tuple(qubits),
-            params=params,
+        raise QASMImportError(
+            f"Unsupported or unrecognized QASM gate '{m.group(1)}' in statement: {line!r}"
         )
 
-    return None
+    params: tuple[float, ...] = ()
+    if param_str is not None:
+        if not param_str.strip():
+            raise QASMImportError(f"Empty parameter list for gate '{m.group(1)}' in: {line!r}")
+        param_parts = param_str.split(",")
+        params = tuple(_safe_parse_param(p) for p in param_parts)
+
+    if gate_raw == "u2":
+        if len(params) != 2:
+            raise QASMImportError(f"Gate 'u2' expects 2 parameters, got {len(params)} in: {line!r}")
+        params = (math.pi / 2.0, params[0], params[1])
+
+    # Validate parameter count and qubit arity against GATE_REGISTRY
+    reg_entry = GATE_REGISTRY[quanta_gate]
+    if isinstance(reg_entry, MultiParametricGate):
+        expected_params = reg_entry.num_params
+        expected_qubits = 1
+    elif isinstance(reg_entry, ParametricGate):
+        expected_params = 1
+        expected_qubits = reg_entry.num_qubits
+    elif isinstance(reg_entry, Gate):
+        expected_params = 0
+        expected_qubits = reg_entry.num_qubits
+    else:  # pragma: no cover
+        expected_params = len(params)
+        expected_qubits = 1
+
+    if len(params) != expected_params:
+        raise QASMImportError(
+            f"Gate '{m.group(1)}' expects {expected_params} parameter(s), got {len(params)} in: {line!r}"
+        )
+
+    qubit_args = [part.strip() for part in qubit_str.split(",") if part.strip()]
+    if not qubit_args:
+        raise QASMImportError(f"Missing qubit operands in QASM statement: {line!r}")
+
+    qubits: list[int] = []
+    for arg in qubit_args:
+        qm = re.match(r"^(\w+)\s*\[\s*(\d+)\s*\]$", arg)
+        if not qm:
+            raise QASMImportError(
+                f"Invalid qubit operand {arg!r} in QASM statement: {line!r}"
+            )
+        reg_name, idx_str = qm.groups()
+        if qubit_offset and reg_name not in qubit_offset:
+            raise QASMImportError(
+                f"Undeclared quantum register {reg_name!r} in statement: {line!r}"
+            )
+        offset = qubit_offset.get(reg_name, 0)
+        qubits.append(offset + int(idx_str))
+
+    if len(qubits) != expected_qubits:
+        raise QASMImportError(
+            f"Gate '{m.group(1)}' expects {expected_qubits} qubit(s), got {len(qubits)} in: {line!r}"
+        )
+    if len(set(qubits)) != len(qubits):
+        raise QASMImportError(
+            f"Duplicate qubit operands {qubits} in gate statement: {line!r}"
+        )
+
+    return Instruction(
+        gate_name=quanta_gate,
+        qubits=tuple(qubits),
+        params=params,
+    )
 
 
 def _infer_qubits(instructions: list[Instruction]) -> int:

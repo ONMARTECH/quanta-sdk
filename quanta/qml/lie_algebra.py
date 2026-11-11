@@ -4,11 +4,18 @@ quanta.qml.lie_algebra -- Dynamical Lie Algebras (DLA) and Barren Plateau bounds
 Implements the algebraic framework for quantum controllability and trainability
 analysis in Quantum Machine Learning (QML) and Variational Quantum Algorithms (VQA).
 
+Note on Real vs Complex Vector Space:
+Quantum unitary Lie algebras u(d) and su(d) are real Lie algebras (closed under real
+linear combinations and Lie brackets [A, B] = AB - BA, NOT under multiplication by i,
+since i * (i H) = -H is Hermitian rather than skew-Hermitian). Orthogonalization is
+therefore performed strictly over R using the real inner product:
+    <A, B>_R = Re Tr(A^dagger @ B)
+
 Theory References:
 - Ragone et al., "Unified Theory of Barren Plateaus in Quantum Neural Networks",
-  Nature Communications / arXiv:2309.09342 (2023).
-- Fontana et al., "The Adjoint is All You Need: Characterizing Barren Plateaus in QML",
-  arXiv:2309.07902 (2023).
+  Nature Communications 15, 7172 / arXiv:2309.09342 (2024).
+- Fontana et al., "Characterizing barren plateaus in quantum ansatze via the adjoint
+  representation", Nature Communications 15, 7171 / arXiv:2309.07902 (2024).
 - Larocca et al., "Diagnosing Barren Plateaus with Tools from Quantum Optimal Control",
   Quantum 6, 824 (2022).
 """
@@ -48,26 +55,41 @@ def hilbert_schmidt_inner_product(A: np.ndarray, B: np.ndarray) -> complex:
     return complex(np.trace(A.conj().T @ B))
 
 
+def _matrix_to_real_vec(A: np.ndarray) -> np.ndarray:
+    """Isometrically embeds A in M_d(C) into R^{2 d^2} under <A, B>_R = Re Tr(A^dagger B)."""
+    flat = np.asarray(A, dtype=np.complex128).reshape(-1, order="F")
+    return np.concatenate([flat.real, flat.imag])
+
+
+def _real_vec_to_matrix(v: np.ndarray, d: int) -> np.ndarray:
+    """Reconstructs a d x d complex matrix from its R^{2 d^2} real embedding."""
+    d2 = d * d
+    comp = v[:d2] + 1j * v[d2:]
+    return comp.reshape((d, d), order="F")
+
+
 def dynamical_lie_algebra(
     generators: Sequence[np.ndarray],
     tol: float = 1e-10,
 ) -> list[np.ndarray]:
-    """Computes the orthonormal basis of the Dynamical Lie Algebra (DLA) g = <i H_k>_Lie.
+    """Computes an R-orthonormal basis of the real Dynamical Lie Algebra g = <G_k>_Lie.
 
     Iteratively expands the algebra through Lie commutators [A, B] = AB - BA,
-    orthonormalizing candidate basis elements with SVD / Gram-Schmidt until algebraic closure.
+    orthonormalizing candidate basis elements over R under the real inner product
+    <A, B>_R = Re Tr(A^dagger @ B) (so Hermitian H and skew-Hermitian iH are never
+    conflated over C). For skew-Hermitian generators in su(d), Im Tr(E_i^dagger E_j) = 0
+    identically, so the returned basis also satisfies Tr(E_i^dagger E_j) = delta_ij.
 
     Args:
-        generators: Initial set of matrix generators (Hermitian or skew-Hermitian).
-        tol: Numerical tolerance for linear independence and singular values.
+        generators: Initial set of matrix generators (typically skew-Hermitian i H_k in su(2^n)).
+        tol: Numerical tolerance for linear independence and singular values over R.
 
     Returns:
-        List of orthonormal matrix basis elements E_k with Tr(E_i^dagger @ E_j) = delta_ij.
+        List of R-orthonormal matrix basis elements E_k with Re Tr(E_i^dagger @ E_j) = delta_ij.
     """
     if not generators:
         return []
 
-    # Validate shapes
     d = generators[0].shape[0]
     for i, g in enumerate(generators):
         if g.ndim != 2 or g.shape[0] != d or g.shape[1] != d:
@@ -75,69 +97,68 @@ def dynamical_lie_algebra(
                 f"Generator {i} shape {g.shape} does not match expected ({d}, {d})"
             )
 
-    d2 = d * d
-    # Flatten generators to column vectors: length d^2
-    col_vectors = [g.reshape(-1, order="F").astype(complex) for g in generators]
+    max_real_dim = 2 * d * d
+    col_vectors = [_matrix_to_real_vec(g) for g in generators]
     M = np.column_stack(col_vectors)
 
-    # Initial basis orthonormalization via SVD
+    # Initial real basis orthonormalization via real SVD
     U, s, _ = np.linalg.svd(M, full_matrices=False)
     rank = int(np.sum(s > tol))
     if rank == 0:
         return []
 
-    # Basis matrix of shape (d^2, rank)
     B_mat = U[:, :rank].copy()
     basis: list[np.ndarray] = [
-        B_mat[:, i].reshape((d, d), order="F") for i in range(rank)
+        _real_vec_to_matrix(B_mat[:, i], d) for i in range(rank)
     ]
 
     new_indices = list(range(rank))
 
-    # Iterative commutator expansion until closure or reaching max dimension d^2
-    while new_indices and B_mat.shape[1] < d2:
+    # Iterative commutator expansion over R until closure
+    while new_indices and B_mat.shape[1] < max_real_dim:
         candidates: list[np.ndarray] = []
         n_current = B_mat.shape[1]
 
         for i in new_indices:
             E_i = basis[i]
             for j in range(n_current):
+                if i == j:
+                    continue
                 E_j = basis[j]
-                # Compute Lie bracket [E_i, E_j]
                 C = commutator(E_i, E_j)
-                norm_C = float(np.linalg.norm(C))
-                if norm_C < tol:
+                v_C = _matrix_to_real_vec(C)
+                if float(np.linalg.norm(v_C)) < tol:
                     continue
 
-                v_C = C.reshape(-1, order="F")
-                # Orthogonal projection against current basis
-                proj = B_mat @ (B_mat.conj().T @ v_C)
+                # Orthogonal projection over R against current real-orthonormal basis
+                proj = B_mat @ (B_mat.T @ v_C)
                 v_orth = v_C - proj
-                if float(np.linalg.norm(v_orth)) > tol:
-                    candidates.append(v_orth)
+                norm_orth = float(np.linalg.norm(v_orth))
+                if norm_orth > tol:
+                    candidates.append(v_orth / norm_orth)
 
         if not candidates:
-            # Algebra closed!
             break
 
-        # SVD on candidate orthogonal directions
         C_mat = np.column_stack(candidates)
-        # Re-project for numerical precision
-        C_mat = C_mat - B_mat @ (B_mat.conj().T @ C_mat)
+        # Second-pass Gram-Schmidt re-projection for machine precision
+        C_mat = C_mat - B_mat @ (B_mat.T @ C_mat)
         U_new, s_new, _ = np.linalg.svd(C_mat, full_matrices=False)
         rank_new = int(np.sum(s_new > tol))
 
         if rank_new == 0:
             break
 
-        # Limit to remaining dimension
-        available_dim = d2 - B_mat.shape[1]
+        available_dim = max_real_dim - B_mat.shape[1]
         rank_add = min(rank_new, available_dim)
         new_cols = U_new[:, :rank_add]
+        # Re-orthogonalize new_cols against B_mat and QR-orthonormalize
+        new_cols = new_cols - B_mat @ (B_mat.T @ new_cols)
+        new_cols, _ = np.linalg.qr(new_cols)
 
         start_idx = len(basis)
         for k in range(rank_add):
-            basis.append(new_cols[:, k].reshape((d, d), order="F"))
+            basis.append(_real_vec_to_matrix(new_cols[:, k], d))
 
         new_indices = list(range(start_idx, start_idx + rank_add))
         B_mat = np.column_stack([B_mat, new_cols])
@@ -148,7 +169,7 @@ def dynamical_lie_algebra(
 def barren_plateau_bound(dla_dim: int, n_qubits: int) -> float:
     """Computes the analytical upper bound on the gradient variance Var[∂_θ <O>].
 
-    Based on the unified Dynamical Lie Algebra (DLA) theorem (Ragone et al., 2023):
+    Based on the unified Dynamical Lie Algebra (DLA) theorem (Ragone et al., 2024):
         Var[∂_θ <O>] <= C / dim(g)
     For an n-qubit system with Hilbert space dimension d = 2^n:
     - When dim(g) ~ 4^n (e.g. full su(2^n) with dim = 4^n - 1), Var <= 1 / (4^n - 1),
@@ -156,7 +177,7 @@ def barren_plateau_bound(dla_dim: int, n_qubits: int) -> float:
     - When dim(g) ~ poly(n), Var exhibits polynomial decay, avoiding barren plateaus.
 
     Args:
-        dla_dim: Dimension of the dynamical Lie algebra dim(g).
+        dla_dim: Real dimension of the dynamical Lie algebra dim_R(g).
         n_qubits: Number of qubits n.
 
     Returns:
@@ -173,21 +194,22 @@ def barren_plateau_bound(dla_dim: int, n_qubits: int) -> float:
 def lie_algebra_dimension(
     generators: Sequence[np.ndarray], tol: float = 1e-10
 ) -> int:
-    """Returns the dimension of the Dynamical Lie Algebra generated by generators."""
+    """Returns the real dimension dim_R(g) of the Dynamical Lie Algebra."""
     return len(dynamical_lie_algebra(generators, tol=tol))
 
 
 def is_in_algebra(
     A: np.ndarray, basis: Sequence[np.ndarray], tol: float = 1e-10
 ) -> bool:
-    """Checks whether matrix A belongs to the Lie algebra spanned by basis."""
+    """Checks whether matrix A belongs to the real Lie algebra spanned over R by basis."""
+    v_A = _matrix_to_real_vec(A)
     if not basis:
-        return float(np.linalg.norm(A)) < tol
+        return float(np.linalg.norm(v_A)) < tol
 
-    B_mat = np.column_stack([b.reshape(-1, order="F") for b in basis])
-    v_A = A.reshape(-1, order="F")
-
-    proj = B_mat @ (B_mat.conj().T @ v_A)
+    B_mat = np.column_stack([_matrix_to_real_vec(b) for b in basis])
+    # Use least-squares / QR projection in case user supplied a non-orthonormal basis
+    Q, _ = np.linalg.qr(B_mat)
+    proj = Q @ (Q.T @ v_A)
     residual = v_A - proj
     return float(np.linalg.norm(residual)) < tol
 
@@ -198,24 +220,26 @@ def is_barren_plateau_immune(
     """Tests if a quantum circuit architecture is immune to barren plateaus.
 
     An architecture is immune if its dynamical Lie algebra dimension scales polynomially
-    with the number of qubits (e.g. free fermions dim(g) = 2n^2 - n) rather than
-    exponentially dim(g) ~ 4^n - 1.
+    with the number of qubits (e.g. free fermions dim(so(2n)) = n(2n - 1) = 2n^2 - n)
+    rather than exponentially dim(g) ~ 4^n.
     """
-    max_dim = (4 ** n_qubits) - 1
-    # Polynomial bound accommodating quadratic / cubic free-fermionic algebras (e.g. 2n^2 - n)
+    if dla_dim <= 0:
+        raise ValueError(f"DLA dimension must be positive, got {dla_dim}")
+    if n_qubits < 1:
+        raise ValueError(f"Number of qubits must be >= 1, got {n_qubits}")
     poly_limit = max(int(2 * (n_qubits ** threshold_degree)), 6)
-    return dla_dim <= poly_limit or dla_dim < (max_dim // 2)
+    return dla_dim <= poly_limit
 
 
 def pauli_dla(pauli_strings: Sequence[str], tol: float = 1e-10) -> list[np.ndarray]:
-    """Constructs the DLA from a list of Pauli string operators {i P_k}.
+    """Constructs the real DLA in su(2^n) from Pauli string operators {i P_k}.
 
     Args:
         pauli_strings: List of Pauli strings, e.g. ["X", "Y", "Z"] or ["XX", "ZZ"].
         tol: Basis tolerance.
 
     Returns:
-        Orthonormal basis of the generated Lie algebra.
+        R-orthonormal basis of the generated Lie algebra.
     """
     pauli_dict = {
         "I": np.eye(2, dtype=complex),
@@ -229,7 +253,7 @@ def pauli_dla(pauli_strings: Sequence[str], tol: float = 1e-10) -> list[np.ndarr
         mat = np.array([[1.0]], dtype=complex)
         for ch in s.upper():
             mat = np.kron(mat, pauli_dict[ch])
-        # Skew-Hermitian generator i * P
+        # Skew-Hermitian generator i * P in u(2^n) / su(2^n)
         generators.append(1j * mat)
 
     return dynamical_lie_algebra(generators, tol=tol)

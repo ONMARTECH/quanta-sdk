@@ -8,6 +8,7 @@ for QuantumLayer and ContinuousResonantLayer.
 from __future__ import annotations
 
 import math
+from collections import OrderedDict
 from collections.abc import Sequence
 from typing import Any
 
@@ -60,9 +61,10 @@ class UnsupportedDtypeError(QuantaError, TypeError):
     """Raised when an unsupported dtype is requested for a specific device."""
 
 
-# ── Global Caches ──
-_PAULI_KRON_CACHE: dict[tuple[str, int, str, torch.dtype], torch.Tensor] = {}
-_PAULI_MAT_CACHE: dict[tuple[str, str, torch.dtype], torch.Tensor] = {}
+# ── Bounded LRU Global Caches ──
+_MAX_PAULI_CACHE_SIZE = 256
+_PAULI_KRON_CACHE: OrderedDict[tuple[str, int, str, torch.dtype], torch.Tensor] = OrderedDict()
+_PAULI_MAT_CACHE: OrderedDict[tuple[str, str, torch.dtype], torch.Tensor] = OrderedDict()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -272,6 +274,7 @@ def get_pauli_matrix(
 
     cached = _PAULI_MAT_CACHE.get(cache_key)
     if cached is not None:
+        _PAULI_MAT_CACHE.move_to_end(cache_key)
         return cached
 
     if key == "I":
@@ -298,6 +301,9 @@ def get_pauli_matrix(
 
     res = mat.contiguous()
     _PAULI_MAT_CACHE[cache_key] = res
+    _PAULI_MAT_CACHE.move_to_end(cache_key)
+    while len(_PAULI_MAT_CACHE) > _MAX_PAULI_CACHE_SIZE:
+        _PAULI_MAT_CACHE.popitem(last=False)
     return res
 
 
@@ -355,6 +361,7 @@ def pauli_kron(
     cache_key = (canonical_str, len(canonical_str), str(dev), c_dtype)
     cached = _PAULI_KRON_CACHE.get(cache_key)
     if cached is not None:
+        _PAULI_KRON_CACHE.move_to_end(cache_key)
         return cached
 
     paulis = pauli_matrices(dev, c_dtype)
@@ -364,6 +371,9 @@ def pauli_kron(
 
     res = res.contiguous()
     _PAULI_KRON_CACHE[cache_key] = res
+    _PAULI_KRON_CACHE.move_to_end(cache_key)
+    while len(_PAULI_KRON_CACHE) > _MAX_PAULI_CACHE_SIZE:
+        _PAULI_KRON_CACHE.popitem(last=False)
     return res
 
 

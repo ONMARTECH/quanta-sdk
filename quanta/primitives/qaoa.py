@@ -340,13 +340,14 @@ class QAOA:
 
             # Mixer layer
             if self.mixer_type == "biased" and self.warm_start_angles is not None:
-                # Egger-style biased mixer: RY(-theta) -> RX(2 * beta * w) -> RY(theta)
+                # Egger et al. (Quantum 5, 479, 2021) warm-start mixer:
+                # RY(-theta) -> RZ(-2 * beta * w) -> RY(theta), fixing |psi_warm> as eigenstate
                 for q in range(n):
                     w = float(weights[q])
                     if abs(w) > 1e-12:
                         theta = float(self.warm_start_angles[q])
                         sim.apply("RY", (q,), (-theta,))
-                        sim.apply("RX", (q,), (2.0 * b * w,))
+                        sim.apply("RZ", (q,), (-2.0 * b * w,))
                         sim.apply("RY", (q,), (theta,))
             else:
                 # Standard transverse mixer with per-qubit weights
@@ -430,7 +431,7 @@ class QAOA:
                         if abs(w) > 1e-12:
                             theta = warm_angles[i]
                             RY(-theta)(q[i])
-                            RX(2.0 * b * w)(q[i])
+                            RZ(-2.0 * b * w)(q[i])
                             RY(theta)(q[i])
                 else:
                     for i in range(n):
@@ -565,11 +566,9 @@ class QAOA:
             for idx in unique
         }
 
-        # Include the most probable statevector basis state
+        # Record analytical probability of the highest-probability basis state without mutating shot counts
         top_idx = int(np.argmax(probs))
         top_bitstr = format(top_idx, fmt)
-        if top_bitstr not in counts:
-            counts[top_bitstr] = 1
         probabilities[top_bitstr] = float(probs[top_idx])
 
         # Build candidate solution list sorted by cost

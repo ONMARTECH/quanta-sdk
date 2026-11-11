@@ -18,10 +18,10 @@ from quanta.core.gates import (
 
 
 class TestGateRegistry:
-    """Registry now has 31 gates."""
+    """Registry now has 34 gates (including CRX, CRY, CRZ)."""
 
     def test_registry_count(self):
-        assert len(GATE_REGISTRY) == 31
+        assert len(GATE_REGISTRY) == 34
 
     def test_new_gates_in_registry(self):
         for name in ("ECR", "iSWAP", "CSWAP", "CH", "CP", "MS"):

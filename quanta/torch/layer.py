@@ -2,7 +2,8 @@
 
 Provides QuantumLayer(nn.Module), an autograd-differentiable quantum circuit
 layer supporting arbitrary variational ansatzes, flexible Pauli observable readouts,
-and exact analytical gradients via the Parameter-Shift Rule.
+angle / amplitude / IQP feature encodings, exact Parameter-Shift Rule for presets,
+and native PyTorch autograd (backprop) for custom callables and non-linear encodings.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from typing import Any, cast
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from quanta.torch import ops
 
@@ -26,6 +28,9 @@ __all__ = [
     "_QuantumLayerFunction",
 ]
 
+_VALID_ENCODINGS = frozenset({"angle", "amplitude", "iqp"})
+_VALID_DIFF_METHODS = frozenset({"parameter-shift", "finite-diff", "backprop"})
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  Observable Data Structures & Parser
@@ -33,12 +38,7 @@ __all__ = [
 
 @dataclass(frozen=True)
 class PauliTerm:
-    """A single Pauli tensor product with a scalar coefficient.
-
-    Attributes:
-        pauli_string: String of length num_qubits, e.g. "ZII", "IXY".
-        coeff: Real coefficient.
-    """
+    """A single Pauli tensor product with a scalar coefficient."""
 
     pauli_string: str
     coeff: float = 1.0
@@ -46,12 +46,7 @@ class PauliTerm:
 
 @dataclass(frozen=True)
 class ParsedObservable:
-    """A quantum observable composed of one or more Pauli terms.
-
-    Attributes:
-        terms: Tuple of Pauli terms summing to the observable H = Σ c_i P_i.
-        name: Human-readable display label.
-    """
+    """A quantum observable composed of one or more Pauli terms."""
 
     terms: tuple[PauliTerm, ...]
     name: str
@@ -68,17 +63,8 @@ class ObservableParser:
         observables: Sequence[Any] | None,
         num_qubits: int,
     ) -> list[ParsedObservable]:
-        """Parse observable specifications into canonical form.
-
-        Args:
-            observables: None, list of strings, list of tuples, or nested lists.
-            num_qubits: Number of qubits in the circuit.
-
-        Returns:
-            List of ParsedObservable instances.
-        """
+        """Parse observable specifications into canonical form."""
         if observables is None:
-            # Default: Single-qubit Z on all qubits: [Z0, Z1, ..., Z_{N-1}]
             return [
                 ParsedObservable(
                     terms=(
@@ -95,7 +81,6 @@ class ObservableParser:
         if not observables:
             raise ValueError("Observables list cannot be empty.")
 
-        # Check if user passed a single composite Hamiltonian: list of (str, float) tuples
         first = observables[0]
         if (
             isinstance(first, tuple)
@@ -103,7 +88,6 @@ class ObservableParser:
             and isinstance(first[0], str)
             and isinstance(first[1], (int, float))
         ):
-            # Single composite observable
             composite_terms = tuple(
                 cls._parse_term(term_str, float(coeff), num_qubits)
                 for term_str, coeff in observables
@@ -126,7 +110,6 @@ class ObservableParser:
                     ParsedObservable(terms=(term,), name=f"{obs[0]}*{obs[1]}")
                 )
             elif isinstance(obs, (list, tuple)):
-                # Composite multi-term observable
                 if not obs:
                     raise ValueError("Composite observable cannot be empty.")
                 terms = tuple(
@@ -151,11 +134,9 @@ class ObservableParser:
         if not raw:
             raise ValueError("Observable descriptor string cannot be empty or whitespace.")
 
-        # Case 1: Full canonical Pauli string of exact length num_qubits
         if len(raw) == num_qubits and all(ch in cls.VALID_PAULIS for ch in raw):
             return PauliTerm(pauli_string=raw, coeff=coeff)
 
-        # Case 2: Indexed notation, e.g. "Z0", "X1", "Z0 Z1", "X0 Y1"
         chars = list("I" * num_qubits)
         tokens = raw.split()
         pattern = re.compile(r"^([XYZI])(\d+)$")
@@ -180,20 +161,11 @@ class ObservableParser:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-#  Ansatz Specifications
+#  Ansatz Specifications & Autograd-Safe Gate Helpers
 # ═══════════════════════════════════════════════════════════════════════════
 
 def get_ansatz_param_count(ansatz: str, num_qubits: int, num_layers: int) -> int:
-    """Compute total parameter count for built-in ansatz presets.
-
-    Args:
-        ansatz: Name of ansatz preset.
-        num_qubits: Number of qubits.
-        num_layers: Number of variational layers.
-
-    Returns:
-        Integer parameter count.
-    """
+    """Compute total parameter count for built-in ansatz presets."""
     preset = ansatz.lower()
     if preset == "hardware_efficient":
         return 2 * num_qubits * num_layers
@@ -208,6 +180,92 @@ def get_ansatz_param_count(ansatz: str, num_qubits: int, num_layers: int) -> int
             f"Unknown ansatz preset '{ansatz}'. Supported presets: "
             f"'hardware_efficient', 'strongly_entangling', 'reuploading', 'real_amplitudes'."
         )
+
+
+def _rx_scalar(theta: torch.Tensor, complex_dtype: torch.dtype) -> torch.Tensor:
+    """Autograd-preserving 2x2 RX(theta) matrix."""
+    c = torch.cos(theta / 2.0).to(complex_dtype)
+    ms = (-1j * torch.sin(theta / 2.0).to(complex_dtype))
+    return torch.stack([torch.stack([c, ms]), torch.stack([ms, c])])
+
+
+def _ry_scalar(theta: torch.Tensor, complex_dtype: torch.dtype) -> torch.Tensor:
+    """Autograd-preserving 2x2 RY(theta) matrix."""
+    c = torch.cos(theta / 2.0).to(complex_dtype)
+    s = torch.sin(theta / 2.0).to(complex_dtype)
+    return torch.stack([torch.stack([c, -s]), torch.stack([s, c])])
+
+
+def _rz_scalar(theta: torch.Tensor, complex_dtype: torch.dtype) -> torch.Tensor:
+    """Autograd-preserving 2x2 RZ(theta) matrix."""
+    half = (theta / 2.0).to(complex_dtype)
+    p_pos = torch.exp(-1j * half)
+    p_neg = torch.exp(1j * half)
+    zero = torch.zeros_like(p_pos)
+    return torch.stack([torch.stack([p_pos, zero]), torch.stack([zero, p_neg])])
+
+
+def _apply_batch_ry(
+    state: torch.Tensor,
+    angles: torch.Tensor,
+    qubit: int,
+    complex_dtype: torch.dtype,
+) -> torch.Tensor:
+    """Applies per-sample RY(angles[b]) to ``qubit`` without in-place mutation."""
+    B = state.shape[0]
+    c = torch.cos(angles / 2.0).to(complex_dtype)
+    s = torch.sin(angles / 2.0).to(complex_dtype)
+    g_gate = torch.stack(
+        [torch.stack([c, -s], dim=-1), torch.stack([s, c], dim=-1)],
+        dim=-2,
+    )  # (B, 2, 2)
+    s_perm = torch.moveaxis(state, qubit + 1, 1)
+    s_shape = s_perm.shape
+    out_bmm = torch.bmm(g_gate, s_perm.reshape(B, 2, -1))
+    return torch.moveaxis(out_bmm.reshape(s_shape), 1, qubit + 1)
+
+
+def _apply_iqp_block(
+    state: torch.Tensor,
+    x_batch: torch.Tensor,
+    num_qubits: int,
+    complex_dtype: torch.dtype,
+    real_dtype: torch.dtype,
+) -> torch.Tensor:
+    """Applies H^{⊗n} -> ∏_i RZ(x_i) -> ∏_{i<j} RZZ(x_i x_j) to ``state``."""
+    B = state.shape[0]
+    N = num_qubits
+    dim = 1 << N
+    device = state.device
+
+    h_mat = ops.get_pauli_matrix("H", device=device, dtype=complex_dtype)
+    for q in range(N):
+        state = torch.moveaxis(
+            torch.tensordot(h_mat, state, dims=([1], [q + 1])), 0, q + 1
+        )
+
+    indices = torch.arange(dim, device=device)
+    z_signs = torch.stack(
+        [1.0 - 2.0 * ((indices >> (N - 1 - q)) & 1).to(real_dtype) for q in range(N)],
+        dim=0,
+    )  # (N, dim)
+
+    d_eff = min(x_batch.shape[1], N)
+    x_eff = x_batch[:, :d_eff].to(real_dtype)
+
+    # Single-qubit RZ(x_i): exp(-i * (x_i / 2) * z_i)
+    total_phase = 0.5 * torch.matmul(x_eff, z_signs[:d_eff])  # (B, dim)
+
+    # Pairwise RZZ(x_i * x_j): exp(-i * (x_i * x_j / 2) * z_i * z_j)
+    for q1 in range(d_eff):
+        for q2 in range(q1 + 1, d_eff):
+            zz_sign = z_signs[q1] * z_signs[q2]  # (dim,)
+            prod_x = (x_eff[:, q1] * x_eff[:, q2]).unsqueeze(-1)  # (B, 1)
+            total_phase = total_phase + 0.5 * prod_x * zz_sign.unsqueeze(0)
+
+    diag_unitary = torch.exp(-1j * total_phase.to(complex_dtype))
+    flat_state = state.reshape(B, dim) * diag_unitary
+    return flat_state.reshape((B,) + (2,) * N)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -228,6 +286,12 @@ class _QuantumLayerFunction(torch.autograd.Function):
         encoding: str = "angle",
     ) -> torch.Tensor:
         """Executes forward batch circuit simulation and returns expectation tensor (B, D_out)."""
+        enc = encoding.lower()
+        if enc not in _VALID_ENCODINGS:
+            raise ValueError(
+                f"Unsupported encoding '{encoding}'. Supported: {sorted(_VALID_ENCODINGS)}"
+            )
+
         is_layerwise = (x.ndim == 3)
         B = x.shape[1] if is_layerwise else x.shape[0]
         N = num_qubits
@@ -235,13 +299,12 @@ class _QuantumLayerFunction(torch.autograd.Function):
         complex_dtype = ops.resolve_complex_dtype(ops.get_complex_dtype(x.dtype), device)
         real_dtype = ops.get_real_dtype(complex_dtype)
 
-        # Short-circuit empty batch (B=0)
+        # Short-circuit empty batch (B=0) while preserving autograd graph edges
         if B == 0:
-            return torch.empty(
-                (0, len(parsed_observables)),
-                dtype=real_dtype,
-                device=device,
-            )
+            anchor = (0.0 * x.sum() + 0.0 * weights.sum()).to(dtype=real_dtype, device=device)
+            return torch.zeros(
+                (0, len(parsed_observables)), dtype=real_dtype, device=device
+            ) + anchor
 
         # 1. Custom callable path
         if callable(circuit_fn):
@@ -249,33 +312,50 @@ class _QuantumLayerFunction(torch.autograd.Function):
             if isinstance(res, torch.Tensor):
                 if res.shape[-1] == len(parsed_observables) and res.ndim == 2:
                     return res.to(dtype=real_dtype, device=device)
-                # If callable returns a state tensor, continue to observable readout
                 state = res.to(dtype=complex_dtype, device=device)
             else:
                 raise TypeError(f"Custom circuit_fn returned unexpected type: {type(res)}")
         else:
-            # Initialize batch ground state |0...0>
-            state = torch.zeros((B,) + (2,) * N, dtype=complex_dtype, device=device)
-            state[(slice(None),) + (0,) * N] = 1.0
-
             ansatz_name = circuit_fn.lower()
+            dim = 1 << N
 
-            # 2. Classical Data Encoding (Angle encoding RY(pi * x_k))
-            if ansatz_name != "reuploading" and encoding == "angle":
-                for q in range(min(x.shape[1], N)):
-                    angles = math.pi * x[:, q]
-                    c = torch.cos(angles / 2.0).to(complex_dtype)
-                    s = torch.sin(angles / 2.0).to(complex_dtype)
-                    g_gate = torch.zeros((B, 2, 2), dtype=complex_dtype, device=device)
-                    g_gate[:, 0, 0] = c
-                    g_gate[:, 0, 1] = -s
-                    g_gate[:, 1, 0] = s
-                    g_gate[:, 1, 1] = c
+            # 2. Classical Data Encoding
+            if enc == "amplitude":
+                x_amp = x[0] if is_layerwise else x
+                if x_amp.shape[1] > dim or x_amp.shape[1] < 1:
+                    raise ValueError(
+                        f"Amplitude encoding expects 1 <= x.shape[-1] <= {dim}, got {x_amp.shape[1]}."
+                    )
+                x_padded = (
+                    F.pad(x_amp, (0, dim - x_amp.shape[1]))
+                    if x_amp.shape[1] < dim
+                    else x_amp
+                )
+                norm = torch.linalg.norm(x_padded, dim=-1, keepdim=True)
+                zero_mask = norm < 1e-12
+                safe_norm = torch.where(zero_mask, torch.ones_like(norm), norm)
+                amps = (x_padded / safe_norm).to(complex_dtype)
+                if bool(zero_mask.any()):
+                    basis0 = torch.zeros_like(amps)
+                    basis0[:, 0] = 1.0
+                    amps = torch.where(zero_mask, basis0, amps)
+                state = amps.reshape((B,) + (2,) * N)
+            else:
+                # Ground state |0...0> without in-place autograd conflict
+                state = torch.zeros((B, dim), dtype=complex_dtype, device=device)
+                state[:, 0] = 1.0
+                state = state.reshape((B,) + (2,) * N)
 
-                    s_perm = torch.moveaxis(state, q + 1, 1)
-                    s_shape = s_perm.shape
-                    out_bmm = torch.bmm(g_gate, s_perm.reshape(B, 2, -1))
-                    state = torch.moveaxis(out_bmm.reshape(s_shape), 1, q + 1)
+                if ansatz_name != "reuploading":
+                    if enc == "angle":
+                        for q in range(min(x.shape[1], N)):
+                            state = _apply_batch_ry(
+                                state, math.pi * x[:, q], q, complex_dtype
+                            )
+                    elif enc == "iqp":
+                        state = _apply_iqp_block(
+                            state, x, N, complex_dtype, real_dtype
+                        )
 
             # 3. Variational Circuit Layers
             cx_mat = ops.cnot_gate(device=device, dtype=complex_dtype).reshape(2, 2, 2, 2)
@@ -284,22 +364,14 @@ class _QuantumLayerFunction(torch.autograd.Function):
                 idx = 0
                 for _ in range(num_layers):
                     for q in range(N):
-                        # RY
-                        ty = weights[idx]
+                        ry = _ry_scalar(weights[idx], complex_dtype)
                         idx += 1
-                        cy = torch.cos(ty / 2.0).to(complex_dtype)
-                        sy = torch.sin(ty / 2.0).to(complex_dtype)
-                        ry = torch.tensor([[cy, -sy], [sy, cy]], dtype=complex_dtype, device=device)
                         state = torch.moveaxis(
                             torch.tensordot(ry, state, dims=([1], [q + 1])), 0, q + 1
                         )
 
-                        # RZ
-                        tz = weights[idx]
+                        rz = _rz_scalar(weights[idx], complex_dtype)
                         idx += 1
-                        phase_pos = torch.exp(-1j * (tz / 2.0).to(complex_dtype))
-                        phase_neg = torch.exp(1j * (tz / 2.0).to(complex_dtype))
-                        rz = torch.diag(torch.stack([phase_pos, phase_neg]))
                         state = torch.moveaxis(
                             torch.tensordot(rz, state, dims=([1], [q + 1])), 0, q + 1
                         )
@@ -316,36 +388,20 @@ class _QuantumLayerFunction(torch.autograd.Function):
                 idx = 0
                 for l_idx in range(num_layers):
                     for q in range(N):
-                        # RX
-                        tx = weights[idx]
+                        rx = _rx_scalar(weights[idx], complex_dtype)
                         idx += 1
-                        cx_rot = torch.cos(tx / 2.0).to(complex_dtype)
-                        sx_rot = torch.sin(tx / 2.0).to(complex_dtype)
-                        rx = torch.tensor(
-                            [[cx_rot, -1j * sx_rot], [-1j * sx_rot, cx_rot]],
-                            dtype=complex_dtype,
-                            device=device,
-                        )
                         state = torch.moveaxis(
                             torch.tensordot(rx, state, dims=([1], [q + 1])), 0, q + 1
                         )
 
-                        # RY
-                        ty = weights[idx]
+                        ry = _ry_scalar(weights[idx], complex_dtype)
                         idx += 1
-                        cy = torch.cos(ty / 2.0).to(complex_dtype)
-                        sy = torch.sin(ty / 2.0).to(complex_dtype)
-                        ry = torch.tensor([[cy, -sy], [sy, cy]], dtype=complex_dtype, device=device)
                         state = torch.moveaxis(
                             torch.tensordot(ry, state, dims=([1], [q + 1])), 0, q + 1
                         )
 
-                        # RZ
-                        tz = weights[idx]
+                        rz = _rz_scalar(weights[idx], complex_dtype)
                         idx += 1
-                        phase_pos = torch.exp(-1j * (tz / 2.0).to(complex_dtype))
-                        phase_neg = torch.exp(1j * (tz / 2.0).to(complex_dtype))
-                        rz = torch.diag(torch.stack([phase_pos, phase_neg]))
                         state = torch.moveaxis(
                             torch.tensordot(rz, state, dims=([1], [q + 1])), 0, q + 1
                         )
@@ -363,30 +419,21 @@ class _QuantumLayerFunction(torch.autograd.Function):
             elif ansatz_name == "reuploading":
                 idx = 0
                 for l_idx in range(num_layers):
-                    # Data re-uploading
                     xl = x[l_idx] if is_layerwise else x
-                    for q in range(min(xl.shape[1], N)):
-                        angles = math.pi * xl[:, q]
-                        c = torch.cos(angles / 2.0).to(complex_dtype)
-                        s = torch.sin(angles / 2.0).to(complex_dtype)
-                        g_gate = torch.zeros((B, 2, 2), dtype=complex_dtype, device=device)
-                        g_gate[:, 0, 0] = c
-                        g_gate[:, 0, 1] = -s
-                        g_gate[:, 1, 0] = s
-                        g_gate[:, 1, 1] = c
+                    if enc == "angle":
+                        for q in range(min(xl.shape[1], N)):
+                            state = _apply_batch_ry(
+                                state, math.pi * xl[:, q], q, complex_dtype
+                            )
+                    elif enc == "iqp":
+                        state = _apply_iqp_block(
+                            state, xl, N, complex_dtype, real_dtype
+                        )
+                    # Note: for enc == "amplitude", initial state was already amplitude-prepared
 
-                        s_perm = torch.moveaxis(state, q + 1, 1)
-                        s_shape = s_perm.shape
-                        out_bmm = torch.bmm(g_gate, s_perm.reshape(B, 2, -1))
-                        state = torch.moveaxis(out_bmm.reshape(s_shape), 1, q + 1)
-
-                    # Variational RY
                     for q in range(N):
-                        ty = weights[idx]
+                        ry = _ry_scalar(weights[idx], complex_dtype)
                         idx += 1
-                        cy = torch.cos(ty / 2.0).to(complex_dtype)
-                        sy = torch.sin(ty / 2.0).to(complex_dtype)
-                        ry = torch.tensor([[cy, -sy], [sy, cy]], dtype=complex_dtype, device=device)
                         state = torch.moveaxis(
                             torch.tensordot(ry, state, dims=([1], [q + 1])), 0, q + 1
                         )
@@ -403,11 +450,8 @@ class _QuantumLayerFunction(torch.autograd.Function):
                 idx = 0
                 for _ in range(num_layers):
                     for q in range(N):
-                        ty = weights[idx]
+                        ry = _ry_scalar(weights[idx], complex_dtype)
                         idx += 1
-                        cy = torch.cos(ty / 2.0).to(complex_dtype)
-                        sy = torch.sin(ty / 2.0).to(complex_dtype)
-                        ry = torch.tensor([[cy, -sy], [sy, cy]], dtype=complex_dtype, device=device)
                         state = torch.moveaxis(
                             torch.tensordot(ry, state, dims=([1], [q + 1])), 0, q + 1
                         )
@@ -420,13 +464,9 @@ class _QuantumLayerFunction(torch.autograd.Function):
                                 [q + 1, q + 2],
                             )
 
-                # Final layer of RY
                 for q in range(N):
-                    ty = weights[idx]
+                    ry = _ry_scalar(weights[idx], complex_dtype)
                     idx += 1
-                    cy = torch.cos(ty / 2.0).to(complex_dtype)
-                    sy = torch.sin(ty / 2.0).to(complex_dtype)
-                    ry = torch.tensor([[cy, -sy], [sy, cy]], dtype=complex_dtype, device=device)
                     state = torch.moveaxis(
                         torch.tensordot(ry, state, dims=([1], [q + 1])), 0, q + 1
                     )
@@ -434,7 +474,7 @@ class _QuantumLayerFunction(torch.autograd.Function):
                 raise ValueError(f"Unsupported circuit ansatz preset: '{circuit_fn}'")
 
         # 4. Readout of Parsed Observables
-        dim = 2 ** N
+        dim = 1 << N
         flat_state = state.reshape(B, dim)
         probs = torch.real(flat_state * flat_state.conj())
         indices = torch.arange(dim, device=device)
@@ -445,7 +485,6 @@ class _QuantumLayerFunction(torch.autograd.Function):
             for term in parsed_obs.terms:
                 coeff = term.coeff
                 p_str = term.pauli_string
-                # Check for fast diagonal path (only I and Z)
                 if all(ch in ("I", "Z") for ch in p_str):
                     signs = torch.ones(dim, dtype=real_dtype, device=device)
                     for q, ch in enumerate(p_str):
@@ -459,7 +498,7 @@ class _QuantumLayerFunction(torch.autograd.Function):
                         p_str, num_qubits=N, device=device, dtype=complex_dtype
                     )
                     term_exp = ops.batch_expectation(flat_state, mat)
-                total_exp += coeff * term_exp
+                total_exp = total_exp + coeff * term_exp
             exp_list.append(total_exp)
 
         return torch.stack(exp_list, dim=-1)
@@ -515,7 +554,6 @@ class _QuantumLayerFunction(torch.autograd.Function):
         grad_x: torch.Tensor | None = None
         grad_weights: torch.Tensor | None = None
 
-        # Short-circuit empty batch gradients (B=0)
         if B == 0:
             if ctx.needs_input_grad[0]:
                 grad_x = torch.zeros_like(x)
@@ -526,15 +564,12 @@ class _QuantumLayerFunction(torch.autograd.Function):
         # 1. Gradient with respect to Input Features X
         if ctx.needs_input_grad[0]:
             grad_x = torch.zeros_like(x)
-            if diff_method == "parameter-shift":
+            if diff_method == "parameter-shift" and encoding == "angle":
                 shift_x = 0.5  # shift = pi / (2 * pi) = 0.5 for RY(pi * x)
                 scale_x = math.pi / 2.0
                 ansatz_name = circuit_fn.lower() if isinstance(circuit_fn, str) else ""
 
                 if ansatz_name == "reuploading" and num_layers >= 2:
-                    # Vectorized layer-wise parameter shift: multivariable chain rule
-                    # d<O>/dx_k = \sum_{l=0}^{L-1} (pi / 2) [ <O>(x_{k,l} + 0.5)
-                    #                                        - <O>(x_{k,l} - 0.5) ]
                     for k in range(min(D_in, num_qubits)):
                         x_rep_plus = x.unsqueeze(0).unsqueeze(0).repeat(
                             num_layers, num_layers, 1, 1
@@ -604,9 +639,8 @@ class _QuantumLayerFunction(torch.autograd.Function):
                         jacobian_slice_k = scale_x * (y_plus - y_minus)
                         grad_x[:, k] = (grad_output * jacobian_slice_k).sum(dim=-1)
             else:
-                # Finite difference fallback
-                eps = 1e-4
-                for k in range(min(D_in, num_qubits)):
+                eps = 1e-5 if x.dtype == torch.float64 else 1e-4
+                for k in range(D_in):
                     x_plus = x.clone()
                     x_plus[:, k] += eps
                     y_plus = _QuantumLayerFunction._simulate_batch(
@@ -634,7 +668,7 @@ class _QuantumLayerFunction(torch.autograd.Function):
                     jacobian_slice_k = (y_plus - y_minus) / (2.0 * eps)
                     grad_x[:, k] = (grad_output * jacobian_slice_k).sum(dim=-1)
 
-        # 2. Gradient with respect to Variational Parameters \theta
+        # 2. Gradient with respect to Variational Parameters θ
         if ctx.needs_input_grad[1]:
             grad_weights = torch.zeros_like(weights)
             if diff_method == "parameter-shift":
@@ -669,8 +703,7 @@ class _QuantumLayerFunction(torch.autograd.Function):
                     jacobian_slice_j = scale_theta * (y_plus - y_minus)
                     grad_weights[j] = (grad_output * jacobian_slice_j).sum()
             else:
-                # Finite difference fallback
-                eps = 1e-4
+                eps = 1e-5 if weights.dtype == torch.float64 else 1e-4
                 for j in range(P):
                     w_plus = weights.clone()
                     w_plus[j] += eps
@@ -709,40 +742,20 @@ class _QuantumLayerFunction(torch.autograd.Function):
 class QuantumLayer(nn.Module):
     """Variational Quantum Circuit Layer for PyTorch.
 
-    Accepts classical input tensors and evaluates expectation values of specified
-    quantum observables across parameterized quantum states. Differentiable via
-    the analytical Parameter-Shift Rule for both variational parameters and inputs.
-
     Args:
         num_qubits: Number of simulated qubits (>= 1).
         circuit_fn: Ansatz preset name ('hardware_efficient', 'strongly_entangling',
             'reuploading', 'real_amplitudes'), or a custom Callable.
         num_layers: Depth of the variational circuit (>= 1).
         observables: Observables to measure. Defaults to [Z0, Z1, ..., Z_{N-1}].
-        diff_method: Differentiation method ('parameter-shift' or 'finite-diff').
+        diff_method: Differentiation method ('parameter-shift', 'finite-diff', or 'backprop').
+            Defaults to 'backprop' for custom `circuit_fn` callables and 'amplitude'/'iqp'
+            encodings, and 'parameter-shift' for built-in presets with 'angle' encoding.
         device: Torch device for execution and parameters.
         dtype: Floating-point precision (torch.float32 or torch.float64).
         init_method: Weight initialization scheme ('uniform', 'normal', 'zeros').
-        encoding: Feature encoding method ('angle').
+        encoding: Feature encoding method ('angle', 'amplitude', or 'iqp').
         num_params: Optional explicit parameter count override for custom callables.
-
-    Examples:
-        >>> import torch
-        >>> import torch.nn as nn
-        >>> from quanta.torch import QuantumLayer
-        >>>
-        >>> layer = QuantumLayer(num_qubits=4, num_layers=2)
-        >>> x = torch.randn(8, 4)
-        >>> y = layer(x)
-        >>> y.shape
-        torch.Size([8, 4])
-        >>>
-        >>> # Sequential model integration
-        >>> model = nn.Sequential(
-        ...     nn.Linear(2, 4),
-        ...     QuantumLayer(num_qubits=4, num_layers=1),
-        ...     nn.Linear(4, 1),
-        ... )
     """
 
     def __init__(
@@ -751,7 +764,7 @@ class QuantumLayer(nn.Module):
         circuit_fn: Callable[..., Any] | Any | str = "hardware_efficient",
         num_layers: int = 1,
         observables: Sequence[Any] | None = None,
-        diff_method: str = "parameter-shift",
+        diff_method: str | None = None,
         device: str | torch.device | None = None,
         dtype: torch.dtype = torch.float32,
         init_method: str = "uniform",
@@ -764,21 +777,37 @@ class QuantumLayer(nn.Module):
             raise ValueError(f"num_qubits must be >= 1, got {num_qubits}")
         if num_layers < 1:
             raise ValueError(f"num_layers must be >= 1, got {num_layers}")
-        if diff_method not in {"parameter-shift", "finite-diff"}:
+
+        enc_norm = encoding.lower()
+        if enc_norm not in _VALID_ENCODINGS:
             raise ValueError(
-                f"Unsupported diff_method '{diff_method}'. "
-                "Supported: 'parameter-shift', 'finite-diff'"
+                f"Unsupported encoding '{encoding}'. "
+                f"Supported: {sorted(_VALID_ENCODINGS)}"
             )
+
+        if diff_method is None:
+            resolved_diff = (
+                "backprop"
+                if (callable(circuit_fn) or enc_norm in {"amplitude", "iqp"})
+                else "parameter-shift"
+            )
+        else:
+            if diff_method not in _VALID_DIFF_METHODS:
+                raise ValueError(
+                    f"Unsupported diff_method '{diff_method}'. "
+                    "Supported: 'parameter-shift', 'finite-diff', 'backprop'"
+                )
+            resolved_diff = diff_method
 
         self.num_qubits: int = num_qubits
         self.num_layers: int = num_layers
         self.circuit_fn: Callable[..., Any] | str = circuit_fn
-        self.diff_method: str = diff_method
-        self.encoding: str = encoding
+        self.diff_method: str = resolved_diff
+        self.encoding: str = enc_norm
         self.init_method: str = init_method
 
         # Dimensions
-        self.in_features: int = num_qubits
+        self.in_features: int = (1 << num_qubits) if enc_norm == "amplitude" else num_qubits
         self._parsed_observables: list[ParsedObservable] = ObservableParser.parse_all(
             observables, num_qubits
         )
@@ -820,21 +849,19 @@ class QuantumLayer(nn.Module):
                 raise ValueError(f"Unknown init_method: '{self.init_method}'")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Executes forward simulation and returns observable expectations.
-
-        Args:
-            x: Input feature tensor of shape (B, in_features), (in_features,),
-                or (*batch, in_features).
-
-        Returns:
-            Expectation tensor of shape (B, out_features), (out_features,),
-            or (*batch, out_features).
-        """
+        """Executes forward simulation and returns observable expectations."""
         if x.ndim == 0:
             raise ValueError("Input tensor must have at least 1 dimension, got 0D scalar.")
 
         last_dim = x.shape[-1]
-        if last_dim != self.in_features:
+        if self.encoding == "amplitude":
+            if last_dim < 1 or last_dim > self.in_features:
+                raise ValueError(
+                    f"Feature dimension mismatch: amplitude encoding expects "
+                    f"1 <= x.shape[-1] <= {self.in_features} (2^{self.num_qubits}), "
+                    f"but got x.shape[-1]={last_dim}."
+                )
+        elif last_dim != self.in_features:
             raise ValueError(
                 f"Feature dimension mismatch: expected in_features={self.in_features} "
                 f"(matching {self.num_qubits} qubits), but got x.shape[-1]={last_dim}."
@@ -848,25 +875,42 @@ class QuantumLayer(nn.Module):
         else:
             x_2d = x
 
-        # Ensure device and dtype match weights (convert dtype first, then device)
+        # Convert dtype first, then device (prevents MPS float64 TypeError)
         if x_2d.dtype != self.weights.dtype:
             x_2d = x_2d.to(dtype=self.weights.dtype)
         if x_2d.device != self.weights.device:
             x_2d = x_2d.to(device=self.weights.device)
 
-        out_tensor = cast(
-            torch.Tensor,
-            _QuantumLayerFunction.apply(
+        use_native_autograd = (
+            self.diff_method == "backprop"
+            or (callable(self.circuit_fn) and self.diff_method != "finite-diff")
+            or (self.encoding in {"amplitude", "iqp"} and self.diff_method != "finite-diff")
+        )
+
+        if use_native_autograd:
+            out_tensor = _QuantumLayerFunction._simulate_batch(
                 x_2d,
                 self.weights,
                 self.num_qubits,
                 self.num_layers,
                 self.circuit_fn,
                 self._parsed_observables,
-                self.diff_method,
                 self.encoding,
-            ),
-        )
+            )
+        else:
+            out_tensor = cast(
+                torch.Tensor,
+                _QuantumLayerFunction.apply(
+                    x_2d,
+                    self.weights,
+                    self.num_qubits,
+                    self.num_layers,
+                    self.circuit_fn,
+                    self._parsed_observables,
+                    self.diff_method,
+                    self.encoding,
+                ),
+            )
 
         if x.ndim == 1:
             return out_tensor.squeeze(0)
@@ -884,5 +928,5 @@ class QuantumLayer(nn.Module):
             f"in_features={self.in_features}, out_features={self.out_features}, "
             f"num_qubits={self.num_qubits}, num_layers={self.num_layers}, "
             f"ansatz='{circuit_name}', diff_method='{self.diff_method}', "
-            f"num_params={self.num_params}"
+            f"encoding='{self.encoding}', num_params={self.num_params}"
         )

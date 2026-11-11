@@ -14,6 +14,7 @@ Example:
 
 from __future__ import annotations
 
+import hashlib
 import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
@@ -27,10 +28,11 @@ if TYPE_CHECKING:
 
 # ── Public API ──
 __all__ = [
-    "Gate", "ParametricGate",
+    "Gate", "ParametricGate", "MultiParametricGate",
     "H", "X", "Y", "Z", "S", "T",
     "CX", "CZ", "CY", "SWAP", "CCX",
     "RX", "RY", "RZ",
+    "CRX", "CRY", "CRZ",
     # IBM-parity gates
     "I", "SDG", "TDG", "P", "SX", "SXdg",
     "U", "RXX", "RZZ", "RCCX", "RC3X",
@@ -120,8 +122,8 @@ class Gate:
         # Self-inverse gates
         if self.name in _SELF_INVERSE_GATES:
             return self
-        # Fallback: compute U† from matrix
-        return _MatrixGate(
+        # Fallback: compute U† from matrix and register for circuit execution
+        return _register_matrix_gate(
             f"{self.name}†", self.matrix.conj().T, self.num_qubits,
         )
 
@@ -135,7 +137,7 @@ class Gate:
             num_ctrl: Number of control qubits (default: 1).
 
         Returns:
-            A new Gate with the controlled-U matrix.
+            A new Gate with the controlled-U matrix, registered in GATE_REGISTRY.
 
         Example:
             >>> X.controlled().name
@@ -154,13 +156,13 @@ class Gate:
         # Build controlled-U: identity for all states except
         # when all controls are |1⟩
         cu = np.eye(dim, dtype=complex)
-        # Replace bottom-right block with U
+        # Replace bottom-right block with U (preserving U's global phase as relative phase)
         u_mat = self.matrix
         start = dim - target_dim
         cu[start:, start:] = u_mat
 
         prefix = "C" * num_ctrl
-        return _MatrixGate(f"{prefix}{self.name}", cu, total_qubits)
+        return _register_matrix_gate(f"{prefix}{self.name}", cu, total_qubits)
 
     def __call__(self, *args: QubitRef | Iterable[QubitRef]) -> None:
         """Records gate to active circuit. Supports broadcast.
@@ -231,7 +233,33 @@ class _BoundParametricGate:
 
     @property
     def matrix(self) -> np.ndarray:
-        return np.asarray(self._matrix_fn(self.theta))
+        return np.asarray(self._matrix_fn(self.theta), dtype=complex)
+
+    @property
+    def inverse(self) -> Gate:
+        """Returns the exact adjoint gate U(θ)† registered in GATE_REGISTRY."""
+        inv_mat = self.matrix.conj().T
+        key = f"{self.name}dg_{_matrix_digest(inv_mat)}"
+        return _register_matrix_gate(key, inv_mat, self.num_qubits)
+
+    def controlled(self, num_ctrl: int = 1) -> Gate:
+        """Returns the exact controlled-U(θ) gate preserving full relative phase."""
+        if num_ctrl < 1:
+            from quanta.core.types import GateError
+            raise GateError(f"num_ctrl must be >= 1, got {num_ctrl}")
+
+        total_qubits = self.num_qubits + num_ctrl
+        dim = 2 ** total_qubits
+        target_dim = 2 ** self.num_qubits
+
+        cu = np.eye(dim, dtype=complex)
+        u_mat = self.matrix
+        start = dim - target_dim
+        cu[start:, start:] = u_mat
+
+        prefix = "C" * num_ctrl
+        key = f"{prefix}_{self.name}_{_matrix_digest(cu)}"
+        return _register_matrix_gate(key, cu, total_qubits)
 
     def __call__(self, *args: QubitRef | Iterable[QubitRef]) -> None:
         qubits = _flatten_qubits(args)
@@ -256,15 +284,20 @@ class MultiParametricGate:
     """Multi-parameter gate factory. Like U(θ, φ, λ)."""
 
     def __init__(
-        self, name: str, matrix_fn: Callable[..., np.ndarray], num_params: int = 3
+        self,
+        name: str,
+        matrix_fn: Callable[..., np.ndarray],
+        num_params: int = 3,
+        num_qubits: int = 1,
     ) -> None:
         self.name = name
         self._matrix_fn = matrix_fn
         self.num_params = num_params
+        self.num_qubits = num_qubits
 
     def __call__(self, *params: float) -> _BoundMultiParametricGate:
         return _BoundMultiParametricGate(
-            self.name, params, self._matrix_fn,
+            self.name, params, self._matrix_fn, self.num_qubits,
         )
 
     def __repr__(self) -> str:
@@ -274,24 +307,64 @@ class MultiParametricGate:
 class _BoundMultiParametricGate:
     """Multi-parameter gate bound with values."""
 
-    num_qubits = 1
-
     def __init__(
-        self, name: str, params: tuple[float, ...], matrix_fn: Callable[..., np.ndarray]
+        self,
+        name: str,
+        params: tuple[float, ...],
+        matrix_fn: Callable[..., np.ndarray],
+        num_qubits: int = 1,
     ) -> None:
         self.name = name
         self.params = params
         self._matrix_fn = matrix_fn
+        self.num_qubits = num_qubits
 
     @property
     def matrix(self) -> np.ndarray:
-        return np.asarray(self._matrix_fn(*self.params))
+        return np.asarray(self._matrix_fn(*self.params), dtype=complex)
+
+    @property
+    def inverse(self) -> Gate:
+        """Returns the exact adjoint gate U(params)† registered in GATE_REGISTRY."""
+        inv_mat = self.matrix.conj().T
+        key = f"{self.name}dg_{_matrix_digest(inv_mat)}"
+        return _register_matrix_gate(key, inv_mat, self.num_qubits)
+
+    def controlled(self, num_ctrl: int = 1) -> Gate:
+        """Returns the exact controlled-U(params) gate preserving full relative phase."""
+        if num_ctrl < 1:
+            from quanta.core.types import GateError
+            raise GateError(f"num_ctrl must be >= 1, got {num_ctrl}")
+
+        total_qubits = self.num_qubits + num_ctrl
+        dim = 2 ** total_qubits
+        target_dim = 2 ** self.num_qubits
+
+        cu = np.eye(dim, dtype=complex)
+        u_mat = self.matrix
+        start = dim - target_dim
+        cu[start:, start:] = u_mat
+
+        prefix = "C" * num_ctrl
+        key = f"{prefix}_{self.name}_{_matrix_digest(cu)}"
+        return _register_matrix_gate(key, cu, total_qubits)
 
     def __call__(self, *args: QubitRef | Iterable[QubitRef]) -> None:
         qubits = _flatten_qubits(args)
-        for qubit in qubits:
+        if self.num_qubits == 1:
+            for qubit in qubits:
+                _get_active_builder().record(
+                    Instruction(self.name, (qubit,), self.params)
+                )
+        else:
+            if len(qubits) != self.num_qubits:
+                from quanta.core.types import CircuitError
+                raise CircuitError(
+                    f"{self.name} requires {self.num_qubits} "
+                    f"qubits, got {len(qubits)}."
+                )
             _get_active_builder().record(
-                Instruction(self.name, (qubit,), self.params)
+                Instruction(self.name, tuple(qubits), self.params)
             )
 
 
@@ -565,6 +638,29 @@ class _CH(Gate):
         m[3, 3] = -_SQRT2_INV
         return m
 
+# ── Controlled Rotation Gates: CRX, CRY, CRZ ──
+
+CRX = ParametricGate("CRX", lambda t: np.array([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, np.cos(t / 2), -1j * np.sin(t / 2)],
+    [0, 0, -1j * np.sin(t / 2), np.cos(t / 2)],
+], dtype=complex), num_qubits=2)
+
+CRY = ParametricGate("CRY", lambda t: np.array([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, np.cos(t / 2), -np.sin(t / 2)],
+    [0, 0, np.sin(t / 2), np.cos(t / 2)],
+], dtype=complex), num_qubits=2)
+
+CRZ = ParametricGate("CRZ", lambda t: np.array([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, np.exp(-1j * t / 2), 0],
+    [0, 0, 0, np.exp(1j * t / 2)],
+], dtype=complex), num_qubits=2)
+
 # ── New v0.9: CP (Controlled-Phase) ──
 
 CP = ParametricGate("CP", lambda t: np.array([
@@ -619,6 +715,7 @@ GATE_REGISTRY: dict[str, Gate | ParametricGate | MultiParametricGate] = {
     # Parametric gates
     "RX": RX, "RY": RY, "RZ": RZ, "P": P, "U": U,
     "RXX": RXX, "RZZ": RZZ,
+    "CRX": CRX, "CRY": CRY, "CRZ": CRZ,
     # New v0.9 parametric gates
     "CP": CP, "MS": MS,
 }
@@ -651,9 +748,43 @@ class _MatrixGate(Gate):
     def __init__(self, name: str, matrix: np.ndarray, num_qubits: int) -> None:
         self.name = name
         self.num_qubits = num_qubits
-        self._matrix = matrix
+        self._matrix = np.asarray(matrix, dtype=complex)
 
     def _build_matrix(self) -> np.ndarray:
         return self._matrix
+
+    def __call__(self, *args: QubitRef | Iterable[QubitRef]) -> None:
+        if self.name not in GATE_REGISTRY:
+            GATE_REGISTRY[self.name] = self
+        super().__call__(*args)
+
+
+def _matrix_digest(matrix: np.ndarray) -> str:
+    """Computes a deterministic 12-hex SHA-256 digest of a unitary matrix."""
+    # Add 0.0 after rounding so -0.0 and +0.0 hash identically
+    canonical = np.ascontiguousarray(np.round(matrix, decimals=14) + (0.0 + 0.0j), dtype=np.complex128)
+    return hashlib.sha256(canonical.tobytes()).hexdigest()[:12]
+
+
+def _register_matrix_gate(
+    preferred_name: str, matrix: np.ndarray, num_qubits: int
+) -> _MatrixGate:
+    """Creates a _MatrixGate and registers it in GATE_REGISTRY without clobbering incompatible gates."""
+    existing = GATE_REGISTRY.get(preferred_name)
+    if existing is None:
+        gate = _MatrixGate(preferred_name, matrix, num_qubits)
+        GATE_REGISTRY[preferred_name] = gate
+        return gate
+    if (
+        isinstance(existing, Gate)
+        and existing.num_qubits == num_qubits
+        and np.allclose(existing.matrix, matrix, atol=1e-12)
+    ):
+        return _MatrixGate(preferred_name, matrix, num_qubits)
+
+    reg_name = f"{preferred_name}_{_matrix_digest(matrix)}"
+    gate = _MatrixGate(reg_name, matrix, num_qubits)
+    GATE_REGISTRY[reg_name] = gate
+    return gate
 
 
