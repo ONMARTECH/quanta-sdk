@@ -4,7 +4,7 @@ quanta.simulator.density_matrix -- Density matrix simulator.
 Simulates quantum circuits using density matrices (rho = |psi><psi|)
 instead of statevectors. Enables:
   - Mixed states (noise, decoherence)
-  - Kraus operator noise channels natively
+  - Kraus operator noise channels natively via exact O(4^n) tensor contraction
   - Trace operations (partial trace)
 
 Tradeoff: O(4^n) memory vs statevector's O(2^n), so max ~13 qubits.
@@ -20,22 +20,27 @@ Example:
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from quanta.core.gates import GATE_REGISTRY, MultiParametricGate, ParametricGate
 from quanta.core.types import QuantaError
+from quanta.simulator.base import SimulatorBackend
+from quanta.simulator.noise import ReadoutError, resolve_channel_qubit_targets
 
-__all__ = ["DensityMatrixSimulator"]
+__all__ = ["DensityMatrixError", "DensityMatrixSimulator"]
 
 
 class DensityMatrixError(QuantaError):
     """Density matrix simulator error."""
 
 
-class DensityMatrixSimulator:
-    """Density matrix simulator for mixed-state quantum circuits.
+class DensityMatrixSimulator(SimulatorBackend):
+    """Vectorized density matrix simulator for mixed-state quantum circuits.
 
-    State is represented as rho (2^n x 2^n complex matrix).
+    State is represented as rho (2^n x 2^n complex matrix), operated on via
+    [2] * (2 * n) ket/bra tensor contractions in O(2^k * 4^n) per k-qubit op.
     Gate application: rho' = U @ rho @ U.H
     Noise (Kraus): rho' = sum_k (K_k @ rho @ K_k.H)
 
@@ -46,7 +51,7 @@ class DensityMatrixSimulator:
 
     MAX_QUBITS = 13  # Memory: 4^13 * 16 = ~1 GB
 
-    __slots__ = ("num_qubits", "_rho", "_rng")
+    __slots__ = ("num_qubits", "_rho", "_rng", "_seed")
 
     def __init__(self, num_qubits: int, seed: int | None = None) -> None:
         if num_qubits > self.MAX_QUBITS:
@@ -56,11 +61,44 @@ class DensityMatrixSimulator:
             )
 
         self.num_qubits = num_qubits
+        self._seed = seed
         self._rng = np.random.default_rng(seed)
 
         dim = 2 ** num_qubits
         self._rho = np.zeros((dim, dim), dtype=complex)
         self._rho[0, 0] = 1.0  # |0><0|
+
+    @property
+    def max_qubits(self) -> int:
+        return self.MAX_QUBITS
+
+    def _contract_superoperator(
+        self, op_matrix: np.ndarray, qubits: tuple[int, ...]
+    ) -> np.ndarray:
+        """Computes M @ rho @ M† in O(2^k * 4^n) using [2]*(2n) tensor contraction."""
+        n = self.num_qubits
+        dim = 1 << n
+        m = len(qubits)
+        if m == 0:
+            return self._rho.copy()
+
+        op_tensor = np.asarray(op_matrix, dtype=complex).reshape([2] * (2 * m))
+        rho_tensor = self._rho.reshape([2] * (2 * n))
+
+        in_axes = list(range(m, 2 * m))
+        out_axes = list(range(m))
+        ket_axes = list(qubits)
+        bra_axes = [n + q for q in qubits]
+
+        # Contract M on ket axes: M_{i, i'} rho_{i', j'}
+        tmp = np.tensordot(op_tensor, rho_tensor, axes=(in_axes, ket_axes))
+        tmp = np.moveaxis(tmp, out_axes, ket_axes)
+
+        # Contract M* on bra axes: tmp_{i, j'} conj(M)_{j, j'}
+        tmp = np.tensordot(op_tensor.conj(), tmp, axes=(in_axes, bra_axes))
+        tmp = np.moveaxis(tmp, out_axes, bra_axes)
+
+        return np.ascontiguousarray(tmp).reshape(dim, dim)
 
     def apply(
         self,
@@ -70,8 +108,7 @@ class DensityMatrixSimulator:
     ) -> None:
         """Applies a unitary gate: rho' = U @ rho @ U.H"""
         matrix = self._get_gate_matrix(gate_name, params)
-        full = self._expand_gate(matrix, qubits)
-        self._rho = full @ self._rho @ full.conj().T
+        self._rho = self._contract_superoperator(matrix, qubits)
         self._enforce_cptp()
 
     def apply_kraus(
@@ -80,9 +117,6 @@ class DensityMatrixSimulator:
         qubits: tuple[int, ...],
     ) -> None:
         """Applies a Kraus channel: rho' = sum_k (K_k @ rho @ K_k.H)
-
-        This is the native way to apply noise in density matrix formalism.
-        No stochastic sampling needed (unlike statevector noise).
 
         Args:
             kraus_ops: List of Kraus operators. Must satisfy sum(K.H @ K) = I.
@@ -93,6 +127,7 @@ class DensityMatrixSimulator:
 
         target_dim = 2 ** len(qubits)
         completeness = np.zeros((target_dim, target_dim), dtype=complex)
+        checked_ops: list[np.ndarray] = []
         for k in kraus_ops:
             k_mat = np.asarray(k, dtype=complex)
             if k_mat.shape != (target_dim, target_dim):
@@ -101,6 +136,7 @@ class DensityMatrixSimulator:
                     f"target qubits dimension ({target_dim}, {target_dim})"
                 )
             completeness += k_mat.conj().T @ k_mat
+            checked_ops.append(k_mat)
 
         eye = np.eye(target_dim, dtype=complex)
         dev = float(np.max(np.abs(completeness - eye)))
@@ -111,16 +147,34 @@ class DensityMatrixSimulator:
             )
 
         new_rho = np.zeros_like(self._rho)
-        for k in kraus_ops:
-            full_k = self._expand_gate(k, qubits)
-            new_rho += full_k @ self._rho @ full_k.conj().T
+        for k_mat in checked_ops:
+            new_rho += self._contract_superoperator(k_mat, qubits)
         self._rho = new_rho
         self._enforce_cptp()
 
+    def apply_noise(
+        self,
+        noise_model: Any,
+        qubits: tuple[int, ...],
+        rng: np.random.Generator | None = None,
+    ) -> None:
+        """Applies every applicable gate-level channel's Kraus map deterministically."""
+        del rng  # Deterministic CPTP evolution requires no stochastic sampling
+        channels = getattr(noise_model, "channels", [])
+        for channel in channels:
+            if isinstance(channel, ReadoutError):
+                continue
+            targets_list = resolve_channel_qubit_targets(
+                channel, qubits, self.num_qubits
+            )
+            kraus_ops = channel.kraus_operators()
+            for target in targets_list:
+                self.apply_kraus(kraus_ops, target)
+
     def _enforce_cptp(self) -> None:
-        """Enforces Hermiticity, trace preservation Tr(rho)=1, and complete positivity rho >= 0."""
+        """Enforces Hermiticity and trace conservation Tr(rho)=1 in O(4^n)."""
         # 1. Hermiticity: rho = (rho + rho^dagger) / 2
-        self._rho = (self._rho + self._rho.conj().T) / 2.0
+        self._rho = 0.5 * (self._rho + self._rho.conj().T)
 
         # 2. Trace preservation: |Tr(rho) - 1.0| < 1e-12
         tr = np.trace(self._rho)
@@ -131,21 +185,15 @@ class DensityMatrixSimulator:
                 f"(deviation {abs(tr_val - 1.0):.2e} >= 1e-12)"
             )
 
-        # 3. Complete positivity: eigenvalues >= -1e-12
-        evals, evecs = np.linalg.eigh(self._rho)
-        min_eval = float(np.min(evals))
-        if min_eval < -1e-12:
+        # 3. Diagonal positivity guard (Necessary condition rho_ii >= 0 in O(2^n))
+        min_diag = float(np.min(np.real(np.diag(self._rho))))
+        if min_diag < -1e-12:
             raise DensityMatrixError(
-                f"Density matrix violates complete positivity: "
-                f"min eigenvalue = {min_eval:.2e} < -1e-12"
+                f"Density matrix violates positivity: min diagonal = {min_diag:.2e} < -1e-12"
             )
 
-        # Clip numerical negative eigenvalues and re-normalize trace
-        clipped_evals = np.maximum(evals, 0.0)
-        s = float(np.sum(clipped_evals))
-        if s > 0:
-            clipped_evals /= s
-        self._rho = evecs @ np.diag(clipped_evals) @ evecs.conj().T
+        if tr_val > 0.0:
+            self._rho /= tr_val
 
     def apply_depolarizing(self, qubit: int, p: float) -> None:
         """Applies depolarizing noise on a single qubit.
@@ -168,34 +216,6 @@ class DensityMatrixSimulator:
         ]
         self.apply_kraus(kraus, (qubit,))
 
-    def _expand_gate(
-        self, gate: np.ndarray, qubits: tuple[int, ...]
-    ) -> np.ndarray:
-        """Expands gate to full system using tensor contraction."""
-        n = self.num_qubits
-        num_gate_qubits = len(qubits)
-        dim = 2 ** n
-
-        # Tensor contraction approach
-        state_shape = [2] * n
-        gate_tensor = gate.reshape([2] * (2 * num_gate_qubits))
-
-        # Build identity in tensor form, then contract
-        full = np.zeros((dim, dim), dtype=complex)
-
-        for i in range(dim):
-            ei = np.zeros(dim, dtype=complex)
-            ei[i] = 1.0
-            ei_t = ei.reshape(state_shape)
-
-            gate_axes = list(range(num_gate_qubits, 2 * num_gate_qubits))
-            state_axes = list(qubits)
-            out = np.tensordot(gate_tensor, ei_t, axes=(gate_axes, state_axes))
-            out = np.moveaxis(out, list(range(num_gate_qubits)), list(qubits))
-            full[:, i] = out.reshape(-1)
-
-        return full
-
     def _get_gate_matrix(
         self, name: str, params: tuple[float, ...]
     ) -> np.ndarray:
@@ -204,7 +224,6 @@ class DensityMatrixSimulator:
         if gate is None:
             raise DensityMatrixError(f"Unknown gate: {name}")
 
-        # Parametric gates need params to build matrix
         if isinstance(gate, MultiParametricGate):
             if not params:
                 raise DensityMatrixError(f"{name} requires parameters")
@@ -230,18 +249,36 @@ class DensityMatrixSimulator:
         probs = self.probabilities()
         n = self.num_qubits
         indices = self._rng.choice(len(probs), size=shots, p=probs)
-        counts: dict[str, int] = {}
-        for idx in indices:
-            bs = format(idx, f"0{n}b")
-            counts[bs] = counts.get(bs, 0) + 1
-        return counts
+        unique, unique_counts = np.unique(indices, return_counts=True)
+        fmt = f"0{n}b"
+        return {
+            format(idx, fmt): int(cnt)
+            for idx, cnt in zip(unique, unique_counts, strict=True)
+        }
 
     @property
     def purity(self) -> float:
         """Trace(rho^2). Pure state = 1.0, maximally mixed = 1/d."""
-        return float(np.real(np.trace(self._rho @ self._rho)))
+        # Tr(rho^2) = sum_{i,j} |rho_{ij}|^2 since rho is Hermitian (O(4^n) vs O(8^n)!)
+        return float(np.real(np.vdot(self._rho, self._rho)))
 
     @property
     def state(self) -> np.ndarray:
         """Copy of the density matrix."""
         return self._rho.copy()
+
+    @state.setter
+    def state(self, value: Any) -> None:
+        """Sets the density matrix with CPTP validation."""
+        dim = 1 << self.num_qubits
+        arr = np.asarray(value, dtype=complex)
+        if arr.shape != (dim, dim):
+            raise DensityMatrixError(
+                f"Density matrix shape mismatch: expected {(dim, dim)}, got {arr.shape}"
+            )
+        self._rho = arr.copy()
+        self._enforce_cptp()
+
+    def reset(self) -> None:
+        """Resets the density matrix to |00...0><00...0|."""
+        self.__init__(self.num_qubits, seed=self._seed)  # type: ignore[misc]

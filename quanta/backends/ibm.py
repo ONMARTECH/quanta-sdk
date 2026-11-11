@@ -162,8 +162,8 @@ class IBMBackend(Backend):
         result = simulator.run(qc, shots=shots, seed_simulator=seed).result()
         raw_counts = result.get_counts()
 
-        # Qiskit returns bitstrings in reverse order, normalize
-        return {k.replace(" ", ""): v for k, v in raw_counts.items()}
+        # Qiskit returns little-endian bitstrings (c[n-1]...c[0]); reverse to Quanta big-endian (q[0]...q[n-1])
+        return {k.replace(" ", "")[::-1]: v for k, v in raw_counts.items()}
 
     def _run_hardware(
         self, qasm_str: str, shots: int
@@ -193,10 +193,10 @@ class IBMBackend(Backend):
         job = sampler.run([qc], shots=shots)
         result = job.result()
 
-        # Extract counts from SamplerV2 result
+        # Extract counts from SamplerV2 result and reverse from Qiskit little-endian to Quanta big-endian
         pub_result = result[0]
         raw_counts = pub_result.data.c.get_counts()
-        return {k.replace(" ", ""): v for k, v in raw_counts.items()}
+        return {k.replace(" ", "")[::-1]: v for k, v in raw_counts.items()}
 
     def __repr__(self) -> str:
         return (

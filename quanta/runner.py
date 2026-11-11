@@ -74,7 +74,7 @@ class CircuitRunner:
         cutoff: float = 1e-12,
         shots: int = 1024,
         seed: int | None = None,
-        backend: Backend | None = None,
+        backend: Backend | str | None = None,
         noise: NoiseModel | None = None,
         method: str | None = None,
     ) -> None:
@@ -95,7 +95,7 @@ class CircuitRunner:
         max_bond_dim: int | None = None,
         cutoff: float | None = None,
         seed: int | None = None,
-        backend: Backend | None = None,
+        backend: Backend | str | None = None,
         noise: NoiseModel | None = None,
         **kwargs: Any,
     ) -> Result:
@@ -122,11 +122,79 @@ class CircuitRunner:
         )
 
 
+def _build_static_simulator(
+    resolved_method: str,
+    num_qubits: int,
+    seed: int | None,
+    chi_max: int,
+    cutoff: float,
+) -> Any:
+    """Instantiates the requested static simulator backend."""
+    if resolved_method == "mps":
+        from quanta.simulator.mps import MPSSimulator
+
+        return MPSSimulator(
+            num_qubits,
+            seed=seed,
+            chi_max=chi_max,
+            cutoff=cutoff,
+        )
+    if resolved_method == "mlx":
+        from quanta.simulator.mlx import MLXSimulator
+
+        return MLXSimulator(num_qubits, seed=seed)
+    if resolved_method == "pauli_frame":
+        from quanta.simulator.pauli_frame import PauliFrameSimulator
+
+        return PauliFrameSimulator(num_qubits, seed=seed)
+    if resolved_method == "density_matrix":
+        from quanta.simulator.density_matrix import DensityMatrixSimulator
+
+        return DensityMatrixSimulator(num_qubits, seed=seed)
+    if resolved_method in ("sparse", "custatevec"):
+        from quanta.simulator.factory import create_simulator
+
+        return create_simulator(num_qubits, method=resolved_method, seed=seed)
+    if resolved_method == "dense":
+        return StateVectorSimulator(num_qubits, seed=seed)
+    raise QuantaError(
+        f"Unknown simulator method: {resolved_method!r}. "
+        "Supported: 'auto', 'dense', 'mps', 'mlx', 'density_matrix', 'pauli_frame'."
+    )
+
+
+def _reset_trajectory_state(sim: Any, resolved_method: str, init_mlx_state: Any = None) -> None:
+    """Resets quantum state to |0...0> without resetting RNG or GPU gate caches."""
+    n = sim.num_qubits
+    if resolved_method == "dense":
+        sim._state.fill(0.0)
+        sim._state[0] = 1.0
+    elif resolved_method == "mlx":
+        sim._state = init_mlx_state
+        sim._pending_ops = 0
+    elif resolved_method == "mps":
+        tensors: list[np.ndarray] = []
+        for _ in range(n):
+            t = np.zeros((1, 2, 1), dtype=complex)
+            t[0, 0, 0] = 1.0
+            tensors.append(t)
+        sim._tensors = tensors
+        sim._ortho_center = 0
+        sim._total_trunc_error = 0.0
+    elif resolved_method == "pauli_frame":
+        sim._tab.fill(0)
+        for i in range(n):
+            sim._tab[i, i] = 1
+            sim._tab[i + n, n + i] = 1
+    else:
+        sim.reset()
+
+
 def run(
     circuit: CircuitDefinition | DAGCircuit,
     shots: int = 1024,
     seed: int | None = None,
-    backend: Backend | None = None,
+    backend: Backend | str | None = None,
     noise: NoiseModel | None = None,
     method: str = "auto",
     max_bond_dim: int = 64,
@@ -194,7 +262,12 @@ def run(
     if shots < 1:
         raise QuantaError(f"Shot count must be positive, given: {shots}")
 
-    # Delegate to backend if provided
+    # Support string backend shortcuts (e.g., run(circ, backend="mlx"))
+    if isinstance(backend, str):
+        method = backend
+        backend = None
+
+    # Delegate to hardware/external Backend object if provided
     if backend is not None:
         result = backend.execute(dag, shots=shots, seed=seed)
         result.circuit_name = circuit_name
@@ -217,40 +290,68 @@ def run(
     method_str = method.lower() if isinstance(method, str) else "auto"
     if method_str == "auto":
         resolved_method = "mps" if dag.num_qubits > max_dense_qubits else "dense"
-    elif method_str in ("statevector", "dense"):
+    elif method_str in ("statevector", "dense", "local", "numpy"):
         resolved_method = "dense"
     elif method_str == "mps":
         resolved_method = "mps"
-    else:
+    elif method_str in ("mlx", "metal"):
+        resolved_method = "mlx"
+    elif method_str in ("density_matrix", "dm"):
+        resolved_method = "density_matrix"
+    elif method_str in ("pauli_frame", "clifford"):
+        resolved_method = "pauli_frame"
+    elif method_str in ("sparse", "custatevec"):
         resolved_method = method_str
-
-    if is_dynamic and resolved_method == "mps":
+    else:
         raise QuantaError(
-            "MPSSimulator does not currently support dynamic mid-circuit measurements."
+            f"Unknown simulator method: {method!r}. "
+            "Supported: 'auto', 'dense', 'mps', 'mlx', 'density_matrix', 'pauli_frame'."
         )
 
-    if not is_dynamic:
+    if is_dynamic:
         if resolved_method == "mps":
-            from quanta.simulator.mps import MPSSimulator
-
-            simulator = MPSSimulator(
-                dag.num_qubits,
-                seed=seed,
-                chi_max=max_bond_dim,
-                cutoff=cutoff,
+            raise QuantaError(
+                "MPSSimulator does not currently support dynamic mid-circuit measurements."
+            )
+        if resolved_method in ("density_matrix", "pauli_frame"):
+            raise QuantaError(
+                f"{resolved_method} simulator does not currently support dynamic mid-circuit measurements."
             )
 
-            for op in dag.op_nodes():
-                simulator.apply(op.gate_name, op.qubits, op.params)
+    if not is_dynamic:
+        from quanta.simulator.noise import ReadoutError
 
-            counts = simulator.sample(shots)
+        has_gate_noise = bool(
+            noise is not None
+            and any(not isinstance(ch, ReadoutError) for ch in noise.channels)
+        )
+        rng = np.random.default_rng(seed)
+
+        # Branch 1: Exact CPTP density matrix evolution
+        # Used when method="density_matrix" explicitly, or on dense n <= 11 with gate-level noise.
+        if resolved_method == "density_matrix" or (
+            resolved_method == "dense" and dag.num_qubits <= 11 and has_gate_noise
+        ):
+            from quanta.simulator.density_matrix import DensityMatrixSimulator
+
+            dm_sim = DensityMatrixSimulator(dag.num_qubits, seed=seed)
+            for op in dag.op_nodes():
+                dm_sim.apply(op.gate_name, op.qubits, op.params)
+                if has_gate_noise and noise is not None:
+                    dm_sim.apply_noise(noise, op.qubits, rng)
+
+            counts = dm_sim.sample(shots)
+
+            if noise is not None:
+                for channel in noise.channels:
+                    if isinstance(channel, ReadoutError):
+                        counts = channel.apply_to_counts(counts, rng)
 
             if dag.measurement and dag.measurement.qubits:
-                measured = dag.measurement.qubits
-                counts = _filter_measured_qubits(counts, measured, dag.num_qubits)
+                counts = _filter_measured_qubits(
+                    counts, dag.measurement.qubits, dag.num_qubits
+                )
 
-            # High-qubit safeguard: When using MPS or when N > 20, do NOT call sim.state
-            # which triggers exponential O(2^N) dense statevector explosion; set statevector=None
             return Result(
                 counts=counts,
                 shots=shots,
@@ -261,22 +362,66 @@ def run(
                 statevector=None,
             )
 
-        # Stage 3a: Fast static statevector simulation
-        simulator = StateVectorSimulator(dag.num_qubits, seed=seed)
-        rng = np.random.default_rng(seed)
+        # Branch 2: Independent Monte Carlo quantum trajectories per shot
+        # Used when gate-level noise is present on MPS, MLX, PauliFrame, or large dense (n > 11).
+        if has_gate_noise and noise is not None:
+            simulator = _build_static_simulator(
+                resolved_method,
+                dag.num_qubits,
+                seed=seed,
+                chi_max=max_bond_dim,
+                cutoff=cutoff,
+            )
+            simulator._rng = rng
+            init_mlx_state = getattr(simulator, "_state", None) if resolved_method == "mlx" else None
+
+            counts = {}
+            op_list = list(dag.op_nodes())
+            for shot_idx in range(shots):
+                if shot_idx > 0:
+                    _reset_trajectory_state(simulator, resolved_method, init_mlx_state)
+                for op in op_list:
+                    simulator.apply(op.gate_name, op.qubits, op.params)
+                    simulator.apply_noise(noise, op.qubits, rng)
+                shot_sample = simulator.sample(1)
+                for bitstring, cnt in shot_sample.items():
+                    counts[bitstring] = counts.get(bitstring, 0) + cnt
+
+            for channel in noise.channels:
+                if isinstance(channel, ReadoutError):
+                    counts = channel.apply_to_counts(counts, rng)
+
+            if dag.measurement and dag.measurement.qubits:
+                counts = _filter_measured_qubits(
+                    counts, dag.measurement.qubits, dag.num_qubits
+                )
+
+            return Result(
+                counts=counts,
+                shots=shots,
+                num_qubits=dag.num_qubits,
+                circuit_name=circuit_name,
+                gate_count=dag.gate_count(),
+                depth=dag.depth(),
+                statevector=None,
+            )
+
+        # Branch 3: Noiseless (or ReadoutError-only) single evolution
+        simulator = _build_static_simulator(
+            resolved_method,
+            dag.num_qubits,
+            seed=seed,
+            chi_max=max_bond_dim,
+            cutoff=cutoff,
+        )
 
         for op in dag.op_nodes():
             simulator.apply(op.gate_name, op.qubits, op.params)
-            # Apply noise after each gate if noise model is provided
-            if noise is not None:
-                simulator.apply_noise(noise, op.qubits, rng)
 
         counts = simulator.sample(shots)
 
         # Apply ReadoutError to measurement counts (post-measurement noise)
         if noise is not None:
-            from quanta.simulator.noise import ReadoutError
-
             for channel in noise.channels:
                 if isinstance(channel, ReadoutError):
                     counts = channel.apply_to_counts(counts, rng)
@@ -285,8 +430,11 @@ def run(
             measured = dag.measurement.qubits
             counts = _filter_measured_qubits(counts, measured, dag.num_qubits)
 
-        # High-qubit safeguard: When N > 20, do NOT call sim.state
-        statevector = simulator.state if dag.num_qubits <= 20 else None
+        # High-qubit / non-statevector safeguard: do NOT materialize O(2^N) dense vector
+        if resolved_method in ("mps", "pauli_frame", "density_matrix") or dag.num_qubits > 20:
+            statevector = None
+        else:
+            statevector = simulator.state
 
         return Result(
             counts=counts,

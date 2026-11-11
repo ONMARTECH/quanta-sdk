@@ -43,7 +43,7 @@ class CuStateVecSimulator(SimulatorBackend):
 
     MAX_QUBITS = 32  # Limited by GPU memory (e.g., 30 qubits requires ~16GB VRAM)
 
-    __slots__ = ("num_qubits", "_state_cp", "_rng", "_handle", "_workspace")
+    __slots__ = ("num_qubits", "_seed", "_state_cp", "_rng", "_handle", "_workspace")
 
     def __init__(self, num_qubits: int, seed: int | None = None) -> None:
         if not HAS_CUQUANTUM:
@@ -59,6 +59,7 @@ class CuStateVecSimulator(SimulatorBackend):
             )
 
         self.num_qubits = num_qubits
+        self._seed = seed
         self._rng = np.random.default_rng(seed)
 
         # Initial state: |00...0> stored on GPU
@@ -92,7 +93,9 @@ class CuStateVecSimulator(SimulatorBackend):
         gate_matrix = self._get_gate_matrix(gate_name, params)
         gate_cp = cp.asarray(gate_matrix, dtype=cp.complex128, order="C")
 
-        targets = list(qubits)
+        # Map Quanta big-endian qubits (q=0 is MSB, qubits[0] is MSB of gate matrix)
+        # to cuStateVec little-endian wires (wire 0 is LSB, targets[0] is LSB of gate matrix)
+        targets = [self.num_qubits - 1 - q for q in reversed(qubits)]
         n_targets = len(targets)
 
         # Calculate required workspace size
@@ -178,6 +181,16 @@ class CuStateVecSimulator(SimulatorBackend):
 
         fmt = f"0{n}b"
         return {format(idx, fmt): int(cnt) for idx, cnt in zip(unique, unique_counts, strict=True)}
+
+    @property
+    def max_qubits(self) -> int:
+        return self.MAX_QUBITS
+
+    def reset(self) -> None:
+        """Resets GPU statevector to |0...0> while preserving seed and cuStateVec handle."""
+        self._state_cp.fill(0)
+        self._state_cp[0] = 1.0
+        self._rng = np.random.default_rng(self._seed)
 
     @property
     def state(self) -> np.ndarray:
