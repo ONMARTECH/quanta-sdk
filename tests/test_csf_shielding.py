@@ -395,7 +395,7 @@ def test_unitary_norm_preservation() -> None:
     state = out["state"]
     norms = torch.sum(torch.abs(state) ** 2, dim=-1)
     for norm in norms:
-        assert float(norm) == pytest.approx(1.0, abs=1e-5)
+        assert float(norm.detach()) == pytest.approx(1.0, abs=1e-5)
 
 
 def test_consensus_expectation_bounds() -> None:

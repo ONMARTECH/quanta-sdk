@@ -84,10 +84,10 @@ def is_blacklisted_path(path: str | Path) -> bool:
 
 
 def tokenize_text(text: str) -> list[str]:
-    """Tokenizes text into lowercase alphanumeric words."""
+    """Tokenizes text into lowercase alphanumeric words (splitting underscores as word boundaries)."""
     if not text:
         return []
-    return [w for w in re.split(r"[^\w]+", text.lower()) if len(w) > 1]
+    return [w for w in re.split(r"[\W_]+", text.lower()) if len(w) > 1]
 
 
 def _extract_text_from_obj(obj: Any) -> str:
@@ -581,8 +581,9 @@ class LocalVaultIndex:
                 if len(term) >= 3 and (term in doc_title_lower or term in doc_id_lower):
                     exact_boost += 0.05
 
-            # Substring check
-            if q_lower in doc_title_lower or q_lower in doc_id_lower:
+            # Substring check (treating snake_case underscores in IDs as spaces)
+            doc_id_spaced = doc_id_lower.replace("_", " ")
+            if q_lower in doc_title_lower or q_lower in doc_id_lower or q_lower in doc_id_spaced:
                 exact_boost += 0.20
 
             final_score = min(

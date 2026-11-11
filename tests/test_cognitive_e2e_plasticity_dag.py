@@ -1995,8 +1995,11 @@ class TestTier4RealWorldWorkloadScenarios:
         )
         winner = res["winning_trajectory"]
         assert "SQLite Local Engine" in winner["path_labels"]
-        # DenseMatrix is decisively pruned
-        bq_traj = next(t for t in res["trajectories"] if "DenseMatrix" in t["path_labels"][1])
+        # Dense Exponential Statevector is decisively pruned
+        bq_traj = next(
+            t for t in res["trajectories"]
+            if "Dense Exponential Statevector" in t["path_labels"][1]
+        )
         assert bq_traj["is_pruned"] is True
 
     def test_t4_05_full_closed_loop_agent_session_simulation(self, tmp_path: Path) -> None:

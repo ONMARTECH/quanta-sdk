@@ -278,6 +278,6 @@ class TestComparativeBenchmarkIntegration:
             )
 
             vanilla_res = results["results_by_dimension"]["12"]["vanilla_qaoa"]
-            assert "BARREN_PLATEAU_LIMIT" in vanilla_res["status"]
+            assert "CLASSICAL_SV_RAM_LIMIT" in vanilla_res["status"]
             assert vanilla_res["success_rate"] == 0.0
             assert vanilla_res["mean_runtime_seconds"] is None

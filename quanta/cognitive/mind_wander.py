@@ -26,6 +26,7 @@ import logging
 import math
 import os
 import random
+import socket
 import subprocess
 import time
 from collections.abc import Callable, Sequence
@@ -478,9 +479,9 @@ class MindWanderEngine:
         if use_agy_cli is not None:
             self.use_agy_cli = use_agy_cli
         else:
-            # Auto-disable live agy CLI when executing in pytest test runner
-            is_pytest = "PYTEST_CURRENT_TEST" in os.environ or "PYTEST_VERSION" in os.environ
-            self.use_agy_cli = not is_pytest
+            # Never spawn headless `agy -p` in background daemons unless explicitly opted in,
+            # preventing macOS `/usr/bin/open` OAuth browser popups and background G1 credit burn.
+            self.use_agy_cli = os.environ.get("QUANTA_ENABLE_AGY_CLI") == "1"
         self.simulator = BiomorphicDialecticSimulator()
 
     def _cosine_similarity(self, u: list[float], v: list[float]) -> float:
@@ -501,6 +502,13 @@ class MindWanderEngine:
             return None
 
         if preemption_check and preemption_check():
+            return None
+
+        # Prevent headless background runs from triggering interactive browser OAuth
+        # when macOS wakes from sleep before DNS/Wi-Fi is ready.
+        try:
+            socket.getaddrinfo("oauth2.googleapis.com", 443, proto=socket.IPPROTO_TCP)
+        except OSError:
             return None
 
         proj_name = seed.context_keys[0] if seed.context_keys else "Workspace Ecosystem"
@@ -528,11 +536,13 @@ class MindWanderEngine:
         )
 
         try:
+            headless_env = {**os.environ, "BROWSER": "/usr/bin/true"}
             p = subprocess.Popen(
                 [str(AGY_CLI_PATH), "-p", prompt],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
+                env=headless_env,
             )
 
             # Responsive polling loop checking preemption while agy executes

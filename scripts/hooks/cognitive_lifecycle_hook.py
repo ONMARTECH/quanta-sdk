@@ -26,6 +26,7 @@ from typing import Any
 
 # Ensure quanta package is importable regardless of caller's cwd or interpreter
 QUANTA_ROOT = Path(__file__).resolve().parent.parent.parent
+_REAL_REPO_STATE_FILE = (QUANTA_ROOT / "quanta_cognitive_state.json").resolve()
 if str(QUANTA_ROOT) not in sys.path:
     sys.path.insert(0, str(QUANTA_ROOT))
 
@@ -907,9 +908,8 @@ def _atomic_write_single_file(target: Path, state_dict: dict) -> bool:
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         temp_path = target.with_name(f".tmp_{target.name}_{os.getpid()}_{time.time_ns()}")
-        raw_json = json.dumps(state_dict, ensure_ascii=False, indent=2)
         with open(temp_path, "w", encoding="utf-8") as sf:
-            sf.write(raw_json)
+            json.dump(state_dict, sf, ensure_ascii=False, indent=2)
             sf.flush()
             with contextlib.suppress(OSError):
                 os.fsync(sf.fileno())
@@ -954,11 +954,19 @@ def _save_mirrored_state_atomically(
         try:
             ws_root_file = (QUANTA_ROOT / "quanta_cognitive_state.json").resolve()
             is_root_target = False
+            is_real_repo_root = False
             with contextlib.suppress(Exception):
-                is_root_target = (mirror_path.resolve() == ws_root_file)
+                resolved_mirror = mirror_path.resolve()
+                is_root_target = (resolved_mirror == ws_root_file)
+                is_real_repo_root = (resolved_mirror == _REAL_REPO_STATE_FILE)
 
-            # Skip mirror if is_test_env, or if running under pytest and target is root
-            skip_mirror = is_test_env or is_root_target
+            # Never overwrite the real git-tracked quanta_cognitive_state.json during live sessions;
+            # for redirected roots (e.g. isolated workspaces/tests), honor is_test_env & hermetic checks.
+            skip_mirror = (
+                is_test_env
+                or is_real_repo_root
+                or (is_root_target and is_hermetic_test_env())
+            )
 
             with contextlib.suppress(Exception):
                 if mirror_path.resolve() == primary_path.resolve():
@@ -1694,6 +1702,30 @@ def main() -> None:
                 category="constraint",
                 is_core_anchor=True,
             )
+        if "research_subagent_delegation_rule" not in existing_rule_keys:
+            mem.record(
+                key="research_subagent_delegation_rule",
+                content=(
+                    "Geniş çaplı kod tabanı, çoklu dosya ve log taramalarını ana bağlamı"
+                    " şişirmemek için salt-okunur 'research' alt ajanına (invoke_subagent)"
+                    " delege et; ana oturuma yalnızca damıtılmış özeti döndür."
+                ),
+                salience=2.8,
+                category="constraint",
+                is_core_anchor=True,
+            )
+        if "context_hygiene_compact_rule" not in existing_rule_keys:
+            mem.record(
+                key="context_hygiene_compact_rule",
+                content=(
+                    "Oturum 80+ adıma ulaştığında, bağlam kaydığında veya yeni büyük bir"
+                    " işe geçildiğinde kullanıcıya hızlıca '/compact' kullanmayı veya"
+                    " çıktıları arşivleyip yeni konuşma açmayı öner."
+                ),
+                salience=2.8,
+                category="constraint",
+                is_core_anchor=True,
+            )
 
         # Decouple intermediate tool continuation sub-turns from full conversational turns:
         # If continuing after a tool execution, decay was already stepped by PostToolUse (dt=0.2).
@@ -1969,6 +2001,11 @@ def main() -> None:
             if pruned:
                 prune_word = "engram"
                 lines.append(f"  ✂️ Budandı: {len(pruned)} {prune_word}")
+
+            if isinstance(current_step_idx, int) and current_step_idx >= 80:
+                lines.append(
+                    f"  💡 Bağlam Hijyeni (Adım #{current_step_idx}): Oturum uzadı; bağlam kayıyorsa veya yeni büyük işe geçiliyorsa kullanıcıya hızlıca '/compact' veya 'arşivleyip yeni konuşma açma' önerisinde bulun. Geniş taramaları 'research' alt ajanına delege et."
+                )
 
             compact_msg = "\n".join(lines)
 
