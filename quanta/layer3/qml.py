@@ -1,34 +1,14 @@
 """
 quanta.layer3.qml -- Quantum Machine Learning (QML) module.
 
-Provides quantum-enhanced classification and regression using
-parameterized quantum circuits (PQC) with classical optimizers.
-
-Architecture:
-  - QuantumFeatureMap: Encodes classical data into quantum states
-  - QuantumKernel: Quantum kernel for SVM-style classification
-  - QuantumClassifier: End-to-end variational quantum classifier
-
-Supported feature maps:
-  - ZZFeatureMap: Entangling feature map using ZZ interactions
-  - AngleEncoding: Simple RY rotation encoding
-  - AmplitudeEncoding: Log-depth amplitude encoding
-
-Example:
-    >>> from quanta.layer3.qml import QuantumClassifier
-    >>> clf = QuantumClassifier(n_qubits=4, n_layers=2, feature_map="angle")
-    >>> clf.fit(X_train, y_train, epochs=50)
-    >>> predictions = clf.predict(X_test)
-    >>> print(f"Accuracy: {clf.score(X_test, y_test):.2%}")
-
-Theory:
-    Variational quantum classifiers use:
-    1. Feature map U_φ(x): Encodes input x into quantum state
-    2. Variational ansatz V(θ): Parameterized unitary
-    3. Measurement: Extracts class probabilities
-
-    Total unitary: |ψ⟩ = V(θ) · U_φ(x) · |0⟩
-    Loss: cross-entropy between measured probabilities and labels
+Provides variational quantum classification, continuous quantum regression,
+and fidelity quantum kernels with:
+  - Exact chain-rule parameter-shift gradients ``(dL / d<Z>) * (d<Z> / dtheta)``
+    where parameter-shift is applied strictly to the linear Pauli expectation
+    ``<Z>`` (never directly to non-linear cross-entropy ``-log p``!).
+  - Consistent MSB ``q[0]`` Pauli-Z expectation readout ``(i >> (n - 1)) & 1 == 0``.
+  - Full integration with ``quanta.qml.ansatz.Ansatz`` presets and optimizers
+    (``"sgd"``, ``"adam"``, ``"spsa"``, ``"cobyla"``).
 """
 
 from __future__ import annotations
@@ -37,9 +17,17 @@ import math
 from dataclasses import dataclass, field
 
 import numpy as np
+from scipy.optimize import minimize as scipy_minimize
 
 from quanta.simulator.base import SimulatorBackend
 from quanta.simulator.factory import create_simulator
+
+
+def _get_ansatz_preset(name: str):
+    """Lazily resolve Ansatz preset to avoid circular import with quanta.qml."""
+    from quanta.qml.ansatz import Ansatz
+
+    return Ansatz.get(name)
 
 __all__ = [
     "QuantumClassifier",
@@ -61,20 +49,11 @@ def angle_encoding(
     x: np.ndarray,
     qubits: tuple[int, ...] | None = None,
 ) -> None:
-    """Encode features via RY rotations.
-
-    Each feature x_i → RY(π · x_i) on qubit i.
-    Simple and effective for small feature spaces.
-
-    Args:
-        sim: Simulator to apply encoding.
-        x: Feature vector (values in [0, 1]).
-        qubits: Which qubits to use (default: first len(x)).
-    """
+    """Encode features via RY(pi * x_i) rotations."""
     if qubits is None:
-        qubits = tuple(range(len(x)))
+        qubits = tuple(range(min(len(x), sim.num_qubits)))
     for i, q in enumerate(qubits):
-        if i < len(x):
+        if i < len(x) and q < sim.num_qubits:
             sim.apply("RY", (q,), (math.pi * float(x[i]),))
 
 
@@ -84,34 +63,16 @@ def zz_feature_map(
     qubits: tuple[int, ...] | None = None,
     reps: int = 2,
 ) -> None:
-    """ZZ entangling feature map.
-
-    Encodes features with entanglement:
-      1. H on all qubits
-      2. RZ(x_i) on each qubit
-      3. RZZ(x_i * x_j) on adjacent pairs
-    Repeated `reps` times for expressiveness.
-
-    Args:
-        sim: Simulator to apply encoding.
-        x: Feature vector.
-        qubits: Which qubits to use.
-        reps: Number of repetitions.
-    """
-    n = len(x)
+    """ZZ entangling feature map."""
+    n = min(len(x), sim.num_qubits)
     if qubits is None:
         qubits = tuple(range(n))
 
     for _ in range(reps):
-        # Hadamard layer
         for q in qubits[:n]:
             sim.apply("H", (q,))
-
-        # Phase encoding
         for i, q in enumerate(qubits[:n]):
             sim.apply("RZ", (q,), (2.0 * float(x[i]),))
-
-        # Entanglement encoding (ZZ interaction)
         for i in range(n - 1):
             q1, q2 = qubits[i], qubits[i + 1]
             phi = 2.0 * float(x[i]) * float(x[i + 1])
@@ -124,30 +85,20 @@ def amplitude_encoding(
     sim: SimulatorBackend,
     x: np.ndarray,
 ) -> None:
-    """Amplitude encoding: embed data directly into state amplitudes.
-
-    Encodes 2^n features into n qubits.
-    Input is normalized to unit vector.
-
-    Args:
-        sim: Simulator to apply encoding.
-        x: Feature vector (length must be ≤ 2^n_qubits).
-    """
+    """Amplitude encoding: embed normalized feature vector into quantum state."""
     n_qubits = sim.num_qubits
-    dim = 2 ** n_qubits
+    dim = 1 << n_qubits
 
-    # Pad and normalize
-    padded = np.zeros(dim)
-    padded[:len(x)] = x
-    norm = np.linalg.norm(padded)
+    padded = np.zeros(dim, dtype=float)
+    limit = min(len(x), dim)
+    padded[:limit] = np.asarray(x[:limit], dtype=float)
+    norm = float(np.linalg.norm(padded))
     if norm > 1e-12:
         padded = padded / norm
+    else:
+        padded[0] = 1.0
 
-    # Direct state preparation via public setter
     sim.state = padded.astype(complex)
-
-
-# ── Variational Ansatz ────────────────────────────
 
 
 def _variational_layer(
@@ -156,20 +107,15 @@ def _variational_layer(
     n_qubits: int,
     offset: int = 0,
 ) -> int:
-    """Apply one variational layer (RY + RZ + CX chain).
-
-    Returns number of parameters consumed.
-    """
+    """Apply one hardware-efficient variational layer (RY + RZ + CX chain)."""
     idx = offset
     for q in range(n_qubits):
         sim.apply("RY", (q,), (float(params[idx]),))
         idx += 1
         sim.apply("RZ", (q,), (float(params[idx]),))
         idx += 1
-
     for q in range(n_qubits - 1):
         sim.apply("CX", (q, q + 1))
-
     return idx - offset
 
 
@@ -177,16 +123,7 @@ def _variational_layer(
 
 
 class QuantumKernel:
-    """Quantum kernel for kernel-based classification.
-
-    Computes kernel matrix K(x_i, x_j) = |⟨φ(x_i)|φ(x_j)⟩|²
-    using the ZZ feature map for quantum advantage.
-
-    Example:
-        >>> kernel = QuantumKernel(n_qubits=4, feature_map="zz")
-        >>> K = kernel.matrix(X_train)
-        >>> # Use with any kernel SVM
-    """
+    """Quantum kernel computing K(x_i, x_j) = |<phi(x_i)|phi(x_j)>|^2."""
 
     def __init__(
         self,
@@ -194,43 +131,28 @@ class QuantumKernel:
         feature_map: str = "zz",
         reps: int = 2,
     ) -> None:
-        """Initialize quantum kernel.
-
-        Args:
-            n_qubits: Number of qubits.
-            feature_map: "zz" or "angle".
-            reps: Feature map repetitions.
-        """
         self.n_qubits = n_qubits
         self.feature_map = feature_map
         self.reps = reps
 
     def _encode(self, x: np.ndarray) -> np.ndarray:
-        """Encode data into quantum state and return statevector."""
         sim = create_simulator(self.n_qubits)
         if self.feature_map == "zz":
             zz_feature_map(sim, x, reps=self.reps)
+        elif self.feature_map == "amplitude":
+            amplitude_encoding(sim, x)
         else:
             angle_encoding(sim, x)
         return np.asarray(sim.state)
 
     def evaluate(self, x1: np.ndarray, x2: np.ndarray) -> float:
-        """Compute kernel value K(x1, x2) = |⟨φ(x1)|φ(x2)⟩|²."""
         s1 = self._encode(x1)
         s2 = self._encode(x2)
         return float(abs(np.vdot(s1, s2)) ** 2)
 
     def matrix(self, X: np.ndarray) -> np.ndarray:
-        """Compute kernel matrix for dataset X.
-
-        Args:
-            X: Data matrix (n_samples, n_features).
-
-        Returns:
-            (n_samples, n_samples) kernel matrix.
-        """
         n = len(X)
-        K = np.zeros((n, n))
+        K = np.zeros((n, n), dtype=float)
         states = [self._encode(X[i]) for i in range(n)]
         for i in range(n):
             for j in range(i, n):
@@ -239,20 +161,12 @@ class QuantumKernel:
         return K
 
 
-# ── QML Result ────────────────────────────────────
+# ── QML Result Dataclasses ────────────────────────
 
 
 @dataclass
 class QMLResult:
-    """Result of quantum machine learning training.
-
-    Attributes:
-        accuracy: Training accuracy.
-        loss_history: Loss values during training.
-        predictions: Last predictions made.
-        n_qubits: Number of qubits used.
-        n_params: Number of trainable parameters.
-    """
+    """Result of quantum machine learning classification training."""
 
     accuracy: float
     loss_history: list[float] = field(default_factory=list)
@@ -269,16 +183,7 @@ class QMLResult:
 
 @dataclass
 class RegressionResult:
-    """Result of quantum machine learning regression training.
-
-    Attributes:
-        r2: Coefficient of determination R^2 score.
-        mse: Mean squared error on training data.
-        loss_history: Loss values during training.
-        predictions: Last predictions made.
-        n_qubits: Number of qubits used.
-        n_params: Number of trainable parameters.
-    """
+    """Result of quantum machine learning regression training."""
 
     r2: float
     mse: float
@@ -294,24 +199,24 @@ class RegressionResult:
         )
 
 
+def _parity_signs(n_qubits: int) -> np.ndarray:
+    """Returns (+1/-1) eigenvalues of Z^{otimes n} for basis indices 0 .. 2^n - 1."""
+    idx = np.arange(1 << n_qubits, dtype=np.uint32)
+    # Bitwise popcount parity
+    x = idx ^ (idx >> 16)
+    x ^= x >> 8
+    x ^= x >> 4
+    x ^= x >> 2
+    x ^= x >> 1
+    odd = (x & 1).astype(float)
+    return 1.0 - 2.0 * odd
+
+
 # ── Quantum Classifier ───────────────────────────
 
 
 class QuantumClassifier:
-    """Variational Quantum Classifier (VQC).
-
-    End-to-end quantum classification pipeline:
-      1. Feature map encodes classical data → quantum state
-      2. Variational ansatz parameterizes the classifier
-      3. Measurement gives class probabilities
-      4. Classical optimizer updates parameters
-
-    Example:
-        >>> clf = QuantumClassifier(n_qubits=4, n_layers=2)
-        >>> clf.fit(X_train, y_train, epochs=30)
-        >>> acc = clf.score(X_test, y_test)
-        >>> print(f"Accuracy: {acc:.2%}")
-    """
+    """Variational Quantum Classifier (VQC) with exact chain-rule parameter-shift gradients."""
 
     def __init__(
         self,
@@ -320,37 +225,34 @@ class QuantumClassifier:
         feature_map: str = "angle",
         learning_rate: float = 0.1,
         seed: int | None = None,
+        ansatz: str = "hardware_efficient",
+        optimizer: str = "sgd",
     ) -> None:
-        """Initialize quantum classifier.
-
-        Args:
-            n_qubits: Number of qubits.
-            n_layers: Variational ansatz depth.
-            feature_map: "angle", "zz", or "amplitude".
-            learning_rate: Gradient descent step size.
-            seed: Random seed.
-        """
         self.n_qubits = n_qubits
         self.n_layers = n_layers
         self.feature_map = feature_map
         self.learning_rate = learning_rate
+        self.seed = seed
+        self.ansatz = ansatz
+        self.optimizer = optimizer
         self.rng = np.random.default_rng(seed)
 
-        # 2 params per qubit per layer (RY + RZ)
-        self.n_params = 2 * n_qubits * n_layers
-        self.params = self.rng.uniform(
-            -math.pi, math.pi, size=self.n_params,
-        )
+        self._ansatz_preset = _get_ansatz_preset(ansatz)
+        if optimizer not in ("sgd", "adam", "spsa", "cobyla"):
+            raise ValueError(
+                f"Unknown optimizer {optimizer!r}. Supported: 'sgd', 'adam', 'spsa', 'cobyla'"
+            )
+
+        self.n_params = self._ansatz_preset.param_count(n_qubits, n_layers)
+        self.params = self.rng.uniform(-math.pi, math.pi, size=self.n_params)
         self.loss_history: list[float] = []
+        self._parity_eig = _parity_signs(n_qubits)
 
-    def _forward(self, x: np.ndarray) -> np.ndarray:
-        """Forward pass: encode data + apply ansatz + measure.
-
-        Returns probabilities for each computational basis state.
-        """
+    def _forward(self, x: np.ndarray, params: np.ndarray | None = None) -> np.ndarray:
+        """Forward pass: feature map U_phi(x) + variational ansatz V(theta)."""
+        theta = self.params if params is None else params
         sim = create_simulator(self.n_qubits)
 
-        # Feature encoding
         if self.feature_map == "zz":
             zz_feature_map(sim, x)
         elif self.feature_map == "amplitude":
@@ -358,37 +260,72 @@ class QuantumClassifier:
         else:
             angle_encoding(sim, x)
 
-        # Variational layers
-        idx = 0
-        for _ in range(self.n_layers):
-            consumed = _variational_layer(sim, self.params, self.n_qubits, idx)
-            idx += consumed
+        self._ansatz_preset.apply(sim, theta, self.n_qubits, self.n_layers)  # type: ignore[arg-type]
+        return np.asarray(np.abs(sim.state) ** 2, dtype=float)
 
-        # Measurement probabilities
-        probs = np.abs(sim.state) ** 2
-        return np.asarray(probs)
+    def _expectation_parity_z(
+        self, x: np.ndarray, params: np.ndarray | None = None
+    ) -> float:
+        """Linear Pauli parity expectation <Z^{otimes n}> = 1 - 2 * P(class=1)."""
+        probs = self._forward(x, params=params)
+        return float(np.dot(self._parity_eig, probs))
 
-    def _predict_proba(self, x: np.ndarray) -> float:
-        """Get probability of class 1 for a single sample.
+    def _predict_proba(self, x: np.ndarray, params: np.ndarray | None = None) -> float:
+        """Probability of class 1: p_1 = (1 - <Z^{otimes n}>) / 2."""
+        exp_z = self._expectation_parity_z(x, params=params)
+        return float(np.clip(0.5 * (1.0 - exp_z), 0.0, 1.0))
 
-        Uses parity of measurement: P(class=1) = Σ P(|i⟩) where popcount(i) is odd.
-        """
-        probs = self._forward(x)
-        # Parity-based class probability
-        p1 = sum(
-            probs[i] for i in range(len(probs))
-            if bin(i).count("1") % 2 == 1
-        )
-        return float(p1)
-
-    def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
+    def _loss(
+        self, X: np.ndarray, y: np.ndarray, params: np.ndarray | None = None
+    ) -> float:
         """Binary cross-entropy loss."""
         eps = 1e-12
         total = 0.0
         for xi, yi in zip(X, y, strict=False):
-            p = np.clip(self._predict_proba(xi), eps, 1 - eps)
-            total += -(yi * math.log(p) + (1 - yi) * math.log(1 - p))
+            p = float(np.clip(self._predict_proba(xi, params=params), eps, 1.0 - eps))
+            total += -(yi * math.log(p) + (1.0 - yi) * math.log(1.0 - p))
         return total / len(X)
+
+    def _compute_gradients(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """Exact chain-rule gradient: (dL / d<Z>) * (d<Z> / dtheta_j).
+
+        Applies the parameter-shift rule strictly to the linear Pauli observable
+        ``<Z^{otimes n}>(theta +/- pi/2 e_j)`` and multiplies by the exact derivative
+        ``dL_m / d<Z>_m = (y_m - p_m) / (2 * p_m * (1 - p_m))``.
+        """
+        eps = 1e-12
+        X_arr = np.asarray(X, dtype=float)
+        y_arr = np.asarray(y, dtype=float)
+        n_samples = len(X_arr)
+
+        # dL_m / d<Z>_m evaluated at current theta
+        dl_dz = np.empty(n_samples, dtype=float)
+        for m in range(n_samples):
+            p_m = float(np.clip(self._predict_proba(X_arr[m]), eps, 1.0 - eps))
+            dl_dz[m] = (y_arr[m] - p_m) / (2.0 * p_m * (1.0 - p_m))
+
+        gradients = np.zeros(self.n_params, dtype=float)
+        shift = math.pi / 2.0
+
+        for j in range(self.n_params):
+            orig = self.params[j]
+
+            self.params[j] = orig + shift
+            z_plus = np.array(
+                [self._expectation_parity_z(xi) for xi in X_arr], dtype=float
+            )
+
+            self.params[j] = orig - shift
+            z_minus = np.array(
+                [self._expectation_parity_z(xi) for xi in X_arr], dtype=float
+            )
+
+            self.params[j] = orig
+
+            dz_dtheta = 0.5 * (z_plus - z_minus)
+            gradients[j] = float(np.mean(dl_dz * dz_dtheta))
+
+        return gradients
 
     def fit(
         self,
@@ -396,55 +333,62 @@ class QuantumClassifier:
         y: np.ndarray,
         epochs: int = 30,
     ) -> QMLResult:
-        """Train the quantum classifier.
-
-        Uses parameter-shift rule for quantum-native gradients.
-
-        Args:
-            X: Training data (n_samples, n_features).
-            y: Binary labels (0 or 1).
-            epochs: Number of training epochs.
-
-        Returns:
-            QMLResult with accuracy and loss history.
-        """
-        X = np.asarray(X, dtype=float)
-        y = np.asarray(y, dtype=float)
+        """Train the quantum classifier with the configured optimizer."""
+        X_arr = np.asarray(X, dtype=float)
+        y_arr = np.asarray(y, dtype=float)
+        if len(X_arr) == 0:
+            raise ValueError("Training dataset cannot be empty.")
 
         self.loss_history = []
 
-        for epoch in range(epochs):
-            # Compute loss
-            loss = self._loss(X, y)
-            self.loss_history.append(loss)
+        if self.optimizer == "cobyla":
+            def obj_fn(theta: np.ndarray) -> float:
+                val = self._loss(X_arr, y_arr, params=theta)
+                self.loss_history.append(val)
+                return val
 
-            # Parameter-shift gradients
-            gradients = np.zeros(self.n_params)
-            shift = math.pi / 2
+            opt_res = scipy_minimize(
+                obj_fn,
+                self.params.copy(),
+                method="COBYLA",
+                options={"maxiter": max(10, epochs * max(2, self.n_params // 2)), "rhobeg": 0.5},
+            )
+            self.params = np.asarray(opt_res.x, dtype=float)
+        else:
+            m_state = np.zeros(self.n_params, dtype=float)
+            v_state = np.zeros(self.n_params, dtype=float)
+            beta1, beta2, adam_eps = 0.9, 0.999, 1e-8
 
-            for i in range(self.n_params):
-                # +shift
-                self.params[i] += shift
-                loss_plus = self._loss(X, y)
-                self.params[i] -= shift
+            for t, epoch in enumerate(range(epochs), start=1):
+                loss = self._loss(X_arr, y_arr)
+                self.loss_history.append(loss)
 
-                # -shift
-                self.params[i] -= shift
-                loss_minus = self._loss(X, y)
-                self.params[i] += shift
+                if self.optimizer == "spsa":
+                    delta = self.rng.choice([-1.0, 1.0], size=self.n_params)
+                    ck = 0.1 / ((epoch + 1) ** 0.101)
+                    ak = self.learning_rate / ((epoch + 1 + 5) ** 0.602)
+                    loss_plus = self._loss(X_arr, y_arr, params=self.params + ck * delta)
+                    loss_minus = self._loss(X_arr, y_arr, params=self.params - ck * delta)
+                    grad = (loss_plus - loss_minus) / (2.0 * ck * delta)
+                    self.params -= ak * grad
+                else:
+                    gradients = self._compute_gradients(X_arr, y_arr)
+                    if self.optimizer == "adam":
+                        m_state = beta1 * m_state + (1.0 - beta1) * gradients
+                        v_state = beta2 * v_state + (1.0 - beta2) * (gradients**2)
+                        m_hat = m_state / (1.0 - beta1**t)
+                        v_hat = v_state / (1.0 - beta2**t)
+                        self.params -= (
+                            self.learning_rate * m_hat / (np.sqrt(v_hat) + adam_eps)
+                        )
+                    else:
+                        self.params -= self.learning_rate * gradients
 
-                gradients[i] = (loss_plus - loss_minus) / 2
+                if epoch > 5 and abs(self.loss_history[-1] - self.loss_history[-2]) < 1e-6:
+                    break
 
-            # Gradient descent
-            self.params -= self.learning_rate * gradients
-
-            # Early stopping
-            if epoch > 5 and abs(self.loss_history[-1] - self.loss_history[-2]) < 1e-6:
-                break
-
-        # Final accuracy
-        predictions = self.predict(X)
-        accuracy = float(np.mean(predictions == y))
+        predictions = self.predict(X_arr)
+        accuracy = float(np.mean(predictions == y_arr))
 
         return QMLResult(
             accuracy=accuracy,
@@ -455,43 +399,15 @@ class QuantumClassifier:
         )
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        """Predict class labels for samples.
-
-        Args:
-            X: Data matrix (n_samples, n_features).
-
-        Returns:
-            Array of predicted labels (0 or 1).
-        """
-        X = np.asarray(X, dtype=float)
-        return np.array([
-            1 if self._predict_proba(xi) > 0.5 else 0
-            for xi in X
-        ])
+        X_arr = np.asarray(X, dtype=float)
+        return np.array([1 if self._predict_proba(xi) > 0.5 else 0 for xi in X_arr])
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """Predict class probabilities.
-
-        Args:
-            X: Data matrix (n_samples, n_features).
-
-        Returns:
-            Array of (P(class=0), P(class=1)) per sample.
-        """
-        X = np.asarray(X, dtype=float)
-        probas = np.array([self._predict_proba(xi) for xi in X])
-        return np.column_stack([1 - probas, probas])
+        X_arr = np.asarray(X, dtype=float)
+        probas = np.array([self._predict_proba(xi) for xi in X_arr], dtype=float)
+        return np.column_stack([1.0 - probas, probas])
 
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
-        """Compute accuracy on test data.
-
-        Args:
-            X: Test data.
-            y: True labels.
-
-        Returns:
-            Accuracy as a float.
-        """
         predictions = self.predict(X)
         return float(np.mean(predictions == np.asarray(y)))
 
@@ -500,22 +416,7 @@ class QuantumClassifier:
 
 
 class QuantumRegressor:
-    """Variational Quantum Regressor (VQR).
-
-    Continuous quantum regression pipeline:
-      1. Feature map encodes classical features into a quantum state.
-      2. Variational ansatz parameterizes the circuit.
-      3. Expectation value of Pauli-Z on readout qubit is measured.
-      4. Trainable affine parameters (weight, bias) scale expectation in [-1, 1]
-         to continuous target range: y_hat = weight * <Z> + bias.
-      5. Parameter-shift gradients minimize Mean Squared Error (MSE) loss.
-
-    Example:
-        >>> reg = QuantumRegressor(n_qubits=4, n_layers=2)
-        >>> reg.fit(X_train, y_train, epochs=30)
-        >>> preds = reg.predict(X_test)
-        >>> print(f"R2 Score: {reg.score(X_test, y_test):.4f}")
-    """
+    """Variational Quantum Regressor (VQR) reading MSB qubit q[0] <Z_0>."""
 
     def __init__(
         self,
@@ -525,36 +426,34 @@ class QuantumRegressor:
         learning_rate: float = 0.1,
         optimizer: str = "adam",
         seed: int | None = None,
+        ansatz: str = "hardware_efficient",
     ) -> None:
-        """Initialize quantum regressor.
-
-        Args:
-            n_qubits: Number of qubits.
-            n_layers: Variational ansatz depth.
-            feature_map: "angle", "zz", or "amplitude".
-            learning_rate: Gradient descent step size.
-            optimizer: "adam", "sgd", or "spsa".
-            seed: Random seed.
-        """
         self.n_qubits = n_qubits
         self.n_layers = n_layers
         self.feature_map = feature_map
         self.learning_rate = learning_rate
         self.optimizer = optimizer
         self.seed = seed
+        self.ansatz = ansatz
         self.rng = np.random.default_rng(seed)
 
-        # 2 params per qubit per layer (RY + RZ)
-        self.n_params = 2 * n_qubits * n_layers
-        self.params = self.rng.uniform(
-            -math.pi, math.pi, size=self.n_params,
-        )
+        self._ansatz_preset = _get_ansatz_preset(ansatz)
+        if optimizer not in ("sgd", "adam", "spsa", "cobyla"):
+            raise ValueError(
+                f"Unknown optimizer {optimizer!r}. Supported: 'sgd', 'adam', 'spsa', 'cobyla'"
+            )
+
+        self.n_params = self._ansatz_preset.param_count(n_qubits, n_layers)
+        self.params = self.rng.uniform(-math.pi, math.pi, size=self.n_params)
         self.weight = 1.0
         self.bias = 0.0
         self.loss_history: list[float] = []
 
-    def _expectation_z(self, x: np.ndarray) -> float:
-        """Evaluate <Z_0> expectation value for a single sample."""
+    def _expectation_z(
+        self, x: np.ndarray, params: np.ndarray | None = None
+    ) -> float:
+        """Evaluate <Z_0> on MSB qubit q[0] (``(i >> (n - 1)) & 1 == 0``)."""
+        theta = self.params if params is None else params
         sim = create_simulator(self.n_qubits)
 
         if self.feature_map == "zz":
@@ -564,56 +463,30 @@ class QuantumRegressor:
         else:
             angle_encoding(sim, x)
 
-        idx = 0
-        for _ in range(self.n_layers):
-            consumed = _variational_layer(sim, self.params, self.n_qubits, idx)
-            idx += consumed
+        self._ansatz_preset.apply(sim, theta, self.n_qubits, self.n_layers)  # type: ignore[arg-type]
 
         probs = np.abs(sim.state) ** 2
-        # <Z> on qubit 0: (+1 for bit 0 == 0, -1 for bit 0 == 1)
-        exp_z = sum(
-            probs[i] if (i & 1) == 0 else -probs[i]
-            for i in range(len(probs))
-        )
-        return float(exp_z)
+        # MSB q[0] == 0 corresponds to basis indices [0, 2^(n-1)), q[0] == 1 to [2^(n-1), 2^n)
+        half = 1 << (self.n_qubits - 1)
+        return float(np.sum(probs[:half]) - np.sum(probs[half:]))
 
     def _predict_single(self, x: np.ndarray) -> float:
-        """Predict continuous target for a single sample."""
-        exp_z = self._expectation_z(x)
-        return float(self.weight * exp_z + self.bias)
+        return float(self.weight * self._expectation_z(x) + self.bias)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        """Predict continuous targets for samples.
-
-        Args:
-            X: Data matrix (n_samples, n_features).
-
-        Returns:
-            1D array of predicted continuous values.
-        """
-        X = np.asarray(X, dtype=float)
-        return np.array([self._predict_single(xi) for xi in X], dtype=float)
+        X_arr = np.asarray(X, dtype=float)
+        return np.array([self._predict_single(xi) for xi in X_arr], dtype=float)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
-        """Compute Mean Squared Error (MSE) loss."""
         preds = self.predict(X)
         return float(np.mean((preds - y) ** 2))
 
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
-        """Compute R^2 (coefficient of determination) regression score.
-
-        Args:
-            X: Test data.
-            y: True continuous targets.
-
-        Returns:
-            R^2 score as a float (best possible is 1.0).
-        """
-        X = np.asarray(X, dtype=float)
-        y = np.asarray(y, dtype=float)
-        preds = self.predict(X)
-        ss_res = float(np.sum((y - preds) ** 2))
-        ss_tot = float(np.sum((y - np.mean(y)) ** 2))
+        X_arr = np.asarray(X, dtype=float)
+        y_arr = np.asarray(y, dtype=float)
+        preds = self.predict(X_arr)
+        ss_res = float(np.sum((y_arr - preds) ** 2))
+        ss_tot = float(np.sum((y_arr - np.mean(y_arr)) ** 2))
         if ss_tot < 1e-12:
             return 1.0 if ss_res < 1e-12 else 0.0
         return float(1.0 - ss_res / ss_tot)
@@ -624,113 +497,146 @@ class QuantumRegressor:
         y: np.ndarray,
         epochs: int = 30,
     ) -> RegressionResult:
-        """Train the quantum regressor using parameter-shift rule and MSE loss.
-
-        Args:
-            X: Training features (n_samples, n_features).
-            y: Continuous target values.
-            epochs: Number of training epochs.
-
-        Returns:
-            RegressionResult with R^2, MSE, and loss history.
-        """
-        X = np.asarray(X, dtype=float)
-        y = np.asarray(y, dtype=float)
-        n_samples = len(X)
-        if n_samples == 0:
+        """Train the quantum regressor using parameter-shift / SPSA / COBYLA."""
+        X_arr = np.asarray(X, dtype=float)
+        y_arr = np.asarray(y, dtype=float)
+        if len(X_arr) == 0:
             raise ValueError("Training dataset cannot be empty.")
 
-        # Data-driven affine initialization
-        y_mean = float(np.mean(y))
-        y_std = float(np.std(y))
+        y_mean = float(np.mean(y_arr))
+        y_std = float(np.std(y_arr))
         self.bias = y_mean
         self.weight = y_std if y_std > 1e-4 else 1.0
-
         self.loss_history = []
 
-        # Adam state
-        m_params = np.zeros(self.n_params)
-        v_params = np.zeros(self.n_params)
-        m_w, v_w = 0.0, 0.0
-        m_b, v_b = 0.0, 0.0
-        beta1, beta2, eps = 0.9, 0.999, 1e-8
+        if self.optimizer == "cobyla":
+            init_vec = np.concatenate([self.params, [self.weight, self.bias]])
 
-        shift = math.pi / 2
+            def cobyla_obj(vec: np.ndarray) -> float:
+                th = vec[:-2]
+                w = float(vec[-2])
+                b = float(vec[-1])
+                exp_v = np.array(
+                    [self._expectation_z(xi, params=th) for xi in X_arr], dtype=float
+                )
+                val = float(np.mean((w * exp_v + b - y_arr) ** 2))
+                self.loss_history.append(val)
+                return val
 
-        for t, epoch in enumerate(range(epochs), start=1):
-            # Current predictions and expectation values
-            exp_vals = np.array([self._expectation_z(xi) for xi in X])
-            preds = self.weight * exp_vals + self.bias
-            residuals = preds - y
-            loss = float(np.mean(residuals ** 2))
-            self.loss_history.append(loss)
+            opt_res = scipy_minimize(
+                cobyla_obj,
+                init_vec,
+                method="COBYLA",
+                options={"maxiter": max(15, epochs * max(2, self.n_params // 2)), "rhobeg": 0.4},
+            )
+            self.params = np.asarray(opt_res.x[:-2], dtype=float)
+            self.weight = float(opt_res.x[-2])
+            self.bias = float(opt_res.x[-1])
+        else:
+            m_params = np.zeros(self.n_params, dtype=float)
+            v_params = np.zeros(self.n_params, dtype=float)
+            m_w, v_w = 0.0, 0.0
+            m_b, v_b = 0.0, 0.0
+            beta1, beta2, eps = 0.9, 0.999, 1e-8
+            shift = math.pi / 2.0
 
-            grad_b = float(2.0 * np.mean(residuals))
-            grad_w = float(2.0 * np.mean(residuals * exp_vals))
+            for t, epoch in enumerate(range(epochs), start=1):
+                exp_vals = np.array(
+                    [self._expectation_z(xi) for xi in X_arr], dtype=float
+                )
+                preds = self.weight * exp_vals + self.bias
+                residuals = preds - y_arr
+                loss = float(np.mean(residuals**2))
+                self.loss_history.append(loss)
 
-            if self.optimizer == "spsa":
-                delta = self.rng.choice([-1.0, 1.0], size=self.n_params)
-                ck = 0.1 / (epoch + 1) ** 0.101
-                ak = self.learning_rate / (epoch + 1 + 10) ** 0.602
+                grad_b = float(2.0 * np.mean(residuals))
+                grad_w = float(2.0 * np.mean(residuals * exp_vals))
 
-                self.params += ck * delta
-                preds_plus = np.array([
-                    self.weight * self._expectation_z(xi) + self.bias for xi in X
-                ])
-                loss_plus = float(np.mean((preds_plus - y) ** 2))
+                if self.optimizer == "spsa":
+                    delta = self.rng.choice([-1.0, 1.0], size=self.n_params)
+                    ck = 0.1 / ((epoch + 1) ** 0.101)
+                    ak = self.learning_rate / ((epoch + 1 + 10) ** 0.602)
 
-                self.params -= 2 * ck * delta
-                preds_minus = np.array([
-                    self.weight * self._expectation_z(xi) + self.bias for xi in X
-                ])
-                loss_minus = float(np.mean((preds_minus - y) ** 2))
+                    preds_plus = np.array(
+                        [
+                            self.weight
+                            * self._expectation_z(xi, params=self.params + ck * delta)
+                            + self.bias
+                            for xi in X_arr
+                        ],
+                        dtype=float,
+                    )
+                    loss_plus = float(np.mean((preds_plus - y_arr) ** 2))
 
-                self.params += ck * delta
-                grad_spsa = (loss_plus - loss_minus) / (2.0 * ck * delta)
-                self.params -= ak * grad_spsa
-                self.weight -= ak * grad_w
-                self.bias -= ak * grad_b
-            else:
-                grad_params = np.zeros(self.n_params)
-                for j in range(self.n_params):
-                    self.params[j] += shift
-                    exp_plus = np.array([self._expectation_z(xi) for xi in X])
-                    self.params[j] -= 2 * shift
-                    exp_minus = np.array([self._expectation_z(xi) for xi in X])
-                    self.params[j] += shift
+                    preds_minus = np.array(
+                        [
+                            self.weight
+                            * self._expectation_z(xi, params=self.params - ck * delta)
+                            + self.bias
+                            for xi in X_arr
+                        ],
+                        dtype=float,
+                    )
+                    loss_minus = float(np.mean((preds_minus - y_arr) ** 2))
 
-                    d_exp = (exp_plus - exp_minus) / 2.0
-                    grad_params[j] = float(np.mean(2.0 * residuals * self.weight * d_exp))
-
-                if self.optimizer == "adam":
-                    m_params = beta1 * m_params + (1 - beta1) * grad_params
-                    v_params = beta2 * v_params + (1 - beta2) * (grad_params ** 2)
-                    m_hat = m_params / (1.0 - beta1 ** t)
-                    v_hat = v_params / (1.0 - beta2 ** t)
-                    self.params -= self.learning_rate * m_hat / (np.sqrt(v_hat) + eps)
-
-                    m_w = beta1 * m_w + (1 - beta1) * grad_w
-                    v_w = beta2 * v_w + (1 - beta2) * (grad_w ** 2)
-                    mw_hat = m_w / (1.0 - beta1 ** t)
-                    vw_hat = v_w / (1.0 - beta2 ** t)
-                    self.weight -= self.learning_rate * mw_hat / (math.sqrt(vw_hat) + eps)
-
-                    m_b = beta1 * m_b + (1 - beta1) * grad_b
-                    v_b = beta2 * v_b + (1 - beta2) * (grad_b ** 2)
-                    mb_hat = m_b / (1.0 - beta1 ** t)
-                    vb_hat = v_b / (1.0 - beta2 ** t)
-                    self.bias -= self.learning_rate * mb_hat / (math.sqrt(vb_hat) + eps)
+                    grad_spsa = (loss_plus - loss_minus) / (2.0 * ck * delta)
+                    self.params -= ak * grad_spsa
+                    self.weight -= ak * grad_w
+                    self.bias -= ak * grad_b
                 else:
-                    self.params -= self.learning_rate * grad_params
-                    self.weight -= self.learning_rate * grad_w
-                    self.bias -= self.learning_rate * grad_b
+                    grad_params = np.zeros(self.n_params, dtype=float)
+                    for j in range(self.n_params):
+                        orig = self.params[j]
+                        self.params[j] = orig + shift
+                        exp_plus = np.array(
+                            [self._expectation_z(xi) for xi in X_arr], dtype=float
+                        )
+                        self.params[j] = orig - shift
+                        exp_minus = np.array(
+                            [self._expectation_z(xi) for xi in X_arr], dtype=float
+                        )
+                        self.params[j] = orig
 
-            if epoch > 5 and abs(self.loss_history[-1] - self.loss_history[-2]) < 1e-7:
-                break
+                        d_exp = 0.5 * (exp_plus - exp_minus)
+                        grad_params[j] = float(
+                            np.mean(2.0 * residuals * self.weight * d_exp)
+                        )
 
-        final_preds = self.predict(X)
-        final_mse = float(np.mean((final_preds - y) ** 2))
-        final_r2 = self.score(X, y)
+                    if self.optimizer == "adam":
+                        m_params = beta1 * m_params + (1.0 - beta1) * grad_params
+                        v_params = beta2 * v_params + (1.0 - beta2) * (grad_params**2)
+                        m_hat = m_params / (1.0 - beta1**t)
+                        v_hat = v_params / (1.0 - beta2**t)
+                        self.params -= (
+                            self.learning_rate * m_hat / (np.sqrt(v_hat) + eps)
+                        )
+
+                        m_w = beta1 * m_w + (1.0 - beta1) * grad_w
+                        v_w = beta2 * v_w + (1.0 - beta2) * (grad_w**2)
+                        mw_hat = m_w / (1.0 - beta1**t)
+                        vw_hat = v_w / (1.0 - beta2**t)
+                        self.weight -= (
+                            self.learning_rate * mw_hat / (math.sqrt(vw_hat) + eps)
+                        )
+
+                        m_b = beta1 * m_b + (1.0 - beta1) * grad_b
+                        v_b = beta2 * v_b + (1.0 - beta2) * (grad_b**2)
+                        mb_hat = m_b / (1.0 - beta1**t)
+                        vb_hat = v_b / (1.0 - beta2**t)
+                        self.bias -= (
+                            self.learning_rate * mb_hat / (math.sqrt(vb_hat) + eps)
+                        )
+                    else:
+                        self.params -= self.learning_rate * grad_params
+                        self.weight -= self.learning_rate * grad_w
+                        self.bias -= self.learning_rate * grad_b
+
+                if epoch > 5 and abs(self.loss_history[-1] - self.loss_history[-2]) < 1e-7:
+                    break
+
+        final_preds = self.predict(X_arr)
+        final_mse = float(np.mean((final_preds - y_arr) ** 2))
+        final_r2 = self.score(X_arr, y_arr)
 
         return RegressionResult(
             r2=final_r2,

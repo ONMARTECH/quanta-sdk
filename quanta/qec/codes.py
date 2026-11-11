@@ -1,60 +1,70 @@
 """
-quanta.qec.codes — Quantum error correction codes.
+quanta.qec.codes -- Quantum Error Correction code definitions.
 
-
-Supported codes:
-  - RepetitionCode [[n,1,n]]: N-repetition code
-
-Notation: [[n, k, d]]
-  n = physical qubits
-
-Example:
-    >>> from quanta.qec.codes import BitFlipCode
-    >>> code = BitFlipCode()
-    >>> encoded = code.encode()     # Encoding circuit
-    >>> print(code.info)
+Implements classic QEC codes with complete stabilizer syndrome extraction
+and single-error Pauli recovery:
+  - BitFlipCode   [[3, 1, 1]] -- Corrects 1 X (bit-flip) error
+  - PhaseFlipCode [[3, 1, 1]] -- Corrects 1 Z (phase-flip) error
+  - SteaneCode    [[7, 1, 3]] -- CSS Hamming-7 code: corrects arbitrary single X/Y/Z
+  - ShorCode      [[9, 1, 3]] -- Degenerate 9-qubit code: 6 ZZ + 2 XXXXXX checks
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 from quanta.core.circuit import CircuitDefinition, circuit
-from quanta.core.gates import CX, H
+from quanta.core.gates import CCX, CX, H, X, Y, Z
 from quanta.core.measure import measure
 
-# ── Public API ──
-__all__ = ["QECCode", "BitFlipCode", "PhaseFlipCode", "SteaneCode", "ShorCode",
-           "correct_error"]
+__all__ = [
+    "CodeInfo",
+    "CodeParameters",
+    "QECCode",
+    "BitFlipCode",
+    "PhaseFlipCode",
+    "SteaneCode",
+    "ShorCode",
+    "correct_error",
+]
+
 
 @dataclass(frozen=True)
 class CodeInfo:
-    """Error correction code info.
-
-    Attributes:
-        name: Code name.
-        d: Code distance.
-    """
+    """[[n, k, d]] metadata of a QEC code."""
 
     name: str
-    n: int  # physical qubits
-    k: int  # logical qubits
-    d: int  # distance
+    n: int
+    k: int
+    d: int
 
     @property
     def correctable_errors(self) -> int:
-        """Number of correctable errors: ⌊(d-1)/2⌋."""
+        """Maximum guaranteed correctable errors: floor((d-1)/2)."""
         return (self.d - 1) // 2
 
     def __repr__(self) -> str:
-        return (
-            f"[[{self.n},{self.k},{self.d}]] {self.name} — "
-            f"{self.correctable_errors} errors correctable"
-        )
+        return f"{self.name} [[{self.n},{self.k},{self.d}]]"
+
+
+@dataclass(frozen=True)
+class CodeParameters:
+    """[[n, k, d]] parameters of a QEC code."""
+
+    n: int
+    k: int
+    d: int
+
+    @property
+    def correctable_errors(self) -> int:
+        return (self.d - 1) // 2
+
+    def __repr__(self) -> str:
+        return f"[[{self.n}, {self.k}, {self.d}]]"
+
 
 class QECCode:
-    """Base class for error correction codes."""
+    """Base class for quantum error correction codes."""
 
     @property
     def info(self) -> CodeInfo:
@@ -64,116 +74,72 @@ class QECCode:
         raise NotImplementedError
 
     def decode(self) -> CircuitDefinition:
-        """Decoding circuit (inverse of encode)."""
         raise NotImplementedError
 
     def syndrome_measure(self) -> CircuitDefinition:
         raise NotImplementedError
 
     def lookup_table(self) -> dict[str, str]:
-        """Maps syndrome bitstring to error location.
-
-        Returns:
-            Dict mapping syndrome → correction description.
-        """
         raise NotImplementedError
 
 
 def correct_error(code: QECCode, syndrome: str) -> str:
-    """Given a syndrome measurement result, returns correction action.
-
-    Args:
-        code: The QEC code used.
-        syndrome: Measured syndrome bitstring.
-
-    Returns:
-        Description of correction to apply.
-
-    Example:
-        >>> code = BitFlipCode()
-        >>> correct_error(code, "11")
-        'Apply X on qubit 0'
-    """
-    table = code.lookup_table()
-    return table.get(syndrome, "No error detected")
+    """Looks up error diagnosis string from a QECCode syndrome table."""
+    return code.lookup_table().get(syndrome, "No error detected")
 
 
 class BitFlipCode(QECCode):
-    """[[3,1,3]] Bit-flip repetition code.
+    """[[3, 1, 3]] 3-qubit bit-flip code (Z0Z1, Z0Z2 checks; bit-flip distance 3)."""
 
-    Encodes 1 logical qubit into 3 physical qubits.
-    Distance d=3 → can correct ⌊(3-1)/2⌋ = 1 bit-flip error.
-
-    Encoding: |ψ⟩ = α|0⟩ + β|1⟩  →  α|000⟩ + β|111⟩
-    """
+    params = CodeParameters(n=3, k=1, d=3)
 
     @property
     def info(self) -> CodeInfo:
         return CodeInfo("BitFlip", n=3, k=1, d=3)
 
     def encode(self) -> CircuitDefinition:
-        """Bit-flip encoding circuit.
-
-        q[1], q[2]: Ancilla (redundancy) qubits
-
-        Circuit: q[0]──●──●──
-                     │  │
-               q[1]──X──│──
-                        │
-               q[2]─────X──
-        """
         @circuit(qubits=3)
-        def encode_bitflip(q: Any) -> Any:
+        def bitflip_encode(q):
             CX(q[0], q[1])
             CX(q[0], q[2])
-        return encode_bitflip
+            return measure(q)
 
-    def decode(self) -> CircuitDefinition:
-        """Bit-flip decoding circuit (inverse of encode)."""
-        @circuit(qubits=3)
-        def decode_bitflip(q: Any) -> Any:
-            CX(q[0], q[2])
-            CX(q[0], q[1])
-        return decode_bitflip
+        return bitflip_encode
 
     def syndrome_measure(self) -> CircuitDefinition:
-        """Syndrome measurement: error detection with 2 ancilla qubits.
-
-        q[0-2]: Code qubits
-        q[3-4]: Syndrome qubits
-
-          00 → no error
-          01 → error on q[2]
-          10 → error on q[1]
-          11 → error on q[0]
-        """
         @circuit(qubits=5)
-        def syndrome_bitflip(q: Any) -> Any:
-            # Syndrome 1: q[0] XOR q[1]
+        def bitflip_syndrome(q):
             CX(q[0], q[3])
             CX(q[1], q[3])
-            # Syndrome 2: q[0] XOR q[2]
             CX(q[0], q[4])
             CX(q[2], q[4])
             return measure(q[3], q[4])
-        return syndrome_bitflip
+
+        return bitflip_syndrome
+
+    def decode(self) -> CircuitDefinition:
+        @circuit(qubits=3)
+        def bitflip_decode(q):
+            CX(q[0], q[1])
+            CX(q[0], q[2])
+            CCX(q[1], q[2], q[0])
+            return measure(q[0])
+
+        return bitflip_decode
 
     def lookup_table(self) -> dict[str, str]:
         return {
             "00": "No error detected",
-            "01": "Apply X on qubit 2",
-            "10": "Apply X on qubit 1",
-            "11": "Apply X on qubit 0",
+            "11": "X on qubit 0",
+            "10": "X on qubit 1",
+            "01": "X on qubit 2",
         }
 
+
 class PhaseFlipCode(QECCode):
-    """[[3,1,3]] Phase-flip repetition code.
+    """[[3, 1, 3]] 3-qubit phase-flip code (X0X1, X0X2 checks; phase-flip distance 3)."""
 
-    Encodes 1 logical qubit into 3 physical qubits in the Hadamard basis.
-    Distance d=3 → can correct 1 phase-flip error.
-
-    Encoding: |ψ⟩ → α|+++⟩ + β|---⟩
-    """
+    params = CodeParameters(n=3, k=1, d=3)
 
     @property
     def info(self) -> CodeInfo:
@@ -181,150 +147,474 @@ class PhaseFlipCode(QECCode):
 
     def encode(self) -> CircuitDefinition:
         @circuit(qubits=3)
-        def encode_phaseflip(q: Any) -> Any:
+        def phaseflip_encode(q):
             CX(q[0], q[1])
             CX(q[0], q[2])
             H(q[0])
             H(q[1])
             H(q[2])
-        return encode_phaseflip
+            return measure(q)
+
+        return phaseflip_encode
+
+    def syndrome_measure(self) -> CircuitDefinition:
+        """Measures X0X1 on q[3] and X0X2 on q[4]."""
+
+        @circuit(qubits=5)
+        def phaseflip_syndrome(q):
+            H(q[3])
+            H(q[4])
+            CX(q[3], q[0])
+            CX(q[3], q[1])
+            CX(q[4], q[0])
+            CX(q[4], q[2])
+            H(q[3])
+            H(q[4])
+            return measure(q[3], q[4])
+
+        return phaseflip_syndrome
 
     def decode(self) -> CircuitDefinition:
-        """Phase-flip decoding circuit."""
         @circuit(qubits=3)
-        def decode_phaseflip(q: Any) -> Any:
+        def phaseflip_decode(q):
             H(q[0])
             H(q[1])
             H(q[2])
-            CX(q[0], q[2])
             CX(q[0], q[1])
-        return decode_phaseflip
+            CX(q[0], q[2])
+            CCX(q[1], q[2], q[0])
+            return measure(q[0])
+
+        return phaseflip_decode
 
     def lookup_table(self) -> dict[str, str]:
         return {
             "00": "No error detected",
-            "01": "Apply Z on qubit 2",
-            "10": "Apply Z on qubit 1",
-            "11": "Apply Z on qubit 0",
+            "11": "Z on qubit 0",
+            "10": "Z on qubit 1",
+            "01": "Z on qubit 2",
         }
 
+
 class SteaneCode(QECCode):
-    """[[7,1,3]] Steane code.
+    """[[7, 1, 3]] Steane CSS code based on the [7, 4, 3] Hamming code H_7.
 
-
-      X: X₁X₃X₅X₇, X₂X₃X₆X₇, X₄X₅X₆X₇
-      Z: Z₁Z₃Z₅Z₇, Z₂Z₃Z₆Z₇, Z₄Z₅Z₆Z₇
+    Corrects ALL 21 single-qubit Pauli errors (X, Y, Z on q[0]..q[6]).
     """
+
+    params = CodeParameters(n=7, k=1, d=3)
 
     @property
     def info(self) -> CodeInfo:
         return CodeInfo("Steane", n=7, k=1, d=3)
 
     def encode(self) -> CircuitDefinition:
-        """Steane code encoding circuit.
-
-        q[1-6]: Ancilla (redundancy) qubits
-
-        """
         @circuit(qubits=7)
-        def encode_steane(q: Any) -> Any:
+        def steane_encode(q):
+            CX(q[0], q[1])
+            CX(q[0], q[2])
             H(q[3])
             H(q[4])
             H(q[5])
-
-            CX(q[0], q[3])
-            CX(q[0], q[4])
-            CX(q[0], q[5])
-
+            CX(q[3], q[0])
             CX(q[3], q[1])
             CX(q[3], q[6])
+            CX(q[4], q[0])
             CX(q[4], q[2])
             CX(q[4], q[6])
             CX(q[5], q[1])
             CX(q[5], q[2])
-        return encode_steane
+            CX(q[5], q[6])
+            return measure(q)
+
+        return steane_encode
+
+    def decode(self) -> CircuitDefinition:
+        @circuit(qubits=7)
+        def steane_decode(q):
+            CX(q[5], q[6])
+            CX(q[5], q[2])
+            CX(q[5], q[1])
+            CX(q[4], q[6])
+            CX(q[4], q[2])
+            CX(q[4], q[0])
+            CX(q[3], q[6])
+            CX(q[3], q[1])
+            CX(q[3], q[0])
+            H(q[3])
+            H(q[4])
+            H(q[5])
+            CX(q[0], q[2])
+            CX(q[0], q[1])
+            return measure(q[0])
+
+        return steane_decode
 
     def syndrome_measure(self) -> CircuitDefinition:
-        """Steane syndrome measurement: 6 syndrome qubits (3 X + 3 Z).
-
-        13 qubit circuit: 7 code + 6 syndrome.
-        """
         @circuit(qubits=13)
-        def syndrome_steane(q: Any) -> Any:
-            for s, targets in [(7, [0, 2, 4, 6]), (8, [1, 2, 5, 6]), (9, [3, 4, 5, 6])]:
-                for t in targets:
-                    CX(q[t], q[s])
+        def steane_syndrome(q):
+            for idx in [0, 2, 4, 6]:
+                CX(q[idx], q[7])
+            for idx in [1, 2, 5, 6]:
+                CX(q[idx], q[8])
+            for idx in [3, 4, 5, 6]:
+                CX(q[idx], q[9])
 
-            for s, targets in [(10, [0, 2, 4, 6]), (11, [1, 2, 5, 6]), (12, [3, 4, 5, 6])]:
-                H(q[s])
-                for t in targets:
-                    CX(q[s], q[t])
-                H(q[s])
+            H(q[10])
+            H(q[11])
+            H(q[12])
+            for idx in [0, 2, 4, 6]:
+                CX(q[10], q[idx])
+            for idx in [1, 2, 5, 6]:
+                CX(q[11], q[idx])
+            for idx in [3, 4, 5, 6]:
+                CX(q[12], q[idx])
+            H(q[10])
+            H(q[11])
+            H(q[12])
 
             return measure(q[7], q[8], q[9], q[10], q[11], q[12])
-        return syndrome_steane
+
+        return steane_syndrome
+
+    def decode_syndrome(self, syndrome: str) -> dict[int, str]:
+        """Maps 6-bit (or 3-bit bit-flip) Steane syndrome to {qubit: Pauli} recovery."""
+        s = syndrome.strip()
+        if len(s) == 3:
+            loc = int(s[0]) + 2 * int(s[1]) + 4 * int(s[2])
+            return {} if loc == 0 else {loc - 1: "X"}
+        if len(s) != 6 or any(ch not in "01" for ch in s):
+            raise ValueError(f"Steane syndrome must be 6 bits (or 3 bits), got '{syndrome}'")
+
+        x_loc = int(s[0]) + 2 * int(s[1]) + 4 * int(s[2])
+        z_loc = int(s[3]) + 2 * int(s[4]) + 4 * int(s[5])
+
+        if x_loc == 0 and z_loc == 0:
+            return {}
+        if x_loc > 0 and z_loc == 0:
+            return {x_loc - 1: "X"}
+        if x_loc == 0 and z_loc > 0:
+            return {z_loc - 1: "Z"}
+        if x_loc == z_loc:
+            return {x_loc - 1: "Y"}
+        return {x_loc - 1: "X", z_loc - 1: "Z"}
+
+    def lookup_table(self) -> dict[str, str]:
+        table: dict[str, str] = {
+            "000": "No error detected",
+            "000000": "No error detected",
+        }
+        for loc in range(1, 8):
+            b_str = f"{loc & 1}{(loc >> 1) & 1}{(loc >> 2) & 1}"
+            table[b_str] = f"X on qubit {loc - 1}"
+
+        for x_loc in range(8):
+            sx = f"{x_loc & 1}{(x_loc >> 1) & 1}{(x_loc >> 2) & 1}"
+            for z_loc in range(8):
+                sz = f"{z_loc & 1}{(z_loc >> 1) & 1}{(z_loc >> 2) & 1}"
+                key = sx + sz
+                if x_loc == 0 and z_loc == 0:
+                    table[key] = "No error detected"
+                elif x_loc > 0 and z_loc == 0:
+                    table[key] = f"X on qubit {x_loc - 1}"
+                elif x_loc == 0 and z_loc > 0:
+                    table[key] = f"Z on qubit {z_loc - 1}"
+                elif x_loc == z_loc:
+                    table[key] = f"Y on qubit {x_loc - 1}"
+                else:
+                    table[key] = f"X on qubit {x_loc - 1} and Z on qubit {z_loc - 1}"
+        return table
+
+    def verify_single_pauli_recovery(self, pauli: str, qubit: int) -> float:
+        """End-to-end statevector verification on Steane [[7, 1, 3]] across all 21 Paulis."""
+        import numpy as np
+
+        from quanta.simulator.statevector import StateVectorSimulator
+
+        sim = StateVectorSimulator(13)
+        sim.apply("RY", (0,), (1.1,))
+        sim.apply("RZ", (0,), (0.7,))
+
+        ref = StateVectorSimulator(1)
+        ref.apply("RY", (0,), (1.1,))
+        ref.apply("RZ", (0,), (0.7,))
+        psi_target = ref.state.copy()
+
+        # Encode
+        sim.apply("CX", (0, 1))
+        sim.apply("CX", (0, 2))
+        for hq in (3, 4, 5):
+            sim.apply("H", (hq,))
+        for tgt in (0, 1, 6):
+            sim.apply("CX", (3, tgt))
+        for tgt in (0, 2, 6):
+            sim.apply("CX", (4, tgt))
+        for tgt in (1, 2, 6):
+            sim.apply("CX", (5, tgt))
+
+        # Inject single-qubit Pauli error
+        p_up = pauli.upper()
+        if p_up in ("X", "Y", "Z"):
+            sim.apply(p_up, (qubit,))
+
+        # Measure 6 CSS syndromes onto q[7..12]
+        for idx in (0, 2, 4, 6):
+            sim.apply("CX", (idx, 7))
+        for idx in (1, 2, 5, 6):
+            sim.apply("CX", (idx, 8))
+        for idx in (3, 4, 5, 6):
+            sim.apply("CX", (idx, 9))
+
+        for anc in (10, 11, 12):
+            sim.apply("H", (anc,))
+        for idx in (0, 2, 4, 6):
+            sim.apply("CX", (10, idx))
+        for idx in (1, 2, 5, 6):
+            sim.apply("CX", (11, idx))
+        for idx in (3, 4, 5, 6):
+            sim.apply("CX", (12, idx))
+        for anc in (10, 11, 12):
+            sim.apply("H", (anc,))
+
+        probs = sim.probabilities()
+        nz_idx = int(np.argmax(probs))
+        syndrome_6 = format(nz_idx, "013b")[7:13]
+
+        recovery = self.decode_syndrome(syndrome_6)
+        for q_rec, gate_name in recovery.items():
+            sim.apply(gate_name, (q_rec,))
+
+        # Unencode
+        for tgt in (6, 2, 1):
+            sim.apply("CX", (5, tgt))
+        for tgt in (6, 2, 0):
+            sim.apply("CX", (4, tgt))
+        for tgt in (6, 1, 0):
+            sim.apply("CX", (3, tgt))
+        for hq in (3, 4, 5):
+            sim.apply("H", (hq,))
+        sim.apply("CX", (0, 2))
+        sim.apply("CX", (0, 1))
+
+        sv_2d = sim.state.reshape(2, 1 << 12)
+        rho_0 = sv_2d @ sv_2d.conj().T
+        return float(np.real(psi_target.conj() @ rho_0 @ psi_target))
 
 
 class ShorCode(QECCode):
-    """[[9,1,3]] Shor code.
+    """[[9, 1, 3]] Shor 9-qubit degenerate stabilizer code (6 ZZ + 2 XXXXXX checks)."""
 
-    First quantum error correction code. Protects against
-    arbitrary single-qubit errors (bit-flip + phase-flip).
-
-    Combines 3-qubit bit-flip and 3-qubit phase-flip repetition codes.
-    Encoding: |ψ⟩ = α|0⟩ + β|1⟩ →
-        α(|000⟩+|111⟩)(|000⟩+|111⟩)(|000⟩+|111⟩)/2√2 +
-        β(|000⟩-|111⟩)(|000⟩-|111⟩)(|000⟩-|111⟩)/2√2
-    """
+    params = CodeParameters(n=9, k=1, d=3)
 
     @property
     def info(self) -> CodeInfo:
         return CodeInfo("Shor", n=9, k=1, d=3)
 
     def encode(self) -> CircuitDefinition:
-        """Shor 9-qubit encoding circuit."""
         @circuit(qubits=9)
-        def encode_shor(q: Any) -> Any:
-            # Phase-flip encoding (outer): q[0] → q[0], q[3], q[6]
+        def shor_encode(q):
             CX(q[0], q[3])
             CX(q[0], q[6])
             H(q[0])
             H(q[3])
             H(q[6])
-            # Bit-flip encoding (inner): each group of 3
             CX(q[0], q[1])
             CX(q[0], q[2])
             CX(q[3], q[4])
             CX(q[3], q[5])
             CX(q[6], q[7])
             CX(q[6], q[8])
-        return encode_shor
+            return measure(q)
+
+        return shor_encode
+
+    def syndrome_measure(self) -> CircuitDefinition:
+        """17-qubit circuit (9 data + 8 ancillas) extracting full 8-bit syndrome."""
+
+        @circuit(qubits=17)
+        def shor_syndrome(q):
+            CX(q[0], q[9])
+            CX(q[1], q[9])
+            CX(q[0], q[10])
+            CX(q[2], q[10])
+            CX(q[3], q[11])
+            CX(q[4], q[11])
+            CX(q[3], q[12])
+            CX(q[5], q[12])
+            CX(q[6], q[13])
+            CX(q[7], q[13])
+            CX(q[6], q[14])
+            CX(q[8], q[14])
+
+            H(q[15])
+            H(q[16])
+            for idx in (0, 1, 2, 3, 4, 5):
+                CX(q[15], q[idx])
+            for idx in (0, 1, 2, 6, 7, 8):
+                CX(q[16], q[idx])
+            H(q[15])
+            H(q[16])
+
+            return measure(q[9], q[10], q[11], q[12], q[13], q[14], q[15], q[16])
+
+        return shor_syndrome
 
     def decode(self) -> CircuitDefinition:
-        """Shor 9-qubit decoding circuit (inverse of encode)."""
         @circuit(qubits=9)
-        def decode_shor(q: Any) -> Any:
-            # Reverse bit-flip
-            CX(q[6], q[8])
-            CX(q[6], q[7])
-            CX(q[3], q[5])
-            CX(q[3], q[4])
-            CX(q[0], q[2])
+        def shor_decode(q):
             CX(q[0], q[1])
-            # Reverse phase-flip
-            H(q[6])
-            H(q[3])
+            CX(q[0], q[2])
+            CCX(q[1], q[2], q[0])
+
+            CX(q[3], q[4])
+            CX(q[3], q[5])
+            CCX(q[4], q[5], q[3])
+
+            CX(q[6], q[7])
+            CX(q[6], q[8])
+            CCX(q[7], q[8], q[6])
+
             H(q[0])
-            CX(q[0], q[6])
+            H(q[3])
+            H(q[6])
+
             CX(q[0], q[3])
-        return decode_shor
+            CX(q[0], q[6])
+            CCX(q[3], q[6], q[0])
+            return measure(q[0])
+
+        return shor_decode
+
+    def decode_syndrome(self, syndrome: str) -> dict[int, str]:
+        """Decodes an 8-bit Shor stabilizer syndrome into {qubit: Pauli} recovery."""
+        s = syndrome.strip()
+        if len(s) != 8 or any(ch not in "01" for ch in s):
+            raise ValueError(f"Shor syndrome must be an 8-bit binary string, got '{syndrome}'")
+
+        pair_to_offset = {"11": 0, "10": 1, "01": 2}
+        x_qubits: list[int] = []
+        for blk in range(3):
+            bits = s[2 * blk : 2 * blk + 2]
+            if bits in pair_to_offset:
+                x_qubits.append(3 * blk + pair_to_offset[bits])
+
+        phase_bits = s[6:8]
+        phase_to_block = {"11": 0, "10": 1, "01": 2}
+        z_block = phase_to_block.get(phase_bits)
+
+        recovery: dict[int, str] = {}
+        for q_idx in x_qubits:
+            recovery[q_idx] = "X"
+
+        if z_block is not None:
+            same_block_q = [q_idx for q_idx in x_qubits if q_idx // 3 == z_block]
+            if same_block_q:
+                recovery[same_block_q[0]] = "Y"
+            else:
+                recovery[3 * z_block] = "Z"
+
+        return recovery
 
     def lookup_table(self) -> dict[str, str]:
-        return {
+        """Complete 8-bit stabilizer lookup table (+ legacy 4-bit keys)."""
+        table: dict[str, str] = {
             "0000": "No error detected",
-            "0001": "Apply X on qubit 8",
-            "0010": "Apply X on qubit 7",
-            "0011": "Apply X on qubit 6",
-            "0100": "Apply X on qubit 5",
-            "1000": "Apply X on qubit 2",
+            "0001": "X on qubit 8",
+            "0010": "X on qubit 7",
+            "0011": "X on qubit 6",
+            "0100": "X on qubit 5",
+            "1000": "X on qubit 4",
+            "1100": "X on qubit 3",
+            "00000000": "No error detected",
         }
+
+        pair_for_offset = {0: "11", 1: "10", 2: "01"}
+        phase_for_block = {0: "11", 1: "10", 2: "01"}
+
+        for q_idx in range(9):
+            blk, off = divmod(q_idx, 3)
+            zz_bits = ["00", "00", "00"]
+            zz_bits[blk] = pair_for_offset[off]
+            zz_prefix = "".join(zz_bits)
+
+            table[zz_prefix + "00"] = f"X on qubit {q_idx}"
+            table[zz_prefix + phase_for_block[blk]] = f"Y on qubit {q_idx}"
+
+        for blk, p_bits in phase_for_block.items():
+            q0 = 3 * blk
+            table["000000" + p_bits] = (
+                f"Z in block {blk} (correct with Z on qubit {q0})"
+            )
+
+        return table
+
+    def verify_single_pauli_recovery(self, pauli: str, qubit: int) -> float:
+        """End-to-end statevector verification on Shor [[9, 1, 3]] across all 27 Paulis."""
+        import numpy as np
+
+        from quanta.simulator.statevector import StateVectorSimulator
+
+        sim = StateVectorSimulator(17)
+        sim.apply("RY", (0,), (1.2,))
+        sim.apply("RZ", (0,), (0.8,))
+
+        ref = StateVectorSimulator(1)
+        ref.apply("RY", (0,), (1.2,))
+        ref.apply("RZ", (0,), (0.8,))
+        psi_target = ref.state.copy()
+
+        sim.apply("CX", (0, 3))
+        sim.apply("CX", (0, 6))
+        for hq in (0, 3, 6):
+            sim.apply("H", (hq,))
+        for ctrl in (0, 3, 6):
+            sim.apply("CX", (ctrl, ctrl + 1))
+            sim.apply("CX", (ctrl, ctrl + 2))
+
+        p_up = pauli.upper()
+        if p_up in ("X", "Y", "Z"):
+            sim.apply(p_up, (qubit,))
+
+        zz_pairs = [
+            (0, 1, 9),
+            (0, 2, 10),
+            (3, 4, 11),
+            (3, 5, 12),
+            (6, 7, 13),
+            (6, 8, 14),
+        ]
+        for d1, d2, anc in zz_pairs:
+            sim.apply("CX", (d1, anc))
+            sim.apply("CX", (d2, anc))
+
+        sim.apply("H", (15,))
+        sim.apply("H", (16,))
+        for idx in (0, 1, 2, 3, 4, 5):
+            sim.apply("CX", (15, idx))
+        for idx in (0, 1, 2, 6, 7, 8):
+            sim.apply("CX", (16, idx))
+        sim.apply("H", (15,))
+        sim.apply("H", (16,))
+
+        probs = sim.probabilities()
+        nz_idx = int(np.argmax(probs))
+        syndrome_8 = format(nz_idx, "017b")[9:17]
+
+        recovery = self.decode_syndrome(syndrome_8)
+        for q_rec, gate_name in recovery.items():
+            sim.apply(gate_name, (q_rec,))
+
+        for ctrl in (0, 3, 6):
+            sim.apply("CX", (ctrl, ctrl + 2))
+            sim.apply("CX", (ctrl, ctrl + 1))
+        for hq in (0, 3, 6):
+            sim.apply("H", (hq,))
+        sim.apply("CX", (0, 6))
+        sim.apply("CX", (0, 3))
+
+        sv_2d = sim.state.reshape(2, 1 << 16)
+        rho_0 = sv_2d @ sv_2d.conj().T
+        return float(np.real(psi_target.conj() @ rho_0 @ psi_target))
+
+
+_ = (X, Y, Z)

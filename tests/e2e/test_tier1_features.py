@@ -437,8 +437,13 @@ class TestFeature07MWPMDecoder:
         syndrome[0] = True
         syndrome[1] = True
         res = decoder.decode(syndrome, code_distance=3)
-        assert len(res.correction) == 2
-        assert res.weight >= 1
+        # On rotated d=3 [[9,1,3]] surface code, x_stabs[0]=[0,1,3,4] and
+        # x_stabs[1]=[4,5,7,8] share center physical data qubit 4, so the
+        # minimum-weight GF(2) physical correction is (4,) of weight 1
+        # (replaces old stub that returned raw stabilizer indices (0, 1)).
+        assert res.correction == (4,)
+        assert len(res.correction) == 1
+        assert res.weight == 1
 
     def test_f07_distance_3_surface_code_syndromes(self):
         """Decodes distance-3 surface code excited syndrome pattern."""

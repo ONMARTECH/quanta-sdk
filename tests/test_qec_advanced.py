@@ -187,23 +187,31 @@ class TestUnionFindDecoder:
         assert result.correction == ()
 
     def test_two_adjacent_defects(self):
-        from quanta.qec.decoder import UnionFindDecoder
+        from quanta.qec.decoder import UnionFindDecoder, _build_planar_grid_stabilizers
         decoder = UnionFindDecoder()
         syndrome = np.zeros(9, dtype=bool)
         syndrome[0] = True
         syndrome[1] = True
         result = decoder.decode(syndrome, code_distance=3)
         assert result.success is True
-        assert 0 in result.correction
-        assert 1 in result.correction
+        # Adjacent checks 0 and 1 share 1 physical data-qubit edge over GF(2)
+        assert result.weight == 1
+        stabs = _build_planar_grid_stabilizers(3)
+        for s_idx, s in enumerate(stabs):
+            assert sum(1 for q in s if q in result.correction) % 2 == int(syndrome[s_idx])
 
     def test_single_defect(self):
-        from quanta.qec.decoder import UnionFindDecoder
+        from quanta.qec.decoder import UnionFindDecoder, _build_planar_grid_stabilizers
         decoder = UnionFindDecoder()
         syndrome = np.zeros(9, dtype=bool)
         syndrome[4] = True
         result = decoder.decode(syndrome, code_distance=3)
-        assert 4 in result.correction
+        assert result.success is True
+        # Center check 4 connects to boundary via a 2-data-qubit chain
+        assert result.weight == 2
+        stabs = _build_planar_grid_stabilizers(3)
+        for s_idx, s in enumerate(stabs):
+            assert sum(1 for q in s if q in result.correction) % 2 == int(syndrome[s_idx])
 
     def test_many_defects_d5(self):
         from quanta.qec.decoder import UnionFindDecoder

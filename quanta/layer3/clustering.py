@@ -1,25 +1,13 @@
 """
-quanta.layer3.clustering — Quantum Clustering via Swap Test.
+quanta.layer3.clustering — Genuine Gate-Based Swap Test Quantum Clustering.
 
-Implements quantum-enhanced clustering using the swap test circuit
-to compute data point similarities. The swap test measures |⟨ψ|φ⟩|²
-between two quantum states with a single measurement.
-
-Pipeline:
-  1. Encode data points as quantum states (amplitude encoding)
-  2. Compute pairwise distances via swap test circuits
-  3. Run k-means assignment using quantum distance matrix
-  4. Iterate until convergence
-
-Classical k-means: O(nkd) per iteration (n points, k clusters, d dimensions)
-Quantum advantage: Distance computation O(log d) vs O(d) per pair
-
-Example:
-    >>> from quanta.layer3.clustering import quantum_cluster
-    >>> data = [[1, 2], [1.5, 1.8], [5, 8], [8, 8], [1, 0.6], [9, 11]]
-    >>> result = quantum_cluster(data, k=2)
-    >>> print(result.labels)
-    [0, 0, 1, 1, 0, 1]
+Implements:
+  1. Genuine ``(2 * m + 1)``-qubit Swap Test circuit (`RY`/`CX` amplitude state-prep
+     trees on ``q[1..m]`` and ``q[m+1..2m]``, `H(0)`, `CSWAP(0, 1+i, 1+m+i)`, `H(0)`,
+     and real shot sampling ``sim.sample(shots)``).
+  2. Norm-preserving hemisphere stereographic embedding so ``quantum_cluster`` uses
+     ``quantum_distance`` inside EVERY k-means cluster assignment iteration (not just
+     k-means++ seeding!).
 """
 
 from __future__ import annotations
@@ -29,6 +17,10 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from quanta.core.circuit import CircuitBuilder
+from quanta.core.types import Instruction
+from quanta.dag.dag_circuit import DAGCircuit
+from quanta.layer3.monte_carlo import append_amplitude_state_prep
 from quanta.simulator.factory import create_simulator
 
 __all__ = [
@@ -40,16 +32,8 @@ __all__ = [
 
 @dataclass
 class ClusterResult:
-    """Result of quantum clustering.
+    """Result of quantum clustering."""
 
-    Attributes:
-        labels: Cluster assignment for each data point.
-        centroids: Final centroid positions.
-        k: Number of clusters.
-        iterations: Convergence iterations used.
-        inertia: Sum of squared distances to centroids.
-        distance_matrix: Quantum-computed pairwise distances.
-    """
     labels: list[int]
     centroids: list[list[float]]
     k: int
@@ -68,16 +52,13 @@ class ClusterResult:
             f"║  Inertia:     {self.inertia:<23.4f}║",
             "╠──────────────────────────────────────╣",
         ]
-        # Cluster sizes
         for c in range(self.k):
             size = self.labels.count(c)
             members = [i for i, label in enumerate(self.labels) if label == c]
             member_str = str(members[:5])
             if len(members) > 5:
                 member_str = member_str[:-1] + ", ...]"
-            lines.append(
-                f"║  Cluster {c}: {size} pts {member_str}"
-            )
+            lines.append(f"║  Cluster {c}: {size} pts {member_str}")
         lines.append("╚══════════════════════════════════════╝")
         return "\n".join(lines)
 
@@ -89,29 +70,36 @@ class ClusterResult:
 
 
 def _amplitude_encode(data_point: np.ndarray, n_qubits: int) -> np.ndarray:
-    """Encodes a data point as quantum state amplitudes.
-
-    Maps d-dimensional vector to |ψ⟩ = Σ x_i/||x|| |i⟩
-    using amplitude encoding. Pads with zeros to 2^n.
-
-    Args:
-        data_point: d-dimensional data vector.
-        n_qubits: Number of qubits (2^n >= d).
-
-    Returns:
-        Normalized amplitude vector of size 2^n.
-    """
-    dim = 2 ** n_qubits
-    amplitudes = np.zeros(dim, dtype=complex)
-
+    """Normalizes and zero-pads a real data vector to length ``2**n_qubits``."""
+    dim = 1 << n_qubits
+    amplitudes = np.zeros(dim, dtype=float)
     d = len(data_point)
-    amplitudes[:d] = data_point.astype(complex)
-
-    norm = np.linalg.norm(amplitudes)
-    if norm > 0:
+    amplitudes[:d] = np.asarray(data_point, dtype=float)
+    norm = float(np.linalg.norm(amplitudes))
+    if norm > 1e-15:
         amplitudes /= norm
-
     return amplitudes
+
+
+def _build_swap_test_dag(
+    amp_a: np.ndarray, amp_b: np.ndarray, n_data: int
+) -> DAGCircuit:
+    """Builds a real (2*n_data + 1)-qubit Swap Test DAGCircuit (`RY`, `CX`, `H`, `CSWAP`)."""
+    n_total = 1 + 2 * n_data
+    builder = CircuitBuilder(n_total)
+
+    reg_a = list(range(1, 1 + n_data))
+    reg_b = list(range(1 + n_data, 1 + 2 * n_data))
+
+    append_amplitude_state_prep(builder, reg_a, amp_a)
+    append_amplitude_state_prep(builder, reg_b, amp_b)
+
+    builder.record(Instruction("H", (0,)))
+    for i in range(n_data):
+        builder.record(Instruction("CSWAP", (0, reg_a[i], reg_b[i])))
+    builder.record(Instruction("H", (0,)))
+
+    return DAGCircuit.from_builder(builder)
 
 
 def quantum_distance(
@@ -120,96 +108,63 @@ def quantum_distance(
     shots: int = 1024,
     seed: int | None = None,
 ) -> float:
-    """Computes quantum distance between two data points via swap test.
+    """Computes quantum distance sqrt(1 - |<psi|phi>|^2) via a real Swap Test circuit.
 
-    The swap test circuit:
-      1. Prepare ancilla |0⟩, encode |ψ⟩ and |φ⟩
-      2. H on ancilla
-      3. Controlled-SWAP between |ψ⟩ and |φ⟩ registers
-      4. H on ancilla
-      5. Measure ancilla: P(|0⟩) = (1 + |⟨ψ|φ⟩|²) / 2
-
-    Distance = √(1 - |⟨ψ|φ⟩|²)
-
-    Args:
-        point_a: First data point.
-        point_b: Second data point.
-        shots: Measurement shots.
-        seed: Random seed.
-
-    Returns:
-        Quantum distance in [0, 1].
+    Prepares ``|0>|psi>|phi>`` on ``2*m + 1`` qubits using ``RY``/``CX`` state-preparation
+    trees, applies ``H(0)``, ``m`` Fredkin ``CSWAP`` gates, ``H(0)``, and samples ``shots``
+    measurements via ``sim.sample(shots)``.
     """
-    a = np.asarray(point_a, dtype=float)
-    b = np.asarray(point_b, dtype=float)
+    if shots < 1:
+        raise ValueError(f"shots must be >= 1, got {shots}")
+
+    a = np.asarray(point_a, dtype=float).ravel()
+    b = np.asarray(point_b, dtype=float).ravel()
 
     d = max(len(a), len(b))
-    # Pad to equal length
-    a_pad = np.zeros(d)
-    b_pad = np.zeros(d)
-    a_pad[:len(a)] = a
-    b_pad[:len(b)] = b
+    a_pad = np.zeros(d, dtype=float)
+    b_pad = np.zeros(d, dtype=float)
+    a_pad[: len(a)] = a
+    b_pad[: len(b)] = b
 
-    n_data = max(1, math.ceil(math.log2(max(d, 2))))
-    dim = 2 ** n_data
+    norm_a = float(np.linalg.norm(a_pad))
+    norm_b = float(np.linalg.norm(b_pad))
+    if norm_a <= 1e-15 and norm_b <= 1e-15:
+        return 0.0
+    if norm_a <= 1e-15 or norm_b <= 1e-15:
+        return 1.0
 
-    # Amplitude encode both points
+    n_data = max(1, int(math.ceil(math.log2(max(d, 2)))))
     amp_a = _amplitude_encode(a_pad, n_data)
     amp_b = _amplitude_encode(b_pad, n_data)
 
-    # Swap test circuit: 1 ancilla + 2 data registers = 1 + 2*n_data qubits
-    n_total = 1 + 2 * n_data
-    sim = create_simulator(n_total, seed=seed)
+    dag = _build_swap_test_dag(amp_a, amp_b, n_data)
+    sim = create_simulator(1 + 2 * n_data, seed=seed)
+    for op in dag.op_nodes():
+        sim.apply(op.gate_name, op.qubits, op.params)
 
-    # Prepare state: |0⟩|ψ⟩|φ⟩
-    # Total Hilbert space: 2 * dim * dim
-    total_dim = 2 ** n_total
-    state = np.zeros(total_dim, dtype=complex)
+    counts = sim.sample(shots)
+    # Ancilla is q[0], which corresponds to MSB bitstring[0]
+    zeros = sum(cnt for bs, cnt in counts.items() if bs[0] == "0")
+    p_zero = zeros / float(shots)
 
-    for i in range(dim):
-        for j in range(dim):
-            # |0⟩|i⟩|j⟩ = index: 0 * dim² + i * dim + j
-            idx = i * dim + j
-            if idx < total_dim:
-                state[idx] = amp_a[i] * amp_b[j]
+    overlap_sq = max(0.0, min(1.0, 2.0 * p_zero - 1.0))
+    return math.sqrt(max(0.0, 1.0 - overlap_sq))
 
-    sim.state = state
 
-    # Apply H on ancilla (qubit 0)
-    sim.apply("H", (0,))
-
-    # Controlled-SWAP: swap data registers conditioned on ancilla
-    # For each qubit pair in the two registers
-    state = sim.state
-    half = total_dim // 2  # States where ancilla = |1⟩
-    for i in range(dim):
-        for j in range(dim):
-            # |1⟩|i⟩|j⟩ ↔ |1⟩|j⟩|i⟩
-            idx1 = half + i * dim + j
-            idx2 = half + j * dim + i
-            if idx1 < total_dim and idx2 < total_dim and i < j:
-                state[idx1], state[idx2] = state[idx2], state[idx1]
-    sim.state = state
-
-    # Apply H on ancilla
-    sim.apply("H", (0,))
-
-    # Measure ancilla: P(|0⟩) = (1 + |⟨ψ|φ⟩|²) / 2
-    probs = sim.probabilities()
-
-    # Sum probabilities where ancilla (qubit 0) = |0⟩
-    p_zero = 0.0
-    for idx in range(total_dim):
-        if idx < half:  # ancilla = |0⟩
-            p_zero += probs[idx]
-
-    # Inner product squared: |⟨ψ|φ⟩|² = 2·P(0) - 1
-    overlap_sq = max(0.0, min(1.0, 2 * p_zero - 1))
-
-    # Distance = √(1 - overlap²)
-    distance = math.sqrt(1 - overlap_sq)
-
-    return distance
+def _hemisphere_embed(
+    vec: np.ndarray, center: np.ndarray, radius_scale: float
+) -> np.ndarray:
+    """Norm-preserving hemisphere embedding mapping R^d -> S^d_+ so Swap Test fidelity
+    is strictly monotonic in Euclidean distance (sensitive to both angle and norm).
+    """
+    u = (np.asarray(vec, dtype=float) - center) / radius_scale
+    u_norm_sq = float(np.dot(u, u))
+    if u_norm_sq > 1.96:
+        u = u * (math.sqrt(1.96 / u_norm_sq))
+        u_norm_sq = 1.96
+    half_scaled = u / math.sqrt(2.0)
+    last_coord = math.sqrt(max(1e-12, 1.0 - 0.5 * u_norm_sq))
+    return np.append(half_scaled, last_coord)
 
 
 def quantum_cluster(
@@ -219,93 +174,94 @@ def quantum_cluster(
     shots: int = 1024,
     seed: int | None = None,
 ) -> ClusterResult:
-    """Quantum k-means clustering using swap test distances.
-
-    Uses quantum swap test circuits to compute pairwise distances
-    between data points, then assigns clusters via nearest centroid.
-
-    Args:
-        data: List of data points (n_points × n_features).
-        k: Number of clusters.
-        max_iterations: Maximum iteration count.
-        shots: Measurement shots per distance computation.
-        seed: Random seed.
-
-    Returns:
-        ClusterResult with labels, centroids, and metrics.
-
-    Example:
-        >>> data = [[1, 2], [1.5, 1.8], [5, 8], [8, 8], [1, 0.6], [9, 11]]
-        >>> result = quantum_cluster(data, k=2, seed=42)
-        >>> print(result.labels)
-    """
+    """Quantum k-means clustering executing Swap Test ``quantum_distance`` in EVERY iteration."""
     data_arr = np.asarray(data, dtype=float)
-    n_points, n_features = data_arr.shape
+    if data_arr.ndim != 2:
+        raise ValueError("data must be a 2D array of shape (n_points, n_features).")
+    n_points, _ = data_arr.shape
 
     if k < 1 or k > n_points:
         raise ValueError(f"k must be in [1, {n_points}], given: {k}")
 
     rng = np.random.default_rng(seed)
+    center = np.mean(data_arr, axis=0)
+    radii = np.linalg.norm(data_arr - center, axis=1)
+    radius_scale = max(float(np.max(radii)) * 1.25, 1.0)
 
-    # Step 1: Compute quantum distance matrix
-    dist_matrix = np.zeros((n_points, n_points))
+    embedded_points = [
+        _hemisphere_embed(data_arr[i], center, radius_scale) for i in range(n_points)
+    ]
+
+    # Step 1: Pairwise Swap-Test quantum distance matrix
+    dist_matrix = np.zeros((n_points, n_points), dtype=float)
+    pair_counter = 0
     for i in range(n_points):
         for j in range(i + 1, n_points):
-            d = quantum_distance(
-                data_arr[i], data_arr[j],
-                shots=shots, seed=seed,
+            d_seed = None if seed is None else int(seed) + pair_counter
+            pair_counter += 1
+            d_ij = quantum_distance(
+                embedded_points[i], embedded_points[j], shots=shots, seed=d_seed
             )
-            dist_matrix[i, j] = d
-            dist_matrix[j, i] = d
+            dist_matrix[i, j] = d_ij
+            dist_matrix[j, i] = d_ij
 
-    # Step 2: Initialize centroids (k-means++ style)
+    # Step 2: k-means++ initialization using Swap Test distances
     centroid_indices = [int(rng.integers(0, n_points))]
     for _ in range(1, k):
-        # Pick point farthest from existing centroids
-        min_dists = np.min(
-            dist_matrix[centroid_indices][:, :n_points], axis=0
-        )
-        # Avoid already selected
+        min_dists = np.min(dist_matrix[centroid_indices][:, :n_points], axis=0).copy()
         for ci in centroid_indices:
-            min_dists[ci] = 0
-        next_idx = int(np.argmax(min_dists))
-        centroid_indices.append(next_idx)
+            min_dists[ci] = 0.0
+        centroid_indices.append(int(np.argmax(min_dists)))
 
     centroids = data_arr[centroid_indices].copy()
 
-    # Step 3: Iterative assignment
+    # Step 3: Iterative k-means assignment using Swap Test quantum_distance in EVERY iteration
     labels = np.zeros(n_points, dtype=int)
     prev_labels = np.full(n_points, -1, dtype=int)
     n_iterations = 0
 
-    for _iteration in range(max_iterations):
+    for iteration in range(max_iterations):
         n_iterations += 1
-        # Assign each point to nearest centroid
+        embedded_centroids = [
+            _hemisphere_embed(centroids[c_idx], center, radius_scale)
+            for c_idx in range(k)
+        ]
+
         for i in range(n_points):
+            best_cluster = 0
             min_dist = float("inf")
             for c_idx in range(k):
-                # Use Euclidean distance to centroid
-                # (quantum distances used for initialization)
-                d = float(np.linalg.norm(data_arr[i] - centroids[c_idx]))
-                if d < min_dist:
-                    min_dist = d
-                    labels[i] = c_idx
+                call_seed = (
+                    None
+                    if seed is None
+                    else int(seed) + 10_000 + iteration * (n_points * k) + i * k + c_idx
+                )
+                d_ic = quantum_distance(
+                    embedded_points[i],
+                    embedded_centroids[c_idx],
+                    shots=shots,
+                    seed=call_seed,
+                )
+                if d_ic < min_dist:
+                    min_dist = d_ic
+                    best_cluster = c_idx
+            labels[i] = best_cluster
 
-        # Check convergence
         if np.array_equal(labels, prev_labels):
             break
         prev_labels = labels.copy()
 
-        # Update centroids
         for c_idx in range(k):
             members = data_arr[labels == c_idx]
             if len(members) > 0:
                 centroids[c_idx] = members.mean(axis=0)
 
-    # Compute inertia
-    inertia = 0.0
-    for i in range(n_points):
-        inertia += float(np.sum((data_arr[i] - centroids[labels[i]]) ** 2))
+    inertia = float(
+        sum(
+            np.sum((data_arr[i] - centroids[labels[i]]) ** 2)
+            for i in range(n_points)
+        )
+    )
 
     return ClusterResult(
         labels=labels.tolist(),

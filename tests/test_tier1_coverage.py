@@ -356,12 +356,14 @@ class TestSurfaceCodeCoverage:
         assert result is True  # Crosses from left to right
 
     def test_check_logical_error_no_crossing(self):
-        """Lines 265-326: No lattice crossing."""
+        """Syndrome-free trivial stabilizer loop causes zero logical error."""
         from quanta.qec.surface_code import SurfaceCode
         code = SurfaceCode(distance=5)
-        # Single error — should not cross
+        # Trivial X-stabilizer plaquette cycle satisfies H_Z r_X == 0 and r_X . Z_bar == 0
+        # (replaces legacy 8-connected percolation BFS test that passed undecoded single defect)
         error_mask = np.zeros(25, dtype=bool)
-        error_mask[12] = True  # Center qubit only
+        for q in code._x_stabilizers[0]:
+            error_mask[q] = True
         result = code._check_logical_error(error_mask)
         assert result is False
 
