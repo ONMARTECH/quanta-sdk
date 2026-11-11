@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-scripts/test_tutorials.py — Extract and test Python code from tutorials.
+scripts/test_tutorials.py — Extract and test Python code from documentation.
 
-Parses all markdown files in docs/tutorials/ and docs/migration/,
-extracts fenced Python code blocks, and executes them.
+Parses all markdown files in docs/getting-started/, docs/tutorials/,
+docs/migration/, and docs/cookbook/, extracts fenced Python code blocks,
+and executes them.
 
 Designed for CI: exits with code 1 if any code block fails.
 
@@ -23,9 +24,9 @@ def extract_python_blocks(md_path: Path) -> list[tuple[int, str]]:
     """Extract Python code blocks from a markdown file.
 
     Returns list of (line_number, code_string) tuples.
-    Skips blocks that contain '#' comments with 'Qiskit' (comparison blocks).
+    Skips external SDK comparison blocks (Qiskit, Cirq, PennyLane).
     """
-    text = md_path.read_text()
+    text = md_path.read_text(encoding="utf-8")
     blocks: list[tuple[int, str]] = []
 
     for match in re.finditer(
@@ -36,8 +37,8 @@ def extract_python_blocks(md_path: Path) -> list[tuple[int, str]]:
         code = match.group(1).strip()
         line_no = text[: match.start()].count("\n") + 1
 
-        # Skip Qiskit comparison blocks (migration guides)
-        if "# ── Qiskit ──" in code:
+        # Skip external SDK comparison blocks (migration guides)
+        if "# ── Qiskit" in code or "# ── Cirq" in code or "# ── PennyLane" in code:
             continue
 
         # Skip blocks that import external SDKs (comparison/migration code)
@@ -47,12 +48,14 @@ def extract_python_blocks(md_path: Path) -> list[tuple[int, str]]:
             continue
         if "import pennylane" in code or "from pennylane" in code:
             continue
-        if "# ── Cirq ──" in code or "# ── PennyLane ──" in code:
-            continue
 
-        # Skip blocks that only import (no actual test)
-        lines = [ln for ln in code.splitlines() if ln.strip() and not ln.strip().startswith("#")]
-        if all(ln.startswith(("from ", "import ")) for ln in lines):
+        # Skip blocks that only import or are purely comments (no executable statements)
+        lines = [
+            ln
+            for ln in code.splitlines()
+            if ln.strip() and not ln.strip().startswith("#")
+        ]
+        if not lines or all(ln.startswith(("from ", "import ")) for ln in lines):
             continue
 
         blocks.append((line_no, code))
@@ -62,7 +65,6 @@ def extract_python_blocks(md_path: Path) -> list[tuple[int, str]]:
 
 def test_code_block(code: str, file: str, line: int) -> bool:
     """Run a Python code block and return True if it succeeds."""
-    # Add project root to path
     wrapper = f"""
 import sys, os
 sys.path.insert(0, os.path.abspath('.'))
@@ -79,7 +81,6 @@ os.environ.setdefault('QUANTA_TEST_MODE', '1')
 
     if result.returncode != 0:
         print(f"  ❌ {file}:{line}")
-        # Show first 3 lines of error
         err_lines = result.stderr.strip().splitlines()
         for line_text in err_lines[-3:]:
             print(f"     {line_text}")
@@ -90,9 +91,10 @@ os.environ.setdefault('QUANTA_TEST_MODE', '1')
 
 
 def main() -> int:
-    """Run all tutorial code blocks."""
+    """Run all documentation Python code blocks."""
     root = Path(__file__).parent.parent
     dirs = [
+        root / "docs" / "getting-started",
         root / "docs" / "tutorials",
         root / "docs" / "migration",
         root / "docs" / "cookbook",

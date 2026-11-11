@@ -89,17 +89,19 @@ RSA-2048 kırmak için ~4000 qubit'lik QFT gerekir.
 ## Adım 3: Tam Prime Decomposition
 
 Gerçek dünyada büyük sayılar birden fazla asalın çarpımı olabilir.
-`factor_recursive` bunu tamamen çözer:
+`factor_recursive` bunu tamamen çözer.
+
+> **Ölçeklenme Notu ($(n+1)$-Qubit Yarı-Klasik QPE):** Quanta'nın Shor modülü, herhangi bir gizli klasik deneme-bölme (trial-division) kestirmesi kullanmadan Griffiths-Niu / Beauregard $(n+1)$-qubit yarı-klasik iteratif kuantum faz kestirimi (IQPE) ve gerçek üniter kontrollü modüler çarpma ($C\text{-}U_{a^{2^k} \bmod N}$) uygular. $n = \lceil\log_2 N\rceil$ iş yazmacı + 1 geri dönüştürülen kontrol qubiti için klasik statevector belleği $O(2^{n+1})$ ölçeklendiğinden, varsayılan tam statevector simülasyonu $N < 4096$ ($n \le 12$, yani 13 qubitlik tam üniter uzay) sınırında çalışır:
 
 ```python
 from quanta.layer3.shor import factor_recursive
 
-# Gerçek dünya sayıları
+# Tam statevector QPE sınırındaki (N < 4096) bileşik sayılar
 numbers = [
-    (9999,  "kredi kartı son 4 hane"),
-    (2025,  "bu yılın sayısı"),
-    (1001,  "bin bir gece masalı"),
-    (30030, "ilk 7 asalın çarpımı"),
+    (2310, "ilk 5 asalın çarpımı: 2×3×5×7×11"),
+    (2025, "45² = 3⁴×5²"),
+    (1001, "bin bir gece masalı: 7×11×13"),
+    (3570, "2×3×5×7×17"),
 ]
 
 for N, label in numbers:

@@ -1,32 +1,36 @@
 # Coming from PennyLane
 
-> Tested with: Quanta SDK v1.2.0-production
+> Tested with: Quanta SDK v1.3.0
 
 ## Why Switch?
 
 | Feature | PennyLane | Quanta |
 |---------|-----------|--------|
 | Install size | ~200 MB | ~5 MB |
-| Dependencies | TensorFlow/JAX/Torch optional | NumPy only (PyTorch optional) |
-| IBM Hardware | Via plugin | Built-in direct REST API |
+| Core dependencies | SciPy / Autoray / Autograd + optional JAX/Torch | 1 (`numpy>=1.24`, PyTorch/MLX optional) |
+| Gate count | 60+ | 34 (IBM Heron + Google + IonQ native) |
+| IBM Hardware | Via external plugin | Built-in direct REST API |
 | QEC | ❌ | ✅ Dual-track FTQC (Edmonds Blossom MWPM + Gross qLDPC) |
-| MCP (AI tools) | ❌ | ✅ (23 tools) |
-| QASM 3.0 | ❌ | ✅ (export + import) |
+| MCP (AI tools) | ❌ | ✅ (25 tools) |
+| QASM 3.0 | Partial | ✅ (export + import) |
 
-## Side-by-Side: 10 Common Patterns
+## Side-by-Side: 7 Common Patterns
 
 ### 1. Define a Circuit
 
 ```python
 # ── PennyLane ──
-# import pennylane as qml
-# dev = qml.device("default.qubit", wires=2)
-# @qml.qnode(dev)
-# def bell(params):
-#     qml.Hadamard(wires=0)
-#     qml.CNOT(wires=[0, 1])
-#     return qml.probs(wires=[0, 1])
+import pennylane as qml
+dev = qml.device("default.qubit", wires=2)
 
+@qml.qnode(dev)
+def bell():
+    qml.Hadamard(wires=0)
+    qml.CNOT(wires=[0, 1])
+    return qml.probs(wires=[0, 1])
+```
+
+```python
 # ── Quanta ──
 from quanta import circuit, H, CX, measure, run
 
@@ -36,7 +40,7 @@ def bell(q):
     CX(q[0], q[1])
     return measure(q)
 
-result = run(bell, shots=1024)
+result = run(bell, shots=1024, seed=42)
 print(result.counts)
 ```
 
@@ -44,9 +48,12 @@ print(result.counts)
 
 ```python
 # ── PennyLane ──
-# qml.RY(theta, wires=0)
-# qml.RZ(phi, wires=1)
+import pennylane as qml
+qml.RY(0.785, wires=0)
+qml.RZ(1.047, wires=1)
+```
 
+```python
 # ── Quanta ──
 from quanta import circuit, RY, RZ, measure, run
 import math
@@ -57,7 +64,7 @@ def parametric(q):
     RZ(math.pi / 3)(q[1])
     return measure(q)
 
-result = run(parametric, shots=1024)
+result = run(parametric, shots=1024, seed=42)
 print(result.most_frequent)
 ```
 
@@ -65,9 +72,12 @@ print(result.most_frequent)
 
 ```python
 # ── PennyLane ──
-# grad_fn = qml.grad(cost)
-# gradients = grad_fn(params)
+import pennylane as qml
+grad_fn = qml.grad(cost)
+gradients = grad_fn(params)
+```
 
+```python
 # ── Quanta ──
 from quanta.gradients import parameter_shift
 import numpy as np
@@ -84,12 +94,15 @@ print(f"Gradient: {result.gradients}")
 
 ```python
 # ── PennyLane ──
-# @qml.qnode(dev, diff_method="parameter-shift")
-# def classifier(x, params):
-#     qml.AngleEmbedding(x, wires=range(2))
-#     qml.StronglyEntanglingLayers(params, wires=range(2))
-#     return qml.expval(qml.PauliZ(0))
+import pennylane as qml
+@qml.qnode(dev, diff_method="parameter-shift")
+def classifier(x, params):
+    qml.AngleEmbedding(x, wires=range(2))
+    qml.StronglyEntanglingLayers(params, wires=range(2))
+    return qml.expval(qml.PauliZ(0))
+```
 
+```python
 # ── Quanta ──
 from quanta.layer3.qml import QuantumClassifier
 import numpy as np
@@ -106,9 +119,12 @@ print(f"Accuracy: {result.accuracy:.0%}")
 
 ```python
 # ── PennyLane ──
-# kernel = qml.kernels.EmbeddingKernel(ansatz, dev)
-# K = qml.kernels.kernel_matrix(X, X, kernel)
+import pennylane as qml
+kernel = qml.kernels.EmbeddingKernel(ansatz, dev)
+K = qml.kernels.kernel_matrix(X, X, kernel)
+```
 
+```python
 # ── Quanta ──
 from quanta.layer3.qml import QuantumKernel
 import numpy as np
@@ -123,9 +139,12 @@ print(f"Kernel matrix:\n{K.round(3)}")
 
 ```python
 # ── PennyLane ──
-# qml.AngleEmbedding(x, wires=range(n))
-# qml.IQPEmbedding(x, wires=range(n))
+import pennylane as qml
+qml.AngleEmbedding(x, wires=range(2))
+qml.IQPEmbedding(x, wires=range(2))
+```
 
+```python
 # ── Quanta ──
 from quanta.layer3.qml import angle_encoding, zz_feature_map
 from quanta.simulator.statevector import StateVectorSimulator
@@ -146,9 +165,12 @@ print(f"ZZ-encoded state: {len(sim2.state)} amplitudes")
 
 ```python
 # ── PennyLane ──
-# dev = qml.device("default.mixed", wires=2)
-# qml.DepolarizingChannel(0.01, wires=0)
+import pennylane as qml
+dev = qml.device("default.mixed", wires=2)
+qml.DepolarizingChannel(0.01, wires=0)
+```
 
+```python
 # ── Quanta ──
 from quanta import circuit, H, CX, measure, run
 from quanta.simulator.noise import NoiseModel, Depolarizing
@@ -161,7 +183,7 @@ def bell(q):
     CX(q[0], q[1])
     return measure(q)
 
-result = run(bell, shots=1024, noise=noise)
+result = run(bell, shots=1024, noise=noise, seed=42)
 print(f"States: {result.counts}")
 ```
 
@@ -172,12 +194,12 @@ print(f"States: {result.counts}")
 | `qml.device(...)` | Built-in (no device setup) |
 | `@qml.qnode(dev)` | `@circuit(qubits=N)` |
 | `qml.RY(angle, wires=0)` | `RY(angle)(q[0])` |
-| `qml.expval(qml.PauliZ(0))` | `result.counts` |
-| `qml.grad(cost)` | `parameter_shift(fn, params)` |
-| `qml.StronglyEntanglingLayers` | `QuantumClassifier(n_layers=N)` |
+| `qml.expval(qml.PauliZ(0))` | `result.counts` / `QuantumLayer` expectations |
+| `qml.grad(cost)` | `parameter_shift(fn, params)` or PyTorch autograd (`quanta.torch`) |
+| `qml.StronglyEntanglingLayers` | `QuantumClassifier(n_layers=N)` / `QuantumLayer` |
 
 ## Getting Help
 
-- [Tutorials](../tutorials/01-getting-started.md) — 8-part learning path
+- [Tutorials](../tutorials/01-getting-started.md) — 16-part structured learning path
 - [Features](../FEATURES_EN.md) — Complete feature reference
 - [GitHub](https://github.com/ONMARTECH/quanta-sdk) — Issues & discussions
