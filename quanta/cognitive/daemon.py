@@ -508,6 +508,13 @@ class SubconsciousDaemon:
             "- **Production Integrity**: External project codebases remain pristine and unaffected.\n"
         )
 
+        # Supersede prior timestamped drafts for the same (slug_a, slug_b) pair
+        # so recurring REM cycles remain idempotent and never exhaust disk inodes.
+        for stale_rfc in docs_dir.glob(f"RFC_HYBRID_*_{slug_a}_{slug_b}.md"):
+            if stale_rfc != rfc_path:
+                with contextlib.suppress(OSError):
+                    stale_rfc.unlink()
+
         rfc_path.write_text(content, encoding="utf-8")
         if self._foreground:
             print(f"📄 [Hybrid RFC Kaydedildi]: {rfc_path}", flush=True)

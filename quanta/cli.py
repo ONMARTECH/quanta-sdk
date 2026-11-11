@@ -384,6 +384,9 @@ def handle_service(args: argparse.Namespace) -> int:
     action = getattr(args, "service_action", "status")
 
     if action == "install":
+        private_agent_dir = Path.home() / ".quanta" / "agent"
+        private_state = private_agent_dir / "quanta_dream_state.json"
+        private_pid = private_agent_dir / "quanta_dream.pid"
         LAUNCHAGENT_PLIST.parent.mkdir(parents=True, exist_ok=True)
         plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -400,7 +403,11 @@ def handle_service(args: argparse.Namespace) -> int:
         <string>start</string>
         <string>--foreground</string>
         <string>--idle-min</string>
-        <string>15.0</string>
+        <string>900.0</string>
+        <string>--state-file</string>
+        <string>{private_state}</string>
+        <string>--pid-file</string>
+        <string>{private_pid}</string>
     </array>
     <key>WorkingDirectory</key>
     <string>{WORKSPACE_DIR}</string>

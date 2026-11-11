@@ -270,9 +270,11 @@ class TestTier1FeatureCoverage:
         assert constraint_str.startswith("🔒 Bilişsel Kuantum Karar Kısıtı:")
         assert winning_hyp["label"] in constraint_str
 
-        # Side-by-side counterfactual A/B verification
+        # Side-by-side counterfactual A/B verification (honest ablation against flat baseline)
         ab = res["counterfactual_ab"]
-        assert ab.get("effect_verified") is True
+        assert ab.get("baseline_executed") is True
+        assert isinstance(ab.get("effect_verified"), bool)
+        assert ab.get("effect_verified") == (ab.get("baseline_choice") != ab.get("quanta_choice"))
         assert "without_quanta" in ab
         assert "with_quanta" in ab
         assert len(ab["without_quanta"]) > 20

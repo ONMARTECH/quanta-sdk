@@ -458,8 +458,8 @@ def test_layer_attenuated_dephasing_impact() -> None:
     out_norm = layer_normal(x)
     out_men = layer_meningitis(x)
 
-    c_norm = float(out_norm["coherence_factor"].mean())
-    c_men = float(out_men["coherence_factor"].mean())
+    c_norm = float(out_norm["coherence_factor"].detach().mean())
+    c_men = float(out_men["coherence_factor"].detach().mean())
 
     assert c_norm > c_men
     assert c_norm > 0.95  # Normal CSF preserves coherence

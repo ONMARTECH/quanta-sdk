@@ -10,6 +10,7 @@ Enforces Synaptic Homeostasis (SHY microglial downscaling & pruning) and atomic 
 from __future__ import annotations
 
 import contextlib
+import fcntl
 import json
 import logging
 import os
@@ -24,6 +25,9 @@ from quanta.cognitive.memory import CognitiveMemoryManager
 from quanta.cognitive.mind_wander import DreamInsight
 
 logger = logging.getLogger(__name__)
+
+_REAL_REPO_STATE_FILE = (Path(__file__).resolve().parents[2] / "quanta_cognitive_state.json").resolve()
+_DEFAULT_PRIVATE_DREAM_STATE = Path.home() / ".quanta" / "agent" / "quanta_dream_state.json"
 
 
 class GlymphaticClearanceResult(dict[str, int]):
@@ -355,9 +359,18 @@ class SubconsciousConsolidator:
             True on successful atomic write.
         """
         try:
-            self.state_file.parent.mkdir(parents=True, exist_ok=True)
-            temp_path = self.state_file.with_name(
-                f".tmp_{self.state_file.name}_{os.getpid()}_{time.time_ns()}"
+            target_file = self.state_file
+            if (
+                target_file.resolve() == _REAL_REPO_STATE_FILE
+                and os.environ.get("QUANTA_ALLOW_ROOT_STATE_MUTATION") != "1"
+            ):
+                target_file = _DEFAULT_PRIVATE_DREAM_STATE
+                self.state_file = target_file
+
+            target_file.parent.mkdir(parents=True, exist_ok=True)
+            lock_path = target_file.with_name(f".{target_file.name}.lock")
+            temp_path = target_file.with_name(
+                f".tmp_{target_file.name}_{os.getpid()}_{time.time_ns()}"
             )
 
             state_data = {
@@ -367,13 +380,18 @@ class SubconsciousConsolidator:
                 "engrams": self.get_engrams_payload(),
             }
 
-            with open(temp_path, "w", encoding="utf-8") as f:
-                json.dump(state_data, f, ensure_ascii=False, indent=2)
-                f.flush()
-                os.fsync(f.fileno())
+            with open(lock_path, "a+", encoding="utf-8") as lock_f:
+                fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX)
+                try:
+                    with open(temp_path, "w", encoding="utf-8") as f:
+                        json.dump(state_data, f, ensure_ascii=False, indent=2)
+                        f.flush()
+                        os.fsync(f.fileno())
 
-            os.replace(temp_path, self.state_file)
-            self._last_saved_mtime = self.state_file.stat().st_mtime
+                    os.replace(temp_path, target_file)
+                    self._last_saved_mtime = target_file.stat().st_mtime
+                finally:
+                    fcntl.flock(lock_f.fileno(), fcntl.LOCK_UN)
             return True
         except Exception as e:
             logger.error("Failed atomic save of cognitive state to %s: %s", self.state_file, e)
