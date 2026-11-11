@@ -2,15 +2,15 @@
 
 > Benchmark Date: September 2026  
 > Test Platform: Apple Silicon M-Series (macOS Darwin ARM64), Python 3.12+, NumPy 2.x, PyTorch 2.x, MLX  
-> Verification Suite: `benchmarks/run_paper_benchmarks.py` · 2,076 Passing Automated Tests  
-> Software DOI: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
+> Verification Suite: `benchmarks/run_paper_benchmarks.py` · 2,826+ Passing Automated Tests  
+> Latest Release: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 
 ## 1. Simulation & Hardware Acceleration Benchmarks
 
-| Benchmark Scenario | Scale / Configuration | Execution Time | Throughput / Speedup | Notes & Verifications |
-|--------------------|-----------------------|----------------|----------------------|-----------------------|
-| **SIMD Clifford Engine** | 100,000 Random Clifford Gates | **31.91 ms** | **3,133,813 gates/s** | Aaronson-Gottesman binary tableau |
-| **Apple Silicon MLX (Metal)** | 24-Qubit Dense Statevector | **78.42 ms** | **52.09× Peak Speedup** | Zero-copy Unified Memory (vs CPU 4.08s) |
+| Benchmark Scenario | Scale / Configuration | Execution Time | Throughput / Speedup | Notes & Workload Context |
+|--------------------|-----------------------|----------------|----------------------|--------------------------|
+| **SIMD Clifford Engine** | 100,000 Random Clifford Gates | **31.91 ms** | **3,133,813 gates/s** | Full $(2n+1)\times(2n+1)$ Aaronson-Gottesman binary tableau with phase vector (pure Clifford workload) |
+| **Apple Silicon MLX (Metal)** | 24-Qubit Dense Statevector | **78.42 ms** | **52.09× Speedup** | Zero-copy Unified Memory vs CPU 4.08s (58×–404× on deeper 26Q+ multi-layer circuits; single-gate circuits are kernel-dispatch bound) |
 | **Matrix Product States (MPS)** | 250-Qubit GHZ State Preparation | **3.42 ms** | Low-rank tensor network | Schmidt truncation $\chi=64$ |
 | **Statevector Bell State** | 2 Qubits, 1024 Shots | **0.14 ms** | End-to-end pipeline | Build + DAG + sim + measurement |
 | **Statevector GHZ State** | 10 Qubits ($2^{10}$ amplitudes) | **0.28 ms** | Exact statevector | $\|\|\psi\|\|_2 = 1.000000$ |
@@ -35,13 +35,14 @@ Empirical execution times for syndrome extraction and decoding:
 
 ---
 
-## 3. Autograd & Mathematical Gradient Benchmarks (`quanta.torch`)
+## 3. Autograd & Mathematical Gradient Benchmarks (`quanta.gradients` & `quanta.torch`)
 
-| Gradient Method | Mathematical Precision | Latency | Baseline Error |
-|-----------------|------------------------|---------|----------------|
-| **Daleckii-Krein Fréchet Autograd** | Machine Precision ($\epsilon = 9.99\times 10^{-16}$) | **0.12 ms** | Padé approximation error: $>1.3\times 10^{-6}$ |
-| **Parameter-Shift Rule (Exact)** | Analytically Exact ($\epsilon = 0$) | **0.38 ms** | 5 circuit evaluations ($2n+1$) |
-| **Natural Gradient (QFIM)** | Fubini-Study Riemannian metric | **0.84 ms** | Exact Fisher information inversion |
+| Gradient Method | Mathematical Precision | Latency | Scaling & Baseline Notes |
+|-----------------|------------------------|---------|--------------------------|
+| **Daleckii-Krein Fréchet Autograd** | Machine Precision ($\epsilon = 9.99\times 10^{-16}$) | **0.12 ms** | Closed-form spectral Fréchet vs Padé error $>1.3\times 10^{-6}$ |
+| **Adjoint Differentiation (`adjoint_gradient`)** | Machine Precision ($\epsilon < 10^{-15}$) | **0.19 ms** | **$O(G)$ statevector reverse sweep** independent of parameter count $P$ |
+| **Parameter-Shift Rule (Exact)** | Analytically Exact ($\epsilon = 0$) | **0.38 ms** | **$2P$ evaluations** (1Q Pauli generators) / **$4P$ evaluations** (2Q Anselmetti entangling gates) |
+| **Natural Gradient (QFIM)** | Mari-Bromley-Killoran gauge-invariant QFIM | **0.84 ms** | Exact Fubini-Study Riemannian metric inversion |
 
 ---
 

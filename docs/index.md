@@ -69,12 +69,13 @@ hide:
 
 | Dimension | **Quanta SDK** | Qiskit | Cirq | PennyLane |
 |-----------|----------------|--------|------|-----------|
-| **MCP AI Server** | ✅ **23 tools** (Autonomous AI loop) | ❌ | ❌ | ❌ |
-| **Dependencies** | **0** (Pure Python/NumPy) | 20+ packages | 10+ packages | 10+ packages |
-| **Hardware Acceleration** | **Apple Metal / MLX Zero-Copy** (52.09×) | C++/Rust (Aer) | C++ (qsim) | JAX/Torch C++ |
-| **2026 FTQC Engine** | **Dual-Track (MWPM + Gross qLDPC)** | External | No | No |
-| **Continuous Autograd**| **Daleckii-Krein Fréchet** ($9.99\times 10^{-16}$) | Finite Diff | Manual | Parameter-Shift / AD |
-| **Automated Tests** | **2,076 Passing Tests** | 5000+ | 3000+ | 2500+ |
+| **MCP AI Server** | ✅ **25 tools** (Autonomous AI loop) | ❌ | ❌ | ❌ |
+| **Gate Set & Synthesis** | **34 quantum gates + Cartan/KAK $SU(4)$ synthesis** | 50+ + KAK | 60+ + KAK | 30+ |
+| **Dependencies** | **NumPy core** (SciPy/NetworkX for Layer-3 & QEC) | 20+ packages | 10+ packages | 10+ packages |
+| **Hardware Acceleration** | **Apple Metal / MLX Zero-Copy** (up to 58×–404×) | C++/Rust (Aer) | C++ (qsim) | JAX/Torch C++ |
+| **2026 FTQC Engine** | **Dual-Track (MWPM/UF + Gross qLDPC)** | External | No | No |
+| **Continuous Autograd**| **Daleckii-Krein Fréchet + $O(G)$ Adjoint** ($9.99\times 10^{-16}$) | Finite Diff | Manual | Parameter-Shift / AD |
+| **Automated Tests** | **2,826+ Passing Tests** | 5000+ | 3000+ | 2500+ |
 | **Install Time** | **~2 seconds** | ~60s | ~30s | ~30s |
 
 ## Install
@@ -105,7 +106,7 @@ print(result)  # {'00': ~500, '11': ~500}
 fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 ```
 
-**23 tools · 5 resources · 4 guided prompts** — ready for Claude, Gemini, GPT, and autonomous agent loops.
+**25 tools · 5 resources · 4 guided prompts** — ready for Claude, Gemini, GPT, and autonomous agent loops.
 
 ---
 
@@ -113,5 +114,5 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 
 - **Lead Author & Principal Architect**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
 - **Affiliation**: ONMARTECH Quantum Computing Initiative (`info@onmartech.com`)
-- **Permanent Software DOI**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
+- **Latest Release**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 

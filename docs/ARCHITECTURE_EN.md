@@ -2,36 +2,36 @@
 
 ## Overview
 
-Quanta SDK is a standalone quantum software architecture engineered for 2026 quantum computing frontiers, structured across **5 Core Scientific Paradigms**. The framework pairs a zero-dependency Python/NumPy core with Apple Silicon Metal GPU acceleration, analytical Daleckii-Krein Hilbert gradients, and dual-track fault-tolerant quantum error correction (FTQC).
+Quanta SDK is a standalone quantum software architecture engineered for 2026 quantum computing frontiers, structured across **5 Core Scientific Paradigms**. Core circuit, compiler, and statevector engines require only NumPy (while SciPy & NetworkX power Layer-3 solvers and QEC decoders), paired with Apple Silicon Metal GPU acceleration, analytical Daleckii-Krein Hilbert gradients, and dual-track fault-tolerant quantum error correction (FTQC).
 
 ## Layered Architecture Diagram
 
 ```
 +---------------------------------------------------------------------------------+
 |                       LAYER 4: AGENTIC & MCP ORCHESTRATION                      |
-|  23 Model Context Protocol (MCP) Tools | Claude, Gemini, GPT Autonomous Agents  |
+|  25 Model Context Protocol (MCP) Tools | Claude, Gemini, GPT Autonomous Agents  |
 |  "Governing end-to-end quantum workflows via natural language and agentic loops"|
 +---------------------------------------------------------------------------------+
 |               LAYER 3: DEEP LEARNING & DECLARATIVE COGNITIVE API                |
 |  quanta.torch: QuantumLayer | Daleckii-Krein Autograd | Lie Algebra Barren Tool |
-|  BiomorphicResonantBrain | SWR Replay | ContinuousResonator (Schrödinger Flow)  |
+|  BiomorphicResonantBrain | SWR Replay | ContinuousResonantLayer (Schrödinger)   |
 |  search() | optimize() | vqe() | factor() | portfolio_optimize() | resolve()    |
 |  "What to solve?" -- high-level algorithmic execution without manual gate design|
 +---------------------------------------------------------------------------------+
 |                       LAYER 2: ALGORITHMIC CIRCUIT DSL                          |
-|  @circuit | 31 Native Gates (IBM Heron, Google Sycamore, IonQ native parity)    |
-|  Parametric Rotations (RX, RY, RZ, P, U) | measure() | sweep() | equivalence    |
+|  @circuit | 34 Native Gates (IBM Heron, Google Sycamore, IonQ native parity)    |
+|  Parametric Rotations (RX, RY, RZ, CRX, CRY, CRZ, P, U) | measure() | sweep()   |
 |  "How to construct the quantum circuit?"                                        |
 +---------------------------------------------------------------------------------+
 |             LAYER 1: 2026 DUAL-TRACK FAULT-TOLERANCE (FTQC ENGINE)              |
-|  Track A: Edmonds Blossom MWPM | Willow-Compliant 3D Spacetime Syndrome Cycles  |
-|  Track B: Gross [[144, 12, 12]] qLDPC | Native Normalized Min-Sum BP-OSD-0      |
+|  Track A: Blossom MWPM & Union-Find | ColorCode A2+ILP | Willow 3D Syndromes    |
+|  Track B: Gross [[144, 12, 12]] qLDPC | Native Normalized Min-Sum BP-OSD        |
 |  Non-Clifford: 15-to-1 Bravyi-Kitaev Magic State Distillation | Lattice Surgery  |
 +---------------------------------------------------------------------------------+
 |                 LAYER 0: PHYSICAL COMPUTATION & HARDWARE BACKENDS               |
-|  DAG Circuit (Kahn) | Compiler Pipeline (CancelInverses, MergeRotations, Route) |
-|  Metal/MLX Zero-Copy GPU (52.09x) | SIMD Clifford (>3.13M g/s) | MPS (250q)     |
-|  7-Channel Kraus Lindblad Noise | Multi-Cloud (IBM REST, Google Cirq, IonQ)     |
+|  DAG Circuit (Kahn) | Synthesis (ZYZ, Heron, Cartan/KAK SU(4)) | 127/156Q Route |
+|  Metal/MLX Zero-Copy GPU | SIMD Clifford ((2n+1)x(2n+1)) | MPS (200+Q)          |
+|  GKSL Lindblad & 7-Channel Kraus Noise | Multi-Cloud (IBM REST, Cirq, IonQ)     |
 |  "How to execute on physical hardware and high-performance simulators?"         |
 +---------------------------------------------------------------------------------+
 ```
@@ -62,7 +62,7 @@ mcp_server.py ──┐
 | File | Responsibility |
 |------|----------------|
 | `types.py` | QubitRef, Instruction, QubitRegister |
-| `gates.py` | 31 gates + broadcast (IBM Heron parity) |
+| `gates.py` | 34 native gates (`CRX`, `CRY`, `CRZ` + exact `iSWAP`, `ECR`, `CSWAP`, `RCCX`, `RC3X`) + broadcast |
 | `circuit.py` | @circuit decorator, CircuitBuilder |
 | `measure.py` | Flexible measurement (full, partial) |
 | `equivalence.py` | Unitary comparison, fidelity |
@@ -75,14 +75,15 @@ mcp_server.py ──┐
 | `node.py` | InputNode, OpNode, OutputNode (immutable) |
 | `dag_circuit.py` | Topological sort (Kahn's), depth, parallel layers |
 
-### compiler/ -- Optimization Pipeline
+### compiler/ -- Optimization & Unitary Synthesis Pipeline
 
 | File | Responsibility |
 |------|----------------|
 | `pipeline.py` | CompilerPass Protocol, chaining, statistics |
+| `synthesis.py` | Universal 1Q ZYZ Euler decomposition, IBM Heron `RZ-SX-RZ-SX-RZ`, and 2Q Cartan/KAK $SU(4)$ synthesis |
 | `passes/optimize.py` | CancelInverses (H.H=I), MergeRotations |
 | `passes/translate.py` | IBM/Google/Quantinuum gate set transpilation |
-| `passes/routing.py` | Topology-aware SWAP insertion (linear/ring/grid) |
+| `passes/routing.py` | Topology-aware SWAP insertion (`linear`, `ring`, `grid`, 127Q/156Q IBM Heavy-Hex) with dynamic SWAP layout tracking |
 
 ### simulator/ -- Simulation Engines
 
@@ -90,13 +91,15 @@ mcp_server.py ──┐
 |------|----------------|
 | `base.py` | `SimulatorBackend` ABC — abstract interface for all simulators |
 | `statevector.py` | Dense tensor contraction, up to 27 qubits (exact), `apply_phase()` + `apply_noise()` |
+| `mlx.py` | Apple Silicon Metal GPU zero-copy Unified Memory tensor contraction engine (up to 30 qubits) |
 | `sparse.py` | Dict-based sparse statevector, up to 50 qubits, O(k) memory |
-| `mps.py` | Matrix Product State (SVD), 200+ qubits, O(n·χ²) memory |
+| `mps.py` | Matrix Product State (SVD), 200+ qubits, mixed-canonical Born sampling & non-adjacent SWAP routing |
 | `factory.py` | `create_simulator()` — auto-selects best backend |
 | `router.py` | Circuit-aware routing (Clifford detection, qubit count) |
-| `density_matrix.py` | Mixed states + Kraus noise channels, up to 13 qubits |
-| `pauli_frame.py` | Aaronson-Gottesman stabilizer tableau, 50-qubit GHZ in <5s |
-| `noise.py` | 7 noise channels: Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError |
+| `density_matrix.py` | Mixed states up to 13 qubits via `np.tensordot` CPTP Kraus channels + exact `p/15` 2Q depolarizing |
+| `lindblad.py` | Open-system Gorini-Kossakowski-Sudarshan-Lindblad (GKSL) master equation solver |
+| `pauli_frame.py` | Full $(2n+1)\times(2n+1)$ Aaronson-Gottesman stabilizer/destabilizer tableau with phase vector |
+| `noise.py` | Gate-by-gate stochastic trajectories + `ReadoutError` across 7 channels (Depolarizing, BitFlip, PhaseFlip, AmplitudeDamping, T2Relaxation, Crosstalk, ReadoutError) |
 | `accelerated.py` | JAX-GPU / CuPy auto-detection, NumPy fallback |
 
 ### layer3/ -- Declarative API
@@ -107,13 +110,13 @@ mcp_server.py ──┐
 | `optimize.py` | QAOA optimization |
 | `agent.py` | Multi-agent decision modeling |
 | `vqe.py` | Variational Quantum Eigensolver |
-| `shor.py` | Integer factoring (period finding + QFT) |
-| `qsvm.py` | Quantum kernel SVM classification |
+| `shor.py` | Griffiths-Niu / Beauregard semiclassical QPE integer factoring (`shor.factor`) |
+| `qsvm.py` | Cortes-Vapnik Dual QP quantum kernel SVM classification |
 | `finance.py` | Portfolio optimization (Markowitz + QAOA) |
 | `hamiltonian.py` | Trotterized time evolution, molecular Hamiltonians |
 | `entity_resolution.py` | QAOA-based customer deduplication |
-| `monte_carlo.py` | Quantum Monte Carlo, amplitude estimation, option pricing |
-| `clustering.py` | Quantum swap-test distances + k-means clustering |
+| `monte_carlo.py` | Grinko Iterative Quantum Amplitude Estimation (IQAE) + Common Random Numbers (CRN) Black-Scholes Greeks |
+| `clustering.py` | Buhrman Swap Test quantum distances + k-means clustering |
 | `qml.py` | Quantum ML: variational classifier, quantum kernel, feature maps |
 
 ### export/ -- QASM I/O
@@ -128,21 +131,21 @@ mcp_server.py ──┐
 | File | Responsibility |
 |------|----------------|
 | `codes.py` | BitFlip [[3,1,3]], PhaseFlip [[3,1,3]], Steane [[7,1,3]] |
-| `surface_code.py` | Rotated Surface Code [[d^2,1,d]], 3D spacetime syndrome extraction |
-| `color_code.py` | 2D Triangular Color Code, transversal Clifford, restriction decoder |
-| `decoder.py` | Edmonds Blossom MWPM (full-weight perfect matching) and Union-Find |
-| `qldpc.py` | Gross [[144, 12, 12]] Bivariate Bicycle code, Normalized Min-Sum BP-OSD-0 |
+| `surface_code.py` | Rotated Surface Code [[d^2,1,d]] with exact $\mathbb{F}_2$ homology & 3D spacetime syndrome extraction |
+| `color_code.py` | 2D Triangular Color Code with transversal Clifford gates & syndrome-only Kubica-Delfosse $A_2$ lattice + ILP decoder |
+| `decoder.py` | Edmonds Blossom MWPM (full-weight perfect matching) and genuine Delfosse-Nickerson `UnionFindDecoder` |
+| `qldpc.py` | Gross [[144, 12, 12]] Bivariate Bicycle code, Normalized Min-Sum BP-OSD |
 | `distillation.py` | 15-to-1 Bravyi-Kitaev magic state distillation factory, lattice surgery |
 
-### quanta.torch / cognitive/ -- Deep Learning & Biomorphic Quantum Engine
+### quanta.torch / cognitive/ -- Deep Learning & Biomorphic Inspired Engine
 
 | Module / File | Responsibility |
 |---------------|----------------|
-| `quanta.torch.QuantumLayer` | PyTorch nn.Module layer with analytical parameter-shift autograd VJP |
-| `quanta.torch.ContinuousResonator` | Continuous-time Schrödinger evolution, Daleckii-Krein Fréchet derivatives |
-| `quanta.torch.BiomorphicResonantBrain` | Dual-hemisphere quantum brain with 4 neuromodulators (DA, ACh, 5-HT, NE) |
-| `quanta.torch.lie_algebra` | Dynamical Lie algebra dim(g) dimension and analytical barren plateau tool |
-| `quanta.cognitive` | SWR memory consolidation, REM sleep continual replay, CSF phase shield |
+| `quanta.torch.QuantumLayer` | PyTorch `nn.Module` layer with analytical parameter-shift autograd VJP |
+| `quanta.torch.ContinuousResonantLayer` | Continuous-time Schrödinger evolution, Daleckii-Krein Fréchet derivatives |
+| `quanta.torch.BiomorphicResonantBrain` | Quantum- and neurobiology-inspired differentiable dual-hemisphere PyTorch architecture |
+| `quanta.lie_algebra` | Dynamical Lie algebra $\dim(\mathfrak{g})$ dimension and analytical barren plateau diagnosis |
+| `quanta.cognitive` | Classical/PyTorch biomorphic heuristics: SWR memory consolidation, `QuantumZenoAttention`, `QuantumDecisionArbiter` |
 
 ### benchmark/ -- Quality Benchmarking & Empirical Verification
 
@@ -156,11 +159,12 @@ mcp_server.py ──┐
 
 | File | Responsibility |
 |------|----------------|
+| `gradients.py` | Mari-Bromley-Killoran gauge-invariant QFIM, 4-term Anselmetti 2Q parameter-shift, and $O(G)$ `adjoint_gradient` |
 | `runner.py` | 6-stage orchestrator: build > DAG > compile > sim > noise > sample > result |
 | `result.py` | Measurement results, probabilities, Dirac notation, statevector |
 | `visualize.py` | ASCII and SVG circuit diagrams |
 | `visualize_state.py` | Probability histogram, Bloch sphere, phase diagram |
-| `mcp_server.py` | MCP server — **23 quantum tools** for autonomous AI assistants (SSE + stdio) |
+| `mcp_server.py` | MCP server — **25 quantum tools** for autonomous AI assistants (SSE + stdio) |
 
 ## Data Flow
 
@@ -188,12 +192,12 @@ User Code / Autonomous AI Agent (MCP)
 
 ## Architectural Design Principles
 
-1. **Standalone First-Principles Core**: Full quantum execution capability in pure Python/NumPy without requiring heavy C++/LLVM toolchains or CUDA runtimes.
-2. **Apple Silicon Zero-Copy GPU Acceleration**: Metal Performance Shaders / MLX zero-copy Unified Memory tensor pipeline yielding up to **52.09× peak speedup**.
-3. **Continuous Hilbert Gradients**: Analytical closed-form Daleckii-Krein Fréchet derivatives maintaining exact machine precision ($9.99\times 10^{-16}$) with Lie algebra barren plateau guarantees.
-4. **2026 Dual-Track FTQC**: Full Edmonds Blossom MWPM on 2D surface codes and high-rate canonical Gross $[[144, 12, 12]]$ qLDPC with native BP-OSD-0, slashing physical qubit overhead by $12\times$.
-5. **AI-Native MCP Orchestration**: 23 native Model Context Protocol tools enabling Claude, GPT, and Gemini agents to autonomously design, simulate, transpile, and verify quantum workloads.
-6. **Falsifiable Empiricism & Certified Rigor**: 2,076 fully automated tests with zero mock or synthetic oracles, certifying mathematical unitarity and CPTP trace preservation.
+1. **Standalone First-Principles Core**: Core circuit/compiler/statevector engines run in pure Python/NumPy without heavy C++/LLVM toolchains or CUDA runtimes (SciPy & NetworkX power Layer-3 solvers and QEC decoders).
+2. **Apple Silicon Zero-Copy GPU Acceleration**: Metal Performance Shaders / MLX zero-copy Unified Memory tensor pipeline yielding up to 58x–404x speedup depending on gate depth and qubit count.
+3. **Continuous & Adjoint Hilbert Gradients**: Analytical closed-form Daleckii-Krein Fréchet derivatives ($9.99\times 10^{-16}$), $O(G)$ `adjoint_gradient`, 4-term Anselmetti 2Q shift, and Mari-Bromley-Killoran gauge-invariant QFIM.
+4. **2026 Dual-Track FTQC**: Exact $\mathbb{F}_2$ homology Surface Codes with Edmonds Blossom MWPM & Delfosse-Nickerson Union-Find, Kubica-Delfosse $A_2$+ILP Color Codes, and high-rate canonical Gross $[[144, 12, 12]]$ qLDPC with native BP-OSD ($12\times$ physical qubit reduction).
+5. **AI-Native MCP Orchestration**: **25 native Model Context Protocol tools** enabling Claude, GPT, and Gemini agents to autonomously design, simulate, transpile, and verify quantum workloads.
+6. **Falsifiable Empiricism & Certified Rigor**: **2,826+ automated tests** with zero mock or synthetic oracles, certifying mathematical unitarity and CPTP trace preservation.
 
 ---
 
@@ -201,5 +205,5 @@ User Code / Autonomous AI Agent (MCP)
 
 - **Lead Author & Principal Architect**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
 - **Affiliation**: ONMARTECH Quantum Computing Initiative (`info@onmartech.com`)
-- **Permanent Software DOI**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
+- **GitHub Release**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 

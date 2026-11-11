@@ -23,6 +23,8 @@ Here, we present the exhaustive resolution of this thirty-year conflict through 
 4. **Resolution of the Internal Observer & Collapse**: The measurement problem is resolved without invoking unverified Diósi-Penrose gravitational reduction ($E_G = \hbar/\tau$) or ad-hoc Continuous Spontaneous Localization (CSL). Consensus collapse is an endogenous macroscopic quantum phase transition synchronized to $40\,\text{Hz}$ gamma cycles via parvalbumin-positive (PV+) GABAergic interneurons. Deliberation is strictly unitary ($dS = 0, Q = 0$), preserving metabolic energy until an inhibitory surge quenches the transverse field below criticality ($h_X < h_c$), triggering symmetry-breaking crystallization that dissipates Landauer's bound $Q \ge k_B T \ln 2 \approx 2.968 \times 10^{-21}\,\text{J}$ per bit, directly explaining the brain's $20\,\text{W}$ efficiency.
 5. **Scaling to Large Language Models**: By exploiting the Entanglement Area Law in modular cortical graphs ($S(\rho_A) \le c |\partial A|$), we show that real-world scaling bypasses the $2^N$ classical simulation barrier via Matrix Product States (MPS) with bounded bond dimension $\chi \le 16$. We specify two production-ready foundation model integrations: the **Quantum Contextuality Router** in Transformer attention heads and the **Continual Memory Adapter (LoRA)** with Quantum REM Sleep annealing, guaranteeing $>95\%$ retention without historical data replay.
 
+> **Epistemological & Heuristic Modeling Demarcation Note:** In strict adherence to scientific integrity principles, we distinguish between **(a) proven mathematical properties of open and closed quantum operators** (such as Lindblad Entanglement Sudden Death lifetimes, sheaf-theoretic contextuality fractions $\text{CF} > 0$, Hilbert-space QQO projection identities $q \equiv 0$, and MPS tensor-train Area Law bounds) and **(b) biomorphic neurophysical hypotheses**. The Two-Tier Posner/minicolumn framework, PV+ gamma phase-quench collapse, and working-memory correspondences are presented as **falsifiable biomorphic open-quantum-system mathematical models and computational analogies** motivating `quanta.torch.brain`—not as experimentally established wetware quantum computing in living cortical tissue.
+
 ---
 
 # 1. Executive Summary & Adversarial Architecture
@@ -634,7 +636,7 @@ where $e^{\text{NC}}$ is a non-contextual empirical model (admitting a global se
 ### Empirical Psychological Validation (`QCP-1` and `QDL-1`)
 In cognitive psychology, the order in which questions are asked alters human responses:
 $$P(A_Y \text{ then } B_Y) \ne P(B_Y \text{ then } A_Y)$$
-Wang and Busemeyer (2013, 2015, *PNAS*) proved that if cognitive states exist in a Hilbert space where decisions are represented by orthogonal projection operators ($\Pi_A, \Pi_B$), the response probabilities must satisfy the exact **Quantum Question Order (QQO) equality**:
+Wang, Solloway, Shiffrin, and Busemeyer (2013, 2014, *PNAS*) proved that if cognitive states exist in a Hilbert space where decisions are represented by orthogonal projection operators ($\Pi_A, \Pi_B$), the response probabilities must satisfy the exact **Quantum Question Order (QQO) equality**:
 $$q = \left[ P(A_Y B_Y) + P(A_N B_N) \right] - \left[ P(B_Y A_Y) + P(B_N A_N) \right] \equiv 0$$
 
 Across dozens of large-scale empirical studies (Pew Research, Gallup polls on political and ethical questions), human subjects strictly satisfy the QQO equality:
@@ -991,7 +993,7 @@ The following consolidated parameter table establishes the grounded physical, an
 | **CSW KCBS Classical Bound** | $\alpha(C_5)$ | $2.0$ | dimensionless | Graph independence number (classical) |
 | **CSW KCBS Quantum Bound** | $\vartheta(C_5)$ | $\sqrt{5} \approx 2.236$ | dimensionless | Lovász theta function (quantum saturation) |
 | **Contextuality Fraction (Classical)**| $\text{CF}_{\text{classical}}$ | $\mathbf{0.0}$ | dimensionless | Sheaf-theoretic global section existence |
-| **QQO Order Parameter Invariance**| $q$ | $\mathbf{0.000 \pm 0.012}$ | dimensionless | Wang & Busemeyer (2015, PNAS) |
+| **QQO Order Parameter Invariance**| $q$ | $\mathbf{0.000 \pm 0.012}$ | dimensionless | Wang et al. (2014, PNAS) |
 | **MPS Tensor Bond Dimension** | $\chi$ | $\le 16$ | dimensionless | Matrix Product State polynomial rank |
 | **Total Neocortical Power** | $P_{\text{brain}}$ | $\approx 20.0$ | $\text{W}$ | Whole-body metabolic respirometry budget |
 

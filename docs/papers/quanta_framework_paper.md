@@ -8,12 +8,11 @@ date: "2026-09-25"
 # Quanta: A Zero-Dependency Quantum Software Architecture with Apple Silicon Metal/MLX Acceleration, Continuous Hilbert Autograd, and 2026 Dual-Track Fault Tolerance
 
 <div class="result" markdown>
-<span><img src="https://img.shields.io/badge/arXiv-quant--ph%2F2609.xxxxx-b31b1b.svg" alt="arXiv"/></span>
-<span><img src="https://img.shields.io/badge/JOSS-10.21105%2Fjoss.quanta-blue.svg" alt="JOSS"/></span>
-<span><a href="https://doi.org/Pending Registration"><img src="https://img.shields.io/badge/DOI-pending%20publication-orange.svg" alt="Zenodo DOI"/></a></span>
 <span><img src="https://img.shields.io/badge/version-1.2.0-blue.svg" alt="Version"/></span>
 <span><img src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-brightgreen.svg" alt="Python"/></span>
-<span><img src="https://img.shields.io/badge/tests-2%2C076%20passed-success.svg" alt="Tests"/></span>
+<span><img src="https://img.shields.io/badge/tests-2%2C826%2B%20passed-success.svg" alt="Tests"/></span>
+<span><img src="https://img.shields.io/badge/gates-34%20native-informational.svg" alt="Gates"/></span>
+<span><img src="https://img.shields.io/badge/MCP-25%20tools-purple.svg" alt="MCP Tools"/></span>
 <span><img src="https://img.shields.io/badge/hardware-Apple%20Silicon%20Metal%2FMLX-orange.svg" alt="Hardware"/></span>
 </div>
 
@@ -31,8 +30,8 @@ date: "2026-09-25"
     <ul style="margin: 0; padding-left: 20px;">
       <li><strong>Lead Author & Principal Architect:</strong> <strong>Abdullah Enes SARI</strong> (<a href="https://orcid.org/0000-0002-8827-0587" target="_blank">ORCID: 0000-0002-8827-0587</a>) &mdash; <em>ONMARTECH Quantum Computing Initiative</em>, Istanbul, Turkey (<a href="mailto:info@onmartech.com">info@onmartech.com</a>)</li>
       <li><strong>Co-Author & Peer Inspection Board:</strong> <strong>Quanta Quantum Research Group</strong> (<em>ONMARTECH Quantum Computing Initiative</em>)</li>
-      <li><strong>Release Designation:</strong> <code>Quanta SDK v1.2.0-production</code> | <strong>Date:</strong> October 14, 2026</li>
-      <li><strong>Target Archives:</strong> arXiv:quant-ph / cs.MS; Journal of Open Source Software (JOSS); Zenodo / CERN (<a href="https://doi.org/Pending Registration">DOI: Pending Registration</a>)</li>
+      <li><strong>Release Designation:</strong> <code>Quanta SDK v1.2.0-production</code> | <strong>Latest Release:</strong> <a href="https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0">GitHub Release v1.2.0</a></li>
+      <li><strong>Target Venues:</strong> Quantum Software Architecture Technical Whitepaper (arXiv <code>quant-ph</code> / <code>cs.MS</code> &amp; JOSS manuscript track)</li>
       <li><strong>Official Repository:</strong> <a href="https://github.com/ONMARTECH/quanta-sdk">github.com/ONMARTECH/quanta-sdk</a> | <strong>Documentation:</strong> <a href="https://quanta.onmartech.com/">quanta.onmartech.com</a></li>
     </ul>
   </div>
@@ -45,13 +44,13 @@ date: "2026-09-25"
 
 The prevailing software ecosystem for quantum computing suffers from significant architectural fragmentation, characterized by cumbersome multi-language compilation toolchains (C++/Rust/LLVM), proprietary CUDA driver dependencies, PCIe bus host-to-device memory transfer bottlenecks, and numerical instabilities arising from heuristic approximations. 
 
-In this work, we introduce **Quanta** (version 1.2.0), a local-first, zero-dependency quantum software architecture built from first principles in pure Python and NumPy. Quanta resolves foundational scaling and differentiability barriers across five core scientific paradigms:
+In this work, we introduce **Quanta** (version 1.2.0), a local-first quantum software architecture whose core circuit, compiler, and statevector engine requires only Python and NumPy (while SciPy and NetworkX power Layer-3 solvers and QEC decoders). Quanta resolves foundational scaling and differentiability barriers across five core scientific paradigms:
 
-1. **Standalone First-Principles Core**: A self-contained $O(2^n)$ multidimensional tensor contraction engine with thread-isolated circuit construction and native instruction sets for IBM Heron ($SX, ECR$), Google Sycamore ($iSWAP$), and IonQ ($MS$) hardware architectures, bypassing $O(4^n)$ Kronecker expansions.
-2. **Apple Silicon Metal / MLX Zero-Copy GPU Acceleration**: Hardware-native acceleration on Apple Silicon unified memory architectures via Metal Performance Shaders and Apple MLX, completely eliminating PCIe data transfer overhead ($\Delta t_{\text{PCIe}} \equiv 0$) and yielding up to $52.1\times$ GPU acceleration over CPU NumPy, paired with a vectorized SIMD Aaronson-Gottesman binary tableau simulator achieving peak throughputs exceeding $3.1 \times 10^6$ Clifford gates/second and a norm-preserving Matrix Product State (MPS) simulator.
-3. **Continuous Hilbert Gradients & Daleckii-Krein Spectral Autograd (`quanta.torch`)**: Continuous-time quantum neural network autograd governed by the Daleckii-Krein spectral Fréchet formula with an exact cardinal sine kernel, achieving IEEE 754 double-precision gradient evaluation ($9.99 \times 10^{-16}$ error against analytical parameter shifts) without Padé norm drift ($>1.3 \times 10^{-6}$), combined with analytical Dynamical Lie Algebra (DLA) closure $\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$ and Barren Plateau variance bounds $\operatorname{Var}[\partial_\theta \langle O \rangle] \le 1/\dim(\mathfrak{g})$.
-4. **2026 Dual-Track Fault-Tolerance Engine (FTQC)**: An end-to-end fault-tolerance runtime featuring **Track A** (Edmonds Blossom minimum-weight perfect matching on rotated $[[d^2, 1, d]]$ surface codes with Google Willow-compatible 3D spacetime defect graphs $\Delta s_t = s_t \oplus s_{t-1}$) and **Track B** (the canonical Gross $[[144, 12, 12]]$ Bivariate Bicycle quantum Low-Density Parity-Check code delivering a $12\times$ physical qubit memory compression over 2D surface codes, decoded via a native Normalized Min-Sum Belief Propagation and Ordered Statistics Decoder with an average decode latency of $1.54$ ms and $100\%$ clearance), alongside 15-to-1 Bravyi-Kitaev magic state distillation ($\epsilon_{\text{out}} \le 35 p^3$) and planar lattice surgery.
-5. **Certified Mathematical Rigor**: Runtime conservation invariant guards enforcing spectral unitarity ($\|U^\dagger U - I\|_\infty < 10^{-14}$), Noetherian symmetry conservation, and completely positive trace-preserving (CPTP) dynamics ($|\operatorname{Tr}(\rho) - 1| < 10^{-12}$) across a regression-free verification suite of 2,711 automated tests.
+1. **Standalone First-Principles Core & Universal Synthesis**: A self-contained $O(2^n)$ multidimensional tensor contraction engine with thread-isolated circuit construction, **34 native quantum gates** (including `CRX`, `CRY`, `CRZ`, IBM Heron $SX, ECR$, Google Sycamore $iSWAP$, IonQ $MS$, Fredkin `CSWAP`, and Margolus `RCCX, RC3X`), universal 1Q ZYZ / Heron and 2Q Cartan/KAK $SU(4)$ unitary synthesis, 127Q/156Q IBM Heavy-Hex dynamic SWAP routing, and **25 Model Context Protocol (MCP) tools**, bypassing $O(4^n)$ Kronecker expansions.
+2. **Apple Silicon Metal / MLX Zero-Copy GPU Acceleration**: Hardware-native acceleration on Apple Silicon unified memory architectures via Metal Performance Shaders and Apple MLX, completely eliminating PCIe data transfer overhead ($\Delta t_{\text{PCIe}} \equiv 0$) and yielding up to $52.1\times$ multi-layer GPU acceleration over CPU NumPy, paired with a vectorized SIMD Aaronson-Gottesman full $(2n+1) \times (2n+1)$ binary tableau simulator with phase vector achieving peak throughputs exceeding $3.1 \times 10^6$ Clifford gates/second and a norm-preserving mixed-canonical Matrix Product State (MPS) simulator.
+3. **Continuous Hilbert Gradients, Analytical Circuit Adjoints & Daleckii-Krein Spectral Autograd**: Continuous-time quantum neural network autograd (`quanta.torch`) governed by the Daleckii-Krein spectral Fréchet formula with an exact cardinal sine kernel, achieving IEEE 754 double-precision gradient evaluation ($9.99 \times 10^{-16}$ error against analytical parameter shifts) without Padé norm drift ($>1.3 \times 10^{-6}$), paired with $O(G)$ reverse-mode `adjoint_gradient`, 4-term Anselmetti two-qubit parameter-shift rules, Mari-Bromley-Killoran gauge-invariant Quantum Fisher Information Matrix (QFIM) natural gradients (`quanta.gradients`), and analytical Dynamical Lie Algebra (DLA) closure $\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$ with Barren Plateau variance bounds $\operatorname{Var}[\partial_\theta \langle O \rangle] \le 1/\dim(\mathfrak{g})$.
+4. **2026 Dual-Track Fault-Tolerance Engine (FTQC)**: An end-to-end fault-tolerance runtime featuring **Track A** (exact $\mathbb{F}_2$ homology rotated $[[d^2, 1, d]]$ surface codes decoded via Edmonds Blossom MWPM and almost-linear Delfosse-Nickerson `UnionFindDecoder`, syndrome-only Kubica-Delfosse $A_2$-lattice + ILP `ColorCode`, and Google Willow-compatible 3D spacetime defect graphs $\Delta s_t = s_t \oplus s_{t-1}$) and **Track B** (the canonical Gross $[[144, 12, 12]]$ Bivariate Bicycle quantum Low-Density Parity-Check code delivering a $12\times$ physical qubit memory compression over 2D surface codes, decoded via a native Normalized Min-Sum Belief Propagation and Ordered Statistics Decoder with an average decode latency of $1.54$ ms and $100\%$ clearance), alongside 15-to-1 Bravyi-Kitaev magic state distillation ($\epsilon_{\text{out}} \le 35 p^3$) and planar lattice surgery.
+5. **Certified Mathematical Rigor**: Runtime conservation invariant guards enforcing spectral unitarity ($\|U^\dagger U - I\|_\infty < 10^{-14}$), Noetherian symmetry conservation, and completely positive trace-preserving (CPTP) dynamics ($|\operatorname{Tr}(\rho) - 1| < 10^{-12}$) across a regression-free verification suite of **2,826+ automated tests**.
 
 We present an exhaustive 10-vector comparative analysis against leading quantum frameworks (Qiskit, Cirq, PennyLane, Stim, PyMatching, QuTiP, Julia QuantumClifford) alongside empirical microbenchmarks validating the framework's mathematical fidelity and computational throughput.
 
@@ -66,25 +65,25 @@ Where NISQ workflows prioritized small, parameterized circuit executions and emp
 ```mermaid
 flowchart TD
     subgraph L5["Paradigm 5: Certified Mathematical Rigor & Conservation Invariants"]
-        R1["Spectral Unitarity ||U†U - I|| < 1e-14"] --- R2["CPTP Trace |Tr(ρ)-1| < 1e-12"] --- R3["2,076 Passing Tests"]
+        R1["Spectral Unitarity ||U†U - I|| < 1e-14"] --- R2["CPTP Trace |Tr(ρ)-1| < 1e-12"] --- R3["2,826+ Passing Tests"]
     end
     subgraph L4["Paradigm 4: 2026 FTQC Dual-Track Fault-Tolerance Engine"]
-        TA["Track A: Rotated [[d², 1, d]] + Blossom MWPM + 3D Spacetime Graph"]
+        TA["Track A: Rotated [[d², 1, d]] (MWPM + UF) + ColorCode + 3D Spacetime"]
         TB["Track B: Gross [[144, 12, 12]] qLDPC (12x Savings) + Min-Sum BP-OSD"]
         TU["Universality: 15-to-1 Bravyi-Kitaev Magic Distillation + Lattice Surgery"]
     end
-    subgraph L3["Paradigm 3: Continuous Hilbert Gradients & Daleckii-Krein Autograd"]
+    subgraph L3["Paradigm 3: Continuous Hilbert Gradients, Adjoint & Daleckii-Krein Autograd"]
         DK["Exact Spectral Fréchet Derivative (Sinc Kernel, Machine Precision 1e-16)"]
-        EF["Ehrenfest Time Derivatives d/dt⟨O⟩"]
+        EF["O(G) Adjoint Gradient + 4-Term 2Q Shift + QFIM + Ehrenfest d/dt⟨O⟩"]
         DLA["Dynamic Lie Algebra Bound: Var ≤ 1/dim(g)"]
     end
     subgraph L2["Paradigm 2: Apple Silicon Metal / MLX & SIMD High-Throughput Simulation"]
         UMA["Zero-Copy Unified Memory (52.1x GPU Speedup, Zero PCIe Latency)"]
-        SIMD["SIMD Binary Tableau (>3.1M Clifford ops/s)"]
-        MPS["Norm-Preserving MPS Simulator (250q GHZ in 2.7 ms)"]
+        SIMD["(2n+1)×(2n+1) Binary Tableau (>3.1M Clifford ops/s)"]
+        MPS["Norm-Preserving Mixed-Canonical MPS (250q GHZ in 3.0 ms)"]
     end
-    subgraph L1["Paradigm 1: Local-First Zero-Dependency First-Principles Core"]
-        PY["Pure Python & NumPy Core"] --- TC["O(2^n) Multidimensional Tensor Contractions"] --- NO["Zero C++/LLVM/CUDA Lock-in"]
+    subgraph L1["Paradigm 1: Local-First First-Principles Core & Synthesis"]
+        PY["Python & NumPy Core (34 Gates, 25 MCP Tools)"] --- TC["O(2^n) Tensor Contractions + Cartan/KAK SU(4)"] --- NO["Zero C++/LLVM/CUDA Lock-in"]
     end
 
     L1 ==> L2 ==> L3 ==> L4 ==> L5
@@ -148,7 +147,9 @@ This DAG topology enables:
 - Automated topological depth computation
 - Commutative gate reordering
 - Exact identity cancellation passes ($H \cdot H = I$, $CX \cdot CX = I$, $R_z(\theta) R_z(-\theta) = I$)
-- Native hardware transpilation targeting IBM Heron ($SX, ECR$), Google Sycamore ($iSWAP$), IonQ ($MS$), and Margolus ($RCCX, RC3X$) gate sets without intermediate compilation penalties.
+- **34 native quantum gates**, including controlled rotations (`CRX`, `CRY`, `CRZ`), IBM Heron ($SX, ECR$), Google Sycamore ($iSWAP$), IonQ ($MS$), Fredkin (`CSWAP`), and Margolus (`RCCX, RC3X`)
+- Universal 1Q ZYZ / Heron `RZ-SX-RZ-SX-RZ` and 2Q Cartan/KAK $SU(4)$ arbitrary unitary synthesis (`quanta/compiler/synthesis.py`), plus dynamic SWAP layout tracking across 127-qubit and 156-qubit IBM Heavy-Hex topologies
+- Native exposure of **25 Model Context Protocol (MCP) tools** (`quanta/mcp_server.py`) for programmatic AI agent orchestration.
 
 ---
 
@@ -207,17 +208,18 @@ As demonstrated in our empirical benchmarks, this zero-copy architecture achieve
 
 For quantum circuits restricted to the Clifford group $\mathcal{C}_n = \{ U \in \mathcal{U}(2^n) \mid U \mathcal{P}_n U^\dagger = \mathcal{P}_n \}$, the Gottesman-Knill theorem guarantees classical polynomial-time simulability. Quanta implements a vectorized, SIMD-accelerated stabilizer simulator based on the Aaronson-Gottesman binary tableau formalism (`quanta/simulator/pauli_frame.py`).
 
-A state of $n$ qubits is uniquely specified by an integer matrix $\mathcal{T} \in \mathbb{F}_2^{2n \times (2n+1)}$ of type `np.int8`:
+A state of $n$ qubits is uniquely specified by a full Aaronson-Gottesman integer matrix $\mathcal{T} \in \mathbb{F}_2^{(2n+1) \times (2n+1)}$ of type `np.int8` (where row $2n+1$ serves as the auxiliary rowsum scratch accumulator):
 
 $$
 \mathcal{T} = \begin{pmatrix}
 x_{1,1} & \dots & x_{1,n} & z_{1,1} & \dots & z_{1,n} & r_1 \\
 \vdots & \ddots & \vdots & \vdots & \ddots & \vdots & \vdots \\
-x_{2n,1} & \dots & x_{2n,n} & z_{2n,1} & \dots & z_{2n,n} & r_{2n}
+x_{2n,1} & \dots & x_{2n,n} & z_{2n,1} & \dots & z_{2n,n} & r_{2n} \\
+x_{2n+1,1} & \dots & x_{2n+1,n} & z_{2n+1,1} & \dots & z_{2n+1,n} & r_{2n+1}
 \end{pmatrix}
 $$
 
-where rows $1 \le i \le n$ represent destabilizer generators $R_i$, rows $n+1 \le i \le 2n$ represent stabilizer generators $S_{i-n}$, columns $1 \le j \le n$ store Pauli-$X$ bits ($x_{ij}$), columns $n+1 \le j \le 2n$ store Pauli-$Z$ bits ($z_{ij}$), and column $2n+1$ encodes the overall phase $r_i \in \{0, 1\}$ corresponding to $(-1)^{r_i}$.
+where rows $1 \le i \le n$ represent destabilizer generators $R_i$, rows $n+1 \le i \le 2n$ represent stabilizer generators $S_{i-n}$, row $2n+1$ is the scratch accumulator for exact Pauli product phase tracking, columns $1 \le j \le n$ store Pauli-$X$ bits ($x_{ij}$), columns $n+1 \le j \le 2n$ store Pauli-$Z$ bits ($z_{ij}$), and column $2n+1$ encodes the phase vector $r_i \in \{0, 1\}$ corresponding to $(-1)^{r_i}$.
 
 Quanta replaces classical element-wise loops with vectorized NumPy column-slice operations executed via 64-bit SIMD registers on ARM64 processors:
 
@@ -399,7 +401,7 @@ This theorem establishes an exact diagnostic taxonomy:
   $$\operatorname{Var} \ge \Omega\left(\frac{1}{\operatorname{poly}(n)}\right)$$
   guaranteeing that gradients remain detectable and the model is provably immune to barren plateaus.
 
-Quanta provides `is_barren_plateau_immune(dla_dim, n_qubits)`, allowing researchers to verify ansatz trainability prior to executing large-scale numerical optimizations.
+Quanta provides `is_barren_plateau_immune(dla_dim, n_qubits)`, allowing researchers to verify ansatz trainability prior to executing large-scale numerical optimizations. For discrete gate-model variational circuits (`quanta/gradients.py`), Quanta further provides exact 2-term (1Q) and 4-term Anselmetti (2Q entangling) parameter-shift rules, $O(G)$ reverse-mode `adjoint_gradient` statevector differentiation, and the Mari-Bromley-Killoran gauge-invariant Quantum Fisher Information Matrix (QFIM) for natural gradient descent.
 
 ---
 
@@ -407,9 +409,9 @@ Quanta provides `is_barren_plateau_immune(dla_dim, n_qubits)`, allowing research
 
 ```mermaid
 flowchart TD
-    subgraph TRACKA["Track A: 2D Surface Codes & Google Willow 3D Engine"]
-        LAT["Rotated [[d², 1, d]] Lattice<br>m_X = (d²-1)/2,  m_Z = (d²-1)/2"] --> ST["3D Spacetime Defect Graph<br>Temporal: Δs_t = s_t ⊕ s_{t-1}<br>Weights: w = -ln(p/(1-p))"]
-        ST --> MWPM["Edmonds Blossom MWPM Decoder<br>Optimal Matching O(V³)<br>Suppression: P_L ∝ (p/p_th)^{(d+1)/2}"]
+    subgraph TRACKA["Track A: 2D Topological Codes & Google Willow 3D Engine"]
+        LAT["Rotated [[d², 1, d]] Surface Code (F₂ Homology)<br>+ 6.6.6 A₂-Lattice Triangular ColorCode"] --> ST["3D Spacetime Defect Graph<br>Temporal: Δs_t = s_t ⊕ s_{t-1}<br>Weights: w = -ln(p/(1-p))"]
+        ST --> MWPM["Edmonds Blossom MWPM + Delfosse-Nickerson Union-Find<br>+ Syndrome-Only ILP ColorCode Decoder"]
     end
 
     subgraph TRACKB["Track B: Canonical Gross [[144, 12, 12]] qLDPC Code"]
@@ -455,7 +457,7 @@ w(b_i, b_j) &= 0, \quad \forall b_i, b_j \in \mathcal{D}_{\text{boundary}}
 \end{aligned}$$
 </div>
 
-Solving MWPM over $G_{\text{match}}$ via Edmonds' Blossom algorithm pairs internal defects with minimal-cost correction chains while permitting unpartnered defects to match to virtual boundaries at zero cost. Physical Pauli correction operators ($X$ and $Z$) are reconstructed by backtracking shortest physical qubit chains along lattice edges.
+Solving MWPM over $G_{\text{match}}$ via Edmonds' Blossom algorithm pairs internal defects with minimal-cost correction chains while permitting unpartnered defects to match to virtual boundaries at zero cost. Physical Pauli correction operators ($X$ and $Z$) are reconstructed by backtracking shortest physical qubit chains along lattice edges. Alongside MWPM, Track A includes a genuine Delfosse-Nickerson cluster-growth and spanning-tree peeling `UnionFindDecoder` (`quanta/qec/decoder.py`) operating in almost-linear $O(n \, \alpha(n))$ time, as well as a triangular $[[ (3d^2+1)/4, 1, d ]]$ 6.6.6 $A_2$-lattice `ColorCode` (`quanta/qec/color_code.py`) decoded via syndrome-only Integer Linear Programming (ILP) without data-qubit oracle leakage.
 
 To mirror the Google Willow architecture (Google Quantum AI, 2024), Quanta provides multi-cycle dynamic spacetime syndrome extraction (`simulate_dynamic`). Over $T$ consecutive measurement rounds with physical data error probability $p_{\text{phys}}$ and syndrome measurement error probability $p_{\text{meas}}$, the decoder processes **differential spacetime defect events**:
 
@@ -592,16 +594,16 @@ To ensure that simulations adhere to foundational laws of theoretical physics wi
    preserves unit trace throughout time trajectories ($|\operatorname{Tr}(\rho(t)) - 1.0| < 10^{-10}$) and computes steady states $\mathcal{L} |\rho_{\text{ss}}\rangle\rangle = 0$ via null-space least squares.
 6. **Higher-Order Symplectic Integrators**: Discrete Hamiltonian simulation provides second-order Suzuki-Trotter splitting (local error $O(\Delta t^3)$), fourth-order Suzuki fractal decomposition ($p = \frac{1}{4 - 4^{1/3}}$, local error $O(\Delta t^5)$), and fourth-order two-point Gauss-Legendre Magnus integrators for time-dependent Hamiltonians $H(t)$, strictly preserving unitarity ($\|U^\dagger U - I\| < 10^{-14}$).
 
-### 6.2 Test Suite Architecture: 2,076 Passing Tests
+### 6.2 Test Suite Architecture: 2,826+ Passing Tests
 
-Quanta enforces a strict zero-mocking testing mandate. The complete verification suite comprises **2,076 automated tests** executing under `pytest` with 100% pass rate:
+Quanta enforces a strict zero-mocking testing mandate. The complete verification suite comprises **2,826+ automated tests** executing under `pytest` with 100% pass rate:
 
 - `tests/test_theoretical_physics_m1.py`: Verifies machine-precision unitarity, Suzuki-Trotter convergence orders, and Kraus CPTP trace preservation.
 - `tests/test_m1_mathematical_theorems.py`: Proves the Tsirelson bound ($2\sqrt{2}$) for CHSH inequalities, Bessel function exactness in continuous-time quantum walks, and Daleckii-Krein Fréchet derivatives against parameter-shift.
-- `tests/test_qec_ftqc_m2.py`: Validates Edmonds Blossom matching optimality over greedy heuristics, Google Willow 3D spacetime defect graphs, Gross $[[144, 12, 12]]$ CSS commutativity, BP-OSD decoding, and 15-to-1 magic state distillation.
+- `tests/test_qec_ftqc_m2.py`: Validates Edmonds Blossom MWPM and Delfosse-Nickerson Union-Find optimality, syndrome-only $A_2$-lattice + ILP ColorCode decoding, Google Willow 3D spacetime defect graphs, Gross $[[144, 12, 12]]$ CSS commutativity, BP-OSD decoding, and 15-to-1 magic state distillation.
 - `tests/test_torch_continuous.py`: Validates PyTorch autograd gradient checking (`gradcheck`), Ehrenfest time derivatives, and XOR classification convergence.
 - `tests/test_mlx_simulator.py`: Tests Apple Silicon Metal GPU tensor contraction kernels, lazy graph synchronization, and 30-qubit statevector allocations.
-- `tests/test_mps_simulator.py`: Verifies Schmidt truncation norm preservation and 250-qubit GHZ entanglement synthesis.
+- `tests/test_mps_simulator.py`: Verifies mixed-canonical Schmidt truncation norm preservation, non-adjacent SWAP routing, and 250-qubit GHZ entanglement synthesis.
 
 ---
 
@@ -611,12 +613,12 @@ To evaluate Quanta's position within the global quantum software ecosystem, we p
 
 | # | Architectural Vector | Quanta SDK v1.2.0 | Qiskit | Cirq | PennyLane | Stim | PyMatching | QuTiP | Julia QuantumClifford |
 |---|---|---|---|---|---|---|---|---|---|
-| **1** | **Core Dependency Footprint** | **Zero-Dependency** (Pure Python & NumPy) | Heavy C++/Rust wheels, Rustworkx | C++ extensions (`qsimcirq`) | Python/C++ plugin matrix | C++11 compiled binary | C++ PMlib / Cython | Cython / C++ ODE solvers | Julia LLVM runtime |
+| **1** | **Core Dependency Footprint** | **Pure Python & NumPy Core** (SciPy/NetworkX for Layer-3 & QEC) | Heavy C++/Rust wheels, Rustworkx | C++ extensions (`qsimcirq`) | Python/C++ plugin matrix | C++11 compiled binary | C++ PMlib / Cython | Cython / C++ ODE solvers | Julia LLVM runtime |
 | **2** | **GPU & Memory Architecture** | **Apple Silicon UMA Zero-Copy** (MLX/Metal) | Host-to-Device PCIe CUDA transfers | Host-to-Device PCIe CUDA (`qsim`) | Host-to-Device PCIe CUDA | CPU SIMD only | CPU single/multi-thread | CPU NumPy/SciPy | Julia CUDA.jl (PCIe transfers) |
-| **3** | **Continuous Matrix Gradient** | **Daleckii-Krein Fréchet** ($10^{-16}$ precision) | Parameter-shift / Finite differences | Finite differences / Qsim analytic | Parameter-shift ($2P$ evaluations) | N/A (Stabilizer only) | N/A (Decoder only) | Numerical ODE adjoints | N/A (Clifford only) |
+| **3** | **Continuous & Circuit Gradients** | **Daleckii-Krein ($10^{-16}$) + $O(G)$ Adjoint + 4-Term 2Q + QFIM** | Parameter-shift / Finite differences | Finite differences / Qsim analytic | Parameter-shift ($2P$ evals) / Adjoint | N/A (Stabilizer only) | N/A (Decoder only) | Numerical ODE adjoints | N/A (Clifford only) |
 | **4** | **Lie Algebra & Barren Plateaus** | **Native DLA Closure** & $1/\dim(\mathfrak{g})$ bound | External algorithms repo | Manual external scripts | Experimental research module | N/A | N/A | Dynamics only | N/A |
-| **5** | **Clifford Gate Throughput** | **$>3.1 \times 10^6$ ops/s** (SIMD $\mathbb{F}_2$) | $>5 \times 10^5$ ops/s (Aer) | $>3 \times 10^5$ ops/s | Backend dependent | **$>10^7$ ops/s** (AVX-512 C++) | N/A | External add-ons | $>2 \times 10^6$ ops/s |
-| **6** | **2D Surface Codes & Willow** | **Rotated $[[d^2,1,d]]$ + 3D Spacetime** | Tutorial modules | Experimental Cirq-FT | Plugin-based | Detector error models | Sparse Blossom MWPM | N/A | Basic stabilizer circuits |
+| **5** | **Clifford Gate Throughput** | **$>3.1 \times 10^6$ ops/s** ($(2n+1)\times(2n+1)$ $\mathbb{F}_2$) | $>5 \times 10^5$ ops/s (Aer) | $>3 \times 10^5$ ops/s | Backend dependent | **$>10^7$ ops/s** (AVX-512 C++) | N/A | External add-ons | $>2 \times 10^6$ ops/s |
+| **6** | **2D Topological Codes & Willow** | **Rotated $[[d^2,1,d]]$ (MWPM + UF) + $A_2$/ILP ColorCode + 3D Willow** | Tutorial modules | Experimental Cirq-FT | Plugin-based | Detector error models | Sparse Blossom MWPM | N/A | Basic stabilizer circuits |
 | **7** | **High-Dim qLDPC & BP-OSD** | **Gross $[[144,12,12]]$ + BP-OSD-0** | Experimental `qiskit-qec` | N/A | N/A | General CSS circuits | MWPM graphs only | N/A | Basic Clifford LDPC |
 | **8** | **Non-Clifford Distillation** | **15-to-1 BK ($\epsilon \le 35p^3$) + CCZ** | User assembled | Cirq-FT research | N/A | N/A | N/A | N/A | N/A |
 | **9** | **Large-Scale Tensor Networks** | **Native MPS with SVD Renorm** | MatrixProductState in Aer | Cirq MPS | TensorNetwork wrapper | N/A | N/A | `mesolve` / MPS | N/A |
@@ -710,42 +712,38 @@ Decoding performance of the Gross $[[144, 12, 12]]$ Bivariate Bicycle qLDPC code
 
 ## 9. Code Artifacts & Practical Implementation
 
-### 9.1 First-Principles Circuit & Native Gates
+### 9.1 First-Principles Declarative Circuit & Native Gates
 
 ```python
-import numpy as np
-from quanta import Circuit
+from quanta import circuit, H, SX, iSWAP, CX, measure, run
 
 # Construct 3-qubit circuit with IBM Heron & Sycamore native gates
-qc = Circuit(3)
-qc.h(0)
-qc.sx(1)            # IBM Heron sqrt(X) primitive
-qc.iswap(0, 1)      # Google Sycamore iSWAP primitive
-qc.cx(1, 2)
-qc.measure_all()
+@circuit(qubits=3)
+def native_demo(q):
+    H(q[0])
+    SX(q[1])             # IBM Heron sqrt(X) primitive
+    iSWAP(q[0], q[1])    # Google Sycamore iSWAP primitive
+    CX(q[1], q[2])
+    return measure(q)
 
 # Simulate statevector contraction (O(2^n) complexity)
-result = qc.run(shots=1000)
+result = run(native_demo, shots=1000, seed=42)
 print("Measurement counts:", result.counts)
 ```
 
 ### 9.2 Apple Silicon Metal / MLX Zero-Copy GPU Acceleration
 
 ```python
-from quanta import Circuit
 from quanta.simulator.mlx import MLXSimulator
 
-# Create deep 20-qubit circuit
-qc = Circuit(20)
-for q in range(20):
-    qc.h(q)
-for q in range(19):
-    qc.cx(q, q + 1)
+# Execute 16-qubit ladder circuit on Apple Silicon Metal GPU with unified memory
+sim = MLXSimulator(num_qubits=16, seed=42)
+for q in range(16):
+    sim.apply("H", (q,))
+for q in range(15):
+    sim.apply("CX", (q, q + 1))
 
-# Execute on Apple Silicon Metal GPU with zero-copy unified memory
-sim = MLXSimulator(num_qubits=20)
-sim.run(qc)
-state = sim.statevector()  # Zero PCIe copy overhead!
+state = sim.state  # Zero PCIe copy overhead on Apple Silicon UMA
 print(f"Statevector shape: {state.shape}, dtype: {state.dtype}")
 ```
 
@@ -753,49 +751,51 @@ print(f"Statevector shape: {state.shape}, dtype: {state.dtype}")
 
 ```python
 import torch
-from quanta.torch import ContinuousResonantLayer
+from quanta.torch.continuous import ContinuousResonantLayer
 
 # Initialize continuous resonant layer with graph Hamiltonian
 layer = ContinuousResonantLayer(
-    num_qubits=4,
-    interaction_graph="ring",
-    evolution_time=1.5,
-    learnable_time=True
+    num_nodes=4,
+    in_features=4,
+    coupling_graph="ring",
+    initial_time=1.5,
+    learnable_time=True,
 )
 
 x = torch.randn(8, 4, requires_grad=True)  # Batch of inputs
-out = layer(x)                            # Observable expectations <Z_j>
+out = layer(x)                             # Observable expectations <Z_j>
 loss = out.sum()
-loss.backward()                           # Exact Daleckii-Krein spectral autograd
+loss.backward()                            # Exact Daleckii-Krein spectral autograd
 
 print("Input gradient norm:", x.grad.norm().item())
-print("Evolution time gradient:", layer.time.grad.item())
+print("Evolution time gradient:", layer.t.grad.item())
 ```
 
 ### 9.4 Track B Gross [[144, 12, 12]] qLDPC & BP-OSD Decoding
 
 ```python
 import numpy as np
-from quanta.qec.qldpc import GrossBivariateBicycleCode, BPOSDDecoder
+from quanta.qec.qldpc import BivariateBicycleCode, BPOSDDecoder
 
-# Instantiate Gross [[144, 12, 12]] code
-code = GrossBivariateBicycleCode()
+# Instantiate canonical Gross [[144, 12, 12]] Bivariate Bicycle code
+code = BivariateBicycleCode.gross_144_12_12()
+surface_equivalent_qubits = code.k * (code.d ** 2)
 print(f"Code parameters: [[{code.n}, {code.k}, {code.d}]]")
-print(f"Memory compression vs surface code: {code.qubit_compression_ratio}x")
+print(f"Data-qubit compression vs rotated surface code: {surface_equivalent_qubits // code.n}x")
 
-# Inject random weight-2 physical X error
-error = np.zeros(code.n, dtype=np.uint8)
+# Inject deterministic weight-2 physical X error
+error = np.zeros(code.n, dtype=np.int8)
 error[[12, 85]] = 1
 syndrome = (code.H_Z @ error) % 2
 
 # Decode via native BP-OSD (Normalized Min-Sum with OSD-0 fallback)
-decoder = BPOSDDecoder(code.H_Z, max_iter=30, alpha=0.75)
-correction = decoder.decode(syndrome)
+decoder = BPOSDDecoder(code.H_Z, max_bp_iter=30)
+dec_res = decoder.decode(syndrome)
 
 # Verify complete syndrome clearance
-residual_syndrome = (code.H_Z @ ((error ^ correction) % 2)) % 2
-assert np.all(residual_syndrome == 0), "Syndrome clearance certified!"
-print("Decoding successful! Residual syndrome is zero.")
+residual_syndrome = (code.H_Z @ ((error ^ dec_res.correction_vector) % 2)) % 2
+assert dec_res.success and np.all(residual_syndrome == 0), "Syndrome clearance certified!"
+print("Decoding successful! Corrected qubits:", dec_res.correction)
 ```
 
 ---
@@ -834,17 +834,17 @@ The authors express their gratitude to the **ONMARTECH Quantum Computing Initiat
 8. **Bravyi, S., Cross, A. W., Gambetta, J. M., Maslov, D., Rall, P., & Yoder, T. J.** (2024). High-threshold and low-overhead fault-tolerant quantum memory. *Nature*, 627(8005), 778–782. [DOI: 10.1038/s41586-024-07107-7](https://doi.org/10.1038/s41586-024-07107-7)
 9. **Edmonds, J.** (1965). Paths, trees, and flowers. *Canadian Journal of Mathematics*, 17, 449–467. [DOI: 10.4153/CJM-1965-045-4](https://doi.org/10.4153/CJM-1965-045-4)
 10. **Kolmogorov, V.** (2009). Blossom V: a new implementation of a minimum cost perfect matching algorithm. *Mathematical Programming Computation*, 1(1), 43–67. [DOI: 10.1007/s12532-009-0002-8](https://doi.org/10.1007/s12532-009-0002-8)
-11. **Higgott, O.** (2022). PyMatching: A Python package for decoding quantum codes with minimum-weight perfect matching. *ACM Transactions on Quantum Computing*, 3(3), 1–16. [DOI: 10.1145/3530777](https://doi.org/10.1145/3530777)
-12. **Higgott, O., & Gidney, C.** (2025). Sparse Blossom: faster minimum-weight perfect matching for quantum error correction. *arXiv preprint arXiv:2303.15933*.
+11. **Higgott, O.** (2022). PyMatching: A Python package for decoding quantum codes with minimum-weight perfect matching. *ACM Transactions on Quantum Computing*, 3(3), Article 19, 1–16. [DOI: 10.1145/3505637](https://doi.org/10.1145/3505637)
+12. **Higgott, O., & Gidney, C.** (2025). Sparse Blossom: correcting a million errors per core second with minimum-weight matching. *Quantum*, 9, 1600. [DOI: 10.22331/q-2025-01-20-1600](https://doi.org/10.22331/q-2025-01-20-1600)
 13. **Panteleev, P., & Kalachev, G.** (2021). Degenerate quantum LDPC codes with good parameters. *Quantum*, 5, 585. [DOI: 10.22331/q-2021-11-22-585](https://doi.org/10.22331/q-2021-11-22-585)
-14. **Panteleev, P., & Kalachev, G.** (2022). Asymptotically good quantum LDPC codes. *IEEE Transactions on Information Theory*, 68(11), 7334–7349. [DOI: 10.1109/TIT.2022.3190161](https://doi.org/10.1109/TIT.2022.3190161)
+14. **Panteleev, P., & Kalachev, G.** (2022). Asymptotically good quantum and locally testable classical LDPC codes. In *Proceedings of the 54th Annual ACM SIGACT Symposium on Theory of Computing (STOC '22)*, pp. 375–388. [DOI: 10.1145/3519935.3520017](https://doi.org/10.1145/3519935.3520017)
 15. **Roffe, J., White, D. R., Burton, S., & Campbell, E.** (2020). Decoding across the quantum low-density parity-check code landscape. *Physical Review Research*, 2(4), 043423. [DOI: 10.1103/PhysRevResearch.2.043423](https://doi.org/10.1103/PhysRevResearch.2.043423)
 16. **Bravyi, S., & Kitaev, A.** (2005). Universal quantum computation with ideal Clifford gates and noisy ancillas. *Physical Review A*, 71(2), 022316. [DOI: 10.1103/PhysRevA.71.022316](https://doi.org/10.1103/PhysRevA.71.022316)
 17. **Horsman, C., Fowler, A. G., Devitt, S., & Van Meter, R.** (2012). Surface code quantum computing by lattice surgery. *New Journal of Physics*, 14(12), 123011. [DOI: 10.1088/1367-2630/14/12/123011](https://doi.org/10.1088/1367-2630/14/12/123011)
 18. **Daleckii, J. L., & Krein, M. G.** (1974). *Stability of Solutions of Differential Equations in Banach Space*. American Mathematical Society, Providence, RI.
-19. **Mathias, R.** (1996). A chain rule for matrix functions and applications. *SIAM Journal on Matrix Analysis and Applications*, 17(3), 610–620. [DOI: 10.1137/0617036](https://doi.org/10.1137/0617036)
+19. **Mathias, R.** (1996). A chain rule for matrix functions and applications. *SIAM Journal on Matrix Analysis and Applications*, 17(3), 610–620. [DOI: 10.1137/S0895479895283409](https://doi.org/10.1137/S0895479895283409)
 20. **McClean, J. R., Boixo, S., Smelyanskiy, V. N., Babbush, R., & Neven, H.** (2018). Barren plateaus in quantum neural network training landscapes. *Nature Communications*, 9(1), 4812. [DOI: 10.1038/s41467-018-07090-4](https://doi.org/10.1038/s41467-018-07090-4)
-21. **Fontana, E., Herman, D., Chakrabarti, S., Kumar, N., Yalovetzky, R., Heredge, J., Sureshbabu, S. H., & Pistoia, M.** (2024). Characterizing barren plateaus in quantum ansätze with the adjoint representation. *Nature Communications*, 15(1), 6088. [DOI: 10.1038/s41467-024-49910-w](https://doi.org/10.1038/s41467-024-49910-w)
+21. **Fontana, E., Herman, D., Chakrabarti, S., Kumar, N., Yalovetzky, R., Heredge, J., Sureshbabu, S. H., & Pistoia, M.** (2024). Characterizing barren plateaus in quantum ansätze with the adjoint representation. *Nature Communications*, 15(1), 7171. [DOI: 10.1038/s41467-024-49910-w](https://doi.org/10.1038/s41467-024-49910-w)
 22. **Vidal, G.** (2003). Efficient classical simulation of slightly entangled quantum computations. *Physical Review Letters*, 91(14), 147902. [DOI: 10.1103/PhysRevLett.91.147902](https://doi.org/10.1103/PhysRevLett.91.147902)
 23. **Schollwöck, U.** (2011). The density-matrix renormalization group in the age of matrix product states. *Annals of Physics*, 326(1), 96–192. [DOI: 10.1016/j.aop.2010.09.012](https://doi.org/10.1016/j.aop.2010.09.012)
 24. **Aaronson, S., & Gottesman, D.** (2004). Improved simulation of stabilizer circuits. *Physical Review A*, 70(5), 052328. [DOI: 10.1103/PhysRevA.70.052328](https://doi.org/10.1103/PhysRevA.70.052328)

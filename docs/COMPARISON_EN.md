@@ -7,17 +7,17 @@
 | Dimension / Feature | **Quanta SDK** | Qiskit | Cirq | PennyLane | Stim | PyMatching | QuTiP |
 |---|---|---|---|---|---|---|---|
 | **Primary Philosophy** | Local-First & Cognitive | Enterprise / Cloud | Hardware (Google) | Hybrid QML | Fast Stabilizers | MWPM Decoder | Open Systems |
-| **External Dependencies** | **0** (Pure Python/NumPy) | 20+ packages | 10+ packages | 10+ packages | 1 (C++ build) | 1 (C++ build) | 5+ (SciPy/Cython) |
+| **External Dependencies** | **NumPy core** (SciPy/NetworkX for L3 & QEC) | 20+ packages | 10+ packages | 10+ packages | 1 (C++ build) | 1 (C++ build) | 5+ (SciPy/Cython) |
 | **Hardware Acceleration** | **Metal / MLX Zero-Copy** | C++/Rust (Aer) | C++ (qsim) | JAX/Torch C++ | SIMD C++ (AVX2) | SIMD C++ | C/OpenMP |
-| **Native Gate Set** | **31 Built-in Gates** | 50+ | 60+ | 30+ | Clifford only | N/A | Operator-based |
-| **Gradients & Autograd** | **Daleckii-Krein + Param-Shift** | Finite Diff | Manual | Parameter-Shift / AD | N/A | N/A | N/A |
+| **Native Gate Set** | **34 Built-in Gates + Cartan/KAK $SU(4)$** | 50+ | 60+ | 30+ | Clifford only | N/A | Operator-based |
+| **Gradients & Autograd** | **Daleckii-Krein + $O(G)$ Adjoint + 4-Term Shift + QFIM** | Finite Diff | Manual | Parameter-Shift / AD | N/A | N/A | N/A |
 | **PyTorch Autograd Integration** | **Full (`quanta.torch` nn.Module)** | Partial / Plugin | Plugin | **Built-in (Torch/JAX)** | N/A | N/A | N/A |
 | **Lie Algebra Barren Diagnosis** | **Built-in ($\dim(\mathfrak{g})$)** | N/A | N/A | N/A | N/A | N/A | N/A |
-| **Topological QEC (Track A)** | **Edmonds Blossom MWPM (Willow 3D)** | Separate repo | N/A | N/A | Detection only | **Matching only** | N/A |
-| **High-Rate qLDPC (Track B)** | **Gross $[[144, 12, 12]]$ + BP-OSD-0** | N/A | N/A | N/A | N/A | N/A | N/A |
+| **Topological QEC (Track A)** | **Blossom MWPM + Union-Find + Color $A_2$+ILP** | Separate repo | N/A | N/A | Detection only | **Matching only** | N/A |
+| **High-Rate qLDPC (Track B)** | **Gross $[[144, 12, 12]]$ + BP-OSD** | N/A | N/A | N/A | N/A | N/A | N/A |
 | **Magic State Distillation** | **15-to-1 Bravyi-Kitaev + Surgery** | N/A | N/A | N/A | N/A | N/A | N/A |
-| **Autonomous AI Integration** | **Built-in (23 MCP Tools)** | N/A | N/A | N/A | N/A | N/A | N/A |
-| **Automated Test Suite** | **2,076 Tests (100% Passing)** | 5000+ | 3000+ | 2500+ | 800+ | 200+ | 1200+ |
+| **Autonomous AI Integration** | **Built-in (25 MCP Tools)** | N/A | N/A | N/A | N/A | N/A | N/A |
+| **Automated Test Suite** | **2,826+ Tests (100% Passing)** | 5000+ | 3000+ | 2500+ | 800+ | 200+ | 1200+ |
 
 ### Code Comparison: Bell State
 
@@ -106,7 +106,7 @@ Quantum mechanics applied to decision theory.
 Superposition = choices, Entanglement = interaction, Measurement = decision.
 
 ### 4. Minimal Dependencies
-NumPy only. No 200MB install, no Java, no Rust toolchain.
+Core circuit/compiler/statevector engines require only NumPy (SciPy & NetworkX power Layer-3 solvers and QEC decoders). No 200MB C++ install, no Java, no Rust toolchain.
 
 ## Numerical Comparison & Summary Metrics
 
@@ -115,9 +115,9 @@ NumPy only. No 200MB install, no Java, no Rust toolchain.
 | Bell State code | **5 lines** | 10 lines | 6 lines |
 | Grover search | **1 line (L3)** | 30+ lines | 25+ lines |
 | `pip install` size | **~5 MB** | ~200 MB | ~150 MB |
-| External Dependencies | **0** (Pure NumPy) | 20+ packages | 10+ packages |
-| Automated Tests | **2,076 tests** (100% Passing) | 5000+ | 2500+ |
-| Max Qubits (Simulation) | **200+ (MPS) / 27+ (Metal)** | 32 (Aer) | 26 (Default) |
+| Core Dependencies | **NumPy core** (SciPy/NetworkX for L3 & QEC) | 20+ packages | 10+ packages |
+| Automated Tests | **2,826+ tests** (100% Passing) | 5000+ | 2500+ |
+| Max Qubits (Simulation) | **200+ (MPS) / 30 (Metal)** | 32 (Aer) | 26 (Default) |
 | Clifford Gate Throughput | **>3.13M gates/sec** | ~500k | N/A |
 | FTQC qLDPC Footprint | **12× Qubit Reduction** | None | None |
 
@@ -125,22 +125,23 @@ NumPy only. No 200MB install, no Java, no Rust toolchain.
 
 PennyLane's primary strength has historically been differentiable programming. In `v1.2.0-production`, Quanta SDK provides both exact analytical and full reverse-mode automatic differentiation:
 
-| Feature | Quanta SDK (`quanta.torch`) | PennyLane |
+| Feature | Quanta SDK (`quanta.gradients` & `quanta.torch`) | PennyLane |
 |---------|-----------------------------|-----------|
-| **Parameter-shift rule** | `parameter_shift()` & `QuantumLayer` | `qml.gradients.param_shift` |
+| **Parameter-shift rule** | `parameter_shift()` (2-term 1Q + **4-term Anselmetti 2Q**) & `QuantumLayer` | `qml.gradients.param_shift` |
+| **Adjoint differentiation** | **`adjoint_gradient()` ($O(G)$ statevector reverse sweep)** | `diff_method="adjoint"` |
 | **Finite differences** | `finite_diff()` | `qml.gradients.finite_diff` |
-| **Natural gradient (QFIM)** | `natural_gradient()` (Fubini-Study) | `qml.QNGOptimizer` |
+| **Natural gradient (QFIM)** | `natural_gradient()` (**Mari-Bromley-Killoran gauge-invariant QFIM**) | `qml.QNGOptimizer` |
 | **Reverse-Mode Autograd (Backprop)** | **Full Built-in (`torch.autograd` / VJP)** | Built-in (Torch/JAX/TF) |
 | **Daleckii-Krein Fréchet Derivative**| **Exact ($9.99\times 10^{-16}$ closed-form)** | None (Padé / finite diff) |
 | **Lie Algebra Barren Diagnosis** | **Built-in ($\dim(\mathfrak{g})$ analytical tool)** | None |
 | **Framework integration** | **Pure NumPy + PyTorch (`nn.Module`)** | JAX, PyTorch, TensorFlow |
-| **Biomorphic Memory Resonance** | **Built-in (`BiomorphicResonantBrain`)** | None |
+| **Biomorphic Inspired Resonance** | **Built-in (`BiomorphicResonantBrain` PyTorch model)** | None |
 
 ### Quanta's Distinct Advantages
-- **Daleckii-Krein Precision**: Eliminating Padé truncation divergence ($>10^{-6}$) with machine-precision Fréchet matrix exponential derivatives.
-- **Zero-Dependency Baseline**: Fully functional parameter-shift and expectation estimation on pure NumPy without mandatory ML dependencies.
-- **2026 Dual-Track FTQC**: Full Edmonds Blossom MWPM on surface codes and high-rate Gross $[[144, 12, 12]]$ qLDPC decoding.
-- **Agentic MCP Ecosystem**: 23 native MCP tools allowing autonomous AI agents to build, optimize, and differentiate quantum circuits remotely.
+- **Daleckii-Krein & $O(G)$ Adjoint Precision**: Eliminating Padé truncation divergence ($>10^{-6}$) with machine-precision Fréchet matrix exponential derivatives, $O(G)$ `adjoint_gradient`, 4-term Anselmetti 2Q shifts, and Mari-Bromley-Killoran gauge-invariant QFIM.
+- **Minimal-Dependency Baseline**: Core circuit/compiler/statevector engines run on pure NumPy without mandatory ML build dependencies.
+- **2026 Dual-Track FTQC**: Full Edmonds Blossom MWPM and Delfosse-Nickerson Union-Find on surface codes, Kubica-Delfosse $A_2$+ILP color codes, and high-rate Gross $[[144, 12, 12]]$ qLDPC decoding.
+- **Agentic MCP Ecosystem**: **25 native MCP tools** allowing autonomous AI agents to build, optimize, and differentiate quantum circuits remotely.
 
 ---
 
@@ -148,6 +149,6 @@ PennyLane's primary strength has historically been differentiable programming. I
 
 - **Lead Author & Principal Architect**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
 - **Affiliation**: ONMARTECH Quantum Computing Initiative (`info@onmartech.com`)
-- **Permanent Software DOI**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
+- **GitHub Release**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 
 

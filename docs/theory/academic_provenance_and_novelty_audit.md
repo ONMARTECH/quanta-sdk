@@ -12,15 +12,18 @@
 
 ## Executive Summary & Academic Integrity Protocol
 
-In scientific publishing and theoretical physics, intellectual honesty is paramount. Claiming credit for established physical theorems constitutes academic misconduct (plagiarism or amateurism); conversely, failing to clearly demarcate where existing literature ends and where novel contributions begin diminishes the true intellectual breakthrough of the research.
+> **Epistemological & Heuristic Modeling Demarcation Note:**  
+> In strict adherence to scientific demarcation standards, we distinguish throughout this audit between **(a) exact mathematical properties of open and closed quantum dynamical systems** (proven algebraically and verified numerically in `quanta.torch` and `quanta.simulator`) and **(b) biomorphic neurophysical & clinical modeling hypotheses**. References to cortical working memory bounds, Posner nuclear-spin longevity, cerebrospinal fluid (CSF) shielding, glymphatic clearance, and neurological syndromes (meningitis, NPH, Alzheimer's proteopathy) denote **biomorphic open-quantum-system mathematical models and falsifiable computational hypotheses**, *not* claims of experimentally or clinically proven biological wetware quantum advantage in vivo. Similarly, cognitive control components in `quanta.cognitive` (Quantum Zeno arbitration, SWR replay, microglial pruning) are **quantum- and neurobiology-inspired classical/PyTorch heuristic architectures**, where priority scores such as `99.98%` represent **heuristic retention weights** rather than physical quantum measurement probabilities.
 
-This monograph provides an **exhaustive, line-by-line audit** of every theoretical claim, mathematical theorem (Theorems 1 through 8), biophysical mechanism, and citation across the Quanta SDK research repository. 
+In scientific publishing and theoretical physics, intellectual honesty is paramount. Claiming credit for established physical theorems constitutes academic misconduct (plagiarism or amateurism); conversely, failing to clearly demarcate where existing literature ends and where novel modeling contributions begin obscures the actual mathematical and software scope of the work.
+
+This monograph provides an **exhaustive, line-by-line audit** of every mathematical theorem (Theorems 1 through 8), biomorphic modeling hypothesis, and citation across the Quanta SDK research repository. 
 
 Every single citation in this work is audited against **primary peer-reviewed literature, seminal textbooks, and original archival papers** ("suyunun suyu değil, doğrudan kaynak metinler"). We systematically establish:
 1. **Primary Bibliographical Authenticity**: Authors, Title, Journal/Publisher, Year, Volume, Page Range, and DOI/Archival Index.
 2. **What Prior Art Stated**: Verbatim / exact findings of the original authors.
-3. **Where Prior Art Stopped / Limitations**: Why existing theories could not resolve the brain-quantum paradox.
-4. **Quanta SDK's Novel Contribution**: The exact mathematical derivation, synthesis, or computational implementation proven for the first time in this work.
+3. **Where Prior Art Stopped / Limitations**: The domain boundaries of existing physical, neurobiological, and computational results.
+4. **Quanta SDK's Novel Modeling Contribution**: The exact open/closed quantum mathematical model, computational hypothesis, or differentiable software synthesis introduced in this work.
 
 ---
 
@@ -28,39 +31,39 @@ Every single citation in this work is audited against **primary peer-reviewed li
 
 ```
 +-------------------------------------------------------------------------------------------------------------------------------+
-| THEOREM / CLAIM       | FOUNDATIONAL PRIOR ART (GIANTS)            | QUANTA SDK NOVEL CONTRIBUTION (OUR GENUINE DISCOVERY)     |
+| THEOREM / CLAIM       | FOUNDATIONAL PRIOR ART (GIANTS)            | QUANTA SDK MODELING CONTRIBUTION (COMPUTATIONAL DELTA)    |
 +-----------------------+--------------------------------------------+----------------------------------------------------------+
-| Theorem 1: REM Sleep  | Stickgold (2005), Diekelmann & Born (2010),| Proof that uncoupled Hamiltonian evolution (x=0) drives   |
-| Orthogonalization     | Kirkpatrick et al. (2017) EWC              | memory statevectors into mutually orthogonal DFS         |
+| Theorem 1: REM Sleep  | Stickgold (2005), Diekelmann & Born (2010),| Model showing uncoupled Hamiltonian annealing (x=0)      |
+| Orthogonalization     | Kirkpatrick et al. (2017) EWC              | steers memory statevectors toward orthogonal subspaces   |
 |                       |                                            | (<psi_A | psi_B> -> 0) without explicit data replay.     |
 +-----------------------+--------------------------------------------+----------------------------------------------------------+
-| Theorem 2: Landauer   | Landauer (1961), Bennett (1982),           | Proof that unitary bipartite deliberation has dS=0, Q=0, |
-| Thermodynamic Bound   | Sagawa & Ueda (2008)                       | with Landauer dissipation Q < 75 pW strictly localized at |
-|                       |                                            | 40 Hz macroscopic consensus collapse (20W brain solved). |
+| Theorem 2: Landauer   | Landauer (1961), Bennett (1982),           | Idealized open-system model: unitary deliberation has    |
+| Thermodynamic Bound   | Sagawa & Ueda (2008)                       | dS=0, Q=0, localizing Landauer erasure cost at 40 Hz     |
+|                       |                                            | projective readout as a biomorphic energy analogy.       |
 +-----------------------+--------------------------------------------+----------------------------------------------------------+
-| Theorem 3: Quantum    | Misra & Sudarshan (1977), Kofman & Kurizki | Unified model of attentional focus (Zeno) vs dopamine     |
-| Zeno & Phase Kickback | (2000), Facchi & Pascazio (2008)           | tunneling (Anti-Zeno) with constructive phase kickback   |
-|                       |                                            | deriving the cognitive "Aha!" / Eureka moment.           |
+| Theorem 3: Quantum    | Misra & Sudarshan (1977), Kofman & Kurizki | Quantum-inspired heuristic model of attentional focus    |
+| Zeno & Phase Kickback | (2000), Facchi & Pascazio (2008)           | (Zeno) vs exploratory tunneling (Anti-Zeno) and          |
+|                       |                                            | constructive phase-kickback hypothesis synthesis.        |
 +-----------------------+--------------------------------------------+----------------------------------------------------------+
 | Theorem 4: Quantum    | Ebbinghaus (1885), Gorini et al. (1976),   | Mathematical isomorphism between Lindblad dephasing and  |
-| Ebbinghaus & Capacity | Lindblad (1976), French (1999)             | Ebbinghaus curve (S = 1/Gamma) and dimensional saturation|
-|                       |                                            | bound K_crit = floor(2^N / d_bar) for multi-task storage. |
+| Ebbinghaus & Capacity | Lindblad (1976), French (1999)             | Ebbinghaus decay (S = 1/Gamma) plus Hilbert-space        |
+|                       |                                            | pigeonhole bound K_crit = floor(2^N / d_bar).            |
 +-----------------------+--------------------------------------------+----------------------------------------------------------+
-| Theorem 5: Noisy      | Frey & Morris (1997) Synaptic Tagging,     | Stochastic phase drift + thermal depolarizing noise in   |
-| Hippocampal Buffer    | Buzsáki (2015) Sharp-Wave Ripples (SWR)    | CA3-CA1 buffer; proof that REM annealing is robust to   |
-|                       |                                            | degraded engrams (F = 93.78% -> overlap falls by 69%).   |
+| Theorem 5: Noisy      | Frey & Morris (1997) Synaptic Tagging,     | Stochastic phase-drift + depolarizing buffer model       |
+| Hippocampal Buffer    | Buzsáki (2015) Sharp-Wave Ripples (SWR)    | showing sleep-annealing gradients remain resilient to    |
+|                       |                                            | noisy episodic statevectors in simulation.               |
 +-----------------------+--------------------------------------------+----------------------------------------------------------+
-| Theorem 6: Qubit      | Miller (1956) 7+/-2, Cowan (2001) 4+/-1,   | Analytical proof via Lindblad Entanglement Sudden Death   |
-| Capacity of the Brain | Yu & Eberly (2004, 2009) ESD, Lisman (1995)| tau_crit(k) >= 25 ms iff k <= 4, deriving Miller and     |
-|                       |                                            | Cowan cognitive limits from quantum statistical physics. |
+| Theorem 6: Qubit      | Miller (1956) 7+/-2, Cowan (2001) 4+/-1,   | Biomorphic open-system ESD model: tau_crit(k) >= 25 ms   |
+| Capacity Model        | Yu & Eberly (2004, 2009) ESD, Lisman (1995)| iff k <= 4 under parameterized Lindblad dephasing,       |
+|                       |                                            | offering a computational analogy to Cowan/Miller limits. |
 +-----------------------+--------------------------------------------+----------------------------------------------------------+
-| Theorem 7: Sheaf      | Kochen & Specker (1967), Abramsky &        | Proof that classical contrastive models have CF = 0,     |
-| Contextuality         | Brandenburger (2011), Cabello et al. (2014)| while Quanta achieves CF = sqrt(2)-1, saturates Tsirelson|
-|                       | Wang & Busemeyer (2014) QQO                | S = 2.8284, and preserves QQO invariant q = 0.           |
+| Theorem 7: Sheaf      | Kochen & Specker (1967), Abramsky &        | Proof that classical non-contextual models have CF = 0,  |
+| Contextuality         | Brandenburger (2011), Cabello et al. (2014)| while non-commuting Pauli observables achieve            |
+|                       | Wang et al. (2014) QQO                     | CF = sqrt(2)-1, S = 2.8284, and QQO symmetry q = 0.     |
 +-----------------------+--------------------------------------------+----------------------------------------------------------+
-| Theorem 8: CSF        | Fisher (2015), Bloembergen et al. (1948),  | Five-tier biophysical cryostat bound: kappa_CSF <= 10^-3 |
-| Biophysical Shielding | Debye & Hückel (1923), Nedergaard (2013),  | (6250x coherence gain), solving Tegmark's paradox via    |
-|                       | Hakim & Adams (1965) NPH Tap Test          | paramagnetic purge, Debye screening, and BPP narrowing. |
+| Theorem 8: CSF        | Fisher (2015), Bloembergen et al. (1948),  | Five-factor parameterized Lindblad attenuation model     |
+| Biophysical Shielding | Debye & Hückel (1923), Nedergaard (2013),  | (kappa_CSF in [10^-3, 10^-1]) simulating electrolyte,    |
+|                       | Hakim & Adams (1965) NPH Tap Test          | viscosity, paramagnetic, and glymphatic bath regimes.    |
 +-----------------------+--------------------------------------------+----------------------------------------------------------+
 ```
 
@@ -80,9 +83,9 @@ Below is the verified, primary-source audit of every key reference utilized acro
 - **Authenticity Check:** Verified genuine primary paper.
 - **What Yu & Eberly Proved:** Single-qubit coherence decays asymptotically as $e^{-\gamma t}$, reaching zero only at $t \to \infty$. However, two initially entangled qubits coupled to independent vacuum or thermal baths undergo **complete disentanglement at a finite, non-zero time $\tau_{\text{ESD}} < \infty$** whenever certain non-diagonal density matrix elements drop below diagonal noise thresholds.
 - **Where They Stopped:** They analyzed abstract 2-qubit and multi-qubit systems in quantum optics cavities and open atomic systems. They never applied ESD to neurobiology, brain oscillations, or human working memory.
-- **Quanta SDK Novelty (Theorem 6):** We extended the Lindblad master equation for multi-partite GHZ states to cortical minicolumn pseudo-spins, deriving the exact algebraic cutoff:
+- **Quanta SDK Modeling Contribution (Theorem 6):** We formulated the Lindblad master equation for multi-partite GHZ pseudo-spin registers, deriving the algebraic cutoff under parameterized local dephasing $\Gamma$:
   $$\tau_{\text{crit}}(k) = \frac{\ln\left(1 + \frac{1}{2^{k-1}-1}\right)}{k \Gamma}$$
-  and proved that survival across a single $40\,\text{Hz}$ gamma oscillation cycle ($\Delta t = 25\,\text{ms}$) holds if and only if $k \le 4$. This is the world's first physical derivation of Miller's $7\pm 2$ and Cowan's $4\pm 1$ capacity limits from open-system quantum electrodynamics.
+  showing that survival across a $40\,\text{Hz}$ gamma window ($\Delta t = 25\,\text{ms}$) holds in the model for $k \le 4$. We present this as a biomorphic open-quantum-system mathematical model offering a computational hypothesis for Cowan's $4\pm 1$ and Miller's $7\pm 2$ capacity bounds.
 
 ---
 
@@ -92,10 +95,10 @@ Below is the verified, primary-source audit of every key reference utilized acro
 - **Authenticity Check:** Verified genuine primary paper.
 - **What Fisher Proved/Proposed:** Fisher identified the **Posner cluster $\text{Ca}_9(\text{PO}_4)_6$** as a candidate for biological quantum memory. He demonstrated that $^{31}\text{P}$ has nuclear spin $I = 1/2$. Because spin-1/2 nuclei have zero electric quadrupole moment ($Q = 0$), they are completely immune to environmental electric field gradients. Rapid isotropic rotation protects them from dipole-dipole dephasing. He hypothesized that entangled Posner clusters are taken up into presynaptic glutamatergic neurons, where enzymatic hydrolysis triggers calcium release and modulates synaptic firing.
 - **Where Fisher Stopped:** Fisher provided an atomic and chemical feasibility hypothesis. He did not build a mathematical neural network layer, did not derive continuous-time Hamiltonian graphs, did not model the dual-hemisphere bipartite architecture, did not incorporate autograd backpropagation, and did not examine Cerebrospinal Fluid (CSF) hydrodynamic screening or clinical neuropathologies.
-- **Quanta SDK Novelty (Theorem 8 & Architecture):**
-  1. We embedded Fisher's Posner spin-1/2 qubits into an end-to-end differentiable PyTorch framework (`quanta.torch.brain.BiomorphicResonantBrain`).
-  2. We formalized the 5-tier CSF shielding bound ($\kappa_{\text{CSF}}$), quantifying the $6250\times$ coherence gain.
-  3. We proved how clinical CSF disorders (meningitis, NPH) modulate nuclear spin dephasing.
+- **Quanta SDK Modeling Contribution (Theorem 8 & Architecture):**
+  1. We translated Fisher's spin-1/2 nuclear-spin hypothesis into an end-to-end differentiable PyTorch architecture (`quanta.torch.brain.BiomorphicResonantBrain`).
+  2. We formalized a 5-factor parameterized CSF Lindblad attenuation model ($\kappa_{\text{CSF}}$) in `CSFShieldedEnvironment`.
+  3. We modeled clinical CSF parameter shifts (meningitis, NPH) as open-system dephasing regimes within a falsifiable computational hypothesis.
 
 ---
 
@@ -107,7 +110,7 @@ Below is the verified, primary-source audit of every key reference utilized acro
   - Membrane potential ion channel displacements: $\tau \sim 10^{-19} - 10^{-20}\,\text{s}$.
   Since neural cognitive processing occurs on millisecond timescales ($10^{-3} - 10^{-1}\,\text{s}$), he concluded that quantum coherence cannot play a functional role in brain dynamics.
 - **Where Tegmark Stopped:** Tegmark's calculations were exclusively performed on **electronic charges and dipoles** (which interact via strong Coulomb forces $e^2 / 4\pi\epsilon_0 r$). He explicitly did **not** calculate decoherence for shielded **nuclear spins** ($I=1/2$, magnetic moment $\mu_N \sim 10^{-3} \mu_B$), nor did he incorporate Debye electrolyte screening ($\lambda_D < 1\,\text{nm}$) or BPP motional narrowing in low-viscosity fluids.
-- **Quanta SDK Novelty (The Dialectical Synthesis):** We did not dispute Tegmark's math for electronic dipoles; rather, we proved that the brain's cognitive quantum layer does not reside in electronic dipoles. By shifting the physical carrier to $^{31}\text{P}$ nuclear spins embedded in Posner molecules within CSF/ISF, the decoherence timescale jumps by **18 orders of magnitude**: from Tegmark's $10^{-13}\,\text{s}$ to $10^2 - 10^5\,\text{s}$ (hours/days).
+- **Quanta SDK Modeling Contribution (The Dialectical Synthesis):** Accepting Tegmark's calculation for unshielded electronic dipoles, our biomorphic theoretical model instead adopts Fisher's (2015) $^{31}\text{P}$ nuclear-spin carrier hypothesis combined with parameterized Debye screening and BPP motional narrowing in CSF/ISF, modeling how shielded spin-1/2 registers can avoid sub-picosecond electronic dephasing in open-system simulations.
 
 ---
 
@@ -178,7 +181,7 @@ Below is the verified, primary-source audit of every key reference utilized acro
 #### [A9] Daleckii, Yu. L., & Krein, S. G. (1956/1965) — Spectral Matrix Derivatives
 - **Full Citation:** Yu. L. Daleckii and S. G. Krein, "Integration and differentiation of functions of Hermitian operators and applications to the theory of perturbations," *Voronezh Gos. Univ. Trudy Sem. Funk. Anal.*, vol. 1, pp. 81–105, 1956; English translation in *American Mathematical Society Translations*, Series 2, vol. 47, pp. 1–30, 1965.
 - **Textbook Formulation:** Rajendra Bhatia, *Matrix Analysis*, Graduate Texts in Mathematics, vol. 169, Springer-Verlag, New York, 1997. Chapter V: "Operator Inequalities and Matrix Means".
-- **Related Operator Calculus:** R. M. Wilcox, "Exponential Operators and Parameter Differentiation in Quantum Physics," *Journal of Mathematical Physics*, vol. 8, no. 4, pp. 962–982, 1967. DOI: `10.1063/1.1705296`.
+- **Related Operator Calculus:** R. M. Wilcox, "Exponential Operators and Parameter Differentiation in Quantum Physics," *Journal of Mathematical Physics*, vol. 8, no. 4, pp. 962–982, 1967. DOI: `10.1063/1.1705306`.
 - **Authenticity Check:** Verified mathematical physics literature.
 - **What Daleckii & Krein Proved:** For a parameterized Hermitian matrix $H(\theta) = \sum_j \lambda_j |j\rangle\langle j|$, the Fréchet derivative of a matrix function $f(H)$ is:
   $$\langle j | \frac{d f(H)}{d\theta} | k \rangle = \frac{f(\lambda_j) - f(\lambda_k)}{\lambda_j - \lambda_k} \langle j | \frac{dH}{d\theta} | k \rangle$$
@@ -201,7 +204,7 @@ Below is the verified, primary-source audit of every key reference utilized acro
   3. Subcortical cognitive dementia / memory impairment
   Crucially, draining $30-50\,\text{mL}$ of CSF via lumbar puncture (the "tap test") often produces dramatic, rapid reversal of dementia and gait ataxia within hours.
 - **Where They Stopped:** Classical hydrodynamics (Monro-Kellie doctrine and ventricular compliance).
-- **Quanta SDK Novelty (Theorem 8, Panel C):** Provided the first quantum-biophysical explanation of NPH: impaired CSF drainage causes metabolic waste and paramagnetic ion accumulation in the bath ($\Phi_{\text{CSF}} \to 0$), elevating environmental Lindblad dephasing and causing working memory collapse ($F \to 47.85\%$). Therapeutic lumbar puncture clears the stagnant bath, allowing freshly secreted choroid fluid to restore quantum coherence, explaining the rapid $+46.2\%$ cognitive recovery observed clinically.
+- **Quanta SDK Modeling Contribution (Theorem 8, Panel C):** Formulated a biomorphic open-quantum-system computational hypothesis inspired by NPH: modeling impaired CSF clearance as an elevated Lindblad bath dephasing parameter ($\Phi_{\text{CSF}} \to 0$, simulated state fidelity $F \to 47.85\%$), and modeling fluid replenishment as a bath parameter reset restoring coherence in `CSFShieldedEnvironment` alongside established classical hydrodynamic mechanisms.
 
 ---
 
@@ -209,11 +212,11 @@ Below is the verified, primary-source audit of every key reference utilized acro
 - **Full Citations:**
   - Jeffrey J. Iliff, Minghuan Wang, Yonghong Liao, Benjamin A. Plogg, Weiguo Peng, Georg A. Gundersen, Helene Benveniste, Gerald A. Nedergaard, and Maiken Nedergaard, "A Paravascular Pathway Facilitates CSF Flow Through the Brain Parenchyma and the Clearance of Interstitial Solutes, Including Amyloid $\beta$," *Science Translational Medicine*, vol. 4, no. 147, p. 147ra111, 2012. DOI: `10.1126/scitranslmed.3003748`.
   - Lulu Xie, Hongyi Kang, Qiwu Xu, Michael J. Chen, Yonghong Liao, Meenakshisundaram Thiyagarajan, John O’Donnell, Daniel J. Christensen, Charles Nicholson, Jeffrey J. Iliff, Takahiro Takano, Rashmi Deane, and Maiken Nedergaard, "Sleep Drives Metabolite Clearance from the Adult Brain," *Science*, vol. 342, no. 6156, pp. 373–377, 2013. DOI: `10.1126/science.1241224`.
-  - Maiken Nedergaard, "Garbage Truck of the Brain," *Science*, vol. 340, no. 6140, pp. 1529–1530, 2013. DOI: `10.1126/science.1235329`.
+  - Maiken Nedergaard, "Garbage Truck of the Brain," *Science*, vol. 340, no. 6140, pp. 1529–1530, 2013. DOI: `10.1126/science.1240514`.
   - Nadia Aalling Jessen, Anne Sofie Finmann Munk, Iben Lundgaard, and Maiken Nedergaard, "The Glymphatic System: A Beginner's Guide," *Neurochemical Research*, vol. 40, no. 12, pp. 2583–2599, 2015. DOI: `10.1007/s11064-015-1581-6`.
 - **Authenticity Check:** Verified paradigm-shifting neurophysiology literature.
 - **What Nedergaard Proved:** The brain clears waste via a convective perivascular CSF-ISF exchange system dependent on astrocytic Aquaporin-4 (AQP4) water channels. During sleep (especially slow-wave and REM sleep), the interstitial space expands by $60\%$, accelerating metabolic solute clearance (including amyloid-$\beta$) by more than tenfold compared to wakefulness.
-- **Quanta SDK Novelty (Theorem 8, Panel D):** Formulated the open-system quantum thermodynamics of the glymphatic system. Mapped diurnal wakefulness to an entropic accumulation term $\Gamma_{\text{env}}(t) = \Gamma_0 + \lambda_{\text{waste}} t_{\text{awake}}$, and proved that nocturnal glymphatic convective flushing resets the environmental Lindblad dephasing bath to baseline ($\Gamma \to 0.056\,\text{s}^{-1}$), preventing catastrophic engram drift.
+- **Quanta SDK Modeling Contribution (Theorem 8, Panel D):** Formulated a biomorphic open-system thermodynamic analogy inspired by the glymphatic system, mapping waking solute accumulation to a parameterized dephasing drift $\Gamma_{\text{env}}(t) = \Gamma_0 + \lambda_{\text{waste}} t_{\text{awake}}$ and nocturnal clearance to a bath-reset operator ($\Gamma \to \Gamma_0$) in simulation.
 
 ---
 
@@ -223,14 +226,14 @@ Below is the verified, primary-source audit of every key reference utilized acro
 - **Full Citations:**
   - George A. Miller, "The magical number seven, plus or minus two: Some limits on our capacity for processing information," *Psychological Review*, vol. 63, no. 2, pp. 81–97, 1956. DOI: `10.1037/h0043158`.
   - Nelson Cowan, "The magical number 4 in short-term memory: A reconsideration of mental storage capacity," *Behavioral and Brain Sciences*, vol. 24, no. 1, pp. 87–114, 2001. DOI: `10.1017/s0140525x01003922`.
-  - John E. Lisman and Marco A. P. Idiart, "Storage of $7 \pm 2$ short-term memories in oscillatory subcycles," *Science*, vol. 267, no. 5203, pp. 1512–1515, 1995. DOI: `10.1126/science.7886458`.
+  - John E. Lisman and Marco A. P. Idiart, "Storage of $7 \pm 2$ short-term memories in oscillatory subcycles," *Science*, vol. 267, no. 5203, pp. 1512–1515, 1995. DOI: `10.1126/science.7878473`.
 - **Authenticity Check:** Classical cognitive science citations.
 - **What They Established:**
   - Miller: Immediate human working memory span across digits, letters, and words is $7 \pm 2$ items.
   - Cowan: When chunking strategies are eliminated, the pure capacity limit is $4 \pm 1$ chunks.
   - Lisman & Idiart: Proposed that memories are stored in high-frequency gamma cycles ($40\,\text{Hz}$) multiplexed within low-frequency theta oscillations ($4-8\,\text{Hz}$).
 - **Where They Stopped:** Descriptive empirical and classical neural network models.
-- **Quanta SDK Novelty (Theorem 6):** Proved that $7\pm 2$ ($2^3 = 8$ states) and $4\pm 1$ ($2^4 = 16$ states) represent the physical Hilbert space dimension boundaries where multi-partite quantum entanglement can survive Lindblad dephasing across a $25\,\text{ms}$ gamma cycle:
+- **Quanta SDK Modeling Contribution (Theorem 6):** Formulated a biomorphic open-quantum-system mathematical model in which $2^3 = 8$ and $2^4 = 16$ correspond to the Hilbert-space dimensions where simulated multi-partite entanglement survives parameterized Lindblad dephasing across a $25\,\text{ms}$ window:
   $$\tau_{\text{crit}}(3) = 73.8\,\text{ms} > 25\,\text{ms} \implies \text{Miller } 7\pm 2$$
   $$\tau_{\text{crit}}(4) = 25.7\,\text{ms} \ge 25\,\text{ms} \implies \text{Cowan } 4\pm 1$$
   $$\tau_{\text{crit}}(5) = 9.8\,\text{ms} < 25\,\text{ms} \implies \text{Instantaneous ESD Failure}$$
@@ -263,37 +266,37 @@ To eliminate any ambiguity regarding priority and attribution, the following tab
 
 ```
 =========================================================================================================================================
-CONCEPT / MECHANISM             | PRIOR ART STATUS                          | QUANTA SDK NOVEL DISCOVERY (AUTHENTIC CONTRIBUTION)
+CONCEPT / MECHANISM             | PRIOR ART STATUS                          | QUANTA SDK MODELING CONTRIBUTION (COMPUTATIONAL DELTA)
 =========================================================================================================================================
-1. Posner Molecule Qubit        | Proposed by Fisher (2015) as a static     | Integrated into continuous-time dynamic Hamiltonian
-   Architecture                 | biological nuclear spin qubit candidate.  | graph walks and PyTorch autograd layers.
+1. Posner Molecule Qubit        | Proposed by Fisher (2015) as a static     | Translated into continuous-time dynamic Hamiltonian
+   Architecture                 | biological nuclear spin qubit candidate.  | graph walks and differentiable PyTorch autograd layers.
 -----------------------------------------------------------------------------------------------------------------------------------------
-2. Tegmark Decoherence          | Tegmark (2000) calculated dephasing for   | Proved that Tegmark's math holds for electronic dipoles
-   Hierarchy                    | electronic charges (tau ~ 10^-13 s).      | but fails for Posner spins; derived 18-OOM shield.
+2. Tegmark Decoherence          | Tegmark (2000) calculated dephasing for   | Accepts Tegmark's electronic-dipole limit; models shielded
+   Hierarchy                    | electronic charges (tau ~ 10^-13 s).      | spin-1/2 open-system regimes following Fisher (2015).
 -----------------------------------------------------------------------------------------------------------------------------------------
-3. Miller's Law (7 +/- 2)       | Discovered empirically by Miller (1956)   | Analytically derived as the Lindblad Entanglement
-   from Quantum Limits          | and Cowan (2001) as cognitive limits.     | Sudden Death bound: tau_crit(k) >= 25 ms iff k <= 4.
+3. Miller's Law (7 +/- 2)       | Discovered empirically by Miller (1956)   | Modeled via parameterized Lindblad Entanglement Sudden
+   Open-System Analogy          | and Cowan (2001) as cognitive limits.     | Death: tau_crit(k) >= 25 ms iff k <= 4 in simulation.
 -----------------------------------------------------------------------------------------------------------------------------------------
-4. CSF 5-Tier Biophysical       | Never formulated in physics or medicine   | First unified proof of Theorem 8: Debye screening +
-   Shielding (Theorem 8)        | as a quantum cryostat / shield.           | BPP motional narrowing + paramagnetic exclusion (6250x).
+4. CSF 5-Factor Biophysical     | Classical electrolyte, NMR, and CSF       | Parameterized Theorem 8 open-system damping model: Debye
+   Shielding Model (Theorem 8)  | physiology studied separately.            | screening + BPP narrowing + paramagnetic scaling.
 -----------------------------------------------------------------------------------------------------------------------------------------
-5. NPH / Lumbar Puncture        | Hakim & Adams (1965) discovered tap test  | First quantum-biophysical model of NPH: clearance
-   Working Memory Restoration   | reversing dementia clinically.            | failure -> dephasing, tap test -> +46.2% fidelity gain.
+5. NPH / Lumbar Puncture        | Hakim & Adams (1965) discovered tap test  | Computational hypothesis modeling CSF stasis as elevated
+   Bath-Reset Simulation        | reversing dementia clinically.            | Lindblad dephasing and tap-test reset in PyTorch.
 -----------------------------------------------------------------------------------------------------------------------------------------
-6. Glymphatic REM Entropic      | Nedergaard (2013) discovered sleep-driven | Formulated as nocturnal Lindblad bath entropy purge
+6. Glymphatic REM Entropic      | Nedergaard (2013) discovered sleep-driven | Modeled as a biomorphic Lindblad bath parameter reset
    Reset                        | metabolic waste clearance via AQP4.       | dGamma/dt = -kappa Phi (Gamma - Gamma_0).
 -----------------------------------------------------------------------------------------------------------------------------------------
-7. Continual Learning without   | Kirkpatrick (2017) EWC, French (1999);    | Theorem 1: Closed-system REM sleep annealing drives
-   Replay (Quantum REM Sleep)   | requires replay buffers or weight penalties| statevectors into orthogonal DFS (<psi_A|psi_B> -> 0).
+7. Continual Learning without   | Kirkpatrick (2017) EWC, French (1999);    | Theorem 1: Closed-system REM sleep annealing steers
+   Replay (Quantum REM Sleep)   | requires replay buffers or weight penalties| statevectors toward orthogonal subspaces (<psi_A|psi_B> -> 0).
 -----------------------------------------------------------------------------------------------------------------------------------------
-8. Cognitive Zeno / Anti-Zeno   | Misra & Sudarshan (1977) Zeno;            | Theorem 3: Attentional focus vs dopamine tunneling
-   Phase Kickback ("Aha!")      | Kofman & Kurizki (2000) Anti-Zeno.        | with constructive phase kickback deriving "Aha!" moment.
+8. Cognitive Zeno / Anti-Zeno   | Misra & Sudarshan (1977) Zeno;            | Theorem 3: Quantum-inspired heuristic for focus vs
+   Phase Kickback ("Aha!")      | Kofman & Kurizki (2000) Anti-Zeno.        | exploratory tunneling and phase-kickback synthesis.
 -----------------------------------------------------------------------------------------------------------------------------------------
-9. Non-Classical Sheaf          | Abramsky & Brandenburger (2011) sheaf     | Theorem 7: Proven separation between classical contrastive
-   Contextuality (Theorem 7)    | contextuality, Wang & Busemeyer (2014) QQO| models (CF=0) and Quanta (CF=0.4142, Tsirelson saturation).
+9. Non-Classical Sheaf          | Abramsky & Brandenburger (2011) sheaf     | Theorem 7: Proven separation between classical non-contextual
+   Contextuality (Theorem 7)    | contextuality, Wang et al. (2014) QQO     | models (CF=0) and non-commuting Pauli readouts (CF=0.4142).
 -----------------------------------------------------------------------------------------------------------------------------------------
-10. Autograd Fréchet Spectral   | Daleckii & Krein (1956), Wilcox (1967)    | First native PyTorch custom autograd Function on
-    Matrix Differentiation      | pure operator calculus theorems.          | Apple Silicon Metal MPS for quantum Hamiltonian dynamics.
+10. Autograd Fréchet Spectral   | Daleckii & Krein (1956), Wilcox (1967)    | Native PyTorch custom autograd Function with sinc kernel
+    Matrix Differentiation      | pure operator calculus theorems.          | on Apple Silicon Metal MPS and CPU for Hamiltonian layers.
 =========================================================================================================================================
 ```
 
@@ -372,7 +375,7 @@ Every single bibliographical reference utilized across `docs/paper/biomorphic_qu
 67. **`schuld2019`**: M. Schuld, V. Bergholm, C. Gogolin, J. Izaac, N. Killoran, "Evaluating analytic gradients on quantum hardware," *Physical Review A* 99(3), 032331 (2019). DOI: 10.1103/PhysRevA.99.032331. **[VERIFIED - REAL]**
 68. **`biamonte2017`**: J. Biamonte, P. Wittek, N. Pancotti, P. Rebentrost, N. Wiebe, S. Lloyd, "Quantum machine learning," *Nature* 549(7671), 195–202 (2017). DOI: 10.1038/nature23474. **[VERIFIED - REAL]**
 69. **`friston2010`**: K. Friston, "The free-energy principle: a unified brain theory?," *Nature Reviews Neuroscience* 11(2), 127–138 (2010). DOI: 10.1038/nrn2787. **[VERIFIED - REAL]**
-70. **`kass1988`**: J. R. Kass, "Spin echoes and nuclear magnetic resonance," *Journal of Chemical Education* 65(9), 755 (1988). **[VERIFIED - REAL]**
+70. **`hahn1950`**: E. L. Hahn, "Spin Echoes," *Physical Review* 80(4), 580–594 (1950). DOI: 10.1103/PhysRev.80.580. **[VERIFIED - REAL]**
 71. **`lopezpaz2017`**: D. Lopez-Paz, M. A. Ranzato, "Gradient episodic memory for continual learning," *NeurIPS*, pp. 6467–6476 (2017). **[VERIFIED - REAL]**
 72. **`mccloskey1989`**: M. McCloskey, N. J. Cohen, "Catastrophic interference in connectionist networks," *Psychology of Learning and Motivation* 24, 109–165 (1989). DOI: 10.1016/S0079-7421(08)60536-8. **[VERIFIED - REAL]**
 73. **`sagawa2008`**: T. Sagawa, M. Ueda, "Second law of thermodynamics with discrete quantum feedback control," *Physical Review Letters* 100(8), 080403 (2008). DOI: 10.1103/PhysRevLett.100.080403. **[VERIFIED - REAL]**
@@ -445,7 +448,7 @@ To address the profound epistemological question—*"Are we the owners/originato
 #### Pillar 3: Hemodynamic fMRI BOLD Resource Allocation & Default Mode Network
 - **Foundational Originators**: Seiji Ogawa et al. (1990, *PNAS*); Marcus E. Raichle et al. (2001, *PNAS*).
 - **Ownership Status**: **100% NOT OURS**.
-- **The Giants' Discovery**: Ogawa pioneered blood-oxygen-level-dependent (BOLD) functional MRI. Raichle proved that the brain maintains a constant baseline metabolic budget ($pprox 20\,\text{W}$), redistributing cerebral blood flow locally without altering global energy expenditure.
+- **The Giants' Discovery**: Ogawa pioneered blood-oxygen-level-dependent (BOLD) functional MRI. Raichle proved that the brain maintains a constant baseline metabolic budget ($\approx 20\,\text{W}$), redistributing cerebral blood flow locally without altering global energy expenditure.
 - **Quanta SDK Novel Delta**: We established the exact metabolic conservation constraint $M_{\text{left}}(x) + M_{\text{right}}(x) \equiv 2.0$, dynamically allocating energy between analytical categorization and intuitive synthesis to prevent computational runaway.
 
 #### Pillar 4: Continuous-Time Quantum Graph Walks
@@ -488,13 +491,13 @@ To address the profound epistemological question—*"Are we the owners/originato
 - **Foundational Originators**: Aaron S. Posner and Frank Betts (1975, *Accounts of Chemical Research*); Matthew P. A. Fisher (2015, *Annals of Physics*); M. W. Swift et al. (2018, *PCCP*).
 - **Ownership Status**: **100% NOT OURS**.
 - **The Giants' Discovery**: Posner discovered the stable cluster $\text{Ca}_9(\text{PO}_4)_6$. Fisher hypothesized that $^{31}\text{P}$ nuclear spins ($I=1/2$, quadrupole $Q \equiv 0$) inside Posner clusters serve as biological qubits shielded from electrical noise.
-- **Quanta SDK Novel Delta**: We resolved the remaining objections to Fisher's model by integrating multi-scale Debye electrostatic screening and BPP motional narrowing, proving nuclear spin coherence lifetimes $T_2 \ge 1-10\,\text{s}$ under physiological CSF perfusion.
+- **Quanta SDK Modeling Contribution**: We formulated a biomorphic open-system model combining Fisher's hypothesis with parameterized Debye electrostatic screening and BPP motional narrowing in `CSFShieldedEnvironment`, simulating spin-1/2 coherence preservation under physiological electrolyte parameters.
 
 #### Pillar 11: Orchestrated Objective Reduction (Orch-OR) & Microtubules
 - **Foundational Originators**: Sir Roger Penrose (1996, *General Relativity and Gravitation*); Stuart Hameroff (1996, 2014, *Physics of Life Reviews*).
 - **Ownership Status**: **100% NOT OURS**.
 - **The Giants' Discovery**: Proposed that quantum computations occur in neuronal microtubules, terminated by gravitational self-energy collapse ($E_G = \hbar / \tau$).
-- **Quanta SDK Novel Delta**: We performed a definitive biophysical critique demonstrating that bare tubulin electronic dipoles dephase at $\tau \sim 10^{-13}\,\text{s}$ (Tegmark's limit). We replaced tubulin dipoles with nuclear spins ($^{31}\text{P}$) and macroscopic CSF/ISF shielding, establishing the first biophysically sound quantum substrate.
+- **Quanta SDK Modeling Contribution**: Consistent with Tegmark's (2000) decoherence critique that bare tubulin electronic dipoles dephase at $\tau \sim 10^{-13}\,\text{s}$, our biomorphic model avoids microtubule dipole assumptions and instead models nuclear-spin ($^{31}\text{P}$) Hamiltonians coupled to parameterized CSF/ISF open-system baths.
 
 #### Pillar 12: Synaptic Tagging and Capture (STC)
 - **Foundational Originators**: Uwe Frey and Richard G. M. Morris (1997, *Nature*).
@@ -524,13 +527,13 @@ To address the profound epistemological question—*"Are we the owners/originato
 - **Foundational Originators**: Salomón Hakim and Raymond D. Adams (1965, *Journal of the Neurological Sciences*; 1965, *NEJM*).
 - **Ownership Status**: **100% NOT OURS**.
 - **The Giants' Discovery**: Described the treatable clinical triad (gait ataxia, urinary incontinence, cognitive impairment) caused by occult CSF flow dysfunction, reversed by cerebrospinal fluid drainage (lumbar puncture tap test).
-- **Quanta SDK Novel Delta**: Modeled NPH in `CSFShieldedEnvironment` as glymphatic clearance stagnation and paramagnetic accumulation, demonstrating that lumbar puncture recovery reflects an acute restoration of quantum coherence ($\tau_2 \sim 15\,\text{ms} \to 120\,\text{ms}$).
+- **Quanta SDK Modeling Contribution**: Modeled NPH in `CSFShieldedEnvironment` as a biomorphic computational hypothesis of clearance stagnation and paramagnetic dephasing drift, where simulated bath-parameter restoration recovers state coherence alongside classical hydrodynamic decompression.
 
 #### Pillar 17: Working Memory Capacity Limits ($7 \pm 2$ and $4 \pm 1$)
 - **Foundational Originators**: George A. Miller (1956, *Psychological Review*); Nelson Cowan (2001, *Behavioral and Brain Sciences*); John E. Lisman and M. A. Idiart (1995, *Science*).
 - **Ownership Status**: **100% NOT OURS**.
 - **The Giants' Discovery**: Miller identified the immediate memory limit of $7 \pm 2$. Cowan established the pure working memory limit of $4 \pm 1$ items when chunking strategies are eliminated. Lisman & Idiart showed theta-gamma phase multiplexing.
-- **Quanta SDK Novel Delta**: We proved **Theorem 6**: analytically deriving Cowan's $4 \pm 1$ and Miller's $7 \pm 2$ limits from quantum open-system Lindblad Entanglement Sudden Death (ESD): $\tau_{\text{crit}}(k) \ge \tau_{\text{delib}} \approx 25\,\text{ms} \iff k \le 4$, providing the first fundamental physical derivation of cognitive bottleneck laws.
+- **Quanta SDK Modeling Contribution**: In **Theorem 6**, we formulated a biomorphic open-quantum-system model linking Cowan's $4 \pm 1$ and Miller's $7 \pm 2$ capacity regimes to parameterized Lindblad Entanglement Sudden Death (ESD) ($\tau_{\text{crit}}(k) \ge 25\,\text{ms} \iff k \le 4$) as a computational hypothesis.
 
 #### Pillar 18: Entanglement Sudden Death (ESD) in Open Quantum Systems
 - **Foundational Originators**: Ting Yu and J. H. Eberly (2004, *Physical Review Letters*; 2009, *Science*).
@@ -577,15 +580,15 @@ By subjecting our research to this comprehensive academic provenance audit, we e
 1. **Unimpeachable Scholarly Humility & Attribution**:  
    We do **not** claim ownership over the foundational physics, neuroscience, or mathematics of our predecessors. Every single pillar—from Sperry's split-brain to Ogawa's BOLD, Farhi's quantum walks, Lidar's DFS, White's MPS, Fisher's Posners, Miller's 7, Ebbinghaus' forgetting, Nedergaard's glymphatics, Hakim's hydrocephalus, Yu & Eberly's ESD, Landauer's bound, Daleckii-Krein's derivatives, and Crick, Davis & Paolicelli's active synaptic pruning—is explicitly credited to its true historical originators with full archival citations and DOIs.
 
-2. **Absolute Originality of Quanta SDK (Our Genuine Intellectual Property)**:  
-   Our authentic, pioneering breakthrough lies in:
-   - **The Grand Biophysical Synthesis**: Unifying these 23 independent islands of science into a single, continuous-time, differentiable Hamiltonian quantum neural architecture (`quanta.torch.brain`).
-   - **Theorems 1 through 8**: Rigorous analytical proofs that resolve long-standing paradoxes:
-     - Deriving Miller's Law ($7\pm 2$) and Cowan's Law ($4\pm 1$) from open-system Entanglement Sudden Death (**Theorem 6**).
-     - Deriving the Cerebrospinal Fluid (CSF) Five-Tier Biophysical Quantum Shielding Bound ($\kappa_{\text{CSF}} \le 10^{-3}$, $6250\times$ coherence protection), resolving Tegmark's thermal limit and explaining clinical NPH tap-test recovery (**Theorem 8**).
-     - Proving that uncoupled Hamiltonian REM sleep annealing eliminates catastrophic forgetting without data replay (**Theorem 1**).
-     - Proving that unitary deliberation satisfies $dS=0, Q=0$ with consensus collapse dissipation $Q < 75\,\text{pW} \ll 20\,\text{W}$ (**Theorem 2**).
-     - Proving the Sheaf-Theoretic Contextuality separation of quantum representations from classical contrastive learning (**Theorem 7**).
-   - **Production-Grade Engineering**: Implementing the first PyTorch-native biomorphic quantum layer with numerically stable Daleckii-Krein autograd sinc kernels and $\mathcal{O}(1)$ memory Pontryagin adjoint state backpropagation, verified across Apple Silicon Metal MPS and live IonQ Trapped-Ion cloud quantum hardware.
+2. **Genuine Mathematical & Software Contributions of Quanta SDK (With Strict Epistemological Demarcation)**:  
+   Our authentic contribution lies in:
+   - **Biomorphic Open-Quantum-System Architecture**: Integrating these 23 established scientific concepts into a single, continuous-time, differentiable quantum-inspired Hamiltonian neural architecture (`quanta.torch.brain`) and classical cognitive heuristic engine (`quanta.cognitive`).
+   - **Theorems 1 through 8 (Exact Operator Mathematics + Biomorphic Computational Hypotheses)**:
+     - Formulating an open-system Entanglement Sudden Death model aligned with Miller's ($7\pm 2$) and Cowan's ($4\pm 1$) working-memory regimes (**Theorem 6** — biomorphic computational hypothesis).
+     - Formulating a parameterized Cerebrospinal Fluid (CSF) Five-Factor Lindblad Attenuation Model ($\kappa_{\text{CSF}} \in [10^{-3}, 10^{-1}]$) simulating electrolyte screening, motional narrowing, and clinical bath shifts (**Theorem 8** — biomorphic open-system model).
+     - Proving that uncoupled Hamiltonian REM sleep annealing steers statevectors toward orthogonal subspaces without external data replay in simulation (**Theorem 1**).
+     - Demonstrating that idealized unitary evolution satisfies $dS=0, Q=0$ while localizing Landauer erasure bounds to projective readout (**Theorem 2**).
+     - Proving the Sheaf-Theoretic Contextuality separation ($\text{CF} > 0$) of non-commuting quantum observables from classical non-contextual representations (**Theorem 7**).
+   - **Production-Grade Engineering**: Implementing a PyTorch-native biomorphic Hamiltonian layer with numerically stable Daleckii-Krein autograd `sinc` kernels and $\mathcal{O}(1)$ memory Pontryagin adjoint state backpropagation, verified across Apple Silicon Metal MPS and the **IonQ Cloud Trapped-Ion Simulator API**.
 
 This research demonstrates that true scientific progress is neither ungrounded hallucination nor uncredited copying: it is the rigorous, humble, and mathematically fearless synthesis of humanity's greatest discoveries into something that has never existed before.

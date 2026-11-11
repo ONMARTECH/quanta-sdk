@@ -705,10 +705,10 @@ Let us evaluate $\tau_{\text{crit}}(k)$ in unshielded wetware versus the CSF-shi
 +==========+=============+==============================+==============================+=============+
 ```
 
-**Key Theoretical Discovery:**
-Under physiological CSF biophysical shielding, **$k = 4$ is the exact mathematical supremum** of multi-partite quantum entanglement that survives over the human $40\,\text{Hz}$ gamma deliberation cycle:
+**Key Theoretical Modeling Result:**
+Within our parameterized CSF Lindblad attenuation model, **$k = 4$ is the mathematical supremum** of multi-partite quantum entanglement that survives over a $40\,\text{Hz}$ ($25.0\,\text{ms}$) gamma window:
 $$\tau_{\text{crit}}(4) = 25.68\,\text{ms} \ge 25.0\,\text{ms}$$
-This provides the definitive physical and biophysical foundation for why human working memory is bounded by $k = 3 - 4$ items (Cowan's limit and Miller's chunking bound). The Cerebrospinal Fluid is the exact physical substrate that allows multi-partite cognitive superposition to survive.
+Consistent with our epistemological demarcation note, we present this threshold as a biomorphic open-quantum-system mathematical analogy to human working memory capacity bounds ($k = 3 - 4$ items; Cowan's limit and Miller's chunking bound), modeling how extracellular bath attenuation governs multi-register coherence in `CSFShieldedEnvironment`.
 
 ---
 
@@ -758,8 +758,8 @@ The validity of any biophysical framework is tested when physiological boundary 
 |                                                                                                    |
 | driving the effective dephasing rate to \Gamma_{\text{eff}} \to 100 - 1000\,\text{s}^{-1}. The     |
 | critical entanglement lifetime collapses to \tau_{\text{crit}} < 0.3\,\text{ms} \ll 25.0\,\text{ms},|
-| causing immediate Entanglement Sudden Death and extinguishing cognitive superposition, which      |
-| provides the physical mechanism for the sudden onset of acute delirium, stupor, and coma.         |
+| triggering immediate Entanglement Sudden Death in the open-system simulation—providing a           |
+| biomorphic computational analogy to the rapid functional onset of acute delirium and stupor.       |
 +----------------------------------------------------------------------------------------------------+
 ```
 
@@ -789,9 +789,9 @@ Under these parameters, $\kappa_{\text{CSF}} \to 1.0$. Environmental dephasing e
 |                                                                                                    |
 | Therapeutic lumbar puncture (LP tap test) draining 30-50 mL of stagnant CSF reduces periventricular|
 | turgor and transiently re-establishes a trans-mantle pressure gradient, restarting convective      |
-| bulk CSF-ISF flushing. The cryostat bath is replenished by fresh choroid plexus CSF, restoring    |
-| \kappa_{\text{CSF}} \to 0.01 within 2 to 24 hours and driving the rapid, pathognomonic clinical    |
-| reversal of cognitive executive deficits and gait apraxia.                                         |
+| bulk CSF-ISF flushing. In the `CSFShieldedEnvironment` open-system model, replenishing bath        |
+| parameters restores \kappa_{\text{CSF}} \to 0.01, offering a biomorphic computational hypothesis   |
+| paralleling the reversible cognitive and gait improvements observed clinically post-tap.           |
 +----------------------------------------------------------------------------------------------------+
 ```
 
@@ -848,18 +848,18 @@ Described in 1965 by Salomon Hakim and Raymond Adams, Normal Pressure Hydrocepha
 To translate the physical laws of Theorem 8 into differentiable neural network modules, we map each biophysical parameter into executable PyTorch primitives in `quanta.torch.brain.CSFShieldedEnvironment`:
 
 ```
-+====================================================================================================+
-|                CSF SHIELDING PYTORCH PARAMETER MAPPING (CSFShieldedEnvironment)                    |
-+============================+===================+===============+===================================+
-| Physical Parameter         | Mathematical Symbol| Default Value | PyTorch Attribute / Method        |
-+============================+===================+===============+===================================+
-| Ionic Strength             | I                 | 0.155 M       | `self.ionic_strength` (Tensor)    |
-| Relative Permittivity      | \epsilon_r        | 78.5          | `self.dielectric_constant` (Tensor)|
-| Dynamic Viscosity          | \eta              | 0.80 mPa.s    | `self.viscosity` (Tensor)         |
-| Paramagnetic Pool          | [Para]            | 0.40 \mu M    | `self.paramagnetic_concentration` |
-| Glymphatic Clearance Rate  | k_{\text{glymph}} | 0.20 h^-1     | `self.glymphatic_clearance_rate`  |
-| Physiological Temperature  | T                 | 310.15 K      | `self.temperature` (Tensor)       |
-+============================+===================+===============+===================================+
++==================================================================================================================+
+|                    CSF SHIELDING PYTORCH PARAMETER MAPPING (CSFShieldedEnvironment)                              |
++============================+===================+===============+=================================================+
+| Physical Parameter         | Mathematical Symbol| Default Value | PyTorch Attribute / Biophysical Property Alias  |
++============================+===================+===============+=================================================+
+| Ionic Strength             | I                 | 0.155 M       | `self.ionic_strength`                           |
+| Relative Permittivity      | \epsilon_r        | 78.5          | `self.relative_permittivity` (`dielectric_constant`) |
+| Dynamic Viscosity          | \eta              | 0.80 mPa.s    | `self.viscosity_mpa_s` (`viscosity`)            |
+| Paramagnetic Pool          | [Para]            | 0.40 \mu M    | `self.paramagnetic_ion_mM` (`paramagnetic_concentration`) |
+| Glymphatic Clearance Rate  | k_{\text{glymph}} | 1.00 (norm.)  | `self.glymphatic_clearance_rate`                |
+| Physiological Temperature  | T                 | 310.15 K      | `self.temperature_k` (`temperature`)            |
++============================+===================+===============+=================================================+
 ```
 
 ### 7.1 Analytical Equations Implemented in PyTorch

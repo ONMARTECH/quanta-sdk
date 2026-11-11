@@ -40,16 +40,18 @@ Ortam / Environment: macOS, Python 3.13, Apple Silicon
 ```
 v0.1 (Kronecker):  O(4^n) — her +2 qubit → ~18x yavaşlama
 v0.2 (Tensor):     O(2^n) — her +2 qubit → ~4x yavaşlama
-v1.2 (Metal/MLX):  O(2^n) — Apple Silicon Unified Memory donanım hızlandırması (52.09x hızlanma)
+v1.2 (Metal/MLX):  O(2^n) — Apple Silicon Unified Memory donanım hızlandırması (derin çok-katmanlı devrelerde 52x–404x)
 ```
 
 ---
 
 ## v1.2.0-Production — Eylül 2026 Üretim Yük Testleri
 
-Quanta SDK v1.2.0 sürümü ile birlikte Apple Silicon Metal GPU hızlandırması, Matrix Product States (MPS) ve Clifford SIMD motorları devreye alınmıştır:
+Quanta SDK v1.2.0 sürümü ile birlikte Apple Silicon Metal GPU hızlandırması, Matrix Product States (MPS) ve Clifford SIMD motorları devreye alınmıştır.
 
-### Test 3: Apple Silicon Metal / MLX Zero-Copy GPU Yük Testi
+> **İş Yükü Bağlamı (Derin Devre vs. Tek Kapı Gecikmesi)**: Aşağıdaki MLX Metal GPU hızlanma oranları (24Q'da **52.09×**, 26Q'da **58.46×** ve daha derin çok-katmanlı 26Q+ devrelerde **404×'e varan** hızlanma), Metal çekirdek başlatma (kernel dispatch) maliyetinin onlarca/yüzlerce kapı boyunca Birleşik Bellek (Unified Memory) içinde amorti edildiği **derin devre (deep-circuit)** iş yüklerini temsil eder. Tek kapılı veya düşük qubitli ($n \le 12$) sığ devrelerde GPU çekirdek başlatma sabiti baskın olduğundan saf NumPy CPU yürütmesi daha düşük gecikme sunar; `router.py` bu eşiği otomatik yönetir.
+
+### Test 3: Apple Silicon Metal / MLX Zero-Copy GPU Yük Testi (Derin Devre İş Yükü)
 
 | Qubit Sayısı | CPU StateVector (s) | MLX Metal GPU (s) | Ölçülen Hızlanma | Durum Vektörü Belleği | Üniterlik Hatası |
 |--------------|---------------------|-------------------|-------------------|------------------------|------------------|
@@ -73,5 +75,5 @@ Quanta SDK v1.2.0 sürümü ile birlikte Apple Silicon Metal GPU hızlandırmas�
 
 - **Baş Mimar**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
 - **Kurum**: ONMARTECH Kuantum Bilişim İnisiyatifi (`info@onmartech.com`)
-- **Yazılım DOI**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
+- **GitHub Release**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 

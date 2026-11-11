@@ -11,10 +11,10 @@
 
 As of September 2026, quantum computing has crossed the historic boundary from the Noisy Intermediate-Scale Quantum (NISQ) era into the **Fault-Tolerant Quantum Computing (FTQC)** regime. Real-world physical demonstrators from industrial leaders (Google Quantum AI's Willow processor, IBM's Heron and Condor architectures, Harvard/QuEra's 256- to 10,000-atom neutral atom platforms, and cloud orchestrators AWS Braket and Azure Quantum) have demonstrated physical error rates below the fault-tolerant threshold ($p < p_{\text{th}}$), continuous spacetime syndrome extraction, and high-rate quantum Low-Density Parity-Check (qLDPC) encoding.
 
-Quanta SDK occupies a unique and powerful position within this ecosystem:
-1. **Zero-Dependency Native Architecture**: Unlike Qiskit, Cirq, or PennyLane, which carry deep dependency graphs and cloud lock-in, Quanta SDK provides a standalone, mathematically verified core written in pure Python/NumPy with Apple Silicon Metal/MLX GPU acceleration.
-2. **Unified Continuous and Discrete Physics**: It integrates exact spectral Hamiltonian evolution ($V e^{-i\Lambda t} V^\dagger$), strict CPTP density matrix and Lindblad master equation solvers, and Daleckii-Krein matrix exponential autograd for Quantum Machine Learning.
-3. **Advanced FTQC Engine**: It natively incorporates Edmonds' Blossom Minimum Weight Perfect Matching (MWPM) with virtual boundary replication, 3D spacetime defect graphs for phenomenological measurement noise, the canonical Gross $[[144, 12, 12]]$ Bivariate Bicycle qLDPC code with native BP-OSD decoding, and 15-to-1 Bravyi-Kitaev magic state distillation.
+Quanta SDK occupies a unique and powerful position within this ecosystem (**Baseline: 34 native gates, 25 MCP tools, 2,826+ automated tests**):
+1. **Minimal-Dependency Native Architecture**: Unlike Qiskit, Cirq, or PennyLane, which carry heavy C++ dependency graphs and cloud lock-in, Quanta SDK's core circuit/compiler/statevector engines require only Python/NumPy (with SciPy & NetworkX powering Layer-3 solvers and QEC decoders), paired with universal 1Q ZYZ / Heron / 2Q Cartan/KAK $SU(4)$ synthesis, 127Q/156Q IBM Heavy-Hex routing, and Apple Silicon Metal/MLX GPU acceleration.
+2. **Unified Continuous and Discrete Physics**: It integrates exact spectral Hamiltonian evolution ($V e^{-i\Lambda t} V^\dagger$), strict CPTP density matrix and Lindblad master equation solvers, $O(G)$ `adjoint_gradient`, Mari-Bromley-Killoran QFIM, and Daleckii-Krein matrix exponential autograd for Quantum Machine Learning.
+3. **Advanced FTQC Engine**: It natively incorporates Edmonds' Blossom Minimum Weight Perfect Matching (MWPM) with virtual boundary replication, the shipped Delfosse-Nickerson **`UnionFindDecoder`** (`quanta/qec/decoder.py`), Kubica-Delfosse $A_2$ lattice + ILP **`ColorCode`** (`quanta/qec/color_code.py`), 3D spacetime defect graphs for phenomenological measurement noise, the canonical Gross $[[144, 12, 12]]$ Bivariate Bicycle qLDPC code with native BP-OSD decoding, and 15-to-1 Bravyi-Kitaev magic state distillation.
 
 This strategic roadmap outlines Quanta SDK's competitive positioning and details an actionable, phased trajectory from Q4 2026 through 2028 to establish Quanta SDK as the premier local-first, hardware-agnostic Fault-Tolerant Quantum Operating System (FTQOS).
 
@@ -28,10 +28,10 @@ The table below contrasts Quanta SDK against the four dominant industrial and ac
 |---|---|---|---|---|---|
 | **Physical Architecture** | 105 Superconducting transmon qubits in 2D square grid | 156 (Heron) / 1121 (Condor) Superconducting heavy-hex | 256 physical (moving to 10k) Neutral $^{87}\text{Rb}$ atoms in 2D tweezer arrays | Heterogeneous cloud brokerage (Trapped Ion, Superconducting, Neutral Atom) | **Local-First / Hardware-Agnostic Core** (Apple Silicon Metal GPU / UMA) |
 | **Physical Error Rates** | 2Q gate error: $\approx 0.12\%$; Readout error: $\approx 0.5\%$ | 2Q gate error: $\approx 0.4\%$; Readout error: $\approx 1.2\%$ | 2Q Rydberg gate error: $\approx 0.3\%$; Readout error: $\approx 0.4\%$ | Provider-dependent (Trapped ion: $\approx 0.05\%$; Superconducting: $\approx 0.4\%$) | **Exact Physical Channel Simulation** (CPTP Kraus completeness $\Delta < 10^{-12}$, Lindblad $\mathcal{L}$) |
-| **QEC Code Family** | Planar Surface Codes ($d=3, 5, 7$) | Heavy-Hex Surface Codes & Exploratory qLDPC | 2D/3D Color Codes & Hypercube Transversal Codes | Cloud-hosted surface code decoders & resource estimators | **Hybrid FTQC**: Planar Surface Codes + **Gross $[[144, 12, 12]]$ Bivariate Bicycle qLDPC** |
+| **QEC Code Family** | Planar Surface Codes ($d=3, 5, 7$) | Heavy-Hex Surface Codes & Exploratory qLDPC | 2D/3D Color Codes & Hypercube Transversal Codes | Cloud-hosted surface code decoders & resource estimators | **Hybrid FTQC**: Surface Codes + **$A_2$+ILP Color Codes** + **Gross $[[144, 12, 12]]$ BB qLDPC** |
 | **Error Suppression Factor $\Lambda$** | $\Lambda \approx 2.14$ (exponential logical error suppression below threshold) | $\Lambda \approx 1.2 - 1.5$ (limited by heavy-hex connectivity) | $\Lambda \approx 2.5$ (demonstrated on transversally encoded logical blocks) | N/A (cloud resource estimation benchmark) | **Empirical $\Lambda$ Evaluation**: Dynamic 3D spacetime defect graph with space/time weights $w_s, w_t$ |
-| **Decoding Latency & Algorithms** | Dedicated FPGA / ASIC real-time decoders ($< 1 \mu\text{s}$) | Cloud Qiskit Runtime / Server-side decoding ($> 100 \mu\text{s}$) | Classical co-processor for tweezer shuttling path planning | Cloud-side async batch processing ($> 1 \text{ ms}$) | **Edmonds Blossom MWPM** ($O(V^3)$) + **Native BP-OSD** (Min-Sum + MRB GF(2) OSD-0) |
-| **Qubit Connectivity** | Nearest-neighbor 2D planar grid (degree 4) | Nearest-neighbor Heavy-hex (degree 2–3) | Reconfigurable all-to-all via SLM tweezer shuttling | Provider-dependent (All-to-all on IonQ/Quantinuum) | **Flexible Topology Router**: Linear, 2D grid, heavy-hex, and fully connected |
+| **Decoding Latency & Algorithms** | Dedicated FPGA / ASIC real-time decoders ($< 1 \mu\text{s}$) | Cloud Qiskit Runtime / Server-side decoding ($> 100 \mu\text{s}$) | Classical co-processor for tweezer shuttling path planning | Cloud-side async batch processing ($> 1 \text{ ms}$) | **Edmonds Blossom MWPM** + **Shipped `UnionFindDecoder`** + **ColorCode $A_2$+ILP** + **Native BP-OSD** |
+| **Qubit Connectivity** | Nearest-neighbor 2D planar grid (degree 4) | Nearest-neighbor Heavy-hex (degree 2–3) | Reconfigurable all-to-all via SLM tweezer shuttling | Provider-dependent (All-to-all on IonQ/Quantinuum) | **Flexible Topology Router + Cartan/KAK $SU(4)$**: Linear, 2D grid, **127Q/156Q Heavy-Hex**, all-to-all |
 | **Non-Clifford Gate Synthesis** | Magic state distillation + Lattice surgery | Error mitigation (PEC / ZNE) + Distillation prototypes | Transversal CCZ / T via 3D color code automorphisms | Classical compilation to Clifford+T via resource estimator | **Executable 15-to-1 Bravyi-Kitaev Factory** ($\epsilon \le 35 p^3$) + **CCZ Factory** + **Lattice Surgery** |
 | **QML & Continuous Autograd** | TensorFlow Quantum (TFQ) / Cirq | Qiskit Machine Learning (Parameter-shift) | Tensor network and classical shadow compilation | PennyLane integration (autograd / PyTorch) | **Daleckii-Krein Spectral Fréchet Autograd** (`quanta.torch`, complex128, sinc-stabilized) |
 | **Controllability Theory** | Empirical ansatz tuning | Hardware-efficient ansatz mitigation | Symmetry-protected Rydberg pulses | Heuristic optimization | **Dynamical Lie Algebras (DLA)** $\mathfrak{g} = \langle i H_k \rangle_{\text{Lie}}$ & **Barren Plateau Variance Bounds** |
@@ -52,7 +52,7 @@ From the comparative analysis above, Quanta SDK possesses immense scientific and
 4. **Biomorphic & Cognitive Integration**: The unique bridge to cognitive architectures (SWR hippocampal memory replay and Quantum Zeno arbitrated decision-making) gives Quanta SDK capabilities not found in any standard quantum framework.
 
 ### 3.2 Target Areas for Strategic Leap
-1. **Sub-Microsecond Real-Time Decoding**: While NetworkX-based Edmonds' Blossom is optimal and standalone, its $O(V^3)$ CPU execution cannot meet physical hardware feedback deadlines ($< 1 \mu\text{s}$). Quanta SDK must implement a Metal GPU/C++ vectorized Blossom V and Union-Find engine.
+1. **Sub-Microsecond Real-Time Hardware Decoding**: While Edmonds' Blossom MWPM and Delfosse-Nickerson `UnionFindDecoder` are shipped and verified in Python (`quanta/qec/decoder.py`), Python CPU execution cannot meet physical superconducting hardware feedback deadlines ($< 1 \mu\text{s}$). Quanta SDK's next milestone is porting the shipped `UnionFindDecoder` and Blossom V matching into a native Metal GPU / C++ SIMD real-time kernel.
 2. **Generalized qLDPC Code Catalog**: Expanding from $[[144, 12, 12]]$ to a parameterized catalog including $[[72, 12, 6]]$, $[[288, 12, 18]]$, and 3D hyperbolic codes.
 3. **Hardware Pulse-Level Interface**: Bridging mathematical Hamiltonians to microwave/laser arbitrary waveform generators (AWGs) with DRAG pulse shaping.
 4. **Transversal and Folded Logical Operations**: Compiling logical gates on qLDPC codes via code automorphisms and non-local routing.
@@ -96,11 +96,12 @@ The roadmap is structured into four distinct, sequentially dependent phases. Eac
   - Simulated gate fidelity for 20ns single-qubit rotations $F > 99.99\%$.
   - State leakage to $|2\rangle$ bounded by $< 10^{-5}$.
 
-#### 1.2 Sub-Microsecond Metal GPU / Vectorized MWPM Decoder
+#### 1.2 Sub-Microsecond Metal GPU / Vectorized MWPM & Union-Find Acceleration
+- **Status Baseline**: Genuine Delfosse-Nickerson `UnionFindDecoder` ($O(n \alpha(n))$ cluster growth + peeling) and Edmonds Blossom `MWPMDecoder` are **shipped in `quanta/qec/decoder.py`** (verified across 2,826+ tests).
 - **Mathematical Foundation**: Blossom V dual-variable optimization and parallel Union-Find cluster growth:
   $$\max_{y} \sum_{u \in V} y_u \quad \text{subject to} \quad y_u + y_v \le w_{uv}$$
 - **Milestones**:
-  - Implement native C/Metal GPU parallelized Union-Find decoder with $O(n \alpha(n))$ almost-linear time complexity.
+  - Accelerate the shipped Python `UnionFindDecoder` via native C/Metal GPU parallel kernels for sub-microsecond real-time syndrome loops.
   - Implement standalone Apple Silicon SIMD Blossom matching engine delivering parity with PyMatching 2 while maintaining zero external dependency.
   - Streaming circular-buffer syndrome pipeline for continuous 3D spacetime decoding.
 - **Verification Criteria**:
