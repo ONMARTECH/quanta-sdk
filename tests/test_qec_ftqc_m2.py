@@ -365,10 +365,10 @@ class TestMagicStateDistillationAndSurgery:
         """Transversal CNOT via intermediate surgery routing completes successfully."""
         p_ctrl = LatticeSurgeryPatch(id="Ctrl", distance=3, basis="Z")
         p_tgt = LatticeSurgeryPatch(id="Tgt", distance=3, basis="Z")
-        cnot_op = LatticeSurgery.transversal_cnot(p_ctrl, p_tgt)
+        cnot_op = LatticeSurgery.transversal_cnot(p_ctrl, p_tgt, seed=42)
         assert cnot_op["success"] is True
-        assert cnot_op["m_zz"] == 1
-        assert cnot_op["m_xx"] == 1
+        assert cnot_op["m_zz"] in (+1, -1)
+        assert cnot_op["m_xx"] in (+1, -1)
 
     def test_lattice_surgery_explicit_z_and_x_merges(self):
         """Tests explicit z_merge and x_merge joint stabilizer measurements."""

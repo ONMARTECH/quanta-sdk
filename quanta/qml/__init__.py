@@ -1,27 +1,9 @@
 """
-quanta.qml -- Quantum Machine Learning top-level API.
+quanta.qml -- Quantum Machine Learning top-level scikit-learn compatible API.
 
-Provides a clean, scikit-learn compatible interface for quantum-enhanced
-classification, regression, and kernel methods using variational circuits.
-
-Quick Start (Classification):
-    >>> from quanta.qml import Classifier
-    >>> clf = Classifier(n_qubits=4, feature_map="zz", optimizer="adam")
-    >>> clf.fit(X_train, y_train, epochs=30)
-    >>> print(f"Accuracy: {clf.score(X_test, y_test):.2%}")
-
-Quick Start (Continuous Regression):
-    >>> from quanta.qml import Regressor
-    >>> reg = Regressor(n_qubits=4, feature_map="angle", optimizer="adam")
-    >>> reg.fit(X_train, y_train, epochs=30)
-    >>> print(f"R2 Score: {reg.score(X_test, y_test):.4f}")
-
-Feature Maps:
-    >>> FeatureMap.list_available()
-    ['angle', 'zz', 'amplitude']
-
-Optimizers:
-    Supported: "sgd", "adam" (default for Regressor), "spsa"
+Wires ``FeatureMap``, ``Ansatz`` presets (`hardware_efficient`, `strongly_entangling`,
+`reuploading`), and optimizers (`sgd`, `adam`, `spsa`, `cobyla`) directly into
+``Classifier`` and ``Regressor``.
 """
 
 from __future__ import annotations
@@ -43,10 +25,10 @@ from quanta.layer3.qml import (
 from quanta.layer3.qsvm import QSVMResult, qsvm_classify
 from quanta.qml.ansatz import Ansatz, AnsatzPreset
 
-# ── Scikit-learn compatibility layer ──
 try:
     from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 except ImportError:  # pragma: no cover
+
     class BaseEstimator:  # type: ignore[no-redef]
         """Fallback BaseEstimator when scikit-learn is not installed."""
 
@@ -61,11 +43,9 @@ except ImportError:  # pragma: no cover
 
     class ClassifierMixin:  # type: ignore[no-redef]
         """Fallback ClassifierMixin."""
-        pass
 
     class RegressorMixin:  # type: ignore[no-redef]
         """Fallback RegressorMixin."""
-        pass
 
 
 __all__ = [
@@ -81,19 +61,11 @@ __all__ = [
     "QSVMResult",
 ]
 
-
-# ── Feature Map Registry ──
+_SUPPORTED_OPTIMIZERS = ("sgd", "adam", "spsa", "cobyla")
 
 
 class FeatureMap:
-    """Feature map discovery and access.
-
-    Example:
-        >>> FeatureMap.list_available()
-        ['angle', 'zz', 'amplitude']
-        >>> FeatureMap.get("zz")
-        <function zz_feature_map at ...>
-    """
+    """Feature map discovery and access."""
 
     _REGISTRY = {
         "angle": angle_encoding,
@@ -109,19 +81,10 @@ class FeatureMap:
 
     @classmethod
     def list_available(cls) -> list[str]:
-        """Returns list of available feature map names."""
         return list(cls._REGISTRY.keys())
 
     @classmethod
     def get(cls, name: str) -> Any:
-        """Returns the feature map function by name.
-
-        Args:
-            name: Feature map name ("angle", "zz", "amplitude").
-
-        Raises:
-            ValueError: If name is not recognized.
-        """
         if name not in cls._REGISTRY:
             available = ", ".join(cls._REGISTRY.keys())
             raise ValueError(
@@ -131,7 +94,6 @@ class FeatureMap:
 
     @classmethod
     def describe(cls, name: str) -> str:
-        """Returns a human-readable description of the feature map."""
         if name not in cls._DESCRIPTIONS:
             available = ", ".join(cls._DESCRIPTIONS.keys())
             raise ValueError(
@@ -140,33 +102,15 @@ class FeatureMap:
         return cls._DESCRIPTIONS[name]
 
 
-# ── Helper for Array Conversions ──
-
-
 def _to_numpy(X: Any) -> np.ndarray:
-    """Convert input to numpy array. Supports DataFrame and lists."""
+    """Convert input (list, ndarray, or DataFrame) to float64 numpy array."""
     if hasattr(X, "values"):
         return np.asarray(X.values, dtype=float)
     return np.asarray(X, dtype=float)
 
 
-# ── Classifier (scikit-learn compatible wrapper) ──
-
-
 class Classifier(BaseEstimator, ClassifierMixin):
-    """Variational Quantum Classifier with scikit-learn compatible API.
-
-    Wraps QuantumClassifier with additional features:
-      - Optimizer selection: "sgd", "adam", "spsa"
-      - DataFrame and pipeline input support
-      - Full get_params() / set_params() for Pipeline & GridSearchCV
-
-    Example:
-        >>> clf = Classifier(n_qubits=4, feature_map="zz", optimizer="adam")
-        >>> clf.fit(X_train, y_train, epochs=50)
-        >>> predictions = clf.predict(X_test)
-        >>> print(f"Accuracy: {clf.score(X_test, y_test):.2%}")
-    """
+    """Variational Quantum Classifier with scikit-learn compatible API."""
 
     def __init__(
         self,
@@ -186,17 +130,12 @@ class Classifier(BaseEstimator, ClassifierMixin):
         self.optimizer = optimizer
         self.seed = seed
 
-        # Validate ansatz
         Ansatz.get(ansatz)
-
-        # Validate feature map
         FeatureMap.get(feature_map)
-
-        # Validate optimizer
-        if optimizer not in ("sgd", "adam", "spsa"):
+        if optimizer not in _SUPPORTED_OPTIMIZERS:
             raise ValueError(
                 f"Unknown optimizer '{optimizer}'. "
-                f"Supported: 'sgd', 'adam', 'spsa'"
+                f"Supported: {', '.join(repr(o) for o in _SUPPORTED_OPTIMIZERS)}"
             )
 
         self._clf = QuantumClassifier(
@@ -205,6 +144,8 @@ class Classifier(BaseEstimator, ClassifierMixin):
             feature_map=feature_map,
             learning_rate=learning_rate,
             seed=seed,
+            ansatz=ansatz,
+            optimizer=optimizer,
         )
         self._is_fitted = False
 
@@ -212,12 +153,36 @@ class Classifier(BaseEstimator, ClassifierMixin):
     def _to_numpy(X: Any) -> np.ndarray:
         return _to_numpy(X)
 
-    def fit(
-        self,
-        X: Any,
-        y: Any,
-        epochs: int = 30,
-    ) -> QMLResult:
+    def _rebuild_backend(self) -> None:
+        Ansatz.get(self.ansatz)
+        FeatureMap.get(self.feature_map)
+        if self.optimizer not in _SUPPORTED_OPTIMIZERS:
+            raise ValueError(
+                f"Unknown optimizer '{self.optimizer}'. "
+                f"Supported: {', '.join(repr(o) for o in _SUPPORTED_OPTIMIZERS)}"
+            )
+        self._clf = QuantumClassifier(
+            n_qubits=self.n_qubits,
+            n_layers=self.n_layers,
+            feature_map=self.feature_map,
+            learning_rate=self.learning_rate,
+            seed=self.seed,
+            ansatz=self.ansatz,
+            optimizer=self.optimizer,
+        )
+
+    def fit(self, X: Any, y: Any, epochs: int = 30) -> QMLResult:
+        # Ensure current self.ansatz and self.optimizer are synchronized (e.g. after sklearn clone)
+        if (
+            self._clf.ansatz != self.ansatz
+            or self._clf.optimizer != self.optimizer
+            or self._clf.n_qubits != self.n_qubits
+            or self._clf.n_layers != self.n_layers
+            or self._clf.feature_map != self.feature_map
+            or self._clf.learning_rate != self.learning_rate
+        ):
+            self._rebuild_backend()
+
         X_np = _to_numpy(X)
         y_np = _to_numpy(y)
         self.classes_ = np.unique(y_np)
@@ -252,13 +217,7 @@ class Classifier(BaseEstimator, ClassifierMixin):
         for key, value in params.items():
             if hasattr(self, key):
                 setattr(self, key, value)
-        self._clf = QuantumClassifier(
-            n_qubits=self.n_qubits,
-            n_layers=self.n_layers,
-            feature_map=self.feature_map,
-            learning_rate=self.learning_rate,
-            seed=self.seed,
-        )
+        self._rebuild_backend()
         self._is_fitted = False
         return self
 
@@ -266,28 +225,13 @@ class Classifier(BaseEstimator, ClassifierMixin):
         return (
             f"Classifier(n_qubits={self.n_qubits}, "
             f"feature_map='{self.feature_map}', "
+            f"ansatz='{self.ansatz}', "
             f"optimizer='{self.optimizer}')"
         )
 
 
-# ── Regressor (scikit-learn compatible wrapper) ──
-
-
 class Regressor(BaseEstimator, RegressorMixin):
-    """Variational Quantum Regressor with scikit-learn compatible API.
-
-    Continuous regression model using parameterized quantum circuits:
-      - Measures Pauli-Z expectation value on readout qubit(s)
-      - Learns affine scaling (weight, bias) to match target continuous domain
-      - Optimizes with parameter-shift rule minimizing Mean Squared Error (MSE)
-      - Full scikit-learn Pipeline and GridSearchCV integration
-
-    Example:
-        >>> reg = Regressor(n_qubits=4, feature_map="angle", optimizer="adam")
-        >>> reg.fit(X_train, y_train, epochs=30)
-        >>> predictions = reg.predict(X_test)
-        >>> print(f"R2 Score: {reg.score(X_test, y_test):.4f}")
-    """
+    """Variational Quantum Regressor with scikit-learn compatible API."""
 
     def __init__(
         self,
@@ -309,10 +253,10 @@ class Regressor(BaseEstimator, RegressorMixin):
 
         Ansatz.get(ansatz)
         FeatureMap.get(feature_map)
-        if optimizer not in ("sgd", "adam", "spsa"):
+        if optimizer not in _SUPPORTED_OPTIMIZERS:
             raise ValueError(
                 f"Unknown optimizer '{optimizer}'. "
-                f"Supported: 'sgd', 'adam', 'spsa'"
+                f"Supported: {', '.join(repr(o) for o in _SUPPORTED_OPTIMIZERS)}"
             )
 
         self._reg = QuantumRegressor(
@@ -322,6 +266,7 @@ class Regressor(BaseEstimator, RegressorMixin):
             learning_rate=learning_rate,
             optimizer=optimizer,
             seed=seed,
+            ansatz=ansatz,
         )
         self._is_fitted = False
 
@@ -329,12 +274,35 @@ class Regressor(BaseEstimator, RegressorMixin):
     def _to_numpy(X: Any) -> np.ndarray:
         return _to_numpy(X)
 
-    def fit(
-        self,
-        X: Any,
-        y: Any,
-        epochs: int = 30,
-    ) -> RegressionResult:
+    def _rebuild_backend(self) -> None:
+        Ansatz.get(self.ansatz)
+        FeatureMap.get(self.feature_map)
+        if self.optimizer not in _SUPPORTED_OPTIMIZERS:
+            raise ValueError(
+                f"Unknown optimizer '{self.optimizer}'. "
+                f"Supported: {', '.join(repr(o) for o in _SUPPORTED_OPTIMIZERS)}"
+            )
+        self._reg = QuantumRegressor(
+            n_qubits=self.n_qubits,
+            n_layers=self.n_layers,
+            feature_map=self.feature_map,
+            learning_rate=self.learning_rate,
+            optimizer=self.optimizer,
+            seed=self.seed,
+            ansatz=self.ansatz,
+        )
+
+    def fit(self, X: Any, y: Any, epochs: int = 30) -> RegressionResult:
+        if (
+            self._reg.ansatz != self.ansatz
+            or self._reg.optimizer != self.optimizer
+            or self._reg.n_qubits != self.n_qubits
+            or self._reg.n_layers != self.n_layers
+            or self._reg.feature_map != self.feature_map
+            or self._reg.learning_rate != self.learning_rate
+        ):
+            self._rebuild_backend()
+
         X_np = _to_numpy(X)
         y_np = _to_numpy(y)
         self.n_features_in_ = X_np.shape[1] if X_np.ndim > 1 else 1
@@ -365,14 +333,7 @@ class Regressor(BaseEstimator, RegressorMixin):
         for key, value in params.items():
             if hasattr(self, key):
                 setattr(self, key, value)
-        self._reg = QuantumRegressor(
-            n_qubits=self.n_qubits,
-            n_layers=self.n_layers,
-            feature_map=self.feature_map,
-            learning_rate=self.learning_rate,
-            optimizer=self.optimizer,
-            seed=self.seed,
-        )
+        self._rebuild_backend()
         self._is_fitted = False
         return self
 
@@ -380,25 +341,13 @@ class Regressor(BaseEstimator, RegressorMixin):
         return (
             f"Regressor(n_qubits={self.n_qubits}, "
             f"feature_map='{self.feature_map}', "
+            f"ansatz='{self.ansatz}', "
             f"optimizer='{self.optimizer}')"
         )
 
 
-# ── QSVM (Scikit-Learn Compatible Wrapper) ──
-
-
 class QSVM(BaseEstimator, ClassifierMixin):
-    """Quantum Support Vector Machine with scikit-learn compatible API.
-
-    Supports both:
-      1. Classic classify() API:
-         >>> qsvm = QSVM(n_qubits=4)
-         >>> result = qsvm.classify(X_train, y_train, X_test)
-      2. Scikit-Learn Estimator API (fit / predict / score):
-         >>> qsvm = QSVM(n_qubits=4)
-         >>> qsvm.fit(X_train, y_train)
-         >>> preds = qsvm.predict(X_test)
-    """
+    """Quantum Support Vector Machine with scikit-learn compatible API."""
 
     def __init__(
         self,
@@ -416,6 +365,16 @@ class QSVM(BaseEstimator, ClassifierMixin):
         self.y_train_ = y_tr
         self.classes_ = np.unique(y_tr)
         self.n_features_in_ = X_tr.shape[1] if X_tr.ndim > 1 else 1
+        res = qsvm_classify(
+            X_train=X_tr.tolist(),
+            y_train=y_tr.tolist(),
+            X_test=X_tr[:1].tolist(),
+            num_qubits=self.n_qubits,
+            regularization=self.regularization,
+        )
+        self.support_ = np.asarray(res.support_indices, dtype=int)
+        self.alphas_ = np.asarray(res.alphas, dtype=float)
+        self.intercept_ = float(res.intercept)
         self.is_fitted_ = True
         self._is_fitted = True
         return self
@@ -466,7 +425,5 @@ class QSVM(BaseEstimator, ClassifierMixin):
     def __repr__(self) -> str:
         return f"QSVM(n_qubits={self.n_qubits}, C={self.regularization})"
 
-
-# ── Kernel (re-export) ──
 
 Kernel = QuantumKernel

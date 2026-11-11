@@ -10,7 +10,7 @@ Run:
 Or install in Claude Desktop:
     fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 
-Tools (23):
+Tools (25):
   Education:
     - create_bell_state:         Quick Bell state |Φ+⟩
     - draw_circuit:              SVG circuit diagram
@@ -18,6 +18,7 @@ Tools (23):
     - explain_result:            Interpret measurement results
   Research & Fault-Tolerance:
     - run_circuit:               Execute quantum circuit code
+    - mps_circuit_simulate:      1D tensor-network MPS simulation (15-30+ qubits)
     - grover_search:             Grover's search algorithm
     - shor_factor:               Shor's factoring algorithm
     - simulate_noise:            Run circuit with noise model
@@ -35,6 +36,7 @@ Tools (23):
   Business:
     - monte_carlo_price:         Quantum Monte Carlo option pricing
     - option_greeks:             Option sensitivity Greeks (Δ,Γ,ν,Θ,ρ)
+    - portfolio_optimize:        Gate-based Ising QAOA Markowitz portfolio selection
     - cluster_data:              Quantum clustering
   Hardware:
     - run_on_ibm:                Run on IBM Quantum hardware
@@ -131,16 +133,179 @@ def _safe_error(exc: Exception) -> str:
     })
 
 
+def _build_sandbox_namespace() -> dict[str, Any]:
+    """Build restricted execution sandbox pre-loaded with all 31 Quanta gates."""
+    import math as math_mod
+
+    import numpy as np_mod
+
+    from quanta import (  # noqa: I001
+        CCX,
+        CH,
+        CP,
+        CSWAP,
+        CX,
+        CY,
+        CZ,
+        ECR,
+        MS,
+        RC3X,
+        RCCX,
+        RX,
+        RXX,
+        RY,
+        RZ,
+        RZZ,
+        SDG,
+        SWAP,
+        SX,
+        TDG,
+        H,
+        I,  # noqa: E741
+        P,
+        S,
+        SXdg,
+        T,
+        U,
+        X,
+        Y,
+        Z,
+        circuit,
+        iSWAP,
+        measure,
+        run,
+    )
+
+    return {
+        "__builtins__": _SAFE_BUILTINS,
+        "circuit": circuit,
+        "measure": measure,
+        "run": run,
+        # All 31 quantum gates (IBM Heron + Google Willow + IonQ Aria parity)
+        "H": H, "X": X, "Y": Y, "Z": Z,
+        "S": S, "T": T, "I": I, "SDG": SDG, "TDG": TDG,
+        "SX": SX, "SXdg": SXdg,
+        "CX": CX, "CZ": CZ, "CY": CY, "SWAP": SWAP,
+        "CCX": CCX, "RCCX": RCCX, "RC3X": RC3X,
+        "ECR": ECR, "iSWAP": iSWAP, "CSWAP": CSWAP, "CH": CH,
+        "RX": RX, "RY": RY, "RZ": RZ, "P": P, "U": U,
+        "RXX": RXX, "RZZ": RZZ, "CP": CP, "MS": MS,
+        # Math conveniences
+        "math": math_mod,
+        "np": np_mod,
+        "pi": math_mod.pi,
+        "sqrt": math_mod.sqrt,
+    }
+
+
+def _is_multiple_of(angle: float, period: float, tol: float = 1e-9) -> bool:
+    """Check whether angle is an integer multiple of period within tol."""
+    ratio = float(angle) / period
+    return abs(ratio - round(ratio)) < tol
+
+
+def _classify_gate_clifford_and_t(
+    gate_name: str,
+    params: tuple[float, ...] | None,
+    eps_synth: float | None = None,
+) -> tuple[bool, int, int]:
+    """Classify a gate as Clifford vs non-Clifford and compute its T-count.
+
+    Args:
+        gate_name: Gate identifier from DAG node.
+        params: Optional rotation angle tuple.
+        eps_synth: Per-rotation Ross-Selinger synthesis precision. If None,
+            counts arbitrary-angle synthesis rotations separately without
+            expanding to T-gates yet.
+
+    Returns:
+        Tuple ``(is_clifford, exact_t_gates, arb_synth_rotations)``.
+    """
+    import math as _m
+
+    g = gate_name.upper()
+    ps = tuple(float(x) for x in params) if params else ()
+
+    # Pure fixed Clifford gates (including ECR and iSWAP)
+    if g in {
+        "I", "H", "X", "Y", "Z", "S", "SDG", "SX", "SXDG",
+        "CX", "CY", "CZ", "SWAP", "ECR", "ISWAP",
+    }:
+        return (True, 0, 0)
+
+    # Fixed non-Clifford gates (Litinski 2019 / Jones-Gidney T-counts)
+    if g in {"T", "TDG"}:
+        return (False, 1, 0)
+    if g == "CH":
+        return (False, 2, 0)
+    if g == "RCCX":
+        return (False, 3, 0)  # Margolus relative-phase Toffoli = 3 T
+    if g == "CCX":
+        return (False, 4, 0)  # T-optimal measurement-assisted Toffoli = 4 T
+    if g == "CSWAP":
+        return (False, 7, 0)  # CX + Toffoli + CX
+    if g == "RC3X":
+        return (False, 8, 0)
+
+    # Controlled-Phase CP(theta) = diag(1, 1, 1, e^{i*theta}):
+    # Clifford iff theta is an integer multiple of pi (I or CZ).
+    # Odd multiple of pi/2 (Controlled-S) decomposes into 3 P(+-pi/4) = 3 T.
+    if g == "CP":
+        theta = ps[0] if ps else 0.0
+        if _is_multiple_of(theta, _m.pi):
+            return (True, 0, 0)
+        if _is_multiple_of(theta, _m.pi / 2.0):
+            return (False, 3, 0)
+        if eps_synth is not None:
+            t_rot = max(1, _m.ceil(3.0 * _m.log2(1.0 / max(1e-30, eps_synth))))
+            return (False, t_rot, 1)
+        return (False, 0, 1)
+
+    # General 1-qubit Euler gate U(theta, phi, lam)
+    if g == "U":
+        if all(_is_multiple_of(a, _m.pi / 2.0) for a in ps):
+            return (True, 0, 0)
+        exact_t = 0
+        arb_rots = 0
+        for a in ps:
+            if _is_multiple_of(a, _m.pi / 2.0):
+                continue
+            if _is_multiple_of(a, _m.pi / 4.0):
+                exact_t += 1
+            else:
+                arb_rots += 1
+        if eps_synth is not None and arb_rots > 0:
+            t_rot = max(1, _m.ceil(3.0 * _m.log2(1.0 / max(1e-30, eps_synth))))
+            return (False, exact_t + arb_rots * t_rot, arb_rots)
+        return (False, exact_t, arb_rots)
+
+    # Single-parameter Pauli/Ising rotations: RX, RY, RZ, P, RXX, RZZ, MS
+    if g in {"RX", "RY", "RZ", "P", "RXX", "RZZ", "MS"}:
+        theta = ps[0] if ps else 0.0
+        if _is_multiple_of(theta, _m.pi / 2.0):
+            return (True, 0, 0)
+        if _is_multiple_of(theta, _m.pi / 4.0):
+            return (False, 1, 0)
+        if eps_synth is not None:
+            t_rot = max(1, _m.ceil(3.0 * _m.log2(1.0 / max(1e-30, eps_synth))))
+            return (False, t_rot, 1)
+        return (False, 0, 1)
+
+    return (True, 0, 0)
+
+
 # ── MCP Server ──
 mcp = FastMCP(
     "Quanta Quantum SDK",
     instructions=(
-        "AI-native quantum computing SDK. Quanta provides 20 tools organized "
-        "into 5 categories:\n"
+        "AI-native quantum computing SDK. Quanta provides 25 tools organized "
+        "into 6 categories:\n"
         "• Education: Bell states, circuit drawing, gate reference, result explanation\n"
-        "• Research: Grover, Shor, QAOA, noise simulation, circuit optimization, QEC\n"
+        "• Research & QEC: Circuit execution, MPS simulation, Grover, Shor, QAOA, "
+        "noise, compiler passes, surface code QEC, decoder comparison, FTQC cost\n"
+        "• Agentic AI: Circuit reasoning evaluator, ISA target transpilation\n"
         "• Machine Learning: Quantum classifier with feature maps and ansatz presets\n"
-        "• Business: Monte Carlo option pricing, quantum clustering\n"
+        "• Business: Quantum Monte Carlo pricing, CRN Greeks, Ising QAOA portfolio, clustering\n"
         "• Hardware: Run on real IBM Quantum computers (Heron r3, 156 qubits)\n\n"
         "Start with create_bell_state for a quick demo, or use the prompts "
         "(grover-tutorial, option-pricing, circuit-debug, qec-intro) for "
@@ -189,65 +354,20 @@ def run_circuit(
             return measure(q)
     """
     try:
-        import math as math_mod  # noqa: F811
-
-        import numpy as np  # noqa: F811
-
-        from quanta import (  # noqa: I001
-            CCX,
-            CX,
-            CY,
-            CZ,
-            RC3X,  # noqa: F401
-            RCCX,  # noqa: F401
-            RX,
-            RXX,  # noqa: F401
-            RY,
-            RZ,
-            RZZ,  # noqa: F401
-            SDG,  # noqa: F401
-            SWAP,
-            SX,  # noqa: F401
-            TDG,  # noqa: F401
-            H,
-            I,  # noqa: E741, F401
-            P,  # noqa: F401
-            S,
-            SXdg,  # noqa: F401
-            T,
-            U,  # noqa: F401
-            X,
-            Y,
-            Z,
-            circuit,
-            measure,
-            run,
-        )
+        from quanta import run
         from quanta.runner import CircuitResult, CircuitRunner
         from quanta.simulator.mps import MPSSimulator
 
         # Security: validate code before execution
         _validate_code(code)
 
-        # Pre-inject Quanta symbols — NO raw __builtins__
-        namespace: dict[str, Any] = {
-            "__builtins__": _SAFE_BUILTINS,
-            "circuit": circuit, "H": H, "X": X, "Y": Y, "Z": Z,
-            "S": S, "T": T, "CX": CX, "CZ": CZ, "CY": CY,
-            "SWAP": SWAP, "CCX": CCX, "RX": RX, "RY": RY, "RZ": RZ,
-            # IBM-parity gates
-            "I": I, "SDG": SDG, "TDG": TDG, "P": P,
-            "SX": SX, "SXdg": SXdg, "U": U,
-            "RXX": RXX, "RZZ": RZZ, "RCCX": RCCX, "RC3X": RC3X,
-            # Measurement + execution
-            "measure": measure, "run": run,
+        # Pre-inject all 31 Quanta gates & safe symbols — NO raw __builtins__
+        namespace = _build_sandbox_namespace()
+        namespace.update({
             "MPSSimulator": MPSSimulator,
             "CircuitRunner": CircuitRunner,
             "CircuitResult": CircuitResult,
-            # Math (pre-injected for convenience)
-            "math": math_mod, "np": np,
-            "pi": math_mod.pi, "sqrt": math_mod.sqrt,
-        }
+        })
 
         exec(code, namespace)  # noqa: S102 — sandboxed, restricted builtins
 
@@ -311,62 +431,20 @@ def mps_circuit_simulate(
 
         _validate_code(code)
 
-        import math as math_mod  # noqa: F811
 
-        import numpy as np  # noqa: F811
-
-        from quanta import (  # noqa: I001
-            CCX,
-            CX,
-            CY,
-            CZ,
-            RC3X,  # noqa: F401
-            RCCX,  # noqa: F401
-            RX,
-            RXX,  # noqa: F401
-            RY,
-            RZ,
-            RZZ,  # noqa: F401
-            SDG,  # noqa: F401
-            SWAP,
-            SX,  # noqa: F401
-            TDG,  # noqa: F401
-            H,
-            I,  # noqa: E741, F401
-            P,  # noqa: F401
-            S,
-            SXdg,  # noqa: F401
-            T,
-            U,  # noqa: F401
-            X,
-            Y,
-            Z,
-            circuit,
-            measure,
-            run,
-        )
         from quanta.core.circuit import CircuitDefinition
         from quanta.dag.dag_circuit import DAGCircuit
         from quanta.runner import CircuitResult, CircuitRunner, _filter_measured_qubits
         from quanta.simulator.mps import MPSSimulator
 
-        namespace: dict[str, Any] = {
-            "__builtins__": _SAFE_BUILTINS,
-            "circuit": circuit, "H": H, "X": X, "Y": Y, "Z": Z,
-            "S": S, "T": T, "CX": CX, "CZ": CZ, "CY": CY,
-            "SWAP": SWAP, "CCX": CCX, "RX": RX, "RY": RY, "RZ": RZ,
-            "I": I, "SDG": SDG, "TDG": TDG, "P": P,
-            "SX": SX, "SXdg": SXdg, "U": U,
-            "RXX": RXX, "RZZ": RZZ, "RCCX": RCCX, "RC3X": RC3X,
-            "measure": measure, "run": run,
+        namespace = _build_sandbox_namespace()
+        namespace.update({
             "MPSSimulator": MPSSimulator,
             "CircuitRunner": CircuitRunner,
             "CircuitResult": CircuitResult,
-            "math": math_mod, "np": np,
-            "pi": math_mod.pi, "sqrt": math_mod.sqrt,
             "num_qubits": num_qubits,
             "chi_max": chi_max,
-        }
+        })
 
         exec(code, namespace)  # noqa: S102
 
@@ -509,22 +587,26 @@ def grover_search(
 
         result = search(
             num_bits=num_qubits,
-            target=target,
+            targets=[target],
             shots=shots,
+            seed=seed,
         )
 
+        target_bin = format(target, f"0{num_qubits}b")
         return json.dumps({
             "algorithm": "Grover's Search",
             "search_space_size": 2**num_qubits,
             "target": target,
-            "target_binary": format(target, f"0{num_qubits}b"),
+            "target_binary": target_bin,
             "found": result.most_frequent,
-            "success_probability": result.probabilities.get(
-                format(target, f"0{num_qubits}b"), 0
-            ),
+            "success_probability": result.probabilities.get(target_bin, 0.0),
             "counts": result.counts,
             "classical_queries_needed": 2**num_qubits // 2,
-            "quantum_queries_used": result.gate_count,
+            "classical_setup_queries": result.classical_setup_queries,
+            "oracle_queries": result.oracle_queries,
+            "quantum_queries_used": result.oracle_queries,
+            "gate_count": result.gate_count,
+            "depth": result.depth,
         })
     except Exception as e:
         return _safe_error(e)
@@ -535,36 +617,41 @@ def grover_search(
 # ═══════════════════════════════════════════
 
 @mcp.tool()
-def shor_factor(number: int = 15) -> str:
-    """Factor an integer using Shor's algorithm.
+def shor_factor(number: int = 15, seed: int | None = 42) -> str:
+    """Factor an integer using Shor's algorithm (Beauregard n+1 QPE).
 
-    Uses quantum period-finding to factor numbers exponentially
-    faster than classical algorithms. Note: the simulator can
-    handle numbers up to ~100 due to qubit limits.
+    Uses quantum period-finding via Griffiths-Niu / Beauregard semiclassical
+    iterative Quantum Phase Estimation on n + 1 qubits without silent
+    classical trial-division fallbacks.
 
     Args:
-        number: Integer to factor (must be > 1 and not prime).
+        number: Integer to factor (must be > 1 and composite).
+        seed: Random seed for coprime base selection and QPE sampling.
 
     Returns:
-        JSON with the prime factors found.
+        JSON with the prime factors, quantum period r, and method metadata.
     """
     try:
         from quanta.layer3.shor import factor, factor_recursive
 
-        result = factor(number)
-        prime_factors = factor_recursive(number)
+        result = factor(number, seed=seed)
+        prime_factors = factor_recursive(number, seed=seed)
 
         return json.dumps({
             "algorithm": "Shor's Factoring",
             "input": number,
-            "factors": result.factors,
+            "factors": list(result.factors),
             "prime_factors": prime_factors,
+            "method": result.method,
+            "period": result.period,
+            "attempts": result.attempts,
             "is_correct": result.factors[0] * result.factors[1] == number
             if len(result.factors) == 2 else False,
             "explanation": (
-                f"{number} = {' × '.join(map(str, prime_factors))}. "
-                "Shor's algorithm uses quantum period-finding (QFT) "
-                "to factor integers in polynomial time."
+                f"{number} = {' × '.join(map(str, prime_factors))} "
+                f"(period r={result.period}, method={result.method}). "
+                "Shor's algorithm uses semiclassical iterative QPE "
+                "to find modular multiplicative order."
             ),
         })
     except Exception as e:
@@ -637,46 +724,63 @@ def simulate_noise(
         # ρ → Σ K_i ρ K_i† (Kraus representation of quantum channel)
         from quanta.simulator.density_matrix import DensityMatrixSimulator
 
-        # Build single-qubit Kraus operators from noise parameters
-        p = probability
+        # Build exact CPTP Kraus operators from physical channel parameters
+        p = float(np.clip(probability, 0.0, 1.0))
         I2 = np.eye(2, dtype=complex)
         X2 = np.array([[0, 1], [1, 0]], dtype=complex)
         Y2 = np.array([[0, -1j], [1j, 0]], dtype=complex)
         Z2 = np.array([[1 + 0j, 0], [0, -1]], dtype=complex)
+        I4 = np.eye(4, dtype=complex)
+        ZZ4 = np.kron(Z2, Z2)
 
-        kraus_map = {
+        kraus_1q_map = {
+            # Symmetric depolarizing: X, Y, Z each with probability p/3
+            # sum K_i^dag K_i = (1 - p) I + 3 * (p/3) I = I
             "depolarizing": [
-                np.sqrt(1 - 3 * p / 4) * I2,
-                np.sqrt(p / 4) * X2,
-                np.sqrt(p / 4) * Y2,
-                np.sqrt(p / 4) * Z2,
+                np.sqrt(max(0.0, 1.0 - p)) * I2,
+                np.sqrt(p / 3.0) * X2,
+                np.sqrt(p / 3.0) * Y2,
+                np.sqrt(p / 3.0) * Z2,
             ],
-            "bitflip": [np.sqrt(1 - p) * I2, np.sqrt(p) * X2],
-            "phaseflip": [np.sqrt(1 - p) * I2, np.sqrt(p) * Z2],
+            "bitflip": [np.sqrt(max(0.0, 1.0 - p)) * I2, np.sqrt(p) * X2],
+            "phaseflip": [np.sqrt(max(0.0, 1.0 - p)) * I2, np.sqrt(p) * Z2],
             "amplitude_damping": [
-                np.array([[1, 0], [0, np.sqrt(1 - p)]], dtype=complex),
-                np.array([[0, np.sqrt(p)], [0, 0]], dtype=complex),
+                np.array([[1.0, 0.0], [0.0, np.sqrt(max(0.0, 1.0 - p))]], dtype=complex),
+                np.array([[0.0, np.sqrt(p)], [0.0, 0.0]], dtype=complex),
             ],
-            "t2_relaxation": [np.sqrt(1 - p) * I2, np.sqrt(p) * Z2],
-            "crosstalk": [np.sqrt(1 - p) * I2, np.sqrt(p) * Z2],
+            # Exact T2 pure phase damping Kraus representation:
+            # K0 = diag(1, sqrt(1 - gamma)), K1 = diag(0, sqrt(gamma))
+            "t2_relaxation": [
+                np.array([[1.0, 0.0], [0.0, np.sqrt(max(0.0, 1.0 - p))]], dtype=complex),
+                np.array([[0.0, 0.0], [0.0, np.sqrt(p)]], dtype=complex),
+            ],
         }
+        # Correlated 2-qubit ZZ crosstalk Kraus operators on (q0, q1)
+        kraus_2q_crosstalk = [
+            np.sqrt(max(0.0, 1.0 - p)) * I4,
+            np.sqrt(p) * ZZ4,
+        ]
 
         sim = DensityMatrixSimulator(2, seed=seed)
 
-        # Apply H gate
+        # Apply H gate on q[0]
         sim.apply("H", (0,))
 
-        # Apply noise to qubit 0 (Kraus on density matrix)
-        if noise_type in kraus_map:
-            sim.apply_kraus(kraus_map[noise_type], (0,))
+        # Apply post-1Q gate noise
+        if noise_type in kraus_1q_map:
+            sim.apply_kraus(kraus_1q_map[noise_type], (0,))
+        elif noise_type == "crosstalk":
+            sim.apply_kraus(kraus_2q_crosstalk, (0, 1))
 
-        # Apply CX gate
+        # Apply CX gate on (q[0], q[1])
         sim.apply("CX", (0, 1))
 
-        # Apply noise to both qubits
-        if noise_type in kraus_map:
-            sim.apply_kraus(kraus_map[noise_type], (0,))
-            sim.apply_kraus(kraus_map[noise_type], (1,))
+        # Apply post-2Q gate noise
+        if noise_type in kraus_1q_map:
+            sim.apply_kraus(kraus_1q_map[noise_type], (0,))
+            sim.apply_kraus(kraus_1q_map[noise_type], (1,))
+        elif noise_type == "crosstalk":
+            sim.apply_kraus(kraus_2q_crosstalk, (0, 1))
 
         rho = sim._rho
 
@@ -974,26 +1078,27 @@ def qaoa_optimize(
     Returns:
         JSON with optimal solution and cost.
     """
+    if problem not in ("max_cut", "max_ones", "min_ones"):
+        raise ValueError(
+            f"Unknown problem {problem!r}. Supported problems: 'max_cut', 'max_ones', 'min_ones'."
+        )
+
     try:
         from quanta.layer3.optimize import optimize
 
         if problem == "max_cut":
             def cost_fn(x: int) -> int:
-                return bin(x ^ (x >> 1)).count('1')
+                return bin(x ^ (x >> 1)).count("1")
             desc = "Max-Cut: maximize edges between partitions"
         elif problem == "max_ones":
             def cost_fn(x: int) -> int:
-                return bin(x).count('1')
+                return bin(x).count("1")
             desc = "Max-Ones: maximize number of 1-bits"
-        elif problem == "min_ones":
+        else:  # problem == "min_ones"
             def cost_fn(x: int) -> int:
-                return bin(x).count('1')
+                return bin(x).count("1")
             minimize = True
             desc = "Min-Ones: minimize number of 1-bits"
-        else:
-            def cost_fn(x: int) -> int:
-                return bin(x).count('1')
-            desc = f"Custom: {problem}"
 
         result = optimize(
             num_bits=num_bits,
@@ -1119,7 +1224,7 @@ def run_on_ibm(
             "ibm_sherbrooke", "ibm_nazca", "ibm_cusco",
         }
 
-        # Full 25-gate QASM map
+        # Full 31-gate QASM map
         gate_map = {
             "H": "h", "X": "x", "Y": "y", "Z": "z",
             "S": "s", "T": "t", "I": "id",
@@ -1127,14 +1232,15 @@ def run_on_ibm(
             "SX": "sx", "SXdg": "sxdg",
             "CX": "cx", "CZ": "cz", "CY": "cy",
             "SWAP": "swap", "CCX": "ccx",
+            "ECR": "ecr", "iSWAP": "iswap", "CSWAP": "cswap", "CH": "ch",
             "RX": "rx", "RY": "ry", "RZ": "rz",
-            "P": "p", "U": "u",
+            "P": "p", "U": "u", "CP": "cp", "MS": "rxx",
             "RXX": "rxx", "RZZ": "rzz",
             "RCCX": "rccx", "RC3X": "rc3x",
         }
 
         # Parametric gates that require angle parameters
-        param_gates = {"RX", "RY", "RZ", "P", "U", "RXX", "RZZ"}
+        param_gates = {"RX", "RY", "RZ", "P", "U", "RXX", "RZZ", "CP", "MS"}
 
         # Build QASM 3.0
         lines = [
@@ -1340,21 +1446,8 @@ def optimize_circuit(
         # Security: validate code before execution
         _validate_code(circuit_code)
 
-        # Execute circuit code in restricted sandbox
-        from quanta import (  # noqa: I001
-            CCX, CX, CY, CZ, RC3X, RCCX, RX, RXX, RY, RZ, RZZ,
-            SDG, SWAP, SX, TDG, H, P, S, SXdg, T, U, X, Y, Z,
-            I, circuit, measure, run,  # noqa: E741
-        )
-        sandbox: dict[str, Any] = {
-            "__builtins__": _SAFE_BUILTINS,
-            "circuit": circuit, "measure": measure, "run": run,
-            "H": H, "X": X, "Y": Y, "Z": Z, "S": S, "T": T,
-            "CX": CX, "CZ": CZ, "CY": CY, "SWAP": SWAP, "CCX": CCX,
-            "RX": RX, "RY": RY, "RZ": RZ, "I": I,
-            "SDG": SDG, "TDG": TDG, "P": P, "SX": SX, "SXdg": SXdg,
-            "U": U, "RXX": RXX, "RZZ": RZZ, "RCCX": RCCX, "RC3X": RC3X,
-        }
+        # Execute circuit code in restricted sandbox with all 31 gates
+        sandbox = _build_sandbox_namespace()
         exec(  # noqa: S102
             circuit_code,
             sandbox,
@@ -1572,57 +1665,12 @@ def draw_circuit(
         HTML string with embedded SVG circuit diagram.
     """
     try:
-        import math  # noqa: F401
-
-        import numpy as np  # noqa: F401
-
-        from quanta import (
-            CCX,
-            CX,
-            CY,
-            CZ,
-            RC3X,
-            RCCX,
-            RX,
-            RXX,
-            RY,
-            RZ,
-            RZZ,
-            SDG,
-            SWAP,
-            SX,
-            TDG,
-            H,
-            I,  # noqa: E741
-            P,
-            S,
-            SXdg,
-            T,
-            U,
-            X,
-            Y,
-            Z,
-            circuit,
-            measure,
-        )
         from quanta.visualize_svg import to_html
 
         # Security: validate code before execution
         _validate_code(code)
 
-        namespace = {
-            "__builtins__": _SAFE_BUILTINS,
-            "circuit": circuit, "measure": measure,
-            "H": H, "X": X, "Y": Y, "Z": Z,
-            "S": S, "T": T, "CX": CX, "CZ": CZ,
-            "CY": CY, "SWAP": SWAP, "CCX": CCX,
-            "RX": RX, "RY": RY, "RZ": RZ,
-            "I": I, "SDG": SDG, "TDG": TDG,
-            "P": P, "SX": SX, "SXdg": SXdg,
-            "U": U, "RXX": RXX, "RZZ": RZZ,
-            "RCCX": RCCX, "RC3X": RC3X,
-            "np": np, "math": math,
-        }
+        namespace = _build_sandbox_namespace()
 
         exec(code, namespace)  # noqa: S102 — sandboxed, restricted builtins
 
@@ -1749,26 +1797,42 @@ def compare_decoders(
         mwpm_success = 0
         uf_success = 0
         n = code.n_physical
+        z_stabs = code._z_stabilizers
+
+        def _is_logical_success(err_u8: np.ndarray, corr_indices: list[int]) -> bool:
+            corr_u8 = np.zeros(n, dtype=np.uint8)
+            for q in corr_indices:
+                if 0 <= q < n:
+                    corr_u8[q] ^= 1
+            residual = err_u8 ^ corr_u8
+            # Check zero residual Z-stabilizer syndrome AND trivial F2 homology
+            if np.any((code.H_Z @ residual) % 2):
+                return False
+            return int((code.logical_z @ residual) % 2) == 0
 
         for _ in range(rounds):
-            error_mask = rng.random(n) < error_rate
+            error_mask = (rng.random(n) < error_rate).astype(np.uint8)
             if not error_mask.any():
                 mwpm_success += 1
                 uf_success += 1
                 continue
 
-            syndrome = code.get_syndrome(error_mask)
+            syndrome_z = (code.H_Z @ error_mask) % 2
 
-            mwpm_result = mwpm.decode(syndrome, distance)
-            uf_result = uf.decode(syndrome, distance)
+            mwpm_result = mwpm.decode(
+                syndrome_z, distance, stabilizers=z_stabs, error_type="X"
+            )
+            uf_result = uf.decode(
+                syndrome_z, distance, stabilizers=z_stabs, error_type="X"
+            )
 
-            if mwpm_result.success:
+            if _is_logical_success(error_mask, mwpm_result.correction):
                 mwpm_success += 1
-            if uf_result.success:
+            if _is_logical_success(error_mask, uf_result.correction):
                 uf_success += 1
 
-        mwpm_rate = mwpm_success / rounds
-        uf_rate = uf_success / rounds
+        mwpm_rate = mwpm_success / rounds if rounds > 0 else 0.0
+        uf_rate = uf_success / rounds if rounds > 0 else 0.0
 
         return json.dumps({
             "code_params": code.code_params,
@@ -1777,11 +1841,13 @@ def compare_decoders(
             "mwpm": {
                 "name": "Minimum Weight Perfect Matching",
                 "success_rate": round(mwpm_rate, 4),
+                "logical_error_rate": round(1.0 - mwpm_rate, 4),
                 "complexity": "O(n³)",
             },
             "union_find": {
-                "name": "Union-Find",
+                "name": "Union-Find (Delfosse-Nickerson)",
                 "success_rate": round(uf_rate, 4),
+                "logical_error_rate": round(1.0 - uf_rate, 4),
                 "complexity": "O(n·α(n)) ≈ O(n)",
             },
             "winner": "MWPM" if mwpm_rate > uf_rate else (
@@ -1789,9 +1855,9 @@ def compare_decoders(
             ),
             "explanation": (
                 f"At p={error_rate} on [[{n},1,{distance}]]: "
-                f"MWPM {mwpm_rate:.1%} vs UF {uf_rate:.1%}. "
-                "MWPM is optimal but O(n³); Union-Find is near-linear "
-                "and better for large codes."
+                f"MWPM {mwpm_rate:.1%} vs UF {uf_rate:.1%} logical fidelity "
+                "(verified via residual syndrome + F2 logical homology). "
+                "MWPM is optimal; Union-Find is near-linear O(n·α(n))."
             ),
         })
     except Exception as e:
@@ -1831,6 +1897,7 @@ def option_greeks(
             payoff=payoff, n_samples=50_000, seed=42,
         )
         return json.dumps({
+            "method": result.method,
             "delta": round(result.delta, 6),
             "gamma": round(result.gamma, 6),
             "vega": round(result.vega, 6),
@@ -1841,6 +1908,69 @@ def option_greeks(
                 "spot": spot, "strike": strike,
                 "volatility": volatility, "payoff": payoff,
             },
+        })
+    except Exception as exc:
+        return _safe_error(exc)
+
+
+# ═══════════════════════════════════════════
+#  Tool: Portfolio Optimize (Ising QAOA)
+# ═══════════════════════════════════════════
+
+@mcp.tool()
+def portfolio_optimize(
+    assets: list[dict[str, Any]] | None = None,
+    budget: int = 2,
+    risk_aversion: float = 0.5,
+    layers: int = 2,
+    shots: int = 2048,
+    seed: int = 42,
+) -> str:
+    """Optimize asset selection via Markowitz QUBO mapped to a gate-based Ising QAOA circuit.
+
+    Args:
+        assets: List of asset dicts with ``name``, ``return``, and ``volatility``
+            (defaults to a 4-asset benchmark universe when omitted).
+        budget: Exact number of assets to select (cardinality constraint K).
+        risk_aversion: Risk-aversion weight q >= 0.
+        layers: Number of Ising QAOA layers p.
+        shots: Measurement shots for portfolio sampling.
+        seed: Random seed.
+    """
+    try:
+        from quanta.layer3.finance import portfolio_optimize as _portfolio_opt
+
+        if assets is None:
+            assets = [
+                {"name": "TECH", "return": 0.16, "risk": 0.24},
+                {"name": "BONDS", "return": 0.05, "risk": 0.06},
+                {"name": "GOLD", "return": 0.09, "risk": 0.14},
+                {"name": "ENERGY", "return": 0.12, "risk": 0.20},
+            ]
+
+        res = _portfolio_opt(
+            assets=assets,
+            budget=budget,
+            risk_aversion=risk_aversion,
+            layers=layers,
+            shots=shots,
+            seed=seed,
+        )
+        return json.dumps({
+            "algorithm": "Markowitz Ising QAOA",
+            "selected_assets": res.selected,
+            "bitstring": res.selection_bits,
+            "expected_return": round(res.expected_return, 6),
+            "portfolio_risk": round(res.portfolio_risk, 6),
+            "sharpe_ratio": round(res.sharpe_ratio, 4),
+            "top_portfolios": [
+                {
+                    "bitstring": p["bits"],
+                    "score": round(float(p["objective"]), 6),
+                    "probability": round(float(p["probability"]), 4),
+                }
+                for p in res.all_portfolios[:5]
+            ],
         })
     except Exception as exc:
         return _safe_error(exc)
@@ -1861,19 +1991,21 @@ def qec_diagnose(
     correction action needed.
 
     Args:
-        code: "bitflip", "phaseflip", or "shor".
-        syndrome: Measured syndrome bitstring (e.g., "11").
+        code: "bitflip", "phaseflip", "steane", or "shor".
+        syndrome: Measured syndrome bitstring (e.g., "11", "001011", "10000000").
     """
     try:
         from quanta.qec.codes import (
             BitFlipCode,
             PhaseFlipCode,
             ShorCode,
+            SteaneCode,
             correct_error,
         )
         code_map = {
             "bitflip": BitFlipCode,
             "phaseflip": PhaseFlipCode,
+            "steane": SteaneCode,
             "shor": ShorCode,
         }
         code_lower = code.lower().replace(" ", "").replace("-", "")
@@ -1906,58 +2038,7 @@ def qec_diagnose(
 def _extract_circuit_def(circuit_code: str) -> Any:
     """Safely executes code in sandbox and returns the CircuitDefinition."""
     _validate_code(circuit_code)
-    import math as math_mod
-
-    import numpy as np_mod
-
-    from quanta import (  # noqa: I001
-        CCX,  # noqa: E741
-        CH,
-        CP,
-        CSWAP,
-        CX,
-        CY,
-        CZ,
-        ECR,
-        MS,
-        RC3X,
-        RCCX,
-        RX,
-        RXX,
-        RY,
-        RZ,
-        RZZ,
-        SDG,
-        SWAP,
-        SX,
-        TDG,
-        H,
-        I,
-        P,
-        S,
-        SXdg,
-        T,
-        U,
-        X,
-        Y,
-        Z,
-        circuit,
-        iSWAP,
-        measure,
-        run,
-    )
-
-    sandbox: dict[str, Any] = {
-        "__builtins__": _SAFE_BUILTINS,
-        "circuit": circuit, "measure": measure, "run": run,
-        "H": H, "X": X, "Y": Y, "Z": Z, "S": S, "T": T, "I": I,
-        "CX": CX, "CZ": CZ, "CY": CY, "SWAP": SWAP, "CCX": CCX,
-        "RX": RX, "RY": RY, "RZ": RZ, "P": P, "SX": SX, "SXdg": SXdg,
-        "SDG": SDG, "TDG": TDG, "U": U, "RXX": RXX, "RZZ": RZZ,
-        "RCCX": RCCX, "RC3X": RC3X, "ECR": ECR, "iSWAP": iSWAP,
-        "CSWAP": CSWAP, "CH": CH, "CP": CP, "MS": MS,
-        "math": math_mod, "np": np_mod, "pi": math_mod.pi,
-    }
+    sandbox = _build_sandbox_namespace()
     exec(circuit_code, sandbox)  # noqa: S102
     for v in sandbox.values():
         if hasattr(v, "build"):
@@ -1971,10 +2052,11 @@ def estimate_fault_tolerant_cost(
     target_logical_error_rate: float = 1e-10,
     physical_error_rate: float = 1e-3,
 ) -> str:
-    """Estimates fault-tolerant quantum hardware resources (Google Willow / Surface Code).
+    """Estimates fault-tolerant quantum hardware resources (Litinski 2019 / Fowler 2012).
 
-    Calculates required surface code distance, physical qubits, T-factory
-    distillation footprint, and runtime metrics for fault-tolerant execution.
+    Calculates required surface code distance via spacetime volume V = N_patches * D,
+    Ross-Selinger optimal rotation synthesis T-counts, 1-level vs 2-level
+    (15-to-1)^2 magic-state factory selection, routing overhead, and runtime.
 
     Args:
         circuit_code: Python code defining a @circuit function.
@@ -1982,7 +2064,18 @@ def estimate_fault_tolerant_cost(
         physical_error_rate: Physical 2-qubit gate error rate (default: 1e-3, Willow standard).
     """
     try:
+        import math as _m
+
         from quanta.dag.dag_circuit import DAGCircuit
+
+        p_th = 0.01  # Circuit-level rotated surface code threshold (Fowler et al. 2012)
+        if physical_error_rate >= p_th:
+            return json.dumps({
+                "error": (
+                    f"physical_error_rate={physical_error_rate} >= threshold ({p_th}); "
+                    "surface code cannot suppress logical errors above threshold."
+                ),
+            })
 
         circ_fn = _extract_circuit_def(circuit_code)
         dag = DAGCircuit.from_builder(circ_fn.build())
@@ -1991,53 +2084,109 @@ def estimate_fault_tolerant_cost(
         total_gates = dag.gate_count()
         depth = dag.depth()
 
-        # Count T-gates and Non-Clifford costs
-        t_count = 0
+        # Pass 1: Classify Clifford vs fixed non-Clifford vs arbitrary synthesis rotations
+        fixed_t_count = 0
+        arb_rotations = 0
         clifford_count = 0
         for node in dag.op_nodes():
-            g = node.gate_name.upper()
-            if g in ("T", "TDG"):
-                t_count += 1
-            elif g in ("CCX", "CSWAP"):
-                t_count += 4  # Standard Toffoli requires 4 T gates
-            elif g.startswith("R") or g in ("U", "P", "CP"):
-                t_count += 50  # Solovay-Kitaev / repeat-until-success synthesis
-            else:
+            is_cliff, exact_t, n_arb = _classify_gate_clifford_and_t(
+                node.gate_name, node.params, eps_synth=None
+            )
+            if is_cliff:
                 clifford_count += 1
+            else:
+                fixed_t_count += exact_t
+                arb_rotations += n_arb
 
-        # Surface code distance d calculation
-        # Formula: P_L ~ 0.1 * (p_phys / p_th)**((d+1)/2), p_th = 0.01
-        p_th = 0.01
-        epsilon_budget = target_logical_error_rate / max(1, total_gates)
+        # Pass 2: Ross-Selinger optimal Clifford+T synthesis budget for arbitrary rotations
+        # Allocate 1/3 of total error budget to synthesis, 1/3 to distillation, 1/3 to memory
+        if arb_rotations > 0:
+            eps_synth = max(1e-30, target_logical_error_rate / (3.0 * arb_rotations))
+            t_per_rotation = max(1, _m.ceil(3.0 * _m.log2(1.0 / eps_synth)))
+        else:
+            t_per_rotation = 0
 
+        t_count = fixed_t_count + arb_rotations * t_per_rotation
+
+        # Litinski (Quantum 3, 128, 2019) routing & ancilla patch overhead: ~1.5x + 1 patches
+        routing_logical_patches = max(1, _m.ceil(0.5 * n_logical) + 1)
+        total_logical_patches = n_logical + routing_logical_patches
+
+        # Logical spacetime volume V = N_patches * D_logical (Fowler 2012 / Litinski 2019)
+        logical_time_steps = max(1, depth, t_count)
+        spacetime_volume = total_logical_patches * logical_time_steps
+        topo_budget = (
+            target_logical_error_rate / 3.0 if t_count > 0 else target_logical_error_rate
+        )
+
+        # Solve V * 0.1 * (p_phys / p_th)^((d + 1) / 2) <= topo_budget for odd d >= 3
         d = 3
-        while d <= 45:
-            p_l = 0.1 * ((physical_error_rate / p_th) ** ((d + 1) / 2))
-            if p_l <= epsilon_budget:
-                break
-            d += 2
+        if physical_error_rate > 0:
+            while d <= 55:
+                p_l_per_patch_cycle = 0.1 * (
+                    (physical_error_rate / p_th) ** ((d + 1) / 2.0)
+                )
+                if spacetime_volume * p_l_per_patch_cycle <= topo_budget:
+                    break
+                d += 2
 
+        # Physical qubits per rotated surface code patch = 2 * d^2 (d^2 data + (d^2-1) syndrome)
         data_physical_qubits = 2 * (d ** 2) * n_logical
-        t_factory_qubits = 15 * (d ** 2) if t_count > 0 else 0
-        total_physical_qubits = data_physical_qubits + t_factory_qubits
+        routing_physical_qubits = 2 * (d ** 2) * routing_logical_patches
 
-        # Surface code cycle time (~1 microsecond per syndrome extraction round)
+        # Magic-state distillation factory selection (1-level 15-to-1 vs 2-level (15-to-1)^2)
+        if t_count == 0:
+            factory_levels = 0
+            factory_type = "none (Clifford-only circuit)"
+            t_factory_qubits = 0
+            factory_cycles_per_t = 0
+        else:
+            eps_per_t = target_logical_error_rate / (3.0 * t_count)
+            p_l1 = 35.0 * (physical_error_rate ** 3)
+            d_l1 = max(3, (d // 2) | 1)
+            if p_l1 <= eps_per_t:
+                factory_levels = 1
+                factory_type = "15-to-1 Reed-Muller (1-level)"
+                # 15 logical patches at distance d_l1 (or d if d_l1 topological error > eps_per_t)
+                while d_l1 < d and 15 * 0.1 * ((physical_error_rate / p_th) ** ((d_l1 + 1) / 2.0)) > eps_per_t:
+                    d_l1 += 2
+                t_factory_qubits = 15 * 2 * (d_l1 ** 2)
+                factory_cycles_per_t = 6 * d_l1
+            else:
+                factory_levels = 2
+                factory_type = "(15-to-1)^2 Reed-Muller (2-level)"
+                # Litinski 2-level factory: two L1 blocks at d_l1 feeding one L2 block at d
+                t_factory_qubits = 2 * (15 * 2 * (d_l1 ** 2)) + 15 * 2 * (d ** 2)
+                factory_cycles_per_t = 6 * d
+
+        total_physical_qubits = (
+            data_physical_qubits + routing_physical_qubits + t_factory_qubits
+        )
+
+        # Surface code syndrome cycle time (~1.0 microsecond on superconducting Willow/Starling)
         cycle_time_us = 1.0
-        total_runtime_seconds = (depth * d * cycle_time_us) / 1e6
+        total_code_cycles = max(depth * d, t_count * factory_cycles_per_t)
+        total_runtime_seconds = (total_code_cycles * cycle_time_us) / 1e6
 
         return json.dumps({
             "logical_qubits": n_logical,
+            "routing_logical_patches": routing_logical_patches,
+            "spacetime_volume": spacetime_volume,
             "total_gates": total_gates,
             "circuit_depth": depth,
             "clifford_gates": clifford_count,
             "magic_t_gates_required": t_count,
+            "synthesis_t_per_rotation": t_per_rotation,
             "surface_code_distance": d,
+            "factory_levels": factory_levels,
+            "factory_type": factory_type,
             "physical_qubits_data": data_physical_qubits,
+            "physical_qubits_routing": routing_physical_qubits,
             "physical_qubits_t_factory": t_factory_qubits,
             "total_physical_qubits": total_physical_qubits,
-            "estimated_runtime_seconds": round(total_runtime_seconds, 4),
+            "estimated_runtime_seconds": round(total_runtime_seconds, 8),
             "willow_compatible": total_physical_qubits <= 105,
-            "architecture": "Rotated Surface Code (Google Willow / IBM Starling style)",
+            "architecture": "Rotated Surface Code (Litinski 2019 / Fowler 2012)",
         })
     except Exception as exc:
         return _safe_error(exc)
@@ -2052,7 +2201,8 @@ def quanta_reasoning_eval(circuit_code: str) -> str:
     """Evaluates circuit complexity and provides reasoning feedback for AI agents.
 
     Analyzes gate cancellation potential, 2-qubit entangling capacity,
-    simulation tractability, and suggests architectural self-corrections.
+    exact Clifford vs non-Clifford classification, simulation tractability,
+    and suggests architectural self-corrections.
 
     Args:
         circuit_code: Python code defining a @circuit function.
@@ -2068,13 +2218,16 @@ def quanta_reasoning_eval(circuit_code: str) -> str:
         total_gates = dag.gate_count()
         depth = dag.depth()
 
-        # Gate classification
+        # Exact Clifford vs non-Clifford gate classification
         two_qubit_count = 0
         non_clifford_count = 0
         for node in dag.op_nodes():
             if len(node.qubits) >= 2:
                 two_qubit_count += 1
-            if node.gate_name.upper() in ("T", "TDG", "CCX") or node.gate_name.startswith("R"):
+            is_cliff, _, _ = _classify_gate_clifford_and_t(
+                node.gate_name, node.params, eps_synth=None
+            )
+            if not is_cliff:
                 non_clifford_count += 1
 
         entangling_ratio = (two_qubit_count / total_gates) if total_gates > 0 else 0.0
@@ -2203,17 +2356,19 @@ def sdk_info() -> str:
         "version": "1.2.0",
         "description": "AI-native quantum computing SDK",
         "total_gates": 31,
-        "total_tools": 23,
+        "total_tools": 25,
         "tool_categories": {
             "education": ["create_bell_state", "draw_circuit",
                          "list_gates", "explain_result"],
-            "research": ["run_circuit", "grover_search", "shor_factor",
-                        "simulate_noise", "qaoa_optimize", "optimize_circuit",
-                        "surface_code_simulate", "compare_decoders", "qec_diagnose",
+            "research": ["run_circuit", "mps_circuit_simulate", "grover_search",
+                        "shor_factor", "simulate_noise", "qaoa_optimize",
+                        "optimize_circuit", "surface_code_simulate",
+                        "compare_decoders", "qec_diagnose",
                         "estimate_fault_tolerant_cost"],
             "agentic_ai": ["quanta_reasoning_eval", "transpile_for_target"],
             "machine_learning": ["qml_classify"],
-            "business": ["monte_carlo_price", "option_greeks", "cluster_data"],
+            "business": ["monte_carlo_price", "option_greeks",
+                        "portfolio_optimize", "cluster_data"],
             "hardware": ["run_on_ibm", "ibm_backends", "ibm_job_result"],
         },
         "capabilities": [
@@ -2415,8 +2570,8 @@ def gate_catalog() -> str:
         "isa_decomposition": {
             "H": "rz(π/2) · sx · rz(π/2)",
             "CX": "H(target) · CZ · H(target)",
-            "RX(θ)": "rz(-π/2) · sx · rz(θ+π/2)",
-            "RY(θ)": "rz(θ) · sx · rz(-θ)",
+            "RX(θ)": "rz(π/2) · sx · rz(θ + π) · sx · rz(π/2)",
+            "RY(θ)": "sx · rz(θ + π) · sx · rz(π)",
         },
     })
 

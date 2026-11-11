@@ -1,60 +1,37 @@
 """
-quanta.layer3.entity_resolution -- Quantum entity resolution (dedup).
+quanta.layer3.entity_resolution -- Quantum entity resolution (deduplication).
 
-Solves the "who is who?" problem using QAOA for optimal clustering.
-Hybrid pipeline: classical blocking + quantum optimization + merge.
-
-Pipeline:
-  1. Classical: Compute pairwise similarity scores (fuzzy matching)
-  2. Classical: Blocking — group likely matches into small blocks
-  3. QUANTUM: QAOA optimizes merge decisions within each block
-  4. Classical: Merge blocks and produce final clusters
-
-Why quantum? The merge decision is a graph partitioning problem.
-For N records in a block, there are 2^(N*(N-1)/2) possible merge
-configurations. QAOA explores this exponential space efficiently.
-
-Example:
-    >>> from quanta.layer3.entity_resolution import resolve
-    >>> records = [
-    ...     {"name": "Ahmet Yilmaz", "phone": "5321112233"},
-    ...     {"name": "A. Yılmaz",    "phone": "5321112233"},
-    ... ]
-    >>> result = resolve(records, threshold=0.6)
-    >>> print(result.summary())
+Uses monotonic similarity angle encoding ``theta_q = sim_q * (pi / 2) in [0, pi / 2]``
+and variationally optimizes a correlation-clustering QAOA circuit + threshold layer
+via ``scipy.optimize.minimize(..., method="COBYLA")`` without post-hoc threshold overrides.
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.optimize import minimize as scipy_minimize
 
 from quanta.simulator.factory import create_simulator
 
-__all__ = ["resolve", "ResolutionResult"]
+__all__ = ["resolve", "ResolutionResult", "compute_similarity"]
 
 
 @dataclass
 class Cluster:
     """A cluster of merged records."""
+
     record_ids: list[int]
-    canonical: dict  # Best representative record
+    canonical: dict
     confidence: float
 
 
 @dataclass
 class ResolutionResult:
-    """Result of entity resolution.
+    """Result of entity resolution."""
 
-    Attributes:
-        clusters: List of merged clusters.
-        num_records: Original record count.
-        num_entities: Unique entity count after merge.
-        method: "qaoa" or "greedy".
-        quantum_blocks: Number of blocks solved with QAOA.
-        total_qubits: Total qubits used across all blocks.
-    """
     clusters: list[Cluster]
     num_records: int
     num_entities: int
@@ -91,12 +68,9 @@ class ResolutionResult:
         return "\n".join(lines)
 
 
-# ── Similarity functions ──
-
 def _normalize(s: str) -> str:
-    """Normalize string for comparison."""
+    """Normalize string for Turkish-aware comparison."""
     s = s.lower().strip()
-    # Turkish character normalization
     tr_map = str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU")
     return s.translate(tr_map)
 
@@ -117,101 +91,96 @@ def _levenshtein_sim(a: str, b: str) -> float:
         dp[0] = i
         for j in range(1, n + 1):
             temp = dp[j]
-            if a[i-1] == b[j-1]:
+            if a[i - 1] == b[j - 1]:
                 dp[j] = prev
             else:
-                dp[j] = 1 + min(prev, dp[j], dp[j-1])
+                dp[j] = 1 + min(prev, dp[j], dp[j - 1])
             prev = temp
 
-    distance = dp[n]
-    return 1.0 - distance / max(m, n)
+    return 1.0 - dp[n] / max(m, n)
 
 
-def _field_similarity(a: dict, b: dict, field: str) -> float:
-    """Similarity for a single field."""
-    va = str(a.get(field, "")).strip()
-    vb = str(b.get(field, "")).strip()
+def _field_similarity(a: dict, b: dict, field_name: str) -> float:
+    """Similarity for a single record field."""
+    va = str(a.get(field_name, "")).strip()
+    vb = str(b.get(field_name, "")).strip()
     if not va or not vb:
-        return 0.0  # Missing data → no evidence
+        return 0.0
 
-    # Exact match
     if _normalize(va) == _normalize(vb):
         return 1.0
 
-    # Phone: remove non-digits and compare
-    if field in ("phone", "tc", "phone_number"):
+    if field_name in ("phone", "tc", "phone_number"):
         da = "".join(c for c in va if c.isdigit())
         db = "".join(c for c in vb if c.isdigit())
         if da and db:
             return 1.0 if da == db else 0.0
 
-    # Email: direct comparison
-    if field == "email":
+    if field_name == "email":
         return 1.0 if _normalize(va) == _normalize(vb) else 0.0
 
-    # String fields: Levenshtein
     return _levenshtein_sim(va, vb)
 
 
 def compute_similarity(
-    a: dict, b: dict,
+    a: dict,
+    b: dict,
     fields: list[str] | None = None,
     weights: dict[str, float] | None = None,
 ) -> float:
-    """Weighted similarity score between two records."""
+    """Weighted similarity score in [0, 1] between two records."""
     if fields is None:
         fields = list(set(a.keys()) | set(b.keys()))
 
     if weights is None:
-        # Default weights: identifiers > names > location
         weights = {
-            "phone": 3.0, "tc": 3.0, "email": 2.5,
-            "name": 2.0, "first_name": 1.5, "last_name": 2.0,
-            "birth_date": 2.0, "city": 0.5, "address": 1.0,
+            "phone": 3.0,
+            "tc": 3.0,
+            "email": 2.5,
+            "name": 2.0,
+            "first_name": 1.5,
+            "last_name": 2.0,
+            "birth_date": 2.0,
+            "city": 0.5,
+            "address": 1.0,
         }
 
-    total_weight: float = 0
-    total_score: float = 0
-
+    total_weight = 0.0
+    total_score = 0.0
     for f in fields:
         w = weights.get(f, 1.0)
         sim = _field_similarity(a, b, f)
         total_score += w * sim
         total_weight += w
 
-    return total_score / total_weight if total_weight > 0 else 0
+    return total_score / total_weight if total_weight > 0 else 0.0
 
-
-# ── Phonetic encoding (Turkish-aware Soundex) ──
 
 def _soundex_tr(s: str) -> str:
-    """Turkish-aware Soundex encoding.
-
-    Maps characters to phonetic groups, so "Yılmaz", "Yilmaz",
-    "Yılmazz" all produce the same code.
-
-    Groups:
-      1: B, F, P, V
-      2: C, Ç, G, Ğ, J, K, Q, S, Ş, X, Z
-      3: D, T
-      4: L
-      5: M, N
-      6: R
-    """
+    """Turkish-aware Soundex encoding."""
     s = _normalize(s).upper()
     if not s:
         return ""
 
-    # Keep first letter
     code = s[0]
-
     mapping = {
-        "B": "1", "F": "1", "P": "1", "V": "1",
-        "C": "2", "G": "2", "J": "2", "K": "2",
-        "Q": "2", "S": "2", "X": "2", "Z": "2",
-        "D": "3", "T": "3",
+        "B": "1",
+        "F": "1",
+        "P": "1",
+        "V": "1",
+        "C": "2",
+        "G": "2",
+        "J": "2",
+        "K": "2",
+        "Q": "2",
+        "S": "2",
+        "X": "2",
+        "Z": "2",
+        "D": "3",
+        "T": "3",
         "L": "4",
-        "M": "5", "N": "5",
+        "M": "5",
+        "N": "5",
         "R": "6",
     }
 
@@ -224,42 +193,31 @@ def _soundex_tr(s: str) -> str:
         if len(code) >= 4:
             break
 
-    # Pad to 4 characters
-    code = (code + "000")[:4]
-    return code
+    return (code + "000")[:4]
 
-
-# ── Blocking ──
 
 def _split_block_by_similarity(
-    records: list[dict], block: list[int], max_size: int = 7
+    records: list[dict], block: list[int], max_size: int = 6
 ) -> list[list[int]]:
-    """Splits a large block into sub-blocks keeping similar records together.
-
-    Uses greedy assignment: each record goes to the sub-block where its
-    average similarity to existing members is highest.
-    """
+    """Splits a large block into sub-blocks keeping similar records together (max 6 -> <= 15 qubits)."""
     if len(block) <= max_size:
         return [block]
 
-    # Compute pairwise similarity matrix for this block
     n = len(block)
-    sim_matrix = {}
+    sim_matrix: dict[tuple[int, int], float] = {}
     for i in range(n):
         for j in range(i + 1, n):
             s = compute_similarity(records[block[i]], records[block[j]])
             sim_matrix[(i, j)] = s
             sim_matrix[(j, i)] = s
 
-    # Greedy sub-clustering
     sub_blocks: list[list[int]] = [[block[0]]]
     assigned = {0}
 
-    # Sort remaining by max similarity to already-assigned records
     for _ in range(1, n):
         best_record = -1
         best_sub = 0
-        best_score = -1
+        best_score = -1.0
 
         for ri in range(n):
             if ri in assigned:
@@ -267,10 +225,8 @@ def _split_block_by_similarity(
             for si, sub in enumerate(sub_blocks):
                 if len(sub) >= max_size:
                     continue
-                # Average similarity to this sub-block
                 avg_sim = sum(
-                    sim_matrix.get((ri, block.index(m)), 0)
-                    for m in sub
+                    sim_matrix.get((ri, block.index(m)), 0.0) for m in sub
                 ) / len(sub)
                 if avg_sim > best_score:
                     best_score = avg_sim
@@ -281,141 +237,16 @@ def _split_block_by_similarity(
             break
 
         assigned.add(best_record)
-
-        # Add to best sub-block, or create new one if all full
         if best_score > 0.2 and len(sub_blocks[best_sub]) < max_size:
             sub_blocks[best_sub].append(block[best_record])
         else:
-            # Create new sub-block
             sub_blocks.append([block[best_record]])
 
     return [sb for sb in sub_blocks if len(sb) > 0]
 
-def _block_records(
-    records: list[dict], block_keys: list[str] | None = None,
-) -> list[list[int]]:
-    """3-layer blocking pipeline for high recall.
-
-    Layer 1: Exact key blocking (phone, email, TC)
-    Layer 2: Phonetic blocking (Turkish Soundex on names)
-    Layer 3: Sliding window (sorted neighborhood)
-
-    Records in the same block likely refer to the same entity.
-    Union-find merges overlapping blocks transitively.
-    """
-    blocks: dict[str, set[int]] = {}
-
-    # ── Layer 1: Exact key blocking ──
-    for i, rec in enumerate(records):
-        # Phone
-        phone = "".join(c for c in str(rec.get("phone", "")) if c.isdigit())
-        if phone:
-            blocks.setdefault(f"phone:{phone}", set()).add(i)
-
-        # Email
-        email = _normalize(str(rec.get("email", "")).strip())
-        if email:
-            blocks.setdefault(f"email:{email}", set()).add(i)
-
-        # TC
-        tc = str(rec.get("tc", "")).strip()
-        if tc and len(tc) > 5:
-            blocks.setdefault(f"tc:{tc}", set()).add(i)
-
-        # Last name (exact)
-        name = _normalize(str(rec.get("name", "")).strip())
-        parts = name.split()
-        if len(parts) >= 2:
-            last = parts[-1]
-            blocks.setdefault(f"last:{last}", set()).add(i)
-        elif len(parts) == 1 and "." in str(rec.get("name", "")):
-            raw_parts = str(rec.get("name", "")).strip().split()
-            if len(raw_parts) >= 2:
-                last = _normalize(raw_parts[-1])
-                blocks.setdefault(f"last:{last}", set()).add(i)
-
-        # Birth date + initial
-        bdate = str(rec.get("birth_date", "")).strip()
-        if bdate and parts:
-            initial = parts[0][0] if parts[0] else ""
-            blocks.setdefault(f"bdate:{initial}:{bdate}", set()).add(i)
-
-    # ── Layer 2: Phonetic blocking (Soundex) ──
-    for i, rec in enumerate(records):
-        name = str(rec.get("name", "")).strip()
-        if not name:
-            continue
-
-        parts = name.split()
-
-        # Full name Soundex
-        full_sx = _soundex_tr(name.replace(".", "").replace(" ", ""))
-        if full_sx:
-            blocks.setdefault(f"sx_full:{full_sx}", set()).add(i)
-
-        # Last name Soundex (catches Demir/Demır, Öztürk/Ozturk)
-        if len(parts) >= 2:
-            last_sx = _soundex_tr(parts[-1])
-            first_initial = _normalize(parts[0])[0] if parts[0] else ""
-            if last_sx and first_initial:
-                blocks.setdefault(
-                    f"sx_last:{first_initial}:{last_sx}", set()
-                ).add(i)
-
-        # First name Soundex (catches Ahmet/Ahmet, Ayşe/Ayse)
-        if parts:
-            first_word = parts[0].replace(".", "")
-            if len(first_word) >= 2:
-                first_sx = _soundex_tr(first_word)
-                blocks.setdefault(f"sx_first:{first_sx}", set()).add(i)
-
-    # ── Layer 3: Sliding window (sorted neighborhood) ──
-    # Sort by phonetic key, compare within window
-    indexed = []
-    for i, rec in enumerate(records):
-        name = str(rec.get("name", "")).strip()
-        city = str(rec.get("city", "")).strip()
-        sort_key = _soundex_tr(name) + _normalize(city)[:3]
-        indexed.append((sort_key, i))
-
-    indexed.sort(key=lambda x: x[0])
-    window_size = 4
-
-    for w in range(len(indexed)):
-        for w2 in range(w + 1, min(w + window_size, len(indexed))):
-            sk1, i1 = indexed[w]
-            sk2, i2 = indexed[w2]
-            # Only block together if sort keys share prefix
-            if sk1[:3] == sk2[:3]:
-                pair_key = f"window:{min(i1,i2)}:{max(i1,i2)}"
-                blocks.setdefault(pair_key, set()).update({i1, i2})
-
-    # ── Merge overlapping blocks (union-find) ──
-    merged = _merge_overlapping_sets(list(blocks.values()))
-
-    # ── Split oversized blocks (similarity-aware) ──
-    final_blocks = []
-    for block in merged:
-        if len(block) <= 10:
-            final_blocks.append(block)
-        else:
-            # Similarity-aware sub-clustering for large blocks
-            subs = _split_block_by_similarity(records, block, max_size=7)
-            final_blocks.extend(subs)
-
-    # Add singletons
-    all_assigned = set()
-    for block in final_blocks:
-        all_assigned.update(block)
-    for i in range(len(records)):
-        if i not in all_assigned:
-            final_blocks.append([i])
-
-    return final_blocks
-
 
 def _merge_overlapping_sets(sets: list[set[int]]) -> list[list[int]]:
-    """Merges sets that share any element (union-find)."""
+    """Merges sets that share any element via Union-Find."""
     parent: dict[int, int] = {}
 
     def find(x: int) -> int:
@@ -435,20 +266,106 @@ def _merge_overlapping_sets(sets: list[set[int]]) -> list[list[int]]:
             union(items[0], items[i])
 
     groups: dict[int, list[int]] = {}
-    all_items = set()
+    all_items: set[int] = set()
     for s in sets:
         all_items.update(s)
 
     for item in all_items:
         root = find(item)
-        if root not in groups:
-            groups[root] = []
-        groups[root].append(item)
+        groups.setdefault(root, []).append(item)
 
     return [sorted(g) for g in groups.values() if len(g) > 1]
 
 
-# ── Quantum QAOA optimization ──
+def _block_records(
+    records: list[dict], block_keys: list[str] | None = None
+) -> list[list[int]]:
+    """3-layer blocking pipeline (exact keys + Turkish Soundex + sorted neighborhood)."""
+    _ = block_keys
+    blocks: dict[str, set[int]] = {}
+
+    for i, rec in enumerate(records):
+        phone = "".join(c for c in str(rec.get("phone", "")) if c.isdigit())
+        if phone:
+            blocks.setdefault(f"phone:{phone}", set()).add(i)
+
+        email = _normalize(str(rec.get("email", "")).strip())
+        if email:
+            blocks.setdefault(f"email:{email}", set()).add(i)
+
+        tc = str(rec.get("tc", "")).strip()
+        if tc and len(tc) > 5:
+            blocks.setdefault(f"tc:{tc}", set()).add(i)
+
+        name = _normalize(str(rec.get("name", "")).strip())
+        parts = name.split()
+        if len(parts) >= 2:
+            blocks.setdefault(f"last:{parts[-1]}", set()).add(i)
+        elif len(parts) == 1 and "." in str(rec.get("name", "")):
+            raw_parts = str(rec.get("name", "")).strip().split()
+            if len(raw_parts) >= 2:
+                blocks.setdefault(f"last:{_normalize(raw_parts[-1])}", set()).add(i)
+
+        bdate = str(rec.get("birth_date", "")).strip()
+        if bdate and parts:
+            initial = parts[0][0] if parts[0] else ""
+            blocks.setdefault(f"bdate:{initial}:{bdate}", set()).add(i)
+
+    for i, rec in enumerate(records):
+        name = str(rec.get("name", "")).strip()
+        if not name:
+            continue
+        parts = name.split()
+        full_sx = _soundex_tr(name.replace(".", "").replace(" ", ""))
+        if full_sx:
+            blocks.setdefault(f"sx_full:{full_sx}", set()).add(i)
+
+        if len(parts) >= 2:
+            last_sx = _soundex_tr(parts[-1])
+            first_initial = _normalize(parts[0])[0] if parts[0] else ""
+            if last_sx and first_initial:
+                blocks.setdefault(f"sx_last:{first_initial}:{last_sx}", set()).add(i)
+
+        if parts:
+            first_word = parts[0].replace(".", "")
+            if len(first_word) >= 2:
+                blocks.setdefault(f"sx_first:{_soundex_tr(first_word)}", set()).add(i)
+
+    indexed = []
+    for i, rec in enumerate(records):
+        name = str(rec.get("name", "")).strip()
+        city = str(rec.get("city", "")).strip()
+        sort_key = _soundex_tr(name) + _normalize(city)[:3]
+        indexed.append((sort_key, i))
+
+    indexed.sort(key=lambda x: x[0])
+    window_size = 4
+    for w in range(len(indexed)):
+        for w2 in range(w + 1, min(w + window_size, len(indexed))):
+            sk1, i1 = indexed[w]
+            sk2, i2 = indexed[w2]
+            if sk1[:3] == sk2[:3]:
+                pair_key = f"window:{min(i1, i2)}:{max(i1, i2)}"
+                blocks.setdefault(pair_key, set()).update({i1, i2})
+
+    merged = _merge_overlapping_sets(list(blocks.values()))
+
+    final_blocks: list[list[int]] = []
+    for block in merged:
+        if len(block) <= 6:
+            final_blocks.append(block)
+        else:
+            final_blocks.extend(_split_block_by_similarity(records, block, max_size=6))
+
+    all_assigned: set[int] = set()
+    for block in final_blocks:
+        all_assigned.update(block)
+    for i in range(len(records)):
+        if i not in all_assigned:
+            final_blocks.append([i])
+
+    return final_blocks
+
 
 def _qaoa_optimize_block(
     records: list[dict],
@@ -457,82 +374,124 @@ def _qaoa_optimize_block(
     fields: list[str] | None = None,
     seed: int | None = None,
 ) -> tuple[list[list[int]], int]:
-    """Uses QAOA to find optimal merge within a block.
+    """Variational Correlation-Clustering QAOA within a candidate block.
 
-    Each pair (i,j) gets a qubit: |1⟩ = merge, |0⟩ = keep separate.
-    Cost: maximize similarity for merged pairs, penalize low-similarity merges.
-
-    Returns: (clusters as lists of indices, qubits_used)
+    - Monotonic feature angle encoding: ``theta_q = clip(sim_q, 0, 1) * (pi / 2) in [0, pi/2]``
+      so ``RY(2 * theta_q)|0>`` maps similarity monotonically onto merge amplitude ``sin(theta_q)``.
+    - Variational cost + transitivity + threshold rotation layer optimized via COBYLA
+      against the exact correlation-clustering energy (with transitivity triangle penalty).
     """
     n = len(indices)
     if n <= 1:
         return [[idx] for idx in indices], 0
 
-    # Compute pairwise similarities
-    pairs = []
-    sims = []
+    pairs: list[tuple[int, int]] = []
+    pair_to_q: dict[tuple[int, int], int] = {}
+    sims: list[float] = []
     for i in range(n):
         for j in range(i + 1, n):
-            sim = compute_similarity(
-                records[indices[i]], records[indices[j]], fields
-            )
+            sim = compute_similarity(records[indices[i]], records[indices[j]], fields)
+            pair_to_q[(i, j)] = len(pairs)
             pairs.append((i, j))
-            sims.append(sim)
+            sims.append(float(np.clip(sim, 0.0, 1.0)))
 
-    num_qubits = len(pairs)  # One qubit per pair
-    if num_qubits > 25:
-        # Too many qubits — fall back to greedy within block
+    num_qubits = len(pairs)
+    if num_qubits > 15:
         return _greedy_merge_block(records, indices, threshold, fields), 0
 
-    # QAOA circuit: encode similarities as rotation angles
-    simulator = create_simulator(num_qubits, seed=seed)
+    sims_arr = np.asarray(sims, dtype=float)
+    # Monotonic angle mapping in [0, pi / 2]
+    mono_angles = sims_arr * (math.pi / 2.0)
+    th_angle = float(np.clip(threshold, 0.0, 1.0)) * (math.pi / 2.0)
 
-    # Initial superposition
-    for q in range(num_qubits):
-        simulator.apply("H", (q,))
+    triangles: list[tuple[int, int, int]] = []
+    for a in range(n):
+        for b in range(a + 1, n):
+            for c in range(b + 1, n):
+                triangles.append(
+                    (pair_to_q[(a, b)], pair_to_q[(b, c)], pair_to_q[(a, c)])
+                )
 
-    # Cost layer: rotate based on similarity
-    for q in range(num_qubits):
-        # High similarity → bias toward |1⟩ (merge)
-        # Low similarity → bias toward |0⟩ (separate)
-        angle = (sims[q] - threshold) * np.pi
-        simulator.apply("RZ", (q,), (angle,))
-
-    # Mixer layer: entangle related pairs (transitivity)
+    shared_edges: list[tuple[int, int]] = []
     for q1 in range(num_qubits):
-        for q2 in range(q1 + 1, min(q1 + 3, num_qubits)):
-            # Entangle nearby pairs for transitivity constraint
-            i1, j1 = pairs[q1]
+        i1, j1 = pairs[q1]
+        for q2 in range(q1 + 1, num_qubits):
             i2, j2 = pairs[q2]
-            # If pairs share a record, they're related
-            if len({i1, j1} & {i2, j2}) > 0:
-                simulator.apply("CX", (q1, q2))
-                simulator.apply("RZ", (q2,), (0.3,))
-                simulator.apply("CX", (q1, q2))
+            if i1 in (i2, j2) or j1 in (i2, j2):
+                shared_edges.append((q1, q2))
 
-    # Second cost layer
-    for q in range(num_qubits):
-        simulator.apply("RY", (q,), ((sims[q] - 0.5) * np.pi,))
+    # Precompute correlation-clustering energy on all 2^num_qubits edge configurations:
+    #   E(x) = -sum_q (sim_q - threshold) * x_q + 0.35 * (# open wedges where sum of triangle bits == 2)
+    dim = 1 << num_qubits
+    basis_idx = np.arange(dim, dtype=np.uint32)
+    bits_mat = np.column_stack(
+        [((basis_idx >> (num_qubits - 1 - q)) & 1) for q in range(num_qubits)]
+    ).astype(float)
+    edge_weights = sims_arr - threshold
+    energies = -(bits_mat @ edge_weights)
+    for qa, qb, qc in triangles:
+        tri_sum = bits_mat[:, qa] + bits_mat[:, qb] + bits_mat[:, qc]
+        energies += 0.35 * (tri_sum == 2.0).astype(float)
 
-    # Sample and find best configuration
-    counts = simulator.sample(2048)
-    best_bitstring = max(counts, key=counts.get)
+    def _run_variational_circuit(params: np.ndarray, run_seed: int | None = None):
+        gamma_cost, gamma_trans, beta_th, beta_mix = (
+            float(params[0]),
+            float(params[1]),
+            float(params[2]),
+            float(params[3]),
+        )
+        sim = create_simulator(num_qubits, seed=run_seed)
+        # Layer 0: Monotonic similarity angle loading in [0, pi/2] shifted by variational threshold layer
+        for q in range(num_qubits):
+            # Initial monotonic angle in [0, pi/2]: RY(2 * mono_angles[q]) sets P(|1>) = sin^2(sim * pi/2)
+            sim.apply("RY", (q,), (2.0 * float(mono_angles[q]),))
 
-    # Decode: build adjacency from merge decisions
+        # Layer 1: Ising cost & transitivity interactions
+        for q in range(num_qubits):
+            # Z_q eigenvalue is +1 on |0>, -1 on |1>; x_q = (1 - Z_q)/2 -> h_q = +(sim_q - threshold)/2
+            sim.apply("RZ", (q,), (gamma_cost * float(edge_weights[q]),))
+        for q1, q2 in shared_edges:
+            if abs(gamma_trans) > 1e-12:
+                sim.apply("CX", (q1, q2))
+                sim.apply("RZ", (q2,), (gamma_trans,))
+                sim.apply("CX", (q1, q2))
+
+        # Layer 2: Variational threshold calibration & mixer
+        for q in range(num_qubits):
+            sim.apply("RY", (q,), (beta_th * float(mono_angles[q] - th_angle),))
+            if abs(beta_mix) > 1e-12:
+                sim.apply("RX", (q,), (2.0 * beta_mix,))
+        return sim
+
+    def objective(params: np.ndarray) -> float:
+        sim_eval = _run_variational_circuit(params)
+        return float(np.dot(sim_eval.probabilities(), energies))
+
+    x0 = np.array([0.5, 0.1, 1.5, 0.05], dtype=float)
+    opt_res = scipy_minimize(
+        objective,
+        x0,
+        method="COBYLA",
+        options={"maxiter": 60, "rhobeg": 0.35},
+    )
+
+    sim_opt = _run_variational_circuit(opt_res.x, run_seed=seed)
+    counts = sim_opt.sample(2048)
+    best_bitstring = max(counts, key=lambda bs: counts[bs])
+
+    # Decode clusters purely from the quantum QAOA bitstring (no classical 0.7*threshold override!)
     adjacency = [[False] * n for _ in range(n)]
     for q, (i, j) in enumerate(pairs):
-        if best_bitstring[q] == "1" and sims[q] >= threshold * 0.7:
+        if best_bitstring[q] == "1":
             adjacency[i][j] = True
             adjacency[j][i] = True
 
-    # Find connected components (clusters)
     visited = [False] * n
-    clusters = []
-
+    clusters: list[list[int]] = []
     for start in range(n):
         if visited[start]:
             continue
-        cluster = []
+        cluster: list[int] = []
         stack = [start]
         while stack:
             node = stack.pop()
@@ -554,7 +513,7 @@ def _greedy_merge_block(
     threshold: float,
     fields: list[str] | None = None,
 ) -> list[list[int]]:
-    """Simple greedy merge (classical baseline)."""
+    """Classical greedy transitive closure baseline."""
     n = len(indices)
     parent = list(range(n))
 
@@ -566,9 +525,7 @@ def _greedy_merge_block(
 
     for i in range(n):
         for j in range(i + 1, n):
-            sim = compute_similarity(
-                records[indices[i]], records[indices[j]], fields
-            )
+            sim = compute_similarity(records[indices[i]], records[indices[j]], fields)
             if sim >= threshold:
                 pi, pj = find(i), find(j)
                 if pi != pj:
@@ -576,16 +533,13 @@ def _greedy_merge_block(
 
     groups: dict[int, list[int]] = {}
     for i in range(n):
-        root = find(i)
-        if root not in groups:
-            groups[root] = []
-        groups[root].append(indices[i])
+        groups.setdefault(find(i), []).append(indices[i])
 
     return [sorted(g) for g in groups.values()]
 
 
 def _pick_canonical(records: list[dict], ids: list[int]) -> dict:
-    """Picks the most complete record as canonical."""
+    """Picks the most complete record as canonical representative."""
     best = ids[0]
     best_fields = sum(1 for v in records[best].values() if str(v).strip())
     for idx in ids[1:]:
@@ -596,8 +550,6 @@ def _pick_canonical(records: list[dict], ids: list[int]) -> dict:
     return dict(records[best])
 
 
-# ── Public API ──
-
 def resolve(
     records: list[dict],
     threshold: float = 0.65,
@@ -605,39 +557,30 @@ def resolve(
     method: str = "qaoa",
     seed: int | None = None,
 ) -> ResolutionResult:
-    """Quantum entity resolution.
+    """Quantum entity resolution via blocking + variational correlation-clustering QAOA."""
+    if not records:
+        return ResolutionResult(
+            clusters=[], num_records=0, num_entities=0, method=method
+        )
 
-    Args:
-        records: List of record dicts with matching fields.
-        threshold: Minimum similarity to consider a merge.
-        fields: Fields to compare (auto-detected if None).
-        method: "qaoa" (quantum) or "greedy" (classical).
-        seed: Random seed.
-
-    Returns:
-        ResolutionResult with clusters and metrics.
-    """
     n = len(records)
     if fields is None:
         fields = list(records[0].keys())
 
-    # Step 1: Blocking
     blocks = _block_records(records)
-
-    # Step 2: Resolve within each block
     all_clusters: list[list[int]] = []
     total_qubits = 0
     quantum_blocks = 0
+    assigned: set[int] = set()
 
-    assigned = set()
-
-    for block in blocks:
+    for b_idx, block in enumerate(blocks):
         if len(block) <= 1:
             continue
 
         if method == "qaoa":
+            b_seed = None if seed is None else int(seed) + b_idx * 31
             clusters, qubits = _qaoa_optimize_block(
-                records, block, threshold, fields, seed
+                records, block, threshold, fields, b_seed
             )
             total_qubits += qubits
             if qubits > 0:
@@ -649,32 +592,26 @@ def resolve(
             all_clusters.append(cluster)
             assigned.update(cluster)
 
-    # Add unassigned records as singletons
     for i in range(n):
         if i not in assigned:
             all_clusters.append([i])
 
-    # Build result
-    result_clusters = []
+    result_clusters: list[Cluster] = []
     for ids in all_clusters:
         canonical = _pick_canonical(records, ids)
-        # Confidence: average pairwise similarity in cluster
         if len(ids) > 1:
-            sims = []
-            for a in range(len(ids)):
-                for b in range(a + 1, len(ids)):
-                    sims.append(compute_similarity(
-                        records[ids[a]], records[ids[b]], fields
-                    ))
-            conf = float(np.mean(sims))
+            pair_sims = [
+                compute_similarity(records[ids[a]], records[ids[b]], fields)
+                for a in range(len(ids))
+                for b in range(a + 1, len(ids))
+            ]
+            conf = float(np.mean(pair_sims))
         else:
             conf = 1.0
 
-        result_clusters.append(Cluster(
-            record_ids=sorted(ids),
-            canonical=canonical,
-            confidence=conf,
-        ))
+        result_clusters.append(
+            Cluster(record_ids=sorted(ids), canonical=canonical, confidence=conf)
+        )
 
     result_clusters.sort(key=lambda c: -len(c.record_ids))
 
