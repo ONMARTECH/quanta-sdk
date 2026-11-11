@@ -75,7 +75,7 @@ dev = [
     "scikit-learn>=1.0",
     "mlx>=0.20; sys_platform == 'darwin' and platform_machine == 'arm64'",
     "torch>=2.0",
-    "fastmcp>=3.0",
+    "fastmcp>=4.1.2",
     "matplotlib>=3.7",
 ]
 docs = [
@@ -84,7 +84,7 @@ docs = [
     "mkdocstrings[python]>=0.25",
 ]
 gpu = ["jax[cuda12]", "cupy-cuda12x", "cuquantum-python-cu12"]
-mcp = ["fastmcp>=3.0", "scikit-learn>=1.0", "python-dotenv>=1.0"]
+mcp = ["fastmcp>=4.1.2", "scikit-learn>=1.0", "python-dotenv>=1.0"]
 metal = ["mlx>=0.20", "mlx-metal>=0.20"]
 qml = ["scikit-learn>=1.0"]
 torch = ["torch>=2.0"]
