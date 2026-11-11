@@ -205,7 +205,7 @@ class GoogleBackend(Backend):
             sampler = engine.get_sampler(processor_id=self._processor_id)
             result = sampler.run(cirq_circuit, repetitions=shots)
 
-        counts = self._cirq_result_to_counts(result)
+        counts = self._cirq_result_to_counts(result, num_qubits=dag.num_qubits)
 
         return Result(
             counts=counts,
@@ -214,12 +214,19 @@ class GoogleBackend(Backend):
         )
 
     @staticmethod
-    def _cirq_result_to_counts(result: Any) -> dict[str, int]:
+    def _cirq_result_to_counts(
+        result: Any,
+        num_qubits: int | None = None,
+    ) -> dict[str, int]:
         """Converts Cirq Result to measurement counts dict."""
         try:
             hist = result.histogram(key="result")
-            n_qubits = max(1, max(v.bit_length() for v in hist) if hist else 1)
-            return {format(k, f"0{n_qubits}b"): v for k, v in hist.items()}
+            n_qubits = (
+                num_qubits
+                if num_qubits is not None
+                else max(1, max((int(k).bit_length() for k in hist), default=1))
+            )
+            return {format(int(k), f"0{n_qubits}b"): int(v) for k, v in hist.items()}
         except Exception:
             data = result.data
             counts: dict[str, int] = {}

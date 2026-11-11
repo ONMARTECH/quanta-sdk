@@ -292,6 +292,13 @@ class IBMRestBackend(Backend):
                 f"rz({half}) ${q};",
             ]
 
+        def _cx(ctrl: int, targ: int) -> list[str]:
+            return [
+                *_h(targ),
+                f"cz ${ctrl}, ${targ};",
+                *_h(targ),
+            ]
+
         if gate == "H":
             ops.extend(_h(q0))
 
@@ -325,9 +332,12 @@ class IBMRestBackend(Backend):
 
         elif gate == "RY":
             theta = params[0] if params else 0
-            ops.extend(_h(q0))
-            ops.append(f"rz({theta}) ${q0};")
-            ops.extend(_h(q0))
+            # Exact U(θ, 0, 0) in Heron {rz, sx}: rz(0) -> sx -> rz(θ + π) -> sx -> rz(π)
+            ops.append(f"rz(0) ${q0};")
+            ops.append(f"sx ${q0};")
+            ops.append(f"rz({theta + pi}) ${q0};")
+            ops.append(f"sx ${q0};")
+            ops.append(f"rz({pi}) ${q0};")
 
         elif gate == "CX":
             q1 = qubits[1]
@@ -350,45 +360,23 @@ class IBMRestBackend(Backend):
             ops.append(f"rz({half}) ${q1};")
 
         elif gate == "CCX":
-            # Toffoli — simplified decomposition
+            # Exact 6-CX Sleator-Weinfurter Toffoli decomposition in Heron ISA
             q1, q2 = qubits[1], qubits[2]
-            # H target
             ops.extend(_h(q2))
-            # CX(q1, q2)
-            ops.extend(_h(q2))
-            ops.append(f"cz ${q1}, ${q2};")
-            ops.extend(_h(q2))
-            # T† target
+            ops.extend(_cx(q1, q2))
             ops.append(f"rz({-pi / 4}) ${q2};")
-            # CX(q0, q2)
-            ops.extend(_h(q2))
-            ops.append(f"cz ${q0}, ${q2};")
-            ops.extend(_h(q2))
-            # T target
+            ops.extend(_cx(q0, q2))
             ops.append(f"rz({pi / 4}) ${q2};")
-            # CX(q1, q2)
-            ops.extend(_h(q2))
-            ops.append(f"cz ${q1}, ${q2};")
-            ops.extend(_h(q2))
-            # T† target
+            ops.extend(_cx(q1, q2))
             ops.append(f"rz({-pi / 4}) ${q2};")
-            # CX(q0, q2)
-            ops.extend(_h(q2))
-            ops.append(f"cz ${q0}, ${q2};")
-            ops.extend(_h(q2))
-            # T q1, T target, T† q0
+            ops.extend(_cx(q0, q2))
             ops.append(f"rz({pi / 4}) ${q1};")
             ops.append(f"rz({pi / 4}) ${q2};")
-            ops.append(f"rz({-pi / 4}) ${q0};")
-            # CX(q0, q1)
-            ops.extend(_h(q1))
-            ops.append(f"cz ${q0}, ${q1};")
-            ops.extend(_h(q1))
-            # T q0, T† q1
+            ops.extend(_h(q2))
+            ops.extend(_cx(q0, q1))
             ops.append(f"rz({pi / 4}) ${q0};")
             ops.append(f"rz({-pi / 4}) ${q1};")
-            # H target
-            ops.extend(_h(q2))
+            ops.extend(_cx(q0, q1))
 
         elif gate == "SWAP":
             q1 = qubits[1]
@@ -463,38 +451,40 @@ class IBMRestBackend(Backend):
             ops.extend(_h(q1))
 
         elif gate == "RCCX":
-            # Relative-phase Toffoli — same as CCX up to phase
+            # Exact 4-CX relative-phase Toffoli matching diag(I_6, -i X)
             q1, q2 = qubits[1], qubits[2]
             ops.extend(_h(q2))
-            ops.extend(_h(q2))
-            ops.append(f"cz ${q1}, ${q2};")
-            ops.extend(_h(q2))
+            ops.extend(_cx(q1, q2))
             ops.append(f"rz({-pi / 4}) ${q2};")
-            ops.extend(_h(q2))
-            ops.append(f"cz ${q0}, ${q2};")
-            ops.extend(_h(q2))
+            ops.extend(_cx(q0, q2))
             ops.append(f"rz({pi / 4}) ${q2};")
-            ops.extend(_h(q2))
-            ops.append(f"cz ${q1}, ${q2};")
-            ops.extend(_h(q2))
+            ops.extend(_cx(q1, q2))
+            ops.append(f"rz({-pi / 4}) ${q2};")
+            ops.extend(_cx(q0, q2))
+            ops.append(f"rz({pi / 4}) ${q2};")
             ops.extend(_h(q2))
 
         elif gate == "RC3X":
-            # 3-controlled X — decompose via RCCX chain
+            # Exact 8-CX Gray-code 3-controlled relative-phase X matching diag(I_14, -i X)
             q1, q2, q3 = qubits[1], qubits[2], qubits[3]
-            # Use CCX-like decomposition for 4 qubits
+            eighth = pi / 8
             ops.extend(_h(q3))
-            ops.extend(_h(q3))
-            ops.append(f"cz ${q2}, ${q3};")
-            ops.extend(_h(q3))
-            ops.append(f"rz({-pi / 4}) ${q3};")
-            ops.extend(_h(q3))
-            ops.append(f"cz ${q1}, ${q3};")
-            ops.extend(_h(q3))
-            ops.append(f"rz({pi / 4}) ${q3};")
-            ops.extend(_h(q3))
-            ops.append(f"cz ${q0}, ${q3};")
-            ops.extend(_h(q3))
+            ops.append(f"rz({eighth}) ${q3};")
+            ops.extend(_cx(q2, q3))
+            ops.append(f"rz({-eighth}) ${q3};")
+            ops.extend(_cx(q1, q3))
+            ops.append(f"rz({eighth}) ${q3};")
+            ops.extend(_cx(q2, q3))
+            ops.append(f"rz({-eighth}) ${q3};")
+            ops.extend(_cx(q0, q3))
+            ops.append(f"rz({eighth}) ${q3};")
+            ops.extend(_cx(q2, q3))
+            ops.append(f"rz({-eighth}) ${q3};")
+            ops.extend(_cx(q1, q3))
+            ops.append(f"rz({eighth}) ${q3};")
+            ops.extend(_cx(q2, q3))
+            ops.append(f"rz({-eighth}) ${q3};")
+            ops.extend(_cx(q0, q3))
             ops.extend(_h(q3))
 
         else:
@@ -559,8 +549,8 @@ class IBMRestBackend(Backend):
             "program_id": "sampler",
             "backend": self._backend_name,
             "params": {
-                "pubs": [[qasm_str]],
-                "options": {},
+                "pubs": [[qasm_str, None, shots]],
+                "options": {"default_shots": shots},
                 "version": 2,
             },
         }
@@ -743,27 +733,34 @@ class IBMRestBackend(Backend):
 
                     reg = data[key]
 
-                    # Format 1: SamplerV2 hex samples ["0x0", "0x3", ...]
+                    # Format 1: SamplerV2 hex samples ["0x0", "0x3", ...] where bit 0 is c[0] = q[0]
                     if "samples" in reg:
                         samples = reg["samples"]
                         n_bits = reg.get("num_bits", 2)
                         for sample in samples:
                             val = int(sample, 16) if isinstance(sample, str) else sample
-                            bits = format(val, f"0{n_bits}b")
+                            bits = format(val, f"0{n_bits}b")[::-1]
                             counts[bits] = counts.get(bits, 0) + 1
                         break
 
-                    # Format 2: Pre-counted {"00": 500, "11": 500}
+                    # Format 2: Pre-counted little-endian {"01": 500} or hex {"0x1": 500}
                     if "counts" in reg:
+                        n_bits = reg.get("num_bits", 0)
                         for bitstring, count in reg["counts"].items():
-                            clean = bitstring.replace(" ", "").replace("0x", "")
+                            stripped = bitstring.replace(" ", "")
+                            if stripped.startswith(("0x", "0X")):
+                                val = int(stripped, 16)
+                                width = n_bits if n_bits > 0 else max(1, val.bit_length())
+                                clean = format(val, f"0{width}b")[::-1]
+                            else:
+                                clean = stripped[::-1]
                             counts[clean] = counts.get(clean, 0) + count
                         break
 
         if not counts:
             flat = raw_result.get("counts", {})
             for k, v in flat.items():
-                counts[k.replace(" ", "")] = v
+                counts[k.replace(" ", "")[::-1]] = v
 
         return counts
 

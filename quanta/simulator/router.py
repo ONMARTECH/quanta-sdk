@@ -27,8 +27,9 @@ __all__ = ["select_simulator", "analyze_circuit"]
 
 # Gates that are purely Clifford
 _CLIFFORD_GATES = frozenset({
-    "H", "S", "Sdg", "X", "Y", "Z",
-    "CX", "CNOT", "CZ", "SWAP",
+    "H", "S", "SDG", "Sdg", "SX", "SXdg", "SXDG",
+    "X", "Y", "Z",
+    "CX", "CNOT", "CZ", "SWAP", "ECR", "iSWAP", "ISWAP",
     "I",
 })
 
@@ -96,7 +97,7 @@ def select_simulator(
 
     if method == "clifford":
         from quanta.simulator.pauli_frame import PauliFrameSimulator
-        return PauliFrameSimulator(num_qubits)  # type: ignore[return-value]
+        return PauliFrameSimulator(num_qubits, seed=seed)
 
     if method == "dense":
         if num_qubits >= 20:

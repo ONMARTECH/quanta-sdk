@@ -22,23 +22,21 @@ __all__ = [
     "T2Relaxation", "Crosstalk", "ReadoutError",
 ]
 
-class NoiseChannel(ABC):
-    """Abstract interface for a single noise channel.
+_I2 = np.eye(2, dtype=complex)
+_I4 = np.eye(4, dtype=complex)
+_X = np.array([[0, 1], [1, 0]], dtype=complex)
+_Y = np.array([[0, -1j], [1j, 0]], dtype=complex)
+_Z = np.array([[1, 0], [0, -1]], dtype=complex)
 
-    """
+
+class NoiseChannel(ABC):
+    """Abstract interface for a quantum noise channel."""
 
     @abstractmethod
     def apply(
         self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
     ) -> np.ndarray:
-        """Applies noise to the statevector.
-
-        Args:
-            qubit: Target qubit index.
-            num_qubits: Total qubit count.
-
-        Returns:
-        """
+        """Applies stochastic noise trajectory step to a statevector."""
         ...
 
     @property
@@ -47,13 +45,82 @@ class NoiseChannel(ABC):
         """Channel name."""
         ...
 
+    def kraus_operators(self) -> list[np.ndarray]:
+        """Returns CPTP Kraus operators {K_k} satisfying sum_k K_k† K_k = I."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not define kraus_operators()."
+        )
+
+
+def _apply_kraus_stochastic(
+    state: np.ndarray,
+    kraus_ops: list[np.ndarray],
+    target_qubits: tuple[int, ...],
+    num_qubits: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Applies an arbitrary k-qubit CPTP Kraus channel stochastically to a statevector."""
+    m = len(target_qubits)
+    state_tensor = state.reshape([2] * num_qubits)
+    in_axes = list(range(m, 2 * m))
+    t_axes = list(target_qubits)
+
+    branches: list[np.ndarray] = []
+    probs: list[float] = []
+    for k_op in kraus_ops:
+        k_tensor = np.asarray(k_op, dtype=complex).reshape([2] * (2 * m))
+        cand = np.tensordot(k_tensor, state_tensor, axes=(in_axes, t_axes))
+        cand = np.moveaxis(cand, list(range(m)), t_axes)
+        p_k = float(np.real(np.vdot(cand, cand)))
+        branches.append(cand)
+        probs.append(max(0.0, p_k))
+
+    total_p = sum(probs)
+    if total_p <= 1e-15:
+        return state
+    p_arr = np.array(probs, dtype=np.float64) / total_p
+    idx = int(rng.choice(len(kraus_ops), p=p_arr))
+    chosen = branches[idx].reshape(-1)
+    norm = float(np.linalg.norm(chosen))
+    if norm > 1e-15:
+        chosen = chosen / norm
+    return chosen
+
+
+def resolve_channel_qubit_targets(
+    channel: NoiseChannel,
+    qubits: tuple[int, ...],
+    num_qubits: int,
+) -> list[tuple[int, ...]]:
+    """Resolves the target qubit tuple(s) for a noise channel given gate qubits."""
+    if isinstance(channel, ReadoutError) or not qubits:
+        return []
+
+    kraus = channel.kraus_operators()
+    dim = kraus[0].shape[0]
+    if dim == 2:
+        return [(q,) for q in qubits]
+    if dim == 4:
+        if num_qubits < 2:
+            return []
+        if len(qubits) >= 2:
+            return [(qubits[0], qubits[1])]
+        q = int(qubits[0])
+        if isinstance(channel, Crosstalk):
+            nb = q + int(channel.neighbor_offset)
+            if 0 <= nb < num_qubits and nb != q:
+                return [(q, nb)]
+        return [(q, q + 1) if q + 1 < num_qubits else (q - 1, q)]
+
+    arity = int(round(np.log2(dim)))
+    if len(qubits) >= arity:
+        return [tuple(qubits[:arity])]
+    return []
+
+
 @dataclass
 class Depolarizing(NoiseChannel):
-    """Depolarizing channel: random Pauli (X, Y, Z) error.
-
-
-    Attributes:
-    """
+    """Depolarizing channel: random Pauli (X, Y, Z) error."""
 
     probability: float = 0.01
 
@@ -61,21 +128,27 @@ class Depolarizing(NoiseChannel):
     def name(self) -> str:
         return f"Depolarizing(p={self.probability})"
 
+    def kraus_operators(self) -> list[np.ndarray]:
+        p = float(self.probability)
+        return [
+            np.sqrt(max(0.0, 1.0 - p)) * _I2,
+            np.sqrt(p / 3.0) * _X,
+            np.sqrt(p / 3.0) * _Y,
+            np.sqrt(p / 3.0) * _Z,
+        ]
+
     def apply(
         self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
     ) -> np.ndarray:
-        if rng.random() > self.probability:
-            return state  # No error
-
+        if self.probability <= 0.0 or rng.random() >= self.probability:
+            return state
         pauli = int(rng.integers(0, 3))
         return _apply_single_qubit_error(state, qubit, num_qubits, pauli)
 
+
 @dataclass
 class BitFlip(NoiseChannel):
-    """Bit-flip channel: random |0⟩↔|1⟩ flip (X error).
-
-    Attributes:
-    """
+    """Bit-flip channel: random |0⟩↔|1⟩ flip (X error)."""
 
     probability: float = 0.01
 
@@ -83,19 +156,24 @@ class BitFlip(NoiseChannel):
     def name(self) -> str:
         return f"BitFlip(p={self.probability})"
 
+    def kraus_operators(self) -> list[np.ndarray]:
+        p = float(self.probability)
+        return [
+            np.sqrt(max(0.0, 1.0 - p)) * _I2,
+            np.sqrt(p) * _X,
+        ]
+
     def apply(
         self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
     ) -> np.ndarray:
-        if rng.random() > self.probability:
+        if self.probability <= 0.0 or rng.random() >= self.probability:
             return state
         return _apply_single_qubit_error(state, qubit, num_qubits, pauli=0)
 
+
 @dataclass
 class PhaseFlip(NoiseChannel):
-    """Phase-flip channel: random phase error (Z error).
-
-    Attributes:
-    """
+    """Phase-flip channel: random phase error (Z error)."""
 
     probability: float = 0.01
 
@@ -103,20 +181,24 @@ class PhaseFlip(NoiseChannel):
     def name(self) -> str:
         return f"PhaseFlip(p={self.probability})"
 
+    def kraus_operators(self) -> list[np.ndarray]:
+        p = float(self.probability)
+        return [
+            np.sqrt(max(0.0, 1.0 - p)) * _I2,
+            np.sqrt(p) * _Z,
+        ]
+
     def apply(
         self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
     ) -> np.ndarray:
-        if rng.random() > self.probability:
+        if self.probability <= 0.0 or rng.random() >= self.probability:
             return state
         return _apply_single_qubit_error(state, qubit, num_qubits, pauli=2)
 
+
 @dataclass
 class AmplitudeDamping(NoiseChannel):
-    """Amplitude damping: energy loss (T1 decay).
-
-
-    Attributes:
-    """
+    """Amplitude damping: energy loss (T1 decay)."""
 
     gamma: float = 0.01
 
@@ -124,52 +206,39 @@ class AmplitudeDamping(NoiseChannel):
     def name(self) -> str:
         return f"AmplitudeDamping(γ={self.gamma})"
 
+    def kraus_operators(self) -> list[np.ndarray]:
+        g = float(self.gamma)
+        k0 = np.array([[1.0, 0.0], [0.0, np.sqrt(max(0.0, 1.0 - g))]], dtype=complex)
+        k1 = np.array([[0.0, np.sqrt(g)], [0.0, 0.0]], dtype=complex)
+        return [k0, k1]
+
     def apply(
         self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
     ) -> np.ndarray:
-        """Applies amplitude damping using Kraus operators.
+        """Applies amplitude damping using vectorized Kraus trajectory step."""
+        if self.gamma <= 0.0:
+            return state
 
-        K0 = [[1, 0], [0, √(1-γ)]]  (no-decay branch)
-        K1 = [[0, √γ], [0, 0]]      (decay branch)
+        s = state.copy().reshape([2] * num_qubits)
+        idx0: list[slice | int] = [slice(None)] * num_qubits
+        idx1: list[slice | int] = [slice(None)] * num_qubits
+        idx0[qubit] = 0
+        idx1[qubit] = 1
+        t0, t1 = tuple(idx0), tuple(idx1)
 
-        Statevector application: randomly apply K0 or K1 based
-        on the probability of decay, then renormalize.
-        """
-        n = num_qubits
-        dim = len(state)
-        sqrt_1mg = np.sqrt(1 - self.gamma)
-        sqrt_g = np.sqrt(self.gamma)
-
-        # Compute probability of decay (K1 branch)
-        p_decay = 0.0
-        for i in range(dim):
-            if (i >> (n - 1 - qubit)) & 1:  # qubit in |1⟩
-                p_decay += self.gamma * abs(state[i]) ** 2
-
-        new_state = state.copy()
-
+        p_decay = self.gamma * float(np.sum(np.abs(s[t1]) ** 2))
         if rng.random() < p_decay and p_decay > 1e-15:
-            # Apply K1: |1⟩ → |0⟩ transition
-            for i in range(dim):
-                if (i >> (n - 1 - qubit)) & 1:  # qubit in |1⟩
-                    j = i ^ (1 << (n - 1 - qubit))  # paired |0⟩ index
-                    new_state[j] = sqrt_g * state[i]
-                    new_state[i] = 0
-                # |0⟩ states already zeroed by K1
-                else:
-                    new_state[i] = 0
+            s[t0] = np.sqrt(self.gamma) * s[t1]
+            s[t1] = 0.0
         else:
-            # Apply K0: dampen |1⟩ amplitude
-            for i in range(dim):
-                if (i >> (n - 1 - qubit)) & 1:  # qubit in |1⟩
-                    new_state[i] = sqrt_1mg * state[i]
+            s[t1] = np.sqrt(max(0.0, 1.0 - self.gamma)) * s[t1]
 
-        # Normalize
-        norm = np.linalg.norm(new_state)
+        new_state = s.reshape(-1)
+        norm = float(np.linalg.norm(new_state))
         if norm > 1e-15:
             new_state /= norm
-
         return new_state
+
 
 class NoiseModel:
     """Noise model: manages multiple channels.
@@ -212,10 +281,20 @@ class NoiseModel:
         num_qubits: int,
         rng: np.random.Generator,
     ) -> np.ndarray:
-        """Applies all channels to the specified qubits."""
+        """Applies all gate-level channels to the specified qubits respecting arity."""
         for channel in self._channels:
-            for qubit in qubits:
-                state = channel.apply(state, qubit, num_qubits, rng)
+            if isinstance(channel, ReadoutError):
+                continue
+            targets_list = resolve_channel_qubit_targets(channel, qubits, num_qubits)
+            for target in targets_list:
+                if len(target) == 1:
+                    state = channel.apply(state, target[0], num_qubits, rng)
+                elif len(target) == 2 and isinstance(channel, Crosstalk):
+                    state = channel.apply_2q(state, target[0], target[1], num_qubits, rng)
+                else:
+                    state = _apply_kraus_stochastic(
+                        state, channel.kraus_operators(), target, num_qubits, rng
+                    )
         return state
 
     def describe(self) -> str:
@@ -237,29 +316,14 @@ class NoiseModel:
 
     @classmethod
     def builder(cls) -> _NoiseModelBuilder:
-        """Start building a noise model with fluent API.
-
-        Example:
-            >>> model = (NoiseModel.builder()
-            ...     .depolarizing(0.01)
-            ...     .with_amplitude_damping(0.005)
-            ...     .with_readout(0.01, 0.02)
-            ...     .build())
-        """
+        """Start building a noise model with fluent API."""
         return _NoiseModelBuilder()
 
     # ── Preset Profiles ──
 
     @classmethod
     def ibm_heron(cls) -> NoiseModel:
-        """IBM Heron r3 noise profile.
-
-        Based on ibm_fez calibration data (2026):
-          - 1Q gate error: ~0.02%
-          - 2Q gate error: ~0.5%
-          - T1: ~300 μs, T2: ~200 μs
-          - Readout error: ~0.8%
-        """
+        """IBM Heron r3 noise profile."""
         return (
             cls.builder()
             .depolarizing(0.005)
@@ -271,13 +335,7 @@ class NoiseModel:
 
     @classmethod
     def ionq_aria(cls) -> NoiseModel:
-        """IonQ Aria noise profile.
-
-        Based on IonQ Aria-1 specs (2026):
-          - 1Q gate fidelity: 99.97%
-          - 2Q gate fidelity: 99.4%
-          - All-to-all connectivity (no SWAP overhead)
-        """
+        """IonQ Aria noise profile."""
         return (
             cls.builder()
             .depolarizing(0.003)
@@ -287,14 +345,7 @@ class NoiseModel:
 
     @classmethod
     def google_willow(cls) -> NoiseModel:
-        """Google Willow noise profile.
-
-        Based on Google Willow specs (2026):
-          - 1Q gate error: ~0.03%
-          - 2Q gate error: ~0.3%
-          - T1: ~70 μs
-          - Below-threshold QEC demonstrated
-        """
+        """Google Willow noise profile."""
         return (
             cls.builder()
             .depolarizing(0.003)
@@ -358,25 +409,29 @@ class _NoiseModelBuilder:
         """Build and return the noise model."""
         return self._model
 
+
 def _apply_single_qubit_error(
     state: np.ndarray, qubit: int, num_qubits: int, pauli: int
 ) -> np.ndarray:
-    n = num_qubits
-    new_state = state.copy()
-    dim = len(state)
+    s = state.copy().reshape([2] * num_qubits)
+    idx0: list[slice | int] = [slice(None)] * num_qubits
+    idx1: list[slice | int] = [slice(None)] * num_qubits
+    idx0[qubit] = 0
+    idx1[qubit] = 1
+    t0, t1 = tuple(idx0), tuple(idx1)
 
-    for i in range(dim):
-        bit = (i >> (n - 1 - qubit)) & 1
-        j = i ^ (1 << (n - 1 - qubit))  # bit-flip index
+    if pauli == 0:  # X: bit flip
+        tmp = s[t0].copy()
+        s[t0] = s[t1]
+        s[t1] = tmp
+    elif pauli == 1:  # Y: [[0, -1j], [1j, 0]]
+        tmp = s[t0].copy()
+        s[t0] = -1j * s[t1]
+        s[t1] = 1j * tmp
+    elif pauli == 2:  # Z: [[1, 0], [0, -1]]
+        s[t1] = -s[t1]
 
-        if pauli == 0:    # X: bit flip
-            new_state[i], new_state[j] = state[j], state[i]
-        elif pauli == 1:  # Y: bit flip + phase
-            new_state[i] = 1j * state[j] if bit == 0 else -1j * state[j]
-        elif pauli == 2 and bit == 1:  # Z: phase flip
-            new_state[i] = -state[i]
-
-    return new_state
+    return s.reshape(-1)
 
 
 @dataclass
@@ -385,10 +440,6 @@ class T2Relaxation(NoiseChannel):
 
     Models decoherence where the qubit loses phase information
     without energy loss. T2 is always <= 2*T1.
-
-    In real hardware:
-      - IBM Eagle: T2 ~ 100-200 μs
-      - Google Sycamore: T2 ~ 10-20 μs
 
     Attributes:
         gamma: Dephasing rate (probability of phase randomization).
@@ -400,86 +451,107 @@ class T2Relaxation(NoiseChannel):
     def name(self) -> str:
         return f"T2Relaxation(γ={self.gamma})"
 
+    def kraus_operators(self) -> list[np.ndarray]:
+        g = float(self.gamma)
+        return [
+            np.sqrt(max(0.0, 1.0 - g / 2.0)) * _I2,
+            np.sqrt(g / 2.0) * _Z,
+        ]
+
     def apply(
         self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
     ) -> np.ndarray:
-        if rng.random() > self.gamma:
-            return state  # No dephasing
+        if self.gamma <= 0.0 or rng.random() >= self.gamma:
+            return state
 
-        # Pure dephasing: apply random phase to |1⟩ component
-        n = num_qubits
-        new_state = state.copy()
-        phase = np.exp(1j * rng.uniform(0, 2 * np.pi))
-
-        for i in range(len(state)):
-            if (i >> (n - 1 - qubit)) & 1:  # qubit in |1⟩
-                new_state[i] *= phase
-
-        return new_state
+        s = state.copy().reshape([2] * num_qubits)
+        idx1: list[slice | int] = [slice(None)] * num_qubits
+        idx1[qubit] = 1
+        phase = np.exp(1j * rng.uniform(0.0, 2.0 * np.pi))
+        s[tuple(idx1)] *= phase
+        return s.reshape(-1)
 
 
 @dataclass
 class Crosstalk(NoiseChannel):
-    """Crosstalk noise: correlated errors between neighboring qubits.
+    """Crosstalk noise: correlated ZZ interaction between qubits.
 
-    When a gate operates on a qubit, crosstalk causes unintended
-    rotations on physically adjacent qubits. This is a major error
-    source in superconducting processors.
-
-    In real hardware:
-      - ZZ crosstalk: ~0.1-1% per gate
-      - Frequency collision: ~0.01-0.1%
+    Models unintended coherent ZZ rotation exp(-i * angle/2 * Z⊗Z) =
+    diag(exp(-i*a/2), exp(i*a/2), exp(i*a/2), exp(-i*a/2)) with probability p.
 
     Attributes:
         probability: Probability of crosstalk per gate.
-        neighbor_offset: Which neighbor is affected (+1 = next qubit).
+        neighbor_offset: Which neighbor is affected (+1 = next qubit) for 1Q gates.
+        angle: ZZ rotation angle in radians.
     """
 
     probability: float = 0.005
     neighbor_offset: int = 1
+    angle: float = 0.05 * np.pi
 
     @property
     def name(self) -> str:
         return f"Crosstalk(p={self.probability}, offset={self.neighbor_offset})"
 
+    def kraus_operators(self) -> list[np.ndarray]:
+        p = float(self.probability)
+        a = float(self.angle)
+        u_zz = np.diag([
+            np.exp(-1j * a / 2.0),
+            np.exp(1j * a / 2.0),
+            np.exp(1j * a / 2.0),
+            np.exp(-1j * a / 2.0),
+        ]).astype(complex)
+        return [
+            np.sqrt(max(0.0, 1.0 - p)) * _I4,
+            np.sqrt(p) * u_zz,
+        ]
+
+    def apply_2q(
+        self,
+        state: np.ndarray,
+        q0: int,
+        q1: int,
+        num_qubits: int,
+        rng: np.random.Generator,
+    ) -> np.ndarray:
+        """Applies 2-qubit traceless ZZ crosstalk on (q0, q1)."""
+        if (
+            self.probability <= 0.0
+            or q0 == q1
+            or q0 < 0
+            or q1 < 0
+            or q0 >= num_qubits
+            or q1 >= num_qubits
+            or rng.random() >= self.probability
+        ):
+            return state
+
+        a = float(self.angle)
+        phase_even = np.exp(-1j * a / 2.0)
+        phase_odd = np.exp(1j * a / 2.0)
+
+        s = state.copy().reshape([2] * num_qubits)
+        for b0 in (0, 1):
+            for b1 in (0, 1):
+                slc: list[slice | int] = [slice(None)] * num_qubits
+                slc[q0] = b0
+                slc[q1] = b1
+                s[tuple(slc)] *= phase_even if (b0 == b1) else phase_odd
+        return s.reshape(-1)
+
     def apply(
         self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
     ) -> np.ndarray:
-        if rng.random() > self.probability:
-            return state  # No crosstalk
-
-        neighbor = qubit + self.neighbor_offset
+        neighbor = int(qubit) + int(self.neighbor_offset)
         if neighbor < 0 or neighbor >= num_qubits:
-            return state  # No neighbor to affect
-
-        # ZZ-type crosstalk: small Z rotation on neighbor
-        # conditioned on the state of the target qubit
-        n = num_qubits
-        new_state = state.copy()
-        angle = rng.uniform(0.01, 0.1) * np.pi  # Small unwanted rotation
-
-        for i in range(len(state)):
-            target_bit = (i >> (n - 1 - qubit)) & 1
-            neighbor_bit = (i >> (n - 1 - neighbor)) & 1
-            # ZZ interaction: phase depends on both qubits
-            if target_bit and neighbor_bit:
-                new_state[i] *= np.exp(1j * angle)
-            elif target_bit or neighbor_bit:
-                new_state[i] *= np.exp(-1j * angle / 2)
-
-        return new_state
+            return state
+        return self.apply_2q(state, int(qubit), neighbor, num_qubits, rng)
 
 
 @dataclass
 class ReadoutError(NoiseChannel):
     """Readout error: measurement bit-flip during readout.
-
-    Models the classical error that occurs when reading out a qubit.
-    The qubit state is correct, but the measurement result may flip.
-
-    In real hardware:
-      - IBM Eagle: ~0.5-2% readout error
-      - Google Sycamore: ~0.5-1%
 
     Attributes:
         p0_to_1: Probability of reading |0⟩ as |1⟩.
@@ -493,11 +565,12 @@ class ReadoutError(NoiseChannel):
     def name(self) -> str:
         return f"ReadoutError(p01={self.p0_to_1}, p10={self.p1_to_0})"
 
+    def kraus_operators(self) -> list[np.ndarray]:
+        return [_I2.copy()]
+
     def apply(
         self, state: np.ndarray, qubit: int, num_qubits: int, rng: np.random.Generator
     ) -> np.ndarray:
-        # ReadoutError doesn't modify the quantum state.
-        # It modifies measurement results (applied post-measurement).
         return state
 
     def apply_to_counts(
@@ -505,18 +578,7 @@ class ReadoutError(NoiseChannel):
         counts: dict[str, int],
         rng: np.random.Generator,
     ) -> dict[str, int]:
-        """Applies readout error to measurement counts.
-
-        Flips individual bits in measurement results based on
-        per-bit error probabilities.
-
-        Args:
-            counts: Measurement result counts.
-            rng: Random number generator.
-
-        Returns:
-            Modified counts with readout errors applied.
-        """
+        """Applies readout error to measurement counts."""
         noisy_counts: dict[str, int] = {}
 
         for bitstring, count in counts.items():

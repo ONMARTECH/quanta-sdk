@@ -156,7 +156,9 @@ def tensor_contract(
 
     flat = result.reshape(-1)
 
-    # Convert back to numpy if needed
+    # Convert back to CPU numpy array cleanly (CuPy requires explicit .get())
+    if hasattr(flat, "get"):
+        return np.asarray(flat.get())
     return np.asarray(flat)
 
 

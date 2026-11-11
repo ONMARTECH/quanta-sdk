@@ -83,6 +83,7 @@ class MLXSimulator(StateVectorSimulator):
 
         self._mx = mx
         self.num_qubits = num_qubits
+        self._seed = seed
         self._rng = np.random.default_rng(seed)
         self._gate_cache: dict[tuple[str, tuple[float, ...]], Any] = {}
         self._perm_cache: dict[tuple[tuple[int, ...], int], list[int]] = {}
@@ -236,26 +237,28 @@ class MLXSimulator(StateVectorSimulator):
         rng: np.random.Generator,
     ) -> None:
         """Applies a noise model directly on Apple Metal GPU when possible."""
-        from quanta.simulator.noise import BitFlip, Depolarizing, PhaseFlip
+        from quanta.simulator.noise import BitFlip, Depolarizing, PhaseFlip, ReadoutError
 
         channels = getattr(noise_model, "channels", [])
-        all_pauli = bool(channels)
-        for channel in channels:
-            if not isinstance(channel, (Depolarizing, BitFlip, PhaseFlip)):
-                all_pauli = False
-                break
+        gate_channels = [ch for ch in channels if not isinstance(ch, ReadoutError)]
+        if not gate_channels:
+            return
+
+        all_pauli = all(
+            isinstance(ch, (Depolarizing, BitFlip, PhaseFlip)) for ch in gate_channels
+        )
 
         if all_pauli:
-            for channel in channels:
+            for channel in gate_channels:
                 for qubit in qubits:
                     if isinstance(channel, Depolarizing):
-                        if rng.random() <= channel.probability:
+                        if rng.random() < channel.probability:
                             pauli = int(rng.integers(0, 3))
                             gate = ("X", "Y", "Z")[pauli]
                             self.apply(gate, (qubit,))
-                    elif isinstance(channel, BitFlip) and rng.random() <= channel.probability:
+                    elif isinstance(channel, BitFlip) and rng.random() < channel.probability:
                         self.apply("X", (qubit,))
-                    elif isinstance(channel, PhaseFlip) and rng.random() <= channel.probability:
+                    elif isinstance(channel, PhaseFlip) and rng.random() < channel.probability:
                         self.apply("Z", (qubit,))
             return
 
@@ -267,9 +270,9 @@ class MLXSimulator(StateVectorSimulator):
         self.state = new_flat
 
     def reset(self) -> None:
-        """Resets the simulator state to |00...0>."""
+        """Resets the simulator state to |00...0> while preserving seed."""
         self._pending_ops = 0
-        self.__init__(self.num_qubits)  # type: ignore[misc]
+        self.__init__(self.num_qubits, seed=self._seed)  # type: ignore[misc]
 
     def __repr__(self) -> str:
         return f"MLXSimulator(qubits={self.num_qubits}, device=metal_gpu)"

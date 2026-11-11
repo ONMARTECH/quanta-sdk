@@ -37,6 +37,8 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+import numpy as np
+
 from quanta.backends.base import Backend
 from quanta.core.types import QuantaError
 from quanta.dag.dag_circuit import DAGCircuit
@@ -121,6 +123,8 @@ class IonQBackend(Backend):
 
             if len(op.qubits) == 1:
                 gate["target"] = op.qubits[0]
+            elif ionq_name == "swap":
+                gate["targets"] = [op.qubits[0], op.qubits[1]]
             elif len(op.qubits) == 2:
                 gate["control"] = op.qubits[0]
                 gate["target"] = op.qubits[1]
@@ -223,7 +227,7 @@ class IonQBackend(Backend):
             except Exception:
                 probs = {}
 
-        counts = self._parse_results(probs or job, dag.num_qubits, shots)
+        counts = self._parse_results(probs or job, dag.num_qubits, shots, seed=seed)
 
         return Result(
             counts=counts,
@@ -232,11 +236,16 @@ class IonQBackend(Backend):
         )
 
     @staticmethod
-    def _parse_results(data: dict[str, Any], num_qubits: int, shots: int) -> dict[str, int]:
-        """Converts IonQ probability distribution to measurement counts.
+    def _parse_results(
+        data: dict[str, Any],
+        num_qubits: int,
+        shots: int,
+        seed: int | None = None,
+    ) -> dict[str, int]:
+        """Converts IonQ probability distribution to measurement counts via multinomial sampling.
 
         IonQ returns {"0": 0.5, "3": 0.5} or {"data": {"probabilities": ...}}
-        where keys are decimal state indices. We convert to bitstring counts.
+        where keys are decimal state indices (little-endian: bit q is qubit q).
         """
         if "data" in data and "probabilities" in data["data"]:
             probs = data["data"]["probabilities"]
@@ -245,23 +254,29 @@ class IonQBackend(Backend):
         else:
             probs = data
 
+        valid_items = [
+            (int(k), float(v))
+            for k, v in probs.items()
+            if str(k).isdigit() and float(v) > 0.0
+        ]
+        if not valid_items:
+            return {}
+
+        prob_arr = np.array([v for _, v in valid_items], dtype=np.float64)
+        prob_sum = float(np.sum(prob_arr))
+        if prob_sum <= 0.0:
+            return {}
+        prob_arr = prob_arr / prob_sum
+
+        rng = np.random.default_rng(seed)
+        sampled_indices = rng.choice(len(valid_items), size=shots, p=prob_arr)
+        unique_idx, unique_counts = np.unique(sampled_indices, return_counts=True)
+
         counts: dict[str, int] = {}
-        remaining = shots
-
-        # Filter and sort by probability descending for deterministic rounding
-        valid_items = [(str(k), float(v)) for k, v in probs.items() if str(k).isdigit()]
-        sorted_states = sorted(valid_items, key=lambda x: -x[1])
-
-        for i, (state_idx, prob) in enumerate(sorted_states):
-            bitstring = "".join(str((int(state_idx) >> q) & 1) for q in range(num_qubits))
-            if i == len(sorted_states) - 1:
-                # Last state gets remaining shots to ensure exact total
-                count = remaining
-            else:
-                count = round(prob * shots)
-                remaining -= count
-            if count > 0:
-                counts[bitstring] = count
+        for item_idx, cnt in zip(unique_idx, unique_counts, strict=True):
+            state_idx = valid_items[int(item_idx)][0]
+            bitstring = "".join(str((state_idx >> q) & 1) for q in range(num_qubits))
+            counts[bitstring] = counts.get(bitstring, 0) + int(cnt)
 
         return counts
 

@@ -20,7 +20,18 @@ if TYPE_CHECKING:
 __all__ = ["create_simulator"]
 
 # Simulator methods registry
-METHODS = ("auto", "dense", "sparse", "mps", "clifford", "custatevec", "mlx", "metal")
+METHODS = (
+    "auto",
+    "dense",
+    "sparse",
+    "mps",
+    "clifford",
+    "pauli_frame",
+    "density_matrix",
+    "custatevec",
+    "mlx",
+    "metal",
+)
 
 
 def create_simulator(
@@ -97,9 +108,13 @@ def create_simulator(
                 "Use method='dense' for ≤27 qubits."
             ) from None
 
-    if method == "clifford":
+    if method in ("clifford", "pauli_frame"):
         from quanta.simulator.pauli_frame import PauliFrameSimulator
-        return PauliFrameSimulator(num_qubits)  # type: ignore[return-value]
+        return PauliFrameSimulator(num_qubits, seed=seed)
+
+    if method == "density_matrix":
+        from quanta.simulator.density_matrix import DensityMatrixSimulator
+        return DensityMatrixSimulator(num_qubits, seed=seed)
 
     raise ValueError(f"Unhandled method: {method!r}")
 
