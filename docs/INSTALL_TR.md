@@ -5,7 +5,15 @@
 ### 1. PyPI (Tavsiye edilen / Recommended)
 
 ```bash
+# Temel sürüm / Base install (NumPy core)
 pip install quanta-sdk
+
+# Seçimli paket ekstraları / Optional extras
+pip install "quanta-sdk[torch]"   # PyTorch & quanta.torch autograd
+pip install "quanta-sdk[metal]"   # Apple Silicon Metal / MLX GPU hızlandırma
+pip install "quanta-sdk[mcp]"     # 25 araçlı FastMCP sunucusu / AI Agent MCP server
+pip install "quanta-sdk[qml]"     # scikit-learn QML yardımcıları
+pip install "quanta-sdk[docs]"    # MkDocs Material dokümantasyon derleme
 ```
 
 ### 2. Kaynaktan Kurulum / From Source
@@ -22,14 +30,18 @@ pip install -e ".[dev]"
 pytest
 ```
 
-### 2. Bağımlılıklar / Dependencies
+### 3. Bağımlılıklar & Ekstralar / Dependencies & Extras
 
-| Paket / Package | Amaç / Purpose | Zorunlu / Required |
-|-----------------|----------------|-------------------|
-| `numpy` | Simülatör motoru / Simulator engine | ✅ Evet / Yes |
-| `pytest` | Test çerçevesi / Test framework | 🔧 Geliştirici / Dev only |
-| `ruff` | Linting + format | 🔧 Geliştirici / Dev only |
-| `hypothesis` | Property-based test | 🔧 Geliştirici / Dev only |
+| Paket / Ekstra | Amaç / Purpose | Zorunlu / Required |
+|----------------|----------------|-------------------|
+| `numpy>=1.24` | Çekirdek devre, derleyici ve statevector motoru / Core engine | ✅ Evet / Yes |
+| `scipy`, `networkx` | Katman-3 çözücüler ve QEC dekoderleri (MWPM, ColorCode ILP) / Layer-3 & QEC | ⚙️ İlgili modüller için / For L3 & QEC |
+| `[torch]` (`torch>=2.0`) | `QuantumLayer`, Daleckii-Krein autograd ve `quanta.torch` modülleri | ➕ İsteğe bağlı / Optional |
+| `[metal]` (`mlx>=0.20`, `mlx-metal>=0.20`) | Apple Silicon Metal GPU sıfır-kopya simülasyon (`MLXSimulator`) | ➕ İsteğe bağlı / Optional |
+| `[mcp]` (`fastmcp>=3.0`) | 25 araçlı Model Context Protocol (MCP) sunucusu | ➕ İsteğe bağlı / Optional |
+| `[qml]` (`scikit-learn>=1.0`) | QML veri ön-işleme ve değerlendirme araçları | ➕ İsteğe bağlı / Optional |
+| `[docs]` (`mkdocs-material`, `mkdocstrings`) | Dokümantasyon sitesi üretimi | 🔧 Geliştirici / Dev only |
+| `[dev]` (`pytest`, `ruff`, `mypy`, `hypothesis`) | Test, statik tip kontrolü ve kod kalitesi (2,826+ test) | 🔧 Geliştirici / Dev only |
 
 ---
 
@@ -140,23 +152,32 @@ result = backend.execute(bell, shots=1024)
 
 ---
 
-## IBM Quantum Kurulumu / IBM Quantum Setup
+## IBM Quantum Kurulumu / IBM Quantum Setup (Zero-Qiskit Native REST)
+
+Quanta SDK, harici Qiskit kurulumuna ihtiyaç duymadan doğrudan IBM Quantum Cloud REST API v1 ve IAM kimlik doğrulaması ile çalışan yerleşik **`IBMRestBackend`** sürücüsünü önerir (156-qubit Heron r2/r3 işlemciler: `ibm_torino`, `ibm_fez`):
 
 ```bash
-# IBM Quantum backend destegi / IBM Quantum backend support
-pip install qiskit-ibm-runtime
+export IBM_API_KEY="YOUR_IBM_CLOUD_API_KEY"
+export IBM_INSTANCE_CRN="crn:v1:bluemix:public:quantum-computing:..."
 ```
 
 ```python
-from quanta.backends.ibm import IBMBackend
+import os
+from quanta.backends.ibm_rest import IBMRestBackend
 
-# Lokal test (AerSimulator)
-backend = IBMBackend(simulate_locally=True)
-result = backend.execute(bell, shots=1024)
+# Sıfır-Qiskit doğrudan IBM Heron REST bağlantısı (Önerilen / Recommended)
+backend = IBMRestBackend(
+    api_key=os.environ["IBM_API_KEY"],
+    instance_crn=os.environ.get("IBM_INSTANCE_CRN", ""),
+    backend_name="ibm_torino",  # veya / or: "ibm_fez" (156Q Heron)
+)
 
-# IBM Quantum donaniminda calistirma
-# backend = IBMBackend(token="YOUR_TOKEN", backend_name="ibm_kyoto")
+# Mevcut aktif işlemcileri listele / List active Heron processors
+# print(backend.list_backends())
+# result = backend.execute(bell, shots=1024)
 ```
+
+> **Not**: İsteğe bağlı eski Qiskit uyumluluk köprüsü için `from quanta.backends.ibm import IBMBackend` (`simulate_locally=True`) de kullanılabilir; ancak üretim iş yüklerinde sıfır bağımlılıklı `IBMRestBackend` ve aktif Heron işlemcileri (`ibm_torino`, `ibm_fez`) tercih edilmelidir (eski `ibm_kyoto` emekliye ayrılmıştır).
 
 ---
 

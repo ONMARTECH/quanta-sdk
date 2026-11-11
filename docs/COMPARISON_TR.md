@@ -7,17 +7,17 @@
 | Boyut / Özellik | **Quanta SDK** | Qiskit | Cirq | PennyLane | Stim | PyMatching | QuTiP |
 |---|---|---|---|---|---|---|---|
 | **Birincil Felsefe** | Local-First & Bilişsel | Kurumsal / Bulut | Donanım (Google) | Hibrit QML | Hızlı Stabilizer | MWPM Dekoder | Açık Kuantum |
-| **Harici Bağımlılık** | **0** (Saf Python/NumPy) | 20+ paket | 10+ paket | 10+ paket | 1 (C++ derleme) | 1 (C++ derleme) | 5+ (SciPy/Cython) |
+| **Harici Bağımlılık** | **NumPy çekirdek** (L3 ve QEC için SciPy/NetworkX) | 20+ paket | 10+ paket | 10+ paket | 1 (C++ derleme) | 1 (C++ derleme) | 5+ (SciPy/Cython) |
 | **Donanım Hızlandırma** | **Metal / MLX Zero-Copy** | C++/Rust (Aer) | C++ (qsim) | JAX/Torch C++ | SIMD C++ (AVX2) | SIMD C++ | C/OpenMP |
-| **Kuantum Kapı Seti** | **31 Yerleşik Kapı** | 50+ | 60+ | 30+ | Yalnızca Clifford | N/A | Operatör Bazlı |
-| **Türev & Gradyan** | **Daleckii-Krein + Parameter-Shift** | Sonlu Farklar | Manuel | Parameter-Shift / AD | N/A | N/A | N/A |
+| **Kuantum Kapı Seti** | **34 Yerleşik Kapı + Cartan/KAK $SU(4)$** | 50+ | 60+ | 30+ | Yalnızca Clifford | N/A | Operatör Bazlı |
+| **Türev & Gradyan** | **Daleckii-Krein + $O(G)$ Adjoint + 4-Terim Shift + QFIM** | Sonlu Farklar | Manuel | Parameter-Shift / AD | N/A | N/A | N/A |
 | **Autograd / PyTorch Entegrasyonu**| **Tam (`quanta.torch` nn.Module)** | Kısmi / Eklenti | Eklenti | **Dahili (Torch/JAX)** | N/A | N/A | N/A |
 | **Lie Cebiri Barren Analizi** | **Dahili ($\dim(\mathfrak{g})$)** | N/A | N/A | N/A | N/A | N/A | N/A |
-| **Topolojik QEC (Track A)** | **Edmonds Blossom MWPM (Willow 3D)** | Ayrık repo | N/A | N/A | Sadece Algılama | **Sadece Eşleme** | N/A |
-| **Yüksek Dereceli qLDPC (Track B)** | **Gross $[[144, 12, 12]]$ + BP-OSD-0** | N/A | N/A | N/A | N/A | N/A | N/A |
+| **Topolojik QEC (Track A)** | **Blossom MWPM + Union-Find + Color $A_2$+ILP** | Ayrık repo | N/A | N/A | Sadece Algılama | **Sadece Eşleme** | N/A |
+| **Yüksek Dereceli qLDPC (Track B)** | **Gross $[[144, 12, 12]]$ + BP-OSD** | N/A | N/A | N/A | N/A | N/A | N/A |
 | **Sihirli Durum Damıtma** | **15-to-1 Bravyi-Kitaev + Örgü Cerrahi** | N/A | N/A | N/A | N/A | N/A | N/A |
-| **AI Ajan Entegrasyonu** | **Dahili (23 MCP Aracı)** | N/A | N/A | N/A | N/A | N/A | N/A |
-| **Otomatize Test Sayısı** | **2.076 Test (%100 Başarı)** | 5000+ | 3000+ | 2500+ | 800+ | 200+ | 1200+ |
+| **AI Ajan Entegrasyonu** | **Dahili (25 MCP Aracı)** | N/A | N/A | N/A | N/A | N/A | N/A |
+| **Otomatize Test Sayısı** | **2.826+ Test (%100 Başarı)** | 5000+ | 3000+ | 2500+ | 800+ | 200+ | 1200+ |
 
 ### Kod Karsilastirmasi: Bell Durumu
 
@@ -71,8 +71,8 @@ from qiskit.algorithms.minimum_eigensolvers import VQE
 - Portfoy optimizasyonu (finans)
 - Molekuler simulasyon (H2, LiH, HeH+)
 
-### 3. Tek Bagimlilik
-Sadece NumPy. 200MB kurulum yok, Java yok, Rust toolchain yok.
+### 3. Yalın Bağımlılık Yapısı
+Çekirdek devre/derleyici/statevector yalnızca NumPy gerektirir (Katman-3 çözücüler ve QEC dekoderleri için SciPy ve NetworkX kullanılır). 200MB C++ kurulumu yok, Java yok, Rust toolchain yok.
 
 ## Sayısal Karşılaştırma & Özet Metrikler
 
@@ -81,32 +81,33 @@ Sadece NumPy. 200MB kurulum yok, Java yok, Rust toolchain yok.
 | Bell State kodu | **5 satır** | 10 satır | 6 satır |
 | Grover araması | **1 satır (L3)** | 30+ satır | 25+ satır |
 | `pip install` boyutu | **~5 MB** | ~200 MB | ~150 MB |
-| Harici Bağımlılıklar | **0** (Saf NumPy) | 20+ paket | 10+ paket |
-| Test Sayısı | **2.076 adet** (%100 Başarı) | 5000+ | 2500+ |
-| Maks Qubit (Simülasyon) | **200+ (MPS) / 27+ (Metal)** | 32 (Aer) | 26 (Default) |
+| Çekirdek Bağımlılıklar | **NumPy çekirdek** (L3 ve QEC için SciPy/NetworkX) | 20+ paket | 10+ paket |
+| Test Sayısı | **2.826+ adet** (%100 Başarı) | 5000+ | 2500+ |
+| Maks Qubit (Simülasyon) | **200+ (MPS) / 30 (Metal)** | 32 (Aer) | 26 (Default) |
 | Clifford Kapı Hızı | **>3.13M kapı/saniye** | ~500k | N/A |
 | FTQC qLDPC Bellek Tasarrufu | **12× Qubit Tasarrufu** | Yok | Yok |
 
 ## Diferansiyel Kuantum Hesaplama & Autograd
 
-PennyLane'in temel avantajı diferansiyellenebilir kuantum programlamadır. Quanta SDK `v1.2.0-production` sürümünde bu alanı doğrudan aşan analitik ve ters-mod yetenekler sunar:
+PennyLane'in temel avantajı diferansiyellenebilir kuantum programlamadır. Quanta SDK `v1.2.0-production` sürümünde hem tam analitik hem de ters-mod otomatik türev yetenekleri sunar:
 
-| Özellik | Quanta SDK (`quanta.torch`) | PennyLane |
+| Özellik | Quanta SDK (`quanta.gradients` & `quanta.torch`) | PennyLane |
 |---------|-----------------------------|-----------|
-| **Parameter-shift kuralı** | `parameter_shift()` & `QuantumLayer` | `qml.gradients.param_shift` |
+| **Parameter-shift kuralı** | `parameter_shift()` (2-terim 1Q + **4-terim Anselmetti 2Q**) & `QuantumLayer` | `qml.gradients.param_shift` |
+| **Adjoint türev** | **`adjoint_gradient()` ($O(G)$ ters durum süpürmesi)** | `diff_method="adjoint"` |
 | **Sonlu farklar** | `finite_diff()` | `qml.gradients.finite_diff` |
-| **Doğal gradyan (QFIM)** | `natural_gradient()` (Fubini-Study) | `qml.QNGOptimizer` |
+| **Doğal gradyan (QFIM)** | `natural_gradient()` (**Mari-Bromley-Killoran ayar-değişmez QFIM**) | `qml.QNGOptimizer` |
 | **Geri Yayılım (Autograd)** | **Tam Dahili (`torch.autograd` / VJP)** | Dahili (Torch/JAX/TF) |
 | **Daleckii-Krein Fréchet Türevi**| **Var ($9.99\times 10^{-16}$ kapalı form)** | Yok (Padé / finite diff) |
 | **Lie Cebiri Barren Analizi**| **Dahili ($\dim(\mathfrak{g})$ analitik tarama)** | Yok |
 | **Çerçeve entegrasyonu** | **Saf NumPy + PyTorch (`nn.Module`)** | JAX, PyTorch, TensorFlow |
-| **Biyomorfik Bellek Rezonansı** | **Dahili (`BiomorphicResonantBrain`)** | Yok |
+| **Biyomorfik Esinli Rezonans** | **Dahili (`BiomorphicResonantBrain` PyTorch modeli)** | Yok |
 
 ### Quanta'nın Ayırıcı Üstünlükleri
-- **Daleckii-Krein Spektral Doğruluğu**: Matris üstellerinin türevinde Padé hatalarını ($>10^{-6}$) ortadan kaldıran makine hassasiyetinde türev.
-- **Sıfır Bağımlılıklı Çekirdek**: İsteğe bağlı PyTorch olmadan da saf NumPy üzerinde parameter-shift ve analitik gradyanlar.
-- **2026 Çift-Kanal FTQC**: Hem Edmonds Blossom MWPM yüzey kodları hem de Gross $[[144, 12, 12]]$ qLDPC kod çözümü.
-- **MCP Ajan Entegrasyonu**: AI asistanlarının kuantum devrelerini uzaktan inşa edip gradyanlarını optimize edebileceği 23 araç.
+- **Daleckii-Krein & $O(G)$ Adjoint Doğruluğu**: Matris üstellerinin türevinde Padé hatalarını ($>10^{-6}$) ortadan kaldıran Fréchet türevi, $O(G)$ `adjoint_gradient`, 4-terimli Anselmetti 2Q shift ve Mari-Bromley-Killoran ayar-değişmez QFIM.
+- **Yalın Çekirdek**: İsteğe bağlı PyTorch olmadan da saf NumPy üzerinde devre/derleyici/statevector yürütmesi ve analitik gradyanlar.
+- **2026 Çift-Kanal FTQC**: Hem Edmonds Blossom MWPM ve Delfosse-Nickerson Union-Find yüzey kodları, Kubica-Delfosse $A_2$+ILP Color Code hem de Gross $[[144, 12, 12]]$ qLDPC kod çözümü.
+- **MCP Ajan Entegrasyonu**: AI asistanlarının kuantum devrelerini uzaktan inşa edip gradyanlarını optimize edebileceği **25 araç**.
 
 ---
 
@@ -114,5 +115,5 @@ PennyLane'in temel avantajı diferansiyellenebilir kuantum programlamadır. Quan
 
 - **Baş Mimar**: Abdullah Enes SARI (ORCID: [0000-0002-8827-0587](https://orcid.org/0000-0002-8827-0587))
 - **Kurum**: ONMARTECH Kuantum Bilişim İnisiyatifi (`info@onmartech.com`)
-- **Yazılım DOI**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
+- **GitHub Release**: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0)
 

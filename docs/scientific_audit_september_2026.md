@@ -5,6 +5,13 @@
 **Date**: September 2026  
 **Scope**: Fault-Tolerant Quantum Computing (FTQC), Google Willow 3D QEC, Gross [[144, 12, 12]] qLDPC, Daleckii-Krein Autograd, and Hardware Acceleration Limits  
 
+> [!NOTE]
+> **Post-Audit Production Update (`e31c389` Baseline)**: Following this initial audit, Quanta SDK expanded to **34 native quantum gates** (adding `CRX`, `CRY`, `CRZ`), **25 MCP tools**, and **2,826+ passing automated tests**. Subsequent architectural upgrades include:
+> - **Full $(2n+1)\times(2n+1)$ Aaronson-Gottesman `PauliFrame`** stabilizer/destabilizer tableau with explicit phase vector;
+> - **Genuine Delfosse-Nickerson `UnionFindDecoder`** (`quanta/qec/decoder.py`) and syndrome-only **Kubica-Delfosse $A_2$ lattice + ILP `ColorCode`** (`quanta/qec/color_code.py`);
+> - **Universal Unitary Synthesis (`quanta/compiler/synthesis.py`)** featuring 1Q ZYZ, IBM Heron `RZ-SX-RZ-SX-RZ`, and 2Q Cartan/KAK $SU(4)$ decomposition alongside 127Q/156Q IBM Heavy-Hex routing;
+> - **Analytical Gradient & Layer-3 Upgrades**: $O(G)$ `adjoint_gradient`, 4-term Anselmetti 2Q parameter-shift, Mari-Bromley-Killoran gauge-invariant QFIM (`quanta/gradients.py`), Griffiths-Niu/Beauregard semiclassical QPE `shor.factor`, Grinko IQAE & CRN Greeks (`monte_carlo.py`), and Cortes-Vapnik Dual QP `qsvm.py`.
+
 ---
 
 ## 1. Executive Summary
@@ -558,7 +565,7 @@ All theoretical derivations, algorithmic implementations, and verification bound
    DOI: [10.1007/s12532-009-0002-8](https://doi.org/10.1007/s12532-009-0002-8)
 
 5. **[5] Higgott, O.**, "PyMatching: A Python package for decoding quantum codes with minimum-weight perfect matching", *ACM Transactions on Quantum Computing* **3**(3), 1–16 (2022).  
-   DOI: [10.1145/3530776](https://doi.org/10.1145/3530776) | arXiv: [2105.13082](https://arxiv.org/abs/2105.13082)
+   DOI: [10.1145/3505637](https://doi.org/10.1145/3505637) | arXiv: [2105.13082](https://arxiv.org/abs/2105.13082)
 
 6. **[6] Bravyi, S., Cross, A. W., Gambetta, J. M., Maslov, D., Patrick, P., & Yoder, T.**, "High-threshold and low-overhead fault-tolerant quantum memory", *Nature* **627**, 778–782 (2024).  
    DOI: [10.1038/s41586-024-07107-7](https://doi.org/10.1038/s41586-024-07107-7) | arXiv: [2308.07915](https://arxiv.org/abs/2308.07915)
@@ -587,7 +594,7 @@ All theoretical derivations, algorithmic implementations, and verification bound
 14. **[14] McClean, J. R., Boixo, S., Smelyanskiy, V. N., Babbush, R., & Neven, H.**, "Barren plateaus in quantum neural network training landscapes", *Nature Communications* **9**, 4812 (2018).  
     DOI: [10.1038/s41467-018-07090-4](https://doi.org/10.1038/s41467-018-07090-4) | arXiv: [1803.11173](https://arxiv.org/abs/1803.11173)
 
-15. **[15] Fontana, E., Herman, D., Chakrabarti, S., Kumar, N., Yalovetzky, R., Heredge, J., Sureshbabu, S. H., & Pistoia, M.**, "The Adjoint Is All You Need: Characterizing Barren Plateaus in Quantum Ansätze", *Nature Communications* **15**, 6088 (2024).  
+15. **[15] Fontana, E., Herman, D., Chakrabarti, S., Kumar, N., Yalovetzky, R., Heredge, J., Sureshbabu, S. H., & Pistoia, M.**, "Characterizing barren plateaus in quantum ansätze with the adjoint representation", *Nature Communications* **15**, 7171 (2024).  
     DOI: [10.1038/s41467-024-49910-w](https://doi.org/10.1038/s41467-024-49910-w) | arXiv: [2309.07902](https://arxiv.org/abs/2309.07902)
 
 16. **[16] Lindblad, G.**, "On the generators of quantum dynamical semigroups", *Communications in Mathematical Physics* **48**, 119–130 (1976).  

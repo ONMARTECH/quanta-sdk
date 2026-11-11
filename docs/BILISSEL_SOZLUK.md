@@ -3,16 +3,20 @@
 
 > Bu döküman, Quanta Bilişsel Mimarisi içerisinde kullanılan özgün kültürel kavramlar ile bunların uluslararası bilimsel literatürdeki (hesaplamalı sinirbilim, kuantum fiziği, yapay zeka) teknik karşılıklarını birleştiren resmi eşleşme kılavuzudur.
 
+> [!IMPORTANT]
+> **Bilimsel Dürüstlük Notu (Metafor vs. Gerçeklik / Epistemic Demarcation)**:  
+> Bu sözlükte yer alan **Kuantum Zeno Dikkat Kilidi (Zeno)**, **Hipokampal Keskin Dalga Tekrarı (SWR Replay)**, **Glimfatik Tasfiye (Glymphatic Clearance)**, **BOS Faz Kalkanı (CSF Shielding)** ve **DMN Kuluçka/Rüya Döngüsü (DMN Incubation)** mekanizmaları, biyolojik ıslak dokuda (wetware) kuantum üstünlüğü iddiası veya doğa kanunu ispatı değil; **kuantum mekaniği ve hesaplamalı nörobiyolojiden esinlenen klasik/PyTorch sezgisel optimizasyon ve bellek yönetimi algoritmalarıdır**. Benzer şekilde tablolarda ve telemetri çıktılarında görülen **`%99.98`** gibi değerler fiziksel bir kuantum ölçüm olasılığı değil, çekirdek kuralların mikroglial budamadan korunmasını sağlayan **sezgisel öncelik/tutulma ağırlığıdır (`heuristic retention weight`)**.
+
 ---
 
 ### 🏛️ Kavramsal Eşleşme Matrisi (Ontological Mapping)
 
 | Özgün Bilişsel İsim | Uluslararası Literatür Karşılığı | Kod & Mimari Temsili | Biyofiziksel & Matematiksel Temeli |
 | :--- | :--- | :--- | :--- |
-| **Sebat Kilidi** | **Quantum Zeno Attention Lock** | `QuantumDecisionArbiter`, `ZenoGate` | $P_{\text{zeno}} = \cos^{2N}\left(\frac{\Omega \tau}{2N}\right) \to 1$. Karar anlarında ajanın tereddüt ve dikkat dağınıklığını dondurarak hedefe kilitlenmesi. |
+| **Sebat Kilidi** | **Quantum Zeno Attention Lock** | `QuantumDecisionArbiter`, `QuantumZenoAttention` | $P_{\text{zeno}} = \cos^{2N}\left(\frac{\Omega \tau}{2N}\right) \to 1$ esinli sık-projeksiyon dikkat kapılaması ve klasik sezgisel karar hakemi. |
 | **Teyakkuz Hali** | **Sub-20ms Preemption Reflex** | `_is_preempted`, Darwin Mach HID API | Kullanıcı klavye/fareye dokunduğu anda arkaplan uyku veya rüyasından `<1.5\text{ms}` içinde uyanıp kesintisiz hizmete dönme. |
 | **Zihin Tasfiyesi** | **Glymphatic Clearance & SHY Scaling** | `execute_glymphatic_clearance`, `SleepPhase.NREM_SWS` | Tononi & Cirelli Sinaptik Homeostaz Hipotezi ($\alpha=0.90$) ve Nedergaard glimfatik CSF akışı ile token/scratch gürültüsünün arındırılması. |
-| **Hikmet Damıtımı** | **Fuzzy-Trace Semantic Gist** | `category="semantic_gist"`, `consolidate_gist` | Brainerd & Reyna Bulanık İz Teorisi: Ayrıntılar sönümlenirken stratejik ana fikrin ve hikmetin kalıcı belleğe ($S \ge 1.8$, %99.98) işlenmesi. |
+| **Hikmet Damıtımı** | **Fuzzy-Trace Semantic Gist** | `category="semantic_gist"`, `consolidate_gist` | Brainerd & Reyna Bulanık İz Teorisi: Ayrıntılar sönümlenirken stratejik ana fikrin kalıcı belleğe ($S \ge 1.8$, `%99.98` sezgisel tutulma ağırlığı) işlenmesi. |
 | **Yâd-ı Cemil** | **Hippocampal SWR Episodic Replay** | `recall_reverse_chronological_cascade`, SWR Hook | Buzsáki İki Aşamalı Bellek: Günün en taze tecrübelerinden eskiye doğru ($t_{\text{now}} \to t_{\text{past}}$) dalgalar halinde hafızanın canlandırılması. |
 | **İmtizaç** | **Cross-Project Bisociation** | `pair_orthogonal_projects`, `HybridDreamSeed` | Arthur Koestler Yaratıcılık Kuramı: İki zıt/ortogonal projenin ($\Delta_{\text{domain}} \ge 0.50$) rüyada çarpışarak hibrit mimari (`RFC_HYBRID_*.md`) doğurması. |
 | **Kilit Taşı** | **Constitutional Core Anchors** | `category="constraint"`, $w_{\text{eff}} = 1.0$ | Asla silinmeyen, sönümlenmeyen ve tahliye edilemeyen temel anayasal ve bilimsel doğruluk kuralları. |

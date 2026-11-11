@@ -29,9 +29,11 @@ We formulate, derive, and prove eight foundational theorems of quantum neuromorp
 8. **Theorem 8 (Cerebrospinal Fluid Dielectric & Paramagnetic Quantum Shielding Bound)**: We prove that the macroscopic suspension and perfusion of the mammalian brain in the Cerebrospinal Fluid and Interstitial Fluid (CSF/ISF) continuum acts as an evolutionary room-temperature cryostat and multi-layer quantum shield. Through five physical and chemical mechanisms—paramagnetic ion exclusion via BBB/BCSFB ($[\text{Para}] < 0.5\,\mu\text{M}$ vs plasma $25-55\,\mu\text{M}$, $\kappa_{\text{para}} \approx 6 \times 10^{-3}$), Debye electrostatic screening ($\epsilon_r \approx 78.4, I \approx 0.15\,\text{M}, \lambda_D \approx 0.79\,\text{nm}, \kappa_{\text{elec}} \approx 6.34 \times 10^{-3}$), hydrodynamic BPP motional narrowing ($\eta \approx 0.80\,\text{mPa}\cdot\text{s}, \tau_R \approx 86\,\text{ps}, \omega_0^2 \tau_R^2 \approx 10^{-14} \ll 1, \kappa_{\text{motional}} \approx 1.56 \times 10^{-2}$), Archimedean buoyancy ($1400\,\text{g} \to 50\,\text{g}, 96.5\%$ mass reduction, $\kappa_{\text{buoyant}} \approx 1.27 \times 10^{-3}$), and nocturnal AQP4 convective glymphatic flushing exporting bath entropy $\Delta S_{\text{bath}}$—the composite Lindblad dephasing rate is attenuated by $\kappa_{\text{CSF}} \in [10^{-3}, 10^{-1}]$, yielding an unconditional Coherence Protection Gain $\mathcal{G}_{\text{CSF}} \ge 10^2 - 10^4$. This bound ensures that multi-partite entanglement across $k \le 4$ cortical minicolumns survives over $40\,\text{Hz}$ gamma cycles ($\tau_{\text{crit}}(4) = 25.68\,\text{ms} \ge 25.0\,\text{ms}$), and directly derives clinical neuropathologies: acute meningitis collapse (Corollary 8.1), NPH clearance stasis and lumbar puncture recovery (Corollary 8.2), and Alzheimer's proteopathic dephasing (Corollary 8.3).
 
 Finally, we provide:
-- The exact analytical compilation of continuous bipartite Hamiltonians into native trapped-ion (IonQ) Mølmer-Sørensen (MS) $XX$ gates, benchmarked against live 1024-shot trapped-ion cloud API telemetry ($\mathcal{F} = 0.999828$, Pearson $r = 0.997888$);
+- The exact analytical compilation of continuous bipartite Hamiltonians into native trapped-ion (IonQ) Mølmer-Sørensen (MS) $XX$ gates, benchmarked against 1024-shot **IonQ Cloud Trapped-Ion Simulator API** telemetry ($\mathcal{F} = 0.999828$, Pearson $r = 0.997888$);
 - Exact biophysical parameterization curves for the quad-neurotransmitter system and the metabolic conservation identity $M_{\text{left}}(x) + M_{\text{right}}(x) \equiv 2.0$;
 - Rigorous mathematical bridges to the Daleckii-Krein matrix spectral Fréchet derivative with numerically stable normalized `sinc` kernels and non-unitary Lindblad/projective measurement collapse operators.
+
+> **Epistemological & Scientific Demarcation Note:** In strict adherence to scientific integrity standards, we distinguish between **certified operator mathematics** and **biomorphic theoretical modeling**. Theorems 1–8 establish rigorous mathematical properties of parameterized Hermitian Hamiltonians, Lindblad dynamical semigroups, and Hilbert-space projection operators implemented as differentiable PyTorch architectures in `quanta.torch.brain`. Conversely, mappings to biological wetware (cortical minicolumns, Posner nuclear spins, neuromodulator gating, CSF shielding, and clinical syndromes) represent **quantum- and neurobiology-inspired computational models and falsifiable biophysical hypotheses**, rather than claims of in-vivo wetware quantum advantage.
 
 ---
 
@@ -117,7 +119,7 @@ $$\textbf{"Her yerden aynı anda ışıldayan kuantum dinamikleri"}$$
 | **Collapse Dissipation** | N/A (continuous dissipation) | Projective readouts | **Strictly localized Landauer heat: $Q \ge k_B T \ln 2$** |
 | **Catastrophic Forgetting** | Severe ($\mathcal{R} < 20\%$ without replay) | Severe ($F < 0.1$ across tasks) | **Eliminated via REM Sleep ($\mathcal{R} \ge 95\%$)** |
 | **Gradient Landscape** | Vanishing / exploding gradients | Barren plateaus: $\text{Var} \sim 2^{-N}$ | **Polynomial variance preservation via DA tunneling** |
-| **Total Operational Power** | Megawatts (Supercomputer / Cloud) | Dilution refrigerator ($\sim 10\,\text{kW}$) | **$\sim 20\,\text{W}$ biological biological equivalence** |
+| **Total Operational Power** | Megawatts (Supercomputer / Cloud) | Dilution refrigerator ($\sim 10\,\text{kW}$) | **$\sim 20\,\text{W}$ biological equivalence (biomorphic analogy)** |
 
 ---
 
@@ -937,11 +939,11 @@ $$\boxed{U_{XY}(\theta) = XX(\theta) \cdot \left[ R_z^u\left(\frac{\pi}{2}\right
 
 Because the single-qubit $R_z$ gates are implemented as instantaneous laser phase shifts, this synthesis requires **zero additional laser pulse time** and achieves the theoretical minimum two-qubit gate duration.
 
-## 8.3 Empirical Validation: 1024-Shot Live Trapped-Ion Cloud API Data
+## 8.3 Empirical Validation: 1024-Shot IonQ Cloud Trapped-Ion Simulator API Data
 
-The biomorphic compilation was deployed to the IonQ trapped-ion hardware simulator backend with $N=4$ qubits ($N_L = 2, N_R = 2$, Hilbert space dimension $D = 16$), executed across $N_{\text{shots}} = 1024$ shots.
+The biomorphic compilation was evaluated via the **IonQ Cloud Trapped-Ion Simulator API** backend with $N=4$ qubits ($N_L = 2, N_R = 2$, Hilbert space dimension $D = 16$), executed across $N_{\text{shots}} = 1024$ shots.
 
-The empirical hardware telemetry recorded in `docs/paper/benchmark_academic_data.json` demonstrates:
+The empirical simulator telemetry recorded in `docs/paper/benchmark_academic_data.json` demonstrates:
 - **Classical Bhattacharyya Statistical Fidelity**:
   $$\mathcal{F}_{\text{Bhattacharyya}}(P_{\text{local}}, P_{\text{ionq}}) \equiv \sum_{k=1}^{16} \sqrt{P_{\text{local}}(k) \cdot P_{\text{ionq}}(k)} = \mathbf{0.999828}$$
   (achieving $99.9828\%$ alignment with theoretical statevector predictions).
@@ -950,7 +952,7 @@ The empirical hardware telemetry recorded in `docs/paper/benchmark_academic_data
 
 ### Full 16-Basis State Probability Comparison (1024 Shots)
 
-| Basis State $|q_0 q_1 q_2 q_3\rangle$ | Local Theoretical $P_{\text{local}}$ | IonQ Trapped-Ion $P_{\text{ionq}}$ | Absolute Error $|\Delta P|$ | Relative Fidelity Contribution $\sqrt{P_L P_I}$ |
+| Basis State $|q_0 q_1 q_2 q_3\rangle$ | Local Theoretical $P_{\text{local}}$ | IonQ Cloud Trapped-Ion Simulator API $P_{\text{ionq}}$ | Absolute Error $|\Delta P|$ | Relative Fidelity Contribution $\sqrt{P_L P_I}$ |
 | :---: | :---: | :---: | :---: | :---: |
 | $|0000\rangle$ | 0.053400 | 0.051758 | 0.001642 | 0.052573 |
 | $|0001\rangle$ | 0.129800 | 0.134766 | 0.004966 | 0.132260 |

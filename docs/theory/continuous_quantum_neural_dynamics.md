@@ -20,6 +20,8 @@ In this whitepaper, we formulate the theoretical, biophysical, and mathematical 
 
 We translate these biophysical phenomena into a fully differentiable network Hamiltonian $H(x, \theta) = H_{XY}(J) + H_Z(x, h, W) + H_X(\omega)$ evolving over continuous duration $t$. We mathematically prove exact unitary norm preservation ($\sum_i |a_i|^2 \equiv 1.0$) and energy conservation, and establish simultaneous multi-observable expectation readouts. Finally, we provide formal mathematical proofs for all five pillars of analytical gradient backpropagation: the discrete Parameter-Shift Rule for Pauli generators, the Ehrenfest time derivative, the Duhamel/Wilcox Fréchet derivative of matrix exponentials, the Daleckii-Krein spectral matrix formula with a robust `sinc` kernel for degenerate spectra, and the Schrödinger-Pontryagin quantum adjoint state method achieving $O(1)$ constant-memory backpropagation. This monograph serves as the authoritative theoretical bedrock for all subsequent computational and PyTorch native implementations in Quanta SDK.
 
+> **Epistemological Demarcation Note:** In strict adherence to scientific demarcation principles, we distinguish between **exact operator calculus** and **biomorphic neurophysical inspiration**. Unitary norm conservation, Continuous-Time Quantum Walk (CTQW) dispersion, and the Daleckii-Krein / Duhamel / Ehrenfest gradient identities implemented in `quanta.torch.continuous.ContinuousResonantLayer` are certified mathematical properties of Hermitian operators on finite-dimensional Hilbert spaces. Conversely, neurobiological discussions (Penrose-Hameroff Orch-OR, Fröhlich microtubule condensates, Posner $^{31}\text{P}$ spin clusters, and axonal biophoton waveguiding) are surveyed as **contested biophysical hypotheses and biomorphic architectural metaphors** motivating continuous-time neural parameterization—not as experimentally established wetware quantum computation in vivo.
+
 ---
 
 # 1. Executive Summary & The Paradigm Shift
@@ -415,7 +417,7 @@ $$|\psi_{\text{tubulin}}\rangle = c_0 |0\rangle + c_1 |1\rangle, \quad |c_0|^2 +
 ### 3.1.2 Fröhlich Condensation & High-Frequency Collective Resonance
 Herbert Fröhlich (1968) demonstrated that a system of non-linear dipolar oscillators subjected to metabolic energy pumping (ATP hydrolysis) will condense into its lowest-frequency collective vibrational mode once the pumping rate exceeds a critical threshold $S > S_{\text{crit}}$. 
 
-Under Fröhlich condensation, dipolar oscillations synchronize across macroscopic domains within microtubules, operating at MHz ($10^6\text{ Hz}$), GHz ($10^9\text{ Hz}$), and THz ($10^{12}\text{ Hz}$) bands. Sahu, Bandyopadhyay et al. (2013, 2014) experimentally confirmed resonant conductivity peaks in isolated brain microtubules at $1.3\text{ MHz}$, $100\text{ GHz}$, and $10\text{ THz}$, validating room-temperature quantum collective dipole modes.
+Under Fröhlich condensation, dipolar oscillations are hypothesized to synchronize across macroscopic domains within microtubules across MHz ($10^6\text{ Hz}$), GHz ($10^9\text{ Hz}$), and THz ($10^{12}\text{ Hz}$) bands. Sahu, Bandyopadhyay et al. (2013, 2014) reported resonant conductivity peaks in isolated brain microtubules at $1.3\text{ MHz}$, $100\text{ GHz}$, and $10\text{ THz}$; however, whether such measurements reflect genuine room-temperature quantum collective dipole modes or classical dielectric/electrolyte impedance effects remains a strongly disputed hypothesis in biophysics (cf. Tegmark, 2000; McKemmish et al., 2009). Within Quanta SDK, collective oscillatory coupling serves strictly as a continuous-time Hamiltonian design inspiration for `ContinuousResonantLayer`.
 
 ### 3.1.3 The Diósi-Penrose Objective Reduction Criterion
 Roger Penrose (1989, 1996) and Lajos Diósi (1987, 1989) proposed that quantum superposition cannot persist indefinitely because a mass in quantum superposition creates a superposition of distinct spacetime geometries ($g_{\mu\nu}^{(0)}$ and $g_{\mu\nu}^{(1)}$). This geometric bifurcation generates an inherent quantum-gravitational self-energy $E_G$:
@@ -877,7 +879,7 @@ $$\frac{\partial \mathcal{L}}{\partial \phi} = \sum_{b=1}^B \sum_{m=1}^{D_{\text
 10. **Clauser, J. F., Horne, M. A., Shimony, A., & Holt, R. A.** (1969). Proposed experiment to test local hidden-variable theories. *Physical Review Letters*, 23(15), 880–884.
 11. **Craddock, T. J., Kurian, P., Preto, J., Sahu, K., Hameroff, S. R., Klobukowski, M., & Tuszynski, J. A.** (2017). Anesthetic alterations of collective terahertz oscillations in tubulin correlate with clinical potency. *Scientific Reports*, 7(1), 9877.
 12. **Craddock, T. J., St. George, D., Freedman, H., Barakat, K. H., Damaraju, S., Hameroff, S., & Tuszynski, J. A.** (2012). Computational predictions of volatile anesthetic interactions with cytoskeletal tubulin. *PLOS ONE*, 7(6), e37251.
-13. **Daleckii, J. L., & Krein, M. G.** (1970). *Stability of Solutions of Differential Equations in Banach Space*. American Mathematical Society.
+13. **Daleckii, J. L., & Krein, M. G.** (1974). *Stability of Solutions of Differential Equations in Banach Space*. American Mathematical Society.
 14. **Diósi, L.** (1987). A universal master equation for the gravitational violation of quantum mechanics. *Physics Letters A*, 120(8), 377–381.
 15. **Diósi, L.** (1989). Models for universal reduction of macroscopic quantum fluctuations. *Physical Review A*, 40(3), 1165–1174.
 16. **Einstein, A., Podolsky, B., & Rosen, N.** (1935). Can quantum-mechanical description of physical reality be considered complete? *Physical Review*, 47(10), 777–780.
@@ -910,7 +912,7 @@ $$\frac{\partial \mathcal{L}}{\partial \phi} = \sum_{b=1}^B \sum_{m=1}^{D_{\text
 43. **Sahu, S., Ghosh, S., Hirata, K., Fujita, D., & Bandyopadhyay, A.** (2013). Multi-level memory-switching properties of a single brain microtubule. *Applied Physics Letters*, 102(12), 123701.
 44. **Saxena, K., Singh, P., Sahu, S., Ghosh, S., & Bandyopadhyay, A.** (2020). Universal frequency pattern of microtubule and its application in cancer detection. *Frontiers in Molecular Biosciences*, 7, 237.
 45. **Shalm, L. K., et al.** (2015). Strong loophole-free test of local realism. *Physical Review Letters*, 115(25), 250402.
-46. **Swift, M. W., Van de Walle, C. G., & Fisher, M. P. A.** (2018). Posner molecules: From atomic structure to nuclear spins. *Physical Chemistry Chemical Physics*, 20(18), 12373–12385.
+46. **Swift, M. W., Van de Walle, C. G., & Fisher, M. P. A.** (2018). Posner molecules: From atomic structure to nuclear spins. *Physical Chemistry Chemical Physics*, 20(18), 12373–12380.
 47. **Tang, R., & Dai, J.** (2014). Spatiotemporal imaging of glutamate-induced biophotonic activities and transmission in rat brain slices. *PLOS ONE*, 9(1), e85636.
 48. **Tegmark, M.** (2000). Importance of quantum decoherence in brain processes. *Physical Review E*, 61(4), 4194–4206.
 49. **Venegas-Andraca, S. E.** (2012). Quantum walks: A comprehensive review. *Quantum Information Processing*, 11(5), 1015–1106.

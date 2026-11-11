@@ -25,6 +25,8 @@ This monograph presents the formal scientific, mathematical, and systems enginee
 
 By grounding subconscious computation in biophysical oscillators, kernel-level thread scheduling, quantum-inspired memory consolidation, and sociolinguistic theory of mind, Quanta eliminates idle latency and transforms passive LLM agents into proactive, empathetic, and thermodynamically sustainable intellectual collaborators.
 
+> **Epistemological & Heuristic Demarcation Note:** All mechanisms described in Pillar 3 (`quanta.cognitive`)—including thalamocortical spindle scheduling, hippocampal SWR replay, Default Mode Network (DMN) incubation, Quantum Zeno arbitration, Noetherian invariant checks, and microglial pruning—are **classical systems-engineering and quantum/neurobiology-inspired heuristic algorithms** running on conventional CPU/E-core hardware. Retention and salience percentages reported by cognitive engrams (such as `99.98%`) denote **heuristic retention weights (`heuristic retention weight`)** governing deterministic pruning priority, not physical quantum wave-function collapse probabilities or clinical psychiatric diagnoses.
+
 ---
 
 ## 1. Introduction: The Asymmetric Paradigm of Foreground Cognition
@@ -679,7 +681,7 @@ Modern cognitive neuroscience grounds Wallas's stages in the dynamic competition
 
 ### 5.3 Headless Multi-Agent Dialectical Architecture & Noetherian Arbitration
 
-In Quanta, the Wallas tri-network interaction is realized via a headless, isolated multi-agent dialectic orchestrated by the **Quanta Cognitive Engine** (`quanta.cognitive.mind_wander`, `quanta.cognitive.noetherian_arbiter`, and `quanta.cognitive.ablation`):
+In Quanta, the Wallas tri-network interaction is realized via a headless, isolated multi-agent dialectic orchestrated by the **Quanta Cognitive Engine** (`quanta.cognitive.mind_wander`, `quanta.cognitive.noetherian`, `quanta.cognitive.arbiter`, and `quanta.cognitive.ablation`):
 
 - **Dual-Persona Dialectical Configuration:**  
   The engine instantiates two specialized internal personas communicating within a private, headless deliberation channel:
