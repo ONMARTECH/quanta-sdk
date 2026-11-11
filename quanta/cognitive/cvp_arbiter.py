@@ -649,6 +649,7 @@ class LatticeEngramMemory:
         center: np.ndarray | None = None,
         min_fidelity: float = 0.40,
         delta_regularization: float = 0.05,
+        active_indices: list[int] | tuple[int, ...] | np.ndarray | None = None,
     ) -> WarmStartConfig:
         """Replays high-vitality lattice engrams to compute warm-start angles and seeded parameters.
 
@@ -656,9 +657,10 @@ class LatticeEngramMemory:
             basis_id: Basis identifier string or matrix.
             num_qubits: Number of active qubits in target register.
             bits_per_coord: Number of binary qubits allocated per coordinate.
-            center: Optional reference center vector in Z^n.
+            center: Optional reference center vector in Z^n (or active Z^{n_active}).
             min_fidelity: Minimum biological retention fidelity threshold.
             delta_regularization: Regularization delta in (0.0, 0.5) to prevent deterministic trapping.
+            active_indices: Optional active coordinate indices when subspace pruning is enabled.
 
         Returns:
             WarmStartConfig containing single-qubit RY rotation angles and seed variational angles.
@@ -684,9 +686,20 @@ class LatticeEngramMemory:
         n_dim = num_qubits // bits_per_coord
         span = 1 << bits_per_coord
         half_span = 1 << (bits_per_coord - 1)
+        idx_arr = (
+            np.asarray(active_indices, dtype=np.intp).reshape(-1)
+            if active_indices is not None and len(active_indices) > 0
+            else None
+        )
         if center is not None:
             c_arr = np.asarray(center, dtype=np.int64).reshape(-1)
-            z_min = c_arr - half_span
+            if (
+                idx_arr is not None
+                and len(c_arr) > n_dim
+                and int(np.max(idx_arr)) < len(c_arr)
+            ):
+                c_arr = c_arr[idx_arr]
+            z_min = c_arr[:n_dim] - half_span
         else:
             z_min = -half_span * np.ones(n_dim, dtype=np.int64)
 
@@ -700,8 +713,12 @@ class LatticeEngramMemory:
         # Calculate bitwise marginal probabilities p_a
         p_bits = np.zeros(num_qubits, dtype=np.float64)
         for e, w in zip(engrams, normalized_weights, strict=True):
-            z_sub = np.array(e.z_vector[:n_dim], dtype=np.int64)
-            delta_z = z_sub - z_min[:len(z_sub)]
+            e_vec = np.asarray(e.z_vector, dtype=np.int64).reshape(-1)
+            if idx_arr is not None and int(np.max(idx_arr)) < len(e_vec):
+                z_sub = e_vec[idx_arr]
+            else:
+                z_sub = e_vec[:n_dim]
+            delta_z = z_sub - z_min[: len(z_sub)]
             x_engram = np.zeros(num_qubits, dtype=np.float64)
 
             for i in range(min(n_dim, len(delta_z))):

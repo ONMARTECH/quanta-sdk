@@ -1,4 +1,12 @@
-"""Quantum Decision Arbiter using Quantum Zeno & Anti-Zeno Attention dynamics."""
+"""Quantum-Inspired Decision Arbiter using classical Zeno/Anti-Zeno attention heuristics.
+
+Epistemic & Mathematical Framing:
+All quantities exposed by this module — including `tr_rho_pi`, `p_zeno` (`zeno_pinning_factor`),
+and `dim=64` ("6-qubit") statevectors — are **quantum/physics-inspired classical vector heuristics**
+computed over real feature vectors in R^d via multi-head neural attention, cosine similarity,
+softmax normalization, and linear/non-linear scalar gating. They are heuristic search and
+regularization scores, not physical density-matrix Born probabilities or hardware quantum states.
+"""
 
 from __future__ import annotations
 
@@ -765,12 +773,14 @@ class DecisionDAG:
 
 
 class QuantumDecisionArbiter:
-    """Quantum-inspired 6-qubit decision arbiter (dim=64, 4-head attention) for AI agents.
+    """Quantum-inspired classical vector decision arbiter (dim=64, 4-head attention).
 
-    Employs Quantum Zeno Attention to balance attentional focus pinning
-    (Zeno effect: sticking firmly to established goals) and divergent
-    exploratory tunneling (Anti-Zeno effect: breaking out of local optima).
-    Supports multi-branch decision manifolds and DAG cascading rollouts.
+    Note: `tr_rho_pi`, `p_zeno`, and conserved-charge diagnostics are quantum/physics-inspired
+    classical vector heuristics in R^d (softmax-normalized cosine alignments and scalar margin
+    gates), not physical quantum measurements. Employs multi-head Zeno attention to balance
+    exploitation focus (Zeno-inspired pinning) and exploratory perturbation (Anti-Zeno-inspired
+    kickback), with empirical control-baseline counterfactual verification across flat options
+    and multi-step DecisionDAG rollouts.
     """
 
     def __init__(
@@ -802,6 +812,60 @@ class QuantumDecisionArbiter:
                 config=NoetherianEngineConfig(dim=dim),
                 auto_register_canonical=False,
             )
+
+    def _run_unregularized_flat_baseline(
+        self,
+        raw_goal: str,
+        parsed_options: list[tuple[str, str, dict[str, Any] | None]],
+    ) -> str:
+        """Executes a <1ms unregularized greedy control pass without Zeno attention or panel penalties."""
+        raw_goal_vec = text_to_statevector(raw_goal, dim=self.dim).real
+        raw_opt_vecs = torch.stack(
+            [text_to_statevector(name, dim=self.dim).real for name, _, _ in parsed_options],
+            dim=0,
+        )
+        raw_sims = F.cosine_similarity(raw_opt_vecs, raw_goal_vec.unsqueeze(0), dim=-1)
+        best_idx = int(torch.argmax(raw_sims).item())
+        return parsed_options[best_idx][0]
+
+    def _run_unregularized_dag_baseline(
+        self,
+        dag: DecisionDAG,
+        raw_goal: str,
+        root_id: str | None = None,
+    ) -> list[str]:
+        """Executes a <1ms myopic step-by-step greedy control walk without rollout or regularization."""
+        roots = dag.find_roots()
+        curr_id = root_id or (roots[0] if roots else None)
+        if curr_id is None or curr_id not in dag.nodes:
+            return []
+        raw_goal_vec = text_to_statevector(raw_goal, dim=self.dim).real
+        visited: set[str] = {curr_id}
+        labels: list[str] = [dag.nodes[curr_id].label]
+        while True:
+            out_edges = [
+                e for e in dag.adj.get(curr_id, []) if e.target_id not in visited and e.target_id in dag.nodes
+            ]
+            if not out_edges:
+                break
+
+            def _edge_myopic_score(edge: DecisionEdge) -> float:
+                nd = dag.nodes[edge.target_id]
+                cos_val = float(
+                    F.cosine_similarity(
+                        text_to_statevector(nd.label, dim=self.dim).real.unsqueeze(0),
+                        raw_goal_vec.unsqueeze(0),
+                        dim=-1,
+                    ).item()
+                )
+                imm_u = float(nd.metadata.get("immediate_utility", 0.0)) if nd.metadata else 0.0
+                return cos_val + imm_u
+
+            best_edge = max(out_edges, key=_edge_myopic_score)
+            curr_id = best_edge.target_id
+            visited.add(curr_id)
+            labels.append(dag.nodes[curr_id].label)
+        return labels
 
     def arbitrate(
         self,
@@ -1011,19 +1075,37 @@ class QuantumDecisionArbiter:
                     f"🔒 Bilişsel Kuantum Karar Kısıtı: '{recommended['option']}' seçildi. "
                     f"'{dilemma}' ikileminde bu eksenden sapma."
                 )
-            if not counterfactual_ab:
-                opt_name = recommended["option"]
-                counterfactual_ab = {
-                    "without_quanta": (
-                        "Ajan Quanta olmadan serbest bırakıldığında alternatif yaklaşımlar "
-                        "arasında tereddüt eder, bağlam sapması ve kırılganlık riski taşır."
-                    ),
-                    "with_quanta": (
-                        f"Quanta 6-qubit hakemi P_zeno={zeno_pin:.4f} Zeno kitlemesiyle "
-                        f"'{opt_name}' hipotezine kilitlendi; deterministik recovery sağlandı."
-                    ),
-                    "effect_verified": True,
-                }
+
+        if not counterfactual_ab:
+            opt_name = recommended["option"]
+            baseline_choice = self._run_unregularized_flat_baseline(goal, parsed_options)
+            effect_differs = bool(baseline_choice != opt_name)
+            if effect_differs:
+                without_msg = (
+                    f"Düzenlileştirmesiz kontrol baz çizgisi (Zeno/panel/kriter olmadan ham "
+                    f"argmax) '{baseline_choice}' seçeneğini seçti."
+                )
+                with_msg = (
+                    f"Quanta Zeno/panel hakemi (P_zeno={zeno_pin:.4f}) '{opt_name}' seçeneğine "
+                    f"kilitlenerek baz çizgisi kararını ampirik olarak değiştirdi."
+                )
+            else:
+                without_msg = (
+                    f"Düzenlileştirmesiz kontrol baz çizgisi (ham argmax) de '{baseline_choice}' "
+                    f"seçeneğini seçti."
+                )
+                with_msg = (
+                    f"Quanta Zeno/panel hakemi (P_zeno={zeno_pin:.4f}) '{opt_name}' seçimini "
+                    f"onayladı (kontrol baz çizgisi ile aynı karar; marjinal fark gözlenmedi)."
+                )
+            counterfactual_ab = {
+                "without_quanta": without_msg,
+                "with_quanta": with_msg,
+                "baseline_choice": baseline_choice,
+                "quanta_choice": opt_name,
+                "baseline_executed": True,
+                "effect_verified": effect_differs,
+            }
 
         if log_telemetry:
             record_decision_telemetry(
@@ -1061,6 +1143,7 @@ class QuantumDecisionArbiter:
             "pytorch_latency_ms": round(pytorch_latency_ms, 2),
             "regime": regime,
             "ranked_options": ranking,
+            "counterfactual_ab": counterfactual_ab,
         }
         if "details" in recommended:
             result["recommended_details"] = recommended["details"]
@@ -1068,7 +1151,6 @@ class QuantumDecisionArbiter:
             result["dilemma"] = dilemma
             result["hypotheses"] = hypotheses_structured
             result["injected_prompt_constraint"] = injected_prompt_constraint
-            result["counterfactual_ab"] = counterfactual_ab
             result["step_idx"] = step_idx
 
         return result
@@ -1169,21 +1251,37 @@ class QuantumDecisionArbiter:
             )
 
         if not counterfactual_ab:
-            losing_labels = [h["label"] for h in ranked_hyps[1:]]
-            losing_desc = (
-                ", ".join(losing_labels[:3]) if losing_labels else "alternatif yaklaşımlar"
-            )
             w_label = winner_hyp["label"]
+            raw_hyp_tuples: list[tuple[str, str, dict[str, Any] | None]] = [
+                (h["label"], h["label"], h) for h in normalized_hyps
+            ]
+            baseline_label = self._run_unregularized_flat_baseline(dilemma, raw_hyp_tuples)
+            effect_differs = bool(baseline_label != w_label)
+            if effect_differs:
+                without_msg = (
+                    f"Düzenlileştirmesiz kontrol baz çizgisi (Zeno/bağlam olmadan ham argmax) "
+                    f"'{baseline_label}' hipotezini seçti."
+                )
+                with_msg = (
+                    f"Quanta Zeno hakemi (P_zeno={p_zeno:.4f}) '{w_label}' hipotezine kilitlenerek "
+                    f"kontrol baz çizgisinden farklı bir karar üretti."
+                )
+            else:
+                without_msg = (
+                    f"Düzenlileştirmesiz kontrol baz çizgisi (ham argmax) de '{baseline_label}' "
+                    f"hipotezini seçti."
+                )
+                with_msg = (
+                    f"Quanta Zeno hakemi (P_zeno={p_zeno:.4f}) '{w_label}' hipotezini onayladı "
+                    f"(kontrol baz çizgisi ile aynı seçim; ampirik fark yok)."
+                )
             counterfactual_ab = {
-                "without_quanta": (
-                    f"Ajan Quanta olmadan serbest bırakıldığında ({losing_desc}) seçenekleri "
-                    "arasında tereddüt eder, bağlam sapması ve kırılgan çalışma riski oluşur."
-                ),
-                "with_quanta": (
-                    f"Quanta 6-qubit hakemi P_zeno={p_zeno:.4f} Zeno kitlemesiyle '{w_label}' "
-                    "hipotezine bağlandı; deterministik, doğrulanmış ve tutarlı recovery sağlandı."
-                ),
-                "effect_verified": True,
+                "without_quanta": without_msg,
+                "with_quanta": with_msg,
+                "baseline_choice": baseline_label,
+                "quanta_choice": w_label,
+                "baseline_executed": True,
+                "effect_verified": effect_differs,
             }
 
         result = {
@@ -1690,34 +1788,37 @@ class QuantumDecisionArbiter:
             f"alternatif senaryolar için korundu."
         )
 
+        baseline_path_labels = self._run_unregularized_dag_baseline(dag, goal)
+        baseline_path_str = " -> ".join(baseline_path_labels) if baseline_path_labels else ""
+        effect_differs = bool(baseline_path_str and baseline_path_str != rec_path_str)
+
         if panel_weight > 0.0 or has_panel:
-            counterfactual_ab = {
-                "without_quanta": (
-                    "Ajan Quanta olmadan tek adımlı açgözlü (greedy) seçim yapar; "
-                    "uzun vadeli bakım yükü, gecikme, kullanıcı bilişsel yorgunluğu ve "
-                    "rumatif kilitlenme risklerini öngöremez."
-                ),
-                "with_quanta": (
-                    f"Quanta çok disiplinli karar manifoldu (DAG Rollouts) ile {total_trajectories} "
-                    f"yol kaskat halinde değerlendirildi; P_zeno={dag_res['mean_p_zeno']:.4f} ile "
-                    f"'{rec_path_str}' yoluna kilitlenerek baskın ve bilişsel yük getiren "
-                    f"dallar budandı."
-                ),
-                "effect_verified": True,
-            }
+            without_msg = (
+                f"Düzenlileştirmesiz miyopik baz çizgisi (bilişsel panel ve kaskat maliyet olmadan) "
+                f"'{baseline_path_str}' yolunu seçti."
+            )
+            with_msg = (
+                f"Quanta çok disiplinli DAG değerlendirmesi ({total_trajectories} yol, "
+                f"P_zeno={dag_res['mean_p_zeno']:.4f}) '{rec_path_str}' yolunu seçti."
+            )
         else:
-            counterfactual_ab = {
-                "without_quanta": (
-                    "Ajan Quanta olmadan tek adımlı açgözlü (greedy) seçim yapar; "
-                    "uzun vadeli bakım yükü, gecikme ve mimari kilitlenme risklerini öngöremez."
-                ),
-                "with_quanta": (
-                    f"Quanta çok kollu karar manifoldu (DAG Rollouts) ile {total_trajectories} "
-                    f"yol kaskat halinde değerlendirildi; P_zeno={dag_res['mean_p_zeno']:.4f} ile "
-                    f"'{rec_path_str}' yoluna kilitlenerek baskın dallar budandı."
-                ),
-                "effect_verified": True,
-            }
+            without_msg = (
+                f"Düzenlileştirmesiz miyopik baz çizgisi (kaskat maliyet/Noether budaması olmadan) "
+                f"'{baseline_path_str}' yolunu seçti."
+            )
+            with_msg = (
+                f"Quanta DAG değerlendirmesi ({total_trajectories} yol, "
+                f"P_zeno={dag_res['mean_p_zeno']:.4f}) '{rec_path_str}' yolunu seçti."
+            )
+
+        counterfactual_ab = {
+            "without_quanta": without_msg,
+            "with_quanta": with_msg,
+            "baseline_choice": baseline_path_str,
+            "quanta_choice": rec_path_str,
+            "baseline_executed": True,
+            "effect_verified": effect_differs,
+        }
 
         dag_res["executive_summary"] = exec_summary
         dag_res["counterfactual_ab"] = counterfactual_ab

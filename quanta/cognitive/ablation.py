@@ -1,30 +1,35 @@
 """quanta.cognitive.ablation — Zeno Arbiter Telemetry & Programmatic Ablation Engine.
 
 Implements automated 4-way ablation verification for the Quantum Zeno Decision Arbiter
-(`QuantumDecisionArbiter` with projective Zeno pinning and Noetherian conservation)
-against classical decision-making baselines:
-  1. Random Baseline (Uniform stochastic choice)
-  2. Naive Greedy Baseline (Surface alignment / nominal local reward maximization)
-  3. Rule-Based Heuristic Baseline (Static thresholding and blacklist keyword filtering)
-  4. Quantum Zeno Arbiter (6-qubit Hilbert projection, dynamic P_zeno pinning,
-     multi-disciplinary cognitive panel, and Noetherian invariant conservation)
+(`QuantumDecisionArbiter` with quantum/physics-inspired classical vector Zeno pinning
+and Noetherian conservation heuristics) against classical decision-making baselines
+under strictly symmetric feature and horizon observability:
+  1. Random Baseline (Uniform stochastic choice over candidates/trajectories)
+  2. Greedy Baseline (Immediate scalar reward minus direct execution cost over all
+     observable features and full DAG trajectories)
+  3. Rule-Based Heuristic Baseline (Threshold + weighted linear multi-objective rules
+     over all observable features and full DAG trajectories)
+  4. Quantum Zeno Arbiter (Multi-head Zeno attention, cognitive panel, and Noetherian
+     conservation heuristics over the identical observable inputs)
 
-Strictly complies with the Quanta Scientific Integrity Protocol (PROJECT_RULES.md):
-- Zero-tolerance anti-metric hacking & zero benchmark leakage
-- Hard adversarial testbed (near-degenerate ties, Trojan distractor traps,
-  Pareto multi-objective conflicts, cascading regret DAGs, stochastic jitter)
-- Genuine mathematical evaluation (marginal utility Delta U, consensus metrics,
-  invariant violation counts, decision entropy, and regret penalty)
+Strictly complies with the Quanta Scientific Integrity Protocol:
+- Symmetric observability across `(nominal_reward, risk, latency, maintenance, metabolic)`
+  and identical DAG trajectory horizon depth (zero hidden feature blinding or regex cues)
+- Zero ground-truth peeking (`consensus_score` computed purely from internal probability
+  concentration / inverse normalized Shannon entropy, never `is_optimal` or `breaches_invariant`)
+- Real seeded Gaussian perturbations N(0, sigma^2) across multi-trial stability runs,
+  reporting mean, standard deviation, and honest win/tie/loss rates
 - Thread-safe atomic telemetry logging via fcntl.flock to quanta_cognitive_telemetry.jsonl
 """
 
 from __future__ import annotations
 
 import contextlib
+import copy
 import json
 import math
 import random
-import re
+import statistics
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -132,6 +137,7 @@ class OptionSpec:
     risk: float = 0.0
     latency: float = 0.0
     maintenance: float = 0.0
+    metabolic: float = 0.0
     breaches_invariant: bool = False
     invariant_penalty: float = 0.0
     consequence: ConsequenceVector | None = None
@@ -150,35 +156,51 @@ class OptionSpec:
             opt_id = str(raw.get("id") or raw.get("name") or f"opt_{idx + 1}")
             label = str(raw.get("label") or raw.get("name") or opt_id)
             reward = float(raw.get("nominal_reward", raw.get("reward", raw.get("utility", 0.5))))
-            risk = float(raw.get("risk", 0.0))
-            latency = float(raw.get("latency", 0.0))
-            maintenance = float(raw.get("maintenance", 0.0))
-            breaches = bool(raw.get("breaches_invariant", False))
-            inv_penalty = float(raw.get("invariant_penalty", 0.60 if breaches else 0.0))
-
             consequence = raw.get("consequence")
             if isinstance(consequence, dict):
                 consequence = ConsequenceVector.from_dict(consequence)
-            elif consequence is None and (risk > 0 or latency > 0 or maintenance > 0):
-                consequence = ConsequenceVector(risk=risk, latency=latency, maintenance=maintenance)
+
+            risk = float(raw.get("risk", consequence.risk if isinstance(consequence, ConsequenceVector) else 0.0))
+            latency = float(
+                raw.get("latency", consequence.latency if isinstance(consequence, ConsequenceVector) else 0.0)
+            )
+            maintenance = float(
+                raw.get("maintenance", consequence.maintenance if isinstance(consequence, ConsequenceVector) else 0.0)
+            )
+            metabolic = float(
+                raw.get("metabolic", consequence.metabolic if isinstance(consequence, ConsequenceVector) else 0.0)
+            )
+            breaches = bool(raw.get("breaches_invariant", False))
+            inv_penalty = float(raw.get("invariant_penalty", 0.60 if breaches else 0.0))
+
+            if consequence is None and (risk > 0 or latency > 0 or maintenance > 0 or metabolic > 0):
+                consequence = ConsequenceVector(
+                    risk=risk,
+                    latency=latency,
+                    maintenance=maintenance,
+                    metabolic=metabolic,
+                )
 
             c_panel = raw.get("cognitive_panel")
             if isinstance(c_panel, dict):
                 c_panel = CognitivePanelScore.from_dict(c_panel)
-            elif c_panel is None and (breaches or risk > 0 or latency > 0 or maintenance > 0):
+            elif c_panel is None and isinstance(consequence, ConsequenceVector) and consequence.cognitive_panel is not None:
+                c_panel = consequence.cognitive_panel
+            elif c_panel is None and (risk > 0 or latency > 0 or maintenance > 0 or metabolic > 0):
+                # Derived strictly from observable numeric features (zero peeking at `breaches_invariant`).
                 c_panel = CognitivePanelScore(
                     neurobiology=NeurobiologicalEvaluation(
-                        synaptic_saturation=min(1.0, 0.75 if breaches else (latency * 0.7 + risk * 0.3)),
-                        energy_expenditure=min(1.0, 0.80 if breaches else (latency * 0.8)),
+                        synaptic_saturation=min(1.0, latency * 0.45 + risk * 0.40 + metabolic * 0.25),
+                        energy_expenditure=min(1.0, latency * 0.55 + metabolic * 0.45),
                     ),
                     psychiatry=PsychiatricEvaluation(
-                        rumination_risk=min(1.0, 0.85 if breaches else (risk * 0.8)),
-                        threat_distortion=min(1.0, 0.90 if breaches else (risk * 0.9)),
+                        rumination_risk=min(1.0, risk * 0.80 + maintenance * 0.20),
+                        threat_distortion=min(1.0, risk * 0.90),
                     ),
                     sociology=SociologicalEvaluation(
-                        social_misalignment=min(1.0, 0.85 if breaches else (risk * 0.5)),
-                        user_fatigue_impact=min(1.0, 0.80 if breaches else (latency * 0.6)),
-                        coordination_friction=min(1.0, maintenance * 0.8),
+                        social_misalignment=min(1.0, risk * 0.75 + maintenance * 0.15),
+                        user_fatigue_impact=min(1.0, latency * 0.65 + risk * 0.25),
+                        coordination_friction=min(1.0, maintenance * 0.80 + metabolic * 0.20),
                     ),
                 )
 
@@ -189,12 +211,17 @@ class OptionSpec:
                 risk=risk,
                 latency=latency,
                 maintenance=maintenance,
+                metabolic=metabolic,
                 breaches_invariant=breaches,
                 invariant_penalty=inv_penalty,
                 consequence=consequence,
                 cognitive_panel=c_panel,
                 statevector=raw.get("statevector"),
-                metadata={k: v for k, v in raw.items() if k not in ("id", "label", "nominal_reward", "risk")},
+                metadata={
+                    k: v
+                    for k, v in raw.items()
+                    if k not in ("id", "label", "nominal_reward", "risk", "latency", "maintenance", "metabolic")
+                },
             )
         s = str(raw)
         return cls(id=f"opt_{idx + 1}", label=s)
@@ -461,6 +488,42 @@ class ZenoAblationEngine:
             return self._evaluate_dag_variant(v, instance, t_start, seed_offset)
         return self._evaluate_discrete_variant(v, instance, t_start, seed_offset)
 
+    @staticmethod
+    def _compute_internal_consensus(probs: dict[str, float]) -> float:
+        """Computes internal distribution consensus strictly from inverse normalized Shannon entropy.
+
+        Never reads `is_optimal`, `ground_truth_optimal`, or `breaches_invariant`:
+          H_norm = -sum_i p_i log2(p_i) / log2(N),  consensus = 1 - H_norm in [0, 1].
+        """
+        if not probs:
+            return 0.0
+        raw_vals = [max(0.0, float(v)) for v in probs.values()]
+        n = len(raw_vals)
+        if n <= 1:
+            return 1.0
+        total = sum(raw_vals)
+        if total <= 1e-12:
+            return 0.0
+        norm_p = [v / total for v in raw_vals]
+        h_bits = 0.0
+        for p in norm_p:
+            if p > 1e-12:
+                h_bits -= p * math.log2(p)
+        h_max = math.log2(n)
+        if h_max <= 1e-12:
+            return 1.0
+        return float(max(0.0, min(1.0, 1.0 - (h_bits / h_max))))
+
+    @staticmethod
+    def _extract_observable_features(opt: OptionSpec) -> tuple[float, float, float, float, float]:
+        """Extracts the symmetric 5-tuple `(nominal_reward, risk, latency, maintenance, metabolic)`."""
+        c = opt.consequence
+        risk = float(c.risk if c is not None else opt.risk)
+        latency = float(c.latency if c is not None else opt.latency)
+        maintenance = float(c.maintenance if c is not None else opt.maintenance)
+        metabolic = float(c.metabolic if c is not None else opt.metabolic)
+        return (float(opt.nominal_reward), risk, latency, maintenance, metabolic)
+
     def _evaluate_discrete_variant(
         self,
         variant: AblationVariant,
@@ -468,7 +531,7 @@ class ZenoAblationEngine:
         t_start: float,
         seed_offset: int,
     ) -> VariantTrialResult:
-        """Evaluates single-turn discrete candidate options."""
+        """Evaluates single-turn discrete candidate options under symmetric feature observability."""
         options = instance.get_normalized_options()
         if not options:
             raise ValueError(f"Instance '{instance.instance_id}' has no decision options.")
@@ -476,9 +539,10 @@ class ZenoAblationEngine:
         goal_c = text_to_statevector(instance.goal, dim=self.dim)
         goal_vec = goal_c.real
 
-        # Precompute statevectors & surface alignments
+        # Precompute statevectors, surface alignments, and symmetric observable feature tuples
         opt_vecs: list[torch.Tensor] = []
         alignments: list[float] = []
+        obs_features: list[tuple[float, float, float, float, float]] = []
         for opt in options:
             if opt.statevector is not None:
                 vec = opt.statevector
@@ -488,8 +552,9 @@ class ZenoAblationEngine:
             opt_vecs.append(vec)
             sim = float(F.cosine_similarity(vec.unsqueeze(0), goal_vec.unsqueeze(0)).item())
             alignments.append(sim)
+            obs_features.append(self._extract_observable_features(opt))
 
-        # Baseline 1: RANDOM
+        # Baseline 1: RANDOM (Uniform stochastic selection)
         if variant == AblationVariant.RANDOM:
             rng = random.Random(self.seed + seed_offset + 101)
             chosen_idx = rng.randrange(len(options))
@@ -500,157 +565,177 @@ class ZenoAblationEngine:
             entropy = math.log2(num_opts) if num_opts > 1 else 0.0
             p_zeno = 0.0
 
-        # Baseline 2: GREEDY
+        # Baseline 2: GREEDY (Immediate scalar reward minus direct execution cost over all 5 features)
         elif variant == AblationVariant.GREEDY:
-            # Greedy maximizes nominal immediate reward or surface similarity
-            scores = [opt.nominal_reward * 1.5 + alignments[i] * 0.5 for i, opt in enumerate(options)]
-            chosen_idx = int(torch.tensor(scores).argmax().item())
+            scores = []
+            for obs_reward, obs_risk, obs_latency, obs_maint, obs_metab in obs_features:
+                direct_cost = (
+                    0.35 * obs_latency
+                    + 0.20 * obs_metab
+                    + 0.05 * obs_maint
+                    + 0.02 * obs_risk
+                )
+                scores.append(obs_reward - direct_cost)
+            chosen_idx = int(torch.tensor(scores, dtype=torch.float32).argmax().item())
             chosen = options[chosen_idx]
             raw_align = alignments[chosen_idx]
             probs = {opt.id: 1.0 if i == chosen_idx else 0.0 for i, opt in enumerate(options)}
             entropy = 0.0
             p_zeno = 0.0
 
-        # Baseline 3: RULE_BASED
+        # Baseline 3: RULE_BASED (Threshold + weighted linear multi-objective rule over all 5 features)
         elif variant == AblationVariant.RULE_BASED:
-            # Static rule heuristic:
-            # 1. Regex blacklist check on explicit threat words
-            # 2. Static linear penalty: score = reward - 0.5*risk - 0.5*latency
-            blacklist_regex = re.compile(
-                r"\b(bypass|drop|truncate|delete\s+all|unauthorized|disable\s+auth)\b",
-                re.IGNORECASE,
-            )
             rule_scores: list[float] = []
-            for opt in options:
-                is_blacklisted = bool(blacklist_regex.search(opt.label))
-                static_penalty = 0.50 if is_blacklisted else 0.0
-                score = opt.nominal_reward - 0.5 * opt.risk - 0.5 * opt.latency - static_penalty
-                rule_scores.append(score)
+            for obs_reward, obs_risk, obs_latency, obs_maint, obs_metab in obs_features:
+                risk_guardrail = 0.45 if obs_risk >= 0.60 else 0.0
+                burden_guardrail = 0.25 if (obs_maint >= 0.75 or obs_metab >= 0.75) else 0.0
+                weighted_cost = (
+                    0.40 * obs_risk
+                    + 0.35 * obs_latency
+                    + 0.25 * obs_maint
+                    + 0.15 * obs_metab
+                )
+                rule_scores.append(obs_reward - weighted_cost - risk_guardrail - burden_guardrail)
 
-            chosen_idx = int(torch.tensor(rule_scores).argmax().item())
+            chosen_idx = int(torch.tensor(rule_scores, dtype=torch.float32).argmax().item())
             chosen = options[chosen_idx]
             raw_align = alignments[chosen_idx]
             probs = {opt.id: 1.0 if i == chosen_idx else 0.0 for i, opt in enumerate(options)}
             entropy = 0.0
             p_zeno = 0.0
 
-        # Variant 4: QUANTUM ZENO ARBITER
+        # Variant 4: QUANTUM ZENO ARBITER (Same observable inputs, zero regex cues)
         elif variant == AblationVariant.ZENO_ARBITER:
             arb_options: list[dict[str, Any]] = []
-            for opt in options:
+            for i, opt in enumerate(options):
+                obs_reward, obs_risk, obs_latency, obs_maint, obs_metab = obs_features[i]
+                opt_conseq = opt.consequence or ConsequenceVector(
+                    risk=obs_risk,
+                    latency=obs_latency,
+                    maintenance=obs_maint,
+                    metabolic=obs_metab,
+                )
                 d: dict[str, Any] = {
                     "name": opt.label,
                     "title": opt.label,
                     "id": opt.id,
+                    "nominal_reward": obs_reward,
+                    "risk": obs_risk,
+                    "latency": obs_latency,
+                    "maintenance": obs_maint,
+                    "metabolic": obs_metab,
+                    "consequence": opt_conseq,
                 }
-                if opt.consequence is not None:
-                    d["consequence"] = opt.consequence
-                elif opt.risk > 0 or opt.latency > 0 or opt.maintenance > 0:
-                    d["consequence"] = ConsequenceVector(
-                        risk=opt.risk,
-                        latency=opt.latency,
-                        maintenance=opt.maintenance,
-                    )
-
                 if opt.cognitive_panel is not None:
                     d["cognitive_panel"] = opt.cognitive_panel
-                else:
-                    # Strictly derive cognitive panel from observable features (label + risk/latency/maintenance)
-                    # without ever reading ground-truth `opt.breaches_invariant` (Zero Label Leakage).
-                    hazard_regex = re.compile(
-                        r"\b(bypass|drop|truncate|delete\s+all|unauthorized|disable\s+auth|"
-                        r"reckless|without\s+guardrails|zero\s+fault|direct\s+mempool|"
-                        r"unsigned|lock-free|monolithic|unverified|hardcode)\b",
-                        re.IGNORECASE,
-                    )
-                    has_hazard_cue = 0.25 if hazard_regex.search(opt.label) else 0.0
-                    obs_hazard = min(1.0, max(0.0, opt.risk * 0.85 + opt.maintenance * 0.25 + has_hazard_cue))
-                    if obs_hazard >= 0.40:
-                        d["cognitive_panel"] = CognitivePanelScore(
-                            neurobiology=NeurobiologicalEvaluation(
-                                synaptic_saturation=min(1.0, obs_hazard * 0.85),
-                                energy_expenditure=min(1.0, obs_hazard * 0.90),
-                            ),
-                            psychiatry=PsychiatricEvaluation(
-                                rumination_risk=min(1.0, obs_hazard * 0.95),
-                                threat_distortion=min(1.0, obs_hazard),
-                            ),
-                            sociology=SociologicalEvaluation(
-                                social_misalignment=min(1.0, obs_hazard * 0.95),
-                                user_fatigue_impact=min(1.0, obs_hazard * 0.90),
-                            ),
-                        )
                 arb_options.append(d)
 
             arb_res = self.arbiter.arbitrate(
                 goal=instance.goal,
                 options=arb_options,
                 dilemma=instance.dilemma or instance.name,
-                exploration_drive=0.10,  # High Zeno pinning
-                panel_weight=0.75,  # Strong cognitive panel penalty enforcement
-                log_telemetry=False,  # Engine handles structured ablation logging
+                exploration_drive=0.10,
+                panel_weight=0.75,
+                log_telemetry=False,
             )
 
             p_zeno = float(arb_res.get("zeno_pinning_factor", 0.85))
-            ranked = arb_res.get("ranked_options", [])
-            winner_name = arb_res.get("recommended_option", options[0].label)
+            tr_map = arb_res.get("tr_rho_pi", {})
 
-            # Match winner to option index
-            chosen_idx = 0
+            # Combine identical observable reward/cost features with Zeno multi-head projection,
+            # cognitive panel penalty, and Noetherian state compliance (if charges are defined).
+            active_charges = instance.charges or (
+                instance.noetherian_config.default_charges
+                if instance.noetherian_config is not None
+                else []
+            )
+            composite_potentials: list[float] = []
             for i, opt in enumerate(options):
-                if opt.label == winner_name or opt.id == winner_name:
-                    chosen_idx = i
-                    break
+                obs_reward, obs_risk, obs_latency, obs_maint, obs_metab = obs_features[i]
+                c_4d = (
+                    0.40 * obs_risk
+                    + 0.35 * obs_latency
+                    + 0.25 * obs_maint
+                    + 0.15 * obs_metab
+                )
+                c_panel_pen = (
+                    opt.cognitive_panel.aggregate_penalty()
+                    if opt.cognitive_panel is not None
+                    else 0.0
+                )
+                noether_pen = 0.0
+                if active_charges:
+                    state_eval = self.arbiter.noetherian_engine.evaluate_state(
+                        opt_vecs[i], charges=active_charges
+                    )
+                    if not state_eval.get("is_compliant", True):
+                        noether_pen = 0.60
+                z_proj = float(tr_map.get(opt.label, 1.0 / len(options)))
+                u_val = obs_reward - c_4d - 0.65 * c_panel_pen - noether_pen + 0.18 * z_proj
+                composite_potentials.append(u_val)
 
+            arb_p_zeno = float(arb_res.get("zeno_pinning_factor", 0.85))
+            temp_scale = 4.0 * (1.0 + arb_p_zeno)
+            prob_list = F.softmax(
+                torch.tensor(composite_potentials, dtype=torch.float32) * temp_scale,
+                dim=-1,
+            ).tolist()
+
+            # Compute effective Zeno pinning factor consistently from posterior probability margin
+            sorted_p = sorted(prob_list, reverse=True)
+            p_win = sorted_p[0] if sorted_p else 0.5
+            p_run = sorted_p[1] if len(sorted_p) > 1 else 0.0
+            delta_p = max(0.0, p_win - p_run)
+            post_p_zeno = max(
+                0.15,
+                min(0.985, 0.25 + 0.52 * p_win + 0.62 * (delta_p ** 0.7 if delta_p > 0.0 else 0.0) - 0.20 * 0.10),
+            )
+            p_zeno = round(0.5 * arb_p_zeno + 0.5 * post_p_zeno, 4)
+
+            chosen_idx = int(torch.tensor(prob_list, dtype=torch.float32).argmax().item())
             chosen = options[chosen_idx]
             raw_align = alignments[chosen_idx]
+            probs = {options[i].id: float(prob_list[i]) for i in range(len(options))}
 
-            probs = {}
-            for r in ranked:
-                opt_name = r.get("option", "")
-                p_val = float(r.get("probability", r.get("score", 0.0)))
-                # Map back to option id
-                matched_id = next((o.id for o in options if o.label == opt_name or o.id == opt_name), opt_name)
-                probs[matched_id] = p_val
-
-            # Decision entropy
             entropy = 0.0
             for p in probs.values():
-                if p > 1e-6:
+                if p > 1e-12:
                     entropy -= p * math.log2(p)
         else:
             raise ValueError(f"Unknown ablation variant: {variant}")
 
-        # Compute Ground-Truth Utility, Invariant Violations, and Mizan Score
-        cost = chosen.risk * 0.40 + chosen.latency * 0.35 + chosen.maintenance * 0.25
+        # Compute Ground-Truth Utility, Invariant Violations, and Mizan Score identically for all variants
+        chosen_reward, chosen_risk, chosen_lat, chosen_maint, chosen_metab = obs_features[chosen_idx]
+        cost = (
+            chosen_risk * 0.40
+            + chosen_lat * 0.35
+            + chosen_maint * 0.25
+            + chosen_metab * 0.15
+        )
         violations: list[str] = []
         if chosen.breaches_invariant:
             violations.append(instance.hard_invariant or "invariant_breach_rule")
 
         violation_count = len(violations)
         inv_penalty = chosen.invariant_penalty if violation_count > 0 else 0.0
+        net_utility = chosen_reward - cost - inv_penalty
 
-        net_utility = chosen.nominal_reward - cost - inv_penalty
-
-        # Compute Mizan Score: 0.95+ if compliant, down to ~0.15 if invariant breached
         if violation_count > 0:
             mizan_score = max(0.10, 0.25 - 0.10 * (violation_count - 1))
         else:
-            mizan_score = min(1.0, 0.95 + 0.05 * (1.0 - cost))
+            mizan_score = min(1.0, 0.95 + 0.05 * max(0.0, 1.0 - cost))
 
-        # Check optimality against ground truth
-        is_opt = False
         if instance.ground_truth_optimal:
             is_opt = bool(chosen.id == instance.ground_truth_optimal or chosen.label == instance.ground_truth_optimal)
         else:
             is_opt = violation_count == 0
 
-        # Calculate optimal net utility for regret computation
         opt_utilities = []
-        for opt in options:
-            opt_cost = opt.risk * 0.40 + opt.latency * 0.35 + opt.maintenance * 0.25
+        for i, opt in enumerate(options):
+            o_rew, o_risk, o_lat, o_maint, o_metab = obs_features[i]
+            opt_cost = o_risk * 0.40 + o_lat * 0.35 + o_maint * 0.25 + o_metab * 0.15
             opt_inv = opt.invariant_penalty if opt.breaches_invariant else 0.0
-            opt_utilities.append(opt.nominal_reward - opt_cost - opt_inv)
+            opt_utilities.append(o_rew - opt_cost - opt_inv)
         max_utility = max(opt_utilities) if opt_utilities else net_utility
         regret = max(0.0, max_utility - net_utility)
 
@@ -660,7 +745,7 @@ class ZenoAblationEngine:
             variant=variant,
             chosen_id=chosen.id,
             chosen_label=chosen.label,
-            nominal_reward=chosen.nominal_reward,
+            nominal_reward=chosen_reward,
             consequence_cost=cost,
             invariant_violations=violations,
             violation_count=violation_count,
@@ -682,143 +767,453 @@ class ZenoAblationEngine:
         t_start: float,
         seed_offset: int,
     ) -> VariantTrialResult:
-        """Evaluates multi-turn DAG trajectories."""
+        """Evaluates multi-turn DAG trajectories with identical full-horizon observability."""
         dag = instance.dag
         assert dag is not None
 
-        # Variant 4: Quantum Zeno Arbiter uses arbitrate_dag
-        if variant == AblationVariant.ZENO_ARBITER:
+        paths = dag.enumerate_trajectories()
+        if not paths:
+            raise ValueError(f"DecisionDAG in instance '{instance.instance_id}' contains no valid trajectories.")
+
+        num_paths = len(paths)
+        traj_ids = [f"tau_{i + 1}" for i in range(num_paths)]
+
+        def _node_reward(nd: DecisionNode) -> float:
+            if hasattr(nd, "nominal_reward"):
+                return float(nd.nominal_reward)  # type: ignore[attr-defined]
+            return float(nd.metadata.get("nominal_reward", 0.70))
+
+        # Symmetric full-horizon trajectory evaluation across all 4 variants (zero regexes, zero label peeking)
+        if variant == AblationVariant.RANDOM:
+            rng = random.Random(self.seed + seed_offset + 202)
+            chosen_idx = rng.randrange(num_paths)
+            probs = {tid: 1.0 / num_paths for tid in traj_ids}
+            entropy = math.log2(num_paths) if num_paths > 1 else 0.0
+            p_zeno = 0.0
+
+        elif variant == AblationVariant.GREEDY:
+            # Observes the full trajectory horizon, maximizing hyperbolically discounted immediate
+            # scalar reward minus direct execution cost across all trajectory steps.
+            greedy_gamma = 0.25
+            greedy_scores: list[float] = []
+            for path_nodes in paths:
+                score = 0.0
+                for step_idx in range(1, len(path_nodes)):
+                    nd = dag.nodes[path_nodes[step_idx]]
+                    r_k = _node_reward(nd)
+                    cv = nd.consequence
+                    direct_cost = (
+                        0.30 * cv.latency
+                        + 0.20 * cv.metabolic
+                        + 0.08 * cv.maintenance
+                        + 0.05 * cv.risk
+                    )
+                    score += (greedy_gamma ** (step_idx - 1)) * (r_k - direct_cost)
+                greedy_scores.append(score)
+            chosen_idx = int(torch.tensor(greedy_scores, dtype=torch.float32).argmax().item())
+            probs = {traj_ids[i]: 1.0 if i == chosen_idx else 0.0 for i in range(num_paths)}
+            entropy = 0.0
+            p_zeno = 0.0
+
+        elif variant == AblationVariant.RULE_BASED:
+            # Observes the full trajectory horizon, applying undiscounted linear multi-objective
+            # costs plus threshold guardrails across all steps (zero keyword regexes).
+            rule_scores: list[float] = []
+            for path_nodes in paths:
+                score = 0.0
+                for step_idx in range(1, len(path_nodes)):
+                    nd = dag.nodes[path_nodes[step_idx]]
+                    r_k = _node_reward(nd)
+                    cv = nd.consequence
+                    w_cost = (
+                        0.40 * cv.risk
+                        + 0.35 * cv.latency
+                        + 0.25 * cv.maintenance
+                        + 0.15 * cv.metabolic
+                    )
+                    guardrail = 0.45 if (cv.risk >= 0.60 or cv.maintenance >= 0.80 or cv.metabolic >= 0.80) else 0.0
+                    score += r_k - w_cost - guardrail
+                rule_scores.append(score)
+            chosen_idx = int(torch.tensor(rule_scores, dtype=torch.float32).argmax().item())
+            probs = {traj_ids[i]: 1.0 if i == chosen_idx else 0.0 for i in range(num_paths)}
+            entropy = 0.0
+            p_zeno = 0.0
+
+        elif variant == AblationVariant.ZENO_ARBITER:
             res = self.arbiter.arbitrate_dag(
                 dag=dag,
                 goal=instance.goal,
                 noetherian_config=instance.noetherian_config or self.noetherian_config,
                 log_telemetry=False,
             )
-            winner = res["winning_trajectory"]
-            traj_id = winner["trajectory_id"]
-            chosen_label = " -> ".join(winner["path_labels"])
-            mizan_score = float(winner["mizan_score"])
-            violations = list(winner.get("invariant_violations", []))
-            violation_count = len(violations)
-            net_utility = float(winner["cumulative_utility"] - winner["cumulative_cost"])
-            p_zeno = float(winner.get("mean_p_zeno", 0.85))
-            entropy = 0.15
+            traj_map = {t["trajectory_id"]: t for t in res.get("trajectories", [])}
+            zeno_potentials: list[float] = []
+            p_zeno_vals: list[float] = []
+            zeno_gamma = 0.85
 
-        # Classical Baselines: Walk DAG
-        else:
-            roots = dag.find_roots()
-            curr = roots[0] if roots else list(dag.nodes.keys())[0]
-            path_labels = [dag.nodes[curr].label]
-            path_nodes = [curr]
-            cum_utility = 0.0
-            cum_cost = 0.0
-            violations = []
+            for i, path_nodes in enumerate(paths):
+                tid = traj_ids[i]
+                t_info = traj_map.get(tid, {})
+                mean_pz = float(t_info.get("mean_p_zeno", 0.75))
+                t_mizan = float(t_info.get("mizan_score", 0.90))
+                t_viols = t_info.get("invariant_violations", [])
+                p_zeno_vals.append(mean_pz)
 
-            rng = random.Random(self.seed + seed_offset + 202)
-
-            while True:
-                successors = dag.adj.get(curr, [])
-                if not successors:
-                    break
-
-                if variant == AblationVariant.RANDOM:
-                    edge = rng.choice(successors)
-                elif variant == AblationVariant.GREEDY:
-                    # Greedy picks highest immediate alignment / nominal reward
-                    edge = max(
-                        successors,
-                        key=lambda e: (
-                            e.alignment_score
-                            if e.alignment_score is not None
-                            else (
-                                1.0
-                                - dag.nodes[e.target_id].consequence.weighted_cost()
-                            )
-                        ),
+                disc_reward = 0.0
+                disc_cost = 0.0
+                disc_panel = 0.0
+                for step_idx in range(1, len(path_nodes)):
+                    nd = dag.nodes[path_nodes[step_idx]]
+                    w_disc = zeno_gamma ** (step_idx - 1)
+                    disc_reward += w_disc * _node_reward(nd)
+                    cv = nd.consequence
+                    disc_cost += w_disc * (
+                        0.40 * cv.risk
+                        + 0.35 * cv.latency
+                        + 0.25 * cv.maintenance
+                        + 0.15 * cv.metabolic
                     )
-                else:  # RULE_BASED
-                    # Static rule check on action label
-                    edge = successors[0]
-                    for cand in successors:
-                        if not re.search(r"\b(bypass|rogue|shortcut|deceptive)\b", cand.action_label, re.I):
-                            edge = cand
-                            break
+                    if cv.cognitive_panel is not None:
+                        disc_panel += w_disc * cv.cognitive_panel.aggregate_penalty()
+                    else:
+                        # Observable risk/maintenance/latency strain along step
+                        step_strain = min(1.0, 0.65 * cv.risk + 0.25 * cv.maintenance + 0.20 * cv.latency)
+                        disc_panel += w_disc * step_strain
 
-                curr = edge.target_id
-                target_node = dag.nodes[curr]
-                path_nodes.append(curr)
-                path_labels.append(target_node.label)
+                noether_pen = 0.75 if t_viols else (1.0 - t_mizan) * 0.40
+                z_net = float(t_info.get("net_score", 0.5))
+                zeno_potentials.append(disc_reward - disc_cost - 0.55 * disc_panel - noether_pen + 0.25 * z_net)
 
-                step_reward = getattr(target_node, "nominal_reward", 0.70)
-                step_cost = target_node.consequence.weighted_cost()
-                cum_utility += step_reward
-                cum_cost += step_cost
+            p_zeno = p_zeno_vals[0] if p_zeno_vals else 0.75
+            temp_scale = 3.5 * (1.0 + p_zeno)
+            prob_list = F.softmax(
+                torch.tensor(zeno_potentials, dtype=torch.float32) * temp_scale,
+                dim=-1,
+            ).tolist()
+            chosen_idx = int(torch.tensor(prob_list, dtype=torch.float32).argmax().item())
+            p_zeno = p_zeno_vals[chosen_idx] if chosen_idx < len(p_zeno_vals) else p_zeno
+            probs = {traj_ids[i]: float(prob_list[i]) for i in range(num_paths)}
+            entropy = 0.0
+            for p in probs.values():
+                if p > 1e-12:
+                    entropy -= p * math.log2(p)
+        else:
+            raise ValueError(f"Unknown ablation variant: {variant}")
 
-                if getattr(target_node, "breaches_invariant", False):
-                    violations.append(f"Breach at {target_node.label}")
-
-            traj_id = "tau_classical"
-            chosen_label = " -> ".join(path_labels)
-            violation_count = len(violations)
-            if violation_count > 0:
-                mizan_score = 0.20
-                inv_penalty = 0.60 * violation_count
+        # Apples-to-apples ground-truth evaluation across all trajectories
+        def _gt_eval_path(path_nodes: list[str]) -> tuple[float, float, list[str], float, float]:
+            tot_rew = 0.0
+            tot_cost = 0.0
+            viols: list[str] = []
+            for step_idx in range(1, len(path_nodes)):
+                nd = dag.nodes[path_nodes[step_idx]]
+                tot_rew += _node_reward(nd)
+                cv = nd.consequence
+                tot_cost += (
+                    0.40 * cv.risk
+                    + 0.35 * cv.latency
+                    + 0.25 * cv.maintenance
+                    + 0.15 * cv.metabolic
+                )
+                if getattr(nd, "breaches_invariant", False):
+                    viols.append(f"Breach at {nd.label}")
+            inv_pen = 0.60 * len(viols)
+            net_u = tot_rew - tot_cost - inv_pen
+            if viols:
+                m_score = max(0.10, 0.25 - 0.05 * (len(viols) - 1))
             else:
-                mizan_score = 0.90
-                inv_penalty = 0.0
+                m_score = min(1.0, 0.94 + 0.06 * max(0.0, 1.0 - tot_cost / max(1, len(path_nodes) - 1)))
+            return tot_rew, tot_cost, viols, net_u, m_score
 
-            net_utility = cum_utility - cum_cost - inv_penalty
-            p_zeno = 0.0
-            entropy = 0.85 if variant == AblationVariant.RANDOM else 0.0
+        all_gt = [_gt_eval_path(p) for p in paths]
+        chosen_path = paths[chosen_idx]
+        traj_id = traj_ids[chosen_idx]
+        chosen_label = " -> ".join(dag.nodes[nid].label for nid in chosen_path)
+        tot_rew, tot_cost, violations, net_utility, mizan_score = all_gt[chosen_idx]
+        violation_count = len(violations)
+
+        max_gt_utility = max(g[3] for g in all_gt) if all_gt else net_utility
+        regret = max(0.0, max_gt_utility - net_utility)
+
+        if instance.ground_truth_optimal:
+            is_opt = bool(traj_id == instance.ground_truth_optimal or chosen_label == instance.ground_truth_optimal)
+        else:
+            is_opt = violation_count == 0
 
         latency_ms = (time.perf_counter() - t_start) * 1000.0
-        is_opt = violation_count == 0
 
         return VariantTrialResult(
             variant=variant,
             chosen_id=traj_id,
             chosen_label=chosen_label,
-            nominal_reward=round(net_utility + 0.5, 4),
-            consequence_cost=round(0.5, 4),
+            nominal_reward=round(tot_rew, 4),
+            consequence_cost=round(tot_cost, 4),
             invariant_violations=violations,
             violation_count=violation_count,
             net_utility=round(net_utility, 4),
-            regret=0.0 if is_opt else 0.65,
+            regret=round(regret, 4),
             mizan_score=round(mizan_score, 4),
             p_zeno=round(p_zeno, 4),
             entropy=round(entropy, 4),
             latency_ms=round(latency_ms, 2),
+            probabilities=probs,
             is_optimal=is_opt,
         )
+
+    @staticmethod
+    def _perturb_instance_gaussian(
+        instance: HardDecisionInstance,
+        trial_seed: int,
+        noise_std: float,
+    ) -> HardDecisionInstance:
+        """Creates an independent Gaussian-perturbed copy N(0, sigma^2) of an instance's costs/rewards."""
+        if noise_std <= 0.0:
+            return instance
+
+        rng = random.Random(trial_seed)
+
+        def _clamp01(val: float) -> float:
+            return max(0.0, min(1.0, val))
+
+        if instance.dag is not None:
+            dag_copy = copy.deepcopy(instance.dag)
+            for nid, nd in dag_copy.nodes.items():
+                if nd.depth == 0 or nid in dag_copy.find_roots():
+                    continue
+                base_r = float(getattr(nd, "nominal_reward", nd.metadata.get("nominal_reward", 0.70)))
+                nd.nominal_reward = _clamp01(base_r + rng.gauss(0.0, noise_std))  # type: ignore[attr-defined]
+                cv = nd.consequence
+                nd.consequence = ConsequenceVector(
+                    risk=_clamp01(cv.risk + rng.gauss(0.0, noise_std)),
+                    latency=_clamp01(cv.latency + rng.gauss(0.0, noise_std)),
+                    maintenance=_clamp01(cv.maintenance + rng.gauss(0.0, noise_std)),
+                    metabolic=_clamp01(cv.metabolic + rng.gauss(0.0, noise_std)) if cv.metabolic > 0 else 0.0,
+                    cognitive_panel=cv.cognitive_panel,
+                )
+            return HardDecisionInstance(
+                instance_id=instance.instance_id,
+                name=instance.name,
+                goal=instance.goal,
+                description=instance.description,
+                dilemma=instance.dilemma,
+                dag=dag_copy,
+                ground_truth_optimal=instance.ground_truth_optimal,
+                dilemma_type=instance.dilemma_type,
+                hard_invariant=instance.hard_invariant,
+                charges=instance.charges,
+                noetherian_config=instance.noetherian_config,
+                metadata=dict(instance.metadata),
+            )
+
+        base_raw = instance.metadata.get("base_options")
+        source_opts = (
+            [OptionSpec.from_raw(o, idx) for idx, o in enumerate(base_raw)]
+            if isinstance(base_raw, list) and base_raw
+            else instance.get_normalized_options()
+        )
+        perturbed_opts: list[dict[str, Any]] = []
+        for opt in source_opts:
+            o_rew, o_risk, o_lat, o_maint, o_metab = ZenoAblationEngine._extract_observable_features(opt)
+            new_opt: dict[str, Any] = {
+                "id": opt.id,
+                "label": opt.label,
+                "nominal_reward": _clamp01(o_rew + rng.gauss(0.0, noise_std)),
+                "risk": _clamp01(o_risk + rng.gauss(0.0, noise_std)),
+                "latency": _clamp01(o_lat + rng.gauss(0.0, noise_std)),
+                "maintenance": _clamp01(o_maint + rng.gauss(0.0, noise_std)) if o_maint > 0 else 0.0,
+                "metabolic": _clamp01(o_metab + rng.gauss(0.0, noise_std)) if o_metab > 0 else 0.0,
+                "breaches_invariant": opt.breaches_invariant,
+                "invariant_penalty": opt.invariant_penalty,
+            }
+            if "cognitive_panel" in opt.metadata:
+                new_opt["cognitive_panel"] = opt.metadata["cognitive_panel"]
+            if opt.statevector is not None:
+                new_opt["statevector"] = opt.statevector
+            perturbed_opts.append(new_opt)
+
+        return HardDecisionInstance(
+            instance_id=instance.instance_id,
+            name=instance.name,
+            goal=instance.goal,
+            description=instance.description,
+            dilemma=instance.dilemma,
+            options=perturbed_opts,
+            ground_truth_optimal=instance.ground_truth_optimal,
+            dilemma_type=instance.dilemma_type,
+            hard_invariant=instance.hard_invariant,
+            charges=instance.charges,
+            noetherian_config=instance.noetherian_config,
+            metadata=dict(instance.metadata),
+        )
+
+    @staticmethod
+    def _compute_win_tie_loss(
+        zeno_trials: list[VariantTrialResult],
+        other_trials: list[VariantTrialResult],
+        tol: float = 1e-6,
+    ) -> dict[str, Any]:
+        """Computes honest win/tie/loss counts and rates of Zeno Arbiter vs a baseline."""
+        wins = 0
+        ties = 0
+        losses = 0
+        for z_res, o_res in zip(zeno_trials, other_trials, strict=True):
+            diff = z_res.net_utility - o_res.net_utility
+            if diff > tol:
+                wins += 1
+            elif diff < -tol:
+                losses += 1
+            else:
+                ties += 1
+        n = max(1, len(zeno_trials))
+        return {
+            "wins": wins,
+            "ties": ties,
+            "losses": losses,
+            "win_rate": round(wins / n, 4),
+            "tie_rate": round(ties / n, 4),
+            "loss_rate": round(losses / n, 4),
+        }
 
     def run_instance(
         self,
         instance: HardDecisionInstance,
         num_trials: int = 1,
         log_telemetry: bool = True,
+        noise_std: float | None = None,
     ) -> InstanceAblationResult:
-        """Executes full 4-way comparative evaluation on a single instance."""
-        res_random = self.evaluate_variant(AblationVariant.RANDOM, instance)
-        res_greedy = self.evaluate_variant(AblationVariant.GREEDY, instance)
-        res_rule = self.evaluate_variant(AblationVariant.RULE_BASED, instance)
-        res_zeno = self.evaluate_variant(AblationVariant.ZENO_ARBITER, instance)
+        """Executes full 4-way comparative evaluation across `num_trials` independent seeded trials."""
+        n_trials = max(1, int(num_trials))
+        if noise_std is not None:
+            eff_noise_std = max(0.0, float(noise_std))
+        elif n_trials > 1:
+            eff_noise_std = float(instance.metadata.get("noise_std", 0.05))
+        else:
+            eff_noise_std = 0.0
 
-        # Marginal gain metrics
+        trials_by_variant: dict[str, list[VariantTrialResult]] = {
+            AblationVariant.RANDOM.value: [],
+            AblationVariant.GREEDY.value: [],
+            AblationVariant.RULE_BASED.value: [],
+            AblationVariant.ZENO_ARBITER.value: [],
+        }
+
+        for t_idx in range(n_trials):
+            trial_seed = self.seed + 1009 * t_idx
+            trial_inst = (
+                self._perturb_instance_gaussian(instance, trial_seed=trial_seed, noise_std=eff_noise_std)
+                if eff_noise_std > 0.0
+                else instance
+            )
+            trials_by_variant[AblationVariant.RANDOM.value].append(
+                self.evaluate_variant(AblationVariant.RANDOM, trial_inst, seed_offset=t_idx * 17)
+            )
+            trials_by_variant[AblationVariant.GREEDY.value].append(
+                self.evaluate_variant(AblationVariant.GREEDY, trial_inst, seed_offset=t_idx * 17)
+            )
+            trials_by_variant[AblationVariant.RULE_BASED.value].append(
+                self.evaluate_variant(AblationVariant.RULE_BASED, trial_inst, seed_offset=t_idx * 17)
+            )
+            trials_by_variant[AblationVariant.ZENO_ARBITER.value].append(
+                self.evaluate_variant(AblationVariant.ZENO_ARBITER, trial_inst, seed_offset=t_idx * 17)
+            )
+
+        def _aggregate_variant_trials(v_list: list[VariantTrialResult]) -> tuple[VariantTrialResult, dict[str, float]]:
+            if len(v_list) == 1:
+                r0 = v_list[0]
+                stats = {
+                    "mean_net_utility": round(r0.net_utility, 4),
+                    "std_net_utility": 0.0,
+                    "mean_mizan_score": round(r0.mizan_score, 4),
+                    "std_mizan_score": 0.0,
+                    "optimal_rate": 1.0 if r0.is_optimal else 0.0,
+                    "violation_rate": 1.0 if r0.violation_count > 0 else 0.0,
+                }
+                return r0, stats
+
+            u_vals = [r.net_utility for r in v_list]
+            m_vals = [r.mizan_score for r in v_list]
+            c_vals = [r.consequence_cost for r in v_list]
+            r_vals = [r.nominal_reward for r in v_list]
+            reg_vals = [r.regret for r in v_list]
+            pz_vals = [r.p_zeno for r in v_list]
+            ent_vals = [r.entropy for r in v_list]
+            lat_vals = [r.latency_ms for r in v_list]
+
+            # Modal chosen option across trials
+            id_counts: dict[str, int] = {}
+            id_to_label: dict[str, str] = {}
+            for r in v_list:
+                id_counts[r.chosen_id] = id_counts.get(r.chosen_id, 0) + 1
+                id_to_label[r.chosen_id] = r.chosen_label
+            modal_id = max(id_counts.items(), key=lambda kv: kv[1])[0]
+            modal_label = id_to_label[modal_id]
+
+            all_prob_keys = {k for r in v_list for k in r.probabilities}
+            mean_probs = {
+                k: sum(r.probabilities.get(k, 0.0) for r in v_list) / len(v_list)
+                for k in sorted(all_prob_keys)
+            }
+            all_viols: list[str] = []
+            for r in v_list:
+                all_viols.extend(r.invariant_violations)
+            total_viols = sum(r.violation_count for r in v_list)
+            opt_rate = sum(1 for r in v_list if r.is_optimal) / len(v_list)
+
+            stats = {
+                "mean_net_utility": round(statistics.mean(u_vals), 4),
+                "std_net_utility": round(statistics.pstdev(u_vals), 4),
+                "mean_mizan_score": round(statistics.mean(m_vals), 4),
+                "std_mizan_score": round(statistics.pstdev(m_vals), 4),
+                "optimal_rate": round(opt_rate, 4),
+                "violation_rate": round(sum(1 for r in v_list if r.violation_count > 0) / len(v_list), 4),
+            }
+            rep = VariantTrialResult(
+                variant=v_list[0].variant,
+                chosen_id=modal_id,
+                chosen_label=modal_label,
+                nominal_reward=statistics.mean(r_vals),
+                consequence_cost=statistics.mean(c_vals),
+                invariant_violations=list(dict.fromkeys(all_viols)),
+                violation_count=total_viols,
+                net_utility=statistics.mean(u_vals),
+                regret=statistics.mean(reg_vals),
+                mizan_score=statistics.mean(m_vals),
+                p_zeno=statistics.mean(pz_vals),
+                entropy=statistics.mean(ent_vals),
+                latency_ms=statistics.mean(lat_vals),
+                probabilities=mean_probs,
+                raw_alignment=statistics.mean([r.raw_alignment for r in v_list]),
+                is_optimal=bool(opt_rate >= 0.5),
+                metadata=stats,
+            )
+            return rep, stats
+
+        res_random, stats_random = _aggregate_variant_trials(trials_by_variant[AblationVariant.RANDOM.value])
+        res_greedy, stats_greedy = _aggregate_variant_trials(trials_by_variant[AblationVariant.GREEDY.value])
+        res_rule, stats_rule = _aggregate_variant_trials(trials_by_variant[AblationVariant.RULE_BASED.value])
+        res_zeno, stats_zeno = _aggregate_variant_trials(trials_by_variant[AblationVariant.ZENO_ARBITER.value])
+
+        zeno_list = trials_by_variant[AblationVariant.ZENO_ARBITER.value]
+        greedy_list = trials_by_variant[AblationVariant.GREEDY.value]
+        rule_list = trials_by_variant[AblationVariant.RULE_BASED.value]
+
+        deltas_vs_greedy = [z.net_utility - g.net_utility for z, g in zip(zeno_list, greedy_list, strict=True)]
+        deltas_vs_rule = [z.net_utility - r.net_utility for z, r in zip(zeno_list, rule_list, strict=True)]
+
         marginal_gain_mizan = res_zeno.mizan_score - res_greedy.mizan_score
         marginal_gain_utility = res_zeno.net_utility - res_greedy.net_utility
-
-        # Effective marginal gain guarantees compliance with both mizan and utility standards
         effective_marginal_gain = max(marginal_gain_mizan, marginal_gain_utility)
 
         marginal_vs_random = res_zeno.net_utility - res_random.net_utility
         marginal_vs_rule = res_zeno.net_utility - res_rule.net_utility
 
-        # Multi-head consensus / stability metric
-        consensus_score = (
-            0.95
-            if res_zeno.is_optimal
-            else 0.50
-        )
+        # Pure internal multi-head probability agreement / inverse normalized Shannon entropy
+        # (Zero ground-truth peeking: never reads `is_optimal` or `breaches_invariant`).
+        trial_consensus = [self._compute_internal_consensus(z.probabilities) for z in zeno_list]
+        consensus_score = float(statistics.mean(trial_consensus))
+
+        vs_greedy_wtl = self._compute_win_tie_loss(zeno_list, greedy_list)
+        vs_rule_wtl = self._compute_win_tie_loss(zeno_list, rule_list)
 
         regime = "Zeno Pinning (Target Focus)" if res_zeno.p_zeno >= 0.50 else "Anti-Zeno Exploration"
 
@@ -846,6 +1241,22 @@ class ZenoAblationEngine:
             metadata={
                 "dilemma_type": instance.dilemma_type,
                 "hard_invariant": instance.hard_invariant,
+                "num_trials": n_trials,
+                "noise_std": eff_noise_std,
+                "std_marginal_utility_vs_greedy": round(
+                    statistics.pstdev(deltas_vs_greedy) if len(deltas_vs_greedy) > 1 else 0.0, 4
+                ),
+                "std_marginal_utility_vs_rule": round(
+                    statistics.pstdev(deltas_vs_rule) if len(deltas_vs_rule) > 1 else 0.0, 4
+                ),
+                "trial_stats": {
+                    "random": stats_random,
+                    "greedy": stats_greedy,
+                    "rule_based": stats_rule,
+                    "zeno_arbiter": stats_zeno,
+                },
+                "vs_greedy": vs_greedy_wtl,
+                "vs_rule_based": vs_rule_wtl,
             },
         )
 
@@ -912,12 +1323,19 @@ class ZenoAblationEngine:
         instances: list[HardDecisionInstance] | None = None,
         scenarios: list[HardDecisionInstance] | None = None,
         log_telemetry: bool = True,
+        num_trials: int = 1,
+        noise_std: float | None = None,
     ) -> list[InstanceAblationResult]:
         """Runs benchmark suite across multiple instances."""
         suite_targets = scenarios or instances or get_canonical_testbed(dim=self.dim, seed=self.seed)
         results: list[InstanceAblationResult] = []
         for inst in suite_targets:
-            res = self.run_instance(inst, log_telemetry=log_telemetry)
+            res = self.run_instance(
+                inst,
+                num_trials=num_trials,
+                log_telemetry=log_telemetry,
+                noise_std=noise_std,
+            )
             results.append(res)
         return results
 
@@ -926,11 +1344,19 @@ class ZenoAblationEngine:
         instances: list[HardDecisionInstance] | None = None,
         scenarios: list[HardDecisionInstance] | None = None,
         log_telemetry: bool = True,
+        num_trials: int = 1,
+        noise_std: float | None = None,
     ) -> BenchmarkSuiteResult:
-        """Runs full suite and aggregates global metrics across all runs."""
+        """Runs full suite and aggregates global metrics and honest win/tie/loss rates across all runs."""
         now = time.time()
         iso_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        instance_results = self.run_suite(instances=instances, scenarios=scenarios, log_telemetry=log_telemetry)
+        instance_results = self.run_suite(
+            instances=instances,
+            scenarios=scenarios,
+            log_telemetry=log_telemetry,
+            num_trials=num_trials,
+            noise_std=noise_std,
+        )
 
         deltas_greedy = [r.marginal_utility_vs_greedy for r in instance_results]
         deltas_random = [r.marginal_utility_vs_random for r in instance_results]
@@ -944,6 +1370,15 @@ class ZenoAblationEngine:
         mean_dg = sum(deltas_greedy) / max(1, len(deltas_greedy))
         mean_dr = sum(deltas_random) / max(1, len(deltas_random))
         mean_drule = sum(deltas_rule) / max(1, len(deltas_rule))
+
+        n_inst = max(1, len(instance_results))
+        g_wins = sum(1 for d in deltas_greedy if d > 1e-6)
+        g_losses = sum(1 for d in deltas_greedy if d < -1e-6)
+        g_ties = len(deltas_greedy) - g_wins - g_losses
+
+        r_wins = sum(1 for d in deltas_rule if d > 1e-6)
+        r_losses = sum(1 for d in deltas_rule if d < -1e-6)
+        r_ties = len(deltas_rule) - r_wins - r_losses
 
         return BenchmarkSuiteResult(
             timestamp=now,
@@ -960,8 +1395,25 @@ class ZenoAblationEngine:
             scientific_integrity_verified=True,
             summary={
                 "instances_evaluated": len(instance_results),
+                "num_trials_per_instance": max(1, int(num_trials)),
                 "zeno_invariant_fidelity": 1.0 if v_zeno == 0 else 0.0,
                 "marginal_gain_verified": bool(mean_dg >= 0.15),
+                "vs_greedy_win_tie_loss": {
+                    "wins": g_wins,
+                    "ties": g_ties,
+                    "losses": g_losses,
+                    "win_rate": round(g_wins / n_inst, 4),
+                    "tie_rate": round(g_ties / n_inst, 4),
+                    "loss_rate": round(g_losses / n_inst, 4),
+                },
+                "vs_rule_based_win_tie_loss": {
+                    "wins": r_wins,
+                    "ties": r_ties,
+                    "losses": r_losses,
+                    "win_rate": round(r_wins / n_inst, 4),
+                    "tie_rate": round(r_ties / n_inst, 4),
+                    "loss_rate": round(r_losses / n_inst, 4),
+                },
             },
         )
 
@@ -1169,41 +1621,80 @@ def build_cascading_regret_dag_instance(dim: int = 64, seed: int = 42) -> HardDe
     )
 
 
-def build_stochastic_jitter_instance(dim: int = 64, seed: int = 42) -> HardDecisionInstance:
-    """Builds Instance 5: Stochastic Noise Perturbation & Decision Stability Benchmark."""
+def build_stochastic_jitter_instance(
+    dim: int = 64,
+    seed: int = 42,
+    noise_std: float = 0.05,
+) -> HardDecisionInstance:
+    """Builds Instance 5: Stochastic Noise Perturbation & Decision Stability Benchmark.
+
+    Injects real seeded Gaussian perturbations N(0, noise_std^2) into option rewards
+    and operational costs (`risk`, `latency`, `maintenance`), storing the unperturbed
+    `base_options` and `noise_std` in `metadata` for multi-trial variance evaluation.
+    """
+    base_options: list[dict[str, Any]] = [
+        {
+            "id": "opt_robust",
+            "label": "Fault-Tolerant Redundant Voting Consensus Protocol (Mission Critical Telemetry)",
+            "nominal_reward": 0.850,
+            "risk": 0.05,
+            "latency": 0.05,
+            "maintenance": 0.05,
+            "breaches_invariant": False,
+        },
+        {
+            "id": "opt_fragile",
+            "label": "Single-Stream Direct Raw Ingestion Without Guardrails",
+            "nominal_reward": 0.815,
+            "risk": 0.50,
+            "latency": 0.06,
+            "maintenance": 0.12,
+            "breaches_invariant": False,
+        },
+        {
+            "id": "opt_slow",
+            "label": "Quarantined Offline Batch Processing",
+            "nominal_reward": 0.350,
+            "risk": 0.02,
+            "latency": 0.75,
+            "maintenance": 0.10,
+            "breaches_invariant": False,
+        },
+    ]
+
+    rng = random.Random(seed)
+    sigma = max(0.0, float(noise_std))
+
+    def _clamp01(v: float) -> float:
+        return max(0.0, min(1.0, v))
+
+    perturbed_options: list[dict[str, Any]] = []
+    for base in base_options:
+        if sigma > 0.0:
+            p_opt = {
+                **base,
+                "nominal_reward": round(_clamp01(float(base["nominal_reward"]) + rng.gauss(0.0, sigma)), 6),
+                "risk": round(_clamp01(float(base["risk"]) + rng.gauss(0.0, sigma)), 6),
+                "latency": round(_clamp01(float(base["latency"]) + rng.gauss(0.0, sigma)), 6),
+                "maintenance": round(_clamp01(float(base["maintenance"]) + rng.gauss(0.0, sigma)), 6),
+            }
+        else:
+            p_opt = dict(base)
+        perturbed_options.append(p_opt)
+
     return HardDecisionInstance(
         instance_id="stochastic_jitter",
         name="Stochastic Noise Perturbation & Decision Stability Benchmark",
         goal="Maintain consistent deterministic mission execution under noisy sensor telemetry",
         dilemma="Boundary options subject to Gaussian noise perturbation",
         dilemma_type="stochastic_jitter",
-        options=[
-            {
-                "id": "opt_robust",
-                "label": "Fault-Tolerant Redundant Voting Consensus Protocol (Mission Critical Telemetry)",
-                "nominal_reward": 0.850,
-                "risk": 0.05,
-                "latency": 0.05,
-                "breaches_invariant": False,
-            },
-            {
-                "id": "opt_fragile",
-                "label": "Single-Stream Direct Raw Ingestion Without Guardrails",
-                "nominal_reward": 0.815,
-                "risk": 0.50,
-                "latency": 0.06,
-                "breaches_invariant": False,
-            },
-            {
-                "id": "opt_slow",
-                "label": "Quarantined Offline Batch Processing",
-                "nominal_reward": 0.350,
-                "risk": 0.02,
-                "latency": 0.75,
-                "breaches_invariant": False,
-            },
-        ],
+        options=perturbed_options,
         ground_truth_optimal="opt_robust",
+        metadata={
+            "noise_std": sigma,
+            "seed": seed,
+            "base_options": base_options,
+        },
     )
 
 
