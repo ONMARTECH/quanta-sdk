@@ -25,6 +25,9 @@ from quanta.core.gates import (
     CCX,
     CH,
     CP,
+    CRX,
+    CRY,
+    CRZ,
     CSWAP,
     CX,
     CY,
@@ -64,6 +67,7 @@ __all__ = [
     "H", "X", "Y", "Z", "S", "T",
     "CX", "CY", "CZ", "SWAP", "CCX",
     "RX", "RY", "RZ",
+    "CRX", "CRY", "CRZ",
     # Gates (IBM-parity)
     "I", "SDG", "TDG", "P", "SX", "SXdg",
     "U", "RXX", "RZZ", "RCCX", "RC3X",

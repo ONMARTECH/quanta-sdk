@@ -1,6 +1,6 @@
 # Quanta SDK — Roadmap
 
-> Son güncelleme: 16 Eylül 2026 · Mevcut: **v1.0.0 (Üretim Sürümü)** · Hedef: **5 Stratejik Sütun (v1.1 - v1.4)**
+> Son güncelleme: 11 Kasım 2026 · Mevcut: **v1.3.0 (Üretim Sürümü)** · Hedef: **5 Stratejik Sütun (v1.0 – v1.4+)**
 
 ---
 
@@ -8,26 +8,26 @@
 
 | Sütun | Başlık | Hedef | Durum |
 | :---: | :--- | :---: | :---: |
-| 🍏 **Sütun 1** | **Apple Silicon Yerel Metal/MLX Kuantum Motoru** (`MLXSimulator`) | **v1.0.0** | **✅ TAMAMLANDI** |
-| 🔥 **Sütun 2** | **PyTorch Kuantum Katmanı & Sürekli Rezonans (`quanta.torch`)** | **v1.1.0** | **✅ TAMAMLANDI** |
-| 🛡️ **Sütun 3** | **2026 Çift-Kanal FTQC Motoru (Edmonds Blossom MWPM & Gross [[144,12,12]] qLDPC)** | **v1.2.0** | **✅ TAMAMLANDI** |
-| 🌐 **Sütun 4** | **Endüstriyel QUBO & Büyük Ölçekli Graf Ayrıştırma Motoru** | **v1.3.0** | 🟡 Sıradaki |
-| 🤖 **Sütun 5** | **Akıllı Kuantum Maliyet ve Sadakat Yönlendirici Ajanı (FinOps / Arbiter)** | **v1.4.0** | ⚪ Planlandı |
+| **Sütun 1** | **Apple Silicon Yerel Metal/MLX Kuantum Motoru** (`MLXSimulator`) | **v1.0.0** | **✅ TAMAMLANDI** |
+| **Sütun 2** | **PyTorch Kuantum Katmanı & Sürekli Rezonans (`quanta.torch`)** | **v1.1.0** | **✅ TAMAMLANDI** |
+| **Sütun 3** | **2026 Çift-Kanal FTQC Motoru (MWPM, Delfosse–Nickerson Union-Find, 6.6.6 ColorCode & Gross [[144,12,12]] qLDPC)** | **v1.2.0 – v1.3.0** | **✅ TAMAMLANDI** |
+| **Sütun 4** | **Cartan/KAK SU(4) Sentezi, Yarı-Klasik QPE ($N < 65536$) & Endüstriyel QUBO/CVP Çözücüler** | **v1.3.0 – v1.4.0** | **✅ Çekirdek Tamamlandı / Ölçekleniyor** |
+| **Sütun 5** | **Akıllı Kuantum Maliyet ve Sadakat Yönlendirici Ajanı (FinOps / Arbiter)** | **v1.4.0+** | 🟡 Planlandı / Temel Hazır |
 
 ---
 
-## Mevcut Durum Özeti (v1.2.0-production)
+## Mevcut Durum Özeti (v1.3.0-production)
 
 ```
-Version:     1.2.0 (Production) Tests:       2,076 (100% pass rate)
-Gates:       31                 Files:       120+
-Torch QML:   QuantumLayer + ContinuousResonantLayer + Daleckii-Krein Machine-Precision Autograd
-Tutorials:   16 + 15 notebooks  MCP Tools:   23
-Backends:    6 (PyTorch Native + MLX Metal + Local + IBM + IonQ + Google)
-Compiler:    6-pass (cancel + merge + translate + route + decompose + validate)
-QML:         Classifier + Regressor + QSVM + 3 feature maps + Scikit-Learn Mixins
-Hardware:    Apple Silicon M-Series (30 Qubits Unified RAM, 52.09x MLX Speedup)
-QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[144, 12, 12]] qLDPC BP-OSD-0; 15-to-1 BK Distillation)
+Version:     1.3.0 (Production) Tests:       2,826+ (100% pass rate)
+Gates:       34                 MCP Tools:   25 (5 resources, 4 prompts)
+Torch QML:   QuantumLayer + ContinuousResonantLayer + Daleckii-Krein Autograd + QFIM / Adjoint Gradients
+Tutorials:   16 + 15 notebooks  Docs:        Strict MkDocs Material + Full API Reference
+Backends:    6 (PyTorch Native + MLX Metal + Local + IBM Heron + IonQ Aria + Google Willow/Sycamore)
+Compiler:    Cartan/KAK SU(4) Synthesis (<=3 CX) + Heavy-Hex/Grid Routing + Cancel/Merge/Translate
+QML:         Classifier + Regressor + Cortes-Vapnik Dual QSVM + 3 Feature Maps + Scikit-Learn Mixins
+Hardware:    Apple Silicon M-Series (30 Qubits Unified RAM, ~20x–34x Verified MLX GPU Speedup)
+QEC:         Exact GF(2) SurfaceCode + 6.6.6 ColorCode + MWPM & UnionFindDecoder + [[144, 12, 12]] qLDPC BP-OSD + 15-to-1 BK & 7-T CCZ Distillation
 ```
 
 ---
@@ -46,7 +46,7 @@ QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[14
 ## Faz 1 — Çekirdek Stabilizasyon (Nisan 2026 · v0.10.x)
 
 ### Task 1 — API Ergonomisi & Tip Güvenliği
-**Durum: 🟡 Kısmen mevcut** — Type hint'ler var ama tutarsız.
+**Durum: ✅ Tamamlandı** — `@circuit`, `@quantum`, `measure()`, 34 kapı ve tip denetimleri tamamlandı.
 
 | Alt görev | Detay |
 |-----------|-------|
@@ -60,7 +60,7 @@ QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[14
 ---
 
 ### Task 2 — Gate Set & Meta-veri
-**Durum: ✅ Büyük ölçüde tamamlanmış** — 31 gate, `GATE_REGISTRY` mevcut.
+**Durum: ✅ Tamamlandı** — 34 gate (`CRX`, `CRY`, `CRZ` dahil), `GATE_REGISTRY` ve `custom_gate` mevcut.
 
 | Alt görev | Detay |
 |-----------|-------|
@@ -88,7 +88,7 @@ QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[14
 ---
 
 ### Task 4 — Compiler Pass Netleştirme
-**Durum: ✅ Temel mevcut** — `optimize.py`, `routing.py`, `translate.py` var.
+**Durum: ✅ Tamamlandı** — `optimize.py`, `routing.py` (Heavy-Hex dahil), `translate.py` ve `synthesis.py` (Cartan/KAK SU(4)) mevcut.
 
 | Alt görev | Detay |
 |-----------|-------|
@@ -146,7 +146,7 @@ QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[14
 ---
 
 ### Task 8 — Feature Map & Ansatz Kütüphanesi
-**Durum: 🟡 3 feature map var, ansatz preset eksik**
+**Durum: ✅ Tamamlandı** — 3 feature map (`angle`, `zz`, `amplitude`) ve ansatz presetleri (`hardware_efficient`, `strongly_entangling`, `real_amplitudes`, `reuploading`) mevcut.
 
 | Alt görev | Detay |
 |-----------|-------|
@@ -160,7 +160,7 @@ QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[14
 ---
 
 ### Task 9 — QSVM & Classifier Stabilizasyon
-**Durum: 🟡 Çalışıyor ama benchmark dataset eksik**
+**Durum: ✅ Tamamlandı** — Cortes–Vapnik dual QP `qsvm_classify` ve tam zincir kuralı (chain-rule) analitik gradyanlar doğrulandı.
 
 | Alt görev | Detay |
 |-----------|-------|
@@ -216,7 +216,7 @@ QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[14
 ---
 
 ### Task 13 — Konfigürasyon & Credential Yönetimi
-**Durum: 🟡 Env-var tabanlı, CLI yok**
+**Durum: ✅ Tamamlandı** — `QuantaConfig` (`~/.quanta/config.toml`) ve `quanta` / `quanta-mcp` CLI giriş noktaları mevcut.
 
 | Alt görev | Detay |
 |-----------|-------|
@@ -244,7 +244,7 @@ QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[14
 ---
 
 ### Task 15 — Error Correction Modülleri
-**Durum: ✅ Büyük ölçüde mevcut** — 6 kod, 2 decoder, 97% coverage.
+**Durum: ✅ Tamamlandı** — `SurfaceCode` ($\text{GF}(2)$), `ColorCode` (6.6.6), `BivariateBicycleCode` (BP-OSD), `ShorCode`, `SteaneCode`, `MWPMDecoder` ve `UnionFindDecoder` mevcut.
 
 | Alt görev | Detay |
 |-----------|-------|
@@ -288,7 +288,7 @@ QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[14
 ---
 
 ### Task 18 — Test Coverage & CI
-**Durum: ✅ 820 test, 91% coverage, 4 CI workflow**
+**Durum: ✅ Tamamlandı — 2,826+ test, CPU-optimize CI matrisi, `mkdocs build --strict` ve `twine check` aktif**
 
 | Alt görev | Detay |
 |-----------|-------|
@@ -302,7 +302,7 @@ QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[14
 ---
 
 ### Task 19 — MCP / AI Tool Entegrasyonları
-**Durum: ✅ 20 tool mevcut, coverage 39%**
+**Durum: ✅ Tamamlandı — 25 MCP aracı, 34 kapılı izole kum havuzu (sandbox) ve tam E2E doğrulama**
 
 | Alt görev | Detay |
 |-----------|-------|
@@ -336,10 +336,11 @@ QEC:         Dual-Track FTQC (Track A: Edmonds Blossom MWPM; Track B: Gross [[14
 
 ```
 v0.9.0  ✅  Primitives, @quantum, async, benchmarks (Mart 2026)
-v0.10.0     Core & Compiler revamp (Nisan 2026)
-v0.11.0     QML stable API + Backend GA (Mayıs 2026)
-v0.12.0     Docs & ecosystem polish (Haziran 2026)
-v1.0.0      Production-ready GA (Temmuz 2026)
+v1.0.0  ✅  Production GA & Apple Silicon Metal/MLX GPU Engine (Eylül 2026)
+v1.1.0  ✅  PyTorch QuantumLayer, ContinuousResonantLayer & Daleckii-Krein Autograd (Eylül 2026)
+v1.2.0  ✅  Dual-Track FTQC (Edmonds Blossom MWPM & Gross [[144,12,12]] qLDPC) (Eylül 2026)
+v1.3.0  ✅  Cartan/KAK SU(4), UnionFindDecoder, 6.6.6 ColorCode, Semiclassical Shor (N<65536), QFIM, 34 Gates & 25 MCP Tools (Kasım 2026)
+v1.4.0  🟡  C++/Rust BP-OSD Hızlandırma, Büyük Ölçekli QUBO Graf Ayrıştırma & Agentic Donanım FinOps (2027 Q1)
 ```
 
 ---

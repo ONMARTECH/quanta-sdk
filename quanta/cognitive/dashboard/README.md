@@ -4,6 +4,8 @@
 
 The **Cognitive Cockpit** is a modern, responsive, dark-themed Web UI for monitoring the Quanta Cognitive Engine in real time. It visualizes the dual-tier biomorphic memory hierarchy (Permanent Core Anchors vs. Ephemeral Decaying Decisions), Quantum Zeno Pinning arbitration, microglial synaptic pruning audits, and closed-loop feedback verification.
 
+> **Scientific Integrity & Epistemic Interpretation Note**: All Quantum Zeno pinning ($P_{\text{zeno}}$), Sharp-Wave Ripple (SWR) replay, and Cerebrospinal Fluid (CSF) dielectric shielding ($\kappa_{\text{csf}}$) scores displayed on this dashboard are **quantum- and neurobiology-inspired classical heuristic priority weights (`heuristic retention weight`)** computed on classical hardware for deterministic software memory and decision governance. They are algorithmic optimization heuristics, **not** physical quantum hardware measurements or wet-lab biological observables.
+
 ---
 
 ## 1. Architectural Principles

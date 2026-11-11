@@ -4,6 +4,13 @@ site_url: https://quanta.onmartech.com/
 repo_url: https://github.com/ONMARTECH/quanta-sdk
 repo_name: ONMARTECH/quanta-sdk
 
+exclude_docs: |
+  rfcs/
+  arxiv/
+  paper/
+  papers/joss/paper.bib
+  RFC_*.md
+
 theme:
   name: material
   palette:
@@ -75,7 +82,9 @@ nav:
   - Home: index.md
   - "2026 Research & Publications":
     - "Quanta Architecture Whitepaper": papers/quanta_framework_paper.md
+    - "JOSS Software Paper": papers/joss/paper.md
     - "Scientific Audit (Sept 2026)": scientific_audit_september_2026.md
+    - "CVP & Cognitive QAOA Ablation": CVP_COGNITIVE_QAOA_ANALYSIS.md
     - "Strategic Roadmap (2026-2028)": quantum_roadmap_2026.md
   - "Theoretical Foundations & Monographs":
     - "Biomorphic Quantum Brain Frontiers": theory/quantum_brain_frontiers.md
@@ -109,29 +118,45 @@ nav:
       - Circuit: api/core/circuit.md
       - Gates: api/core/gates.md
       - Types: api/core/types.md
+    - Compiler:
+      - "Pipeline & Passes": api/compiler/pipeline.md
+      - "Cartan / KAK SU(4) Synthesis": api/compiler/synthesis.md
     - Simulator:
       - Statevector: api/simulator/statevector.md
-      - Noise: api/simulator/noise.md
+      - "Density Matrix": api/simulator/density_matrix.md
+      - "Pauli Frame (Clifford)": api/simulator/pauli_frame.md
+      - "Sparse Statevector": api/simulator/sparse.md
       - "Matrix Product States (MPS)": api/simulator/mps.md
       - "Apple Silicon Metal / MLX": api/simulator/mlx.md
       - "Lindblad Master Equation": api/simulator/lindblad.md
+      - Noise: api/simulator/noise.md
     - QEC:
-      - "Decoder & Edmonds Blossom": api/qec/decoder.md
       - Surface Code: api/qec/surface_code.md
+      - "6.6.6 Color Code": api/qec/color_code.md
+      - "Stabilizer & CSS Codes": api/qec/codes.md
+      - "Decoder & Edmonds Blossom": api/qec/decoder.md
       - "qLDPC & BP-OSD": api/qec/qldpc.md
       - "Magic State Distillation": api/qec/distillation.md
+    - "Gradients & QFIM": api/gradients.md
     - PyTorch QML: api/torch.md
     - Export:
       - QASM Export: api/export/qasm.md
       - QASM Import: api/export/qasm_import.md
     - Layer 3:
+      - "Grover Search": api/layer3/search.md
+      - "Shor Factoring": api/layer3/shor.md
+      - "QAOA Optimization": api/layer3/optimize.md
+      - "VQE & Hamiltonian": api/layer3/vqe.md
+      - "QSVM Kernel": api/layer3/qsvm.md
+      - QML: api/layer3/qml.md
       - Monte Carlo: api/layer3/monte_carlo.md
       - Finance: api/layer3/finance.md
-      - QML: api/layer3/qml.md
       - Clustering: api/layer3/clustering.md
+      - "Entity Resolution": api/layer3/entity_resolution.md
     - Result: api/result.md
     - MCP Server: api/mcp_server.md
   - Cookbook:
+    - Overview: cookbook/index.md
     - Bell State: cookbook/bell-state.md
     - "FTQC & qLDPC Decoding": cookbook/ftqc-decoding.md
     - "PyTorch Hybrid QML": cookbook/torch-qml.md
@@ -142,6 +167,7 @@ nav:
     - From PennyLane: migration/from-pennylane.md
     - From Cirq: migration/from-cirq.md
   - Architecture & Features:
+    - "Overview (EN)": README_EN.md
     - "System Architecture (EN)": ARCHITECTURE_EN.md
     - "Features & Gate Catalog (EN)": FEATURES_EN.md
     - "Cross-SDK Comparison (EN)": COMPARISON_EN.md
@@ -153,6 +179,7 @@ nav:
     - "SDK Karşılaştırması (TR)": COMPARISON_TR.md
     - "Kurulum Kılavuzu (TR)": INSTALL_TR.md
     - "Yük Testi & Başarım (TR)": LOADTEST_TR.md
+    - "Bilişsel Kuantum Sözlüğü (TR)": BILISSEL_SOZLUK.md
   - Domain Packs: domain-packs.md
 
 extra_javascript:

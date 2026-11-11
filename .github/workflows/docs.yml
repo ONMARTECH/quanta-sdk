@@ -26,8 +26,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e ".[dev]"
-          pip install mkdocs mkdocs-material "mkdocstrings[python]"
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[dev,docs]"
+
+      - name: Strict Docs Build Verification
+        run: mkdocs build --strict -d /tmp/mkdocs_strict_check
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force

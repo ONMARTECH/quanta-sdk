@@ -42,7 +42,7 @@ from quanta.layer3.optimize import optimize
 from quanta.layer3.qml import QuantumClassifier, QuantumRegressor
 from quanta.layer3.qsvm import qsvm_classify
 from quanta.layer3.search import search
-from quanta.layer3.shor import factor
+from quanta.layer3.shor import factor, factor_recursive
 from quanta.layer3.vqe import build_hamiltonian_matrix, pauli_expectation, vqe
 from quanta.qec.codes import ShorCode, SteaneCode
 from quanta.qec.color_code import ColorCode
@@ -374,6 +374,10 @@ class TestGateBasedAlgorithms:
         assert res.method == "quantum"
         assert res.period > 0 and res.period % 2 == 0
 
+    def test_shor_factor_recursive_large_composites_genuine_qpe(self) -> None:
+        assert factor_recursive(9999, seed=42) == [3, 3, 11, 101]
+        assert factor_recursive(30030, seed=42) == [2, 3, 5, 7, 11, 13]
+
     def test_walsh_hadamard_qaoa_and_ising_portfolio_optimize(self) -> None:
         edges = [(0, 1), (1, 2), (2, 3), (3, 0)]
         opt_res = optimize(
@@ -625,7 +629,7 @@ class TestQMLGradientsQSVMDualAndBitwiseVQE:
 
 
 class TestMCPServerRigorEndToEnd:
-    def test_25_registered_tools_and_all_31_gates_in_all_4_sandboxes(self) -> None:
+    def test_25_registered_tools_and_all_34_gates_in_all_4_sandboxes(self) -> None:
         pytest.importorskip("fastmcp")
         from quanta.mcp_server import (
             draw_circuit,
@@ -641,9 +645,10 @@ class TestMCPServerRigorEndToEnd:
         cat_tools = [t for lst in info["tool_categories"].values() for t in lst]
         assert len(tools) == 25
         assert info["total_tools"] == 25
+        assert info["total_gates"] == 34 == len(GATE_REGISTRY)
         assert sorted(t.name for t in tools) == sorted(cat_tools)
 
-        # Circuit exercising ALL 6 previously-missing v0.9 gates: ECR, iSWAP, CSWAP, CH, CP, MS
+        # Circuit exercising v0.9 + controlled-rotation gates (ECR, iSWAP, CSWAP, CH, CP, MS, CRX, CRY, CRZ)
         v09_circuit_code = (
             "@circuit(qubits=3)\n"
             "def circ(q):\n"
@@ -651,12 +656,15 @@ class TestMCPServerRigorEndToEnd:
             "    iSWAP(q[1], q[2])\n"
             "    CH(q[0], q[2])\n"
             "    CP(pi / 4)(q[0], q[1])\n"
+            "    CRX(0.5)(q[0], q[1])\n"
+            "    CRY(0.4)(q[1], q[2])\n"
+            "    CRZ(0.3)(q[0], q[2])\n"
             "    MS(0.3)(q[1], q[2])\n"
             "    CSWAP(q[0], q[1], q[2])\n"
             "    return measure(q)\n"
         )
         r_run = json.loads(run_circuit(v09_circuit_code, shots=128, seed=42))
-        assert "error" not in r_run and r_run["gate_count"] == 6
+        assert "error" not in r_run and r_run["gate_count"] == 9
 
         v09_mps_code = (
             "@circuit(qubits=4)\n"
@@ -665,6 +673,9 @@ class TestMCPServerRigorEndToEnd:
             "    iSWAP(q[1], q[2])\n"
             "    CH(q[2], q[3])\n"
             "    CP(pi / 3)(q[0], q[1])\n"
+            "    CRX(0.2)(q[0], q[1])\n"
+            "    CRY(0.3)(q[1], q[2])\n"
+            "    CRZ(0.4)(q[2], q[3])\n"
             "    MS(0.2)(q[1], q[2])\n"
             "    return measure(q)\n"
         )
@@ -674,7 +685,7 @@ class TestMCPServerRigorEndToEnd:
         assert "error" not in r_mps and sum(r_mps["counts"].values()) == 64
 
         r_opt = json.loads(optimize_circuit(v09_circuit_code))
-        assert "error" not in r_opt and r_opt["original"]["gates"] == 6
+        assert "error" not in r_opt and r_opt["original"]["gates"] == 9
 
         r_svg = json.loads(draw_circuit(v09_circuit_code))
         assert "error" not in r_svg and "<svg" in r_svg["html"].lower()

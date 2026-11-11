@@ -8,7 +8,7 @@ startCommand:
     properties:
       IBM_API_KEY:
         type: string
-        description: "IBM Quantum API key (optional — only needed for run_on_ibm tool)"
+        description: "IBM Quantum API key (optional — used by run_on_ibm, ibm_backends, and ibm_job_result tools)"
     required: []
   commandFunction: |-
     (config) => ({

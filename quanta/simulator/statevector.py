@@ -11,11 +11,12 @@ Method:
   Apply gate only to relevant axes (np.tensordot).
 
 Example:
-    >>> sim = StateVectorSimulator(num_qubits=20)
+    >>> sim = StateVectorSimulator(num_qubits=3)
     >>> sim.apply("H", (0,))
     >>> sim.apply("CX", (0, 1))
-    >>> sim.probabilities()[:4]
-    array([0.5, 0. , 0. , 0.5])
+    >>> sim.apply("CX", (1, 2))
+    >>> sim.probabilities()[[0, 7]]
+    array([0.5, 0.5])
 """
 
 from __future__ import annotations

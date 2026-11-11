@@ -14,7 +14,7 @@ Tools (25):
   Education:
     - create_bell_state:         Quick Bell state |Φ+⟩
     - draw_circuit:              SVG circuit diagram
-    - list_gates:                Available quantum gates (31)
+    - list_gates:                Available quantum gates (34)
     - explain_result:            Interpret measurement results
   Research & Fault-Tolerance:
     - run_circuit:               Execute quantum circuit code
@@ -47,7 +47,7 @@ Resources (5):
     - quanta://info              SDK capabilities
     - quanta://examples          Example circuits
     - quanta://noise-profiles    7 noise channels detail
-    - quanta://gate-catalog      31 gates with matrices
+    - quanta://gate-catalog      34 gates with matrices
     - quanta://backend-specs     IBM/IonQ/Google specs
 
 Prompts (4):
@@ -134,7 +134,7 @@ def _safe_error(exc: Exception) -> str:
 
 
 def _build_sandbox_namespace() -> dict[str, Any]:
-    """Build restricted execution sandbox pre-loaded with all 31 Quanta gates."""
+    """Build restricted execution sandbox pre-loaded with all 34 Quanta gates."""
     import math as math_mod
 
     import numpy as np_mod
@@ -143,6 +143,9 @@ def _build_sandbox_namespace() -> dict[str, Any]:
         CCX,
         CH,
         CP,
+        CRX,
+        CRY,
+        CRZ,
         CSWAP,
         CX,
         CY,
@@ -181,7 +184,7 @@ def _build_sandbox_namespace() -> dict[str, Any]:
         "circuit": circuit,
         "measure": measure,
         "run": run,
-        # All 31 quantum gates (IBM Heron + Google Willow + IonQ Aria parity)
+        # All 34 quantum gates (IBM Heron + Google Willow + IonQ Aria parity)
         "H": H, "X": X, "Y": Y, "Z": Z,
         "S": S, "T": T, "I": I, "SDG": SDG, "TDG": TDG,
         "SX": SX, "SXdg": SXdg,
@@ -189,6 +192,7 @@ def _build_sandbox_namespace() -> dict[str, Any]:
         "CCX": CCX, "RCCX": RCCX, "RC3X": RC3X,
         "ECR": ECR, "iSWAP": iSWAP, "CSWAP": CSWAP, "CH": CH,
         "RX": RX, "RY": RY, "RZ": RZ, "P": P, "U": U,
+        "CRX": CRX, "CRY": CRY, "CRZ": CRZ,
         "RXX": RXX, "RZZ": RZZ, "CP": CP, "MS": MS,
         # Math conveniences
         "math": math_mod,
@@ -279,6 +283,18 @@ def _classify_gate_clifford_and_t(
             return (False, exact_t + arb_rots * t_rot, arb_rots)
         return (False, exact_t, arb_rots)
 
+    # Controlled Pauli rotations: CRX, CRY, CRZ
+    if g in {"CRX", "CRY", "CRZ"}:
+        theta = ps[0] if ps else 0.0
+        if _is_multiple_of(theta, _m.pi):
+            return (True, 0, 0)
+        if _is_multiple_of(theta, _m.pi / 2.0):
+            return (False, 2, 0)
+        if eps_synth is not None:
+            t_rot = max(1, _m.ceil(3.0 * _m.log2(1.0 / max(1e-30, eps_synth))))
+            return (False, 2 * t_rot, 2)
+        return (False, 0, 2)
+
     # Single-parameter Pauli/Ising rotations: RX, RY, RZ, P, RXX, RZZ, MS
     if g in {"RX", "RY", "RZ", "P", "RXX", "RZZ", "MS"}:
         theta = ps[0] if ps else 0.0
@@ -334,8 +350,8 @@ def run_circuit(
     Args:
         code: Python code defining a quantum circuit. Must define a
               variable called 'circ' as the circuit to run.
-              All 31 gates pre-loaded: H,X,Y,Z,S,T,I,SDG,TDG,SX,SXdg,
-              RX,RY,RZ,P,U,CX,CY,CZ,SWAP,RXX,RZZ,CCX,RCCX,RC3X,
+              All 34 gates pre-loaded: H,X,Y,Z,S,T,I,SDG,TDG,SX,SXdg,
+              RX,RY,RZ,P,U,CX,CY,CZ,SWAP,CRX,CRY,CRZ,RXX,RZZ,CCX,RCCX,RC3X,
               ECR,iSWAP,CSWAP,CH,CP,MS.
               Also: circuit, measure, run, math, np, pi, sqrt, MPSSimulator, CircuitRunner.
                Only 'from quanta ...' imports are allowed.
@@ -361,7 +377,7 @@ def run_circuit(
         # Security: validate code before execution
         _validate_code(code)
 
-        # Pre-inject all 31 Quanta gates & safe symbols — NO raw __builtins__
+        # Pre-inject all 34 Quanta gates & safe symbols — NO raw __builtins__
         namespace = _build_sandbox_namespace()
         namespace.update({
             "MPSSimulator": MPSSimulator,
@@ -888,6 +904,12 @@ def list_gates() -> str:
          "description": "Controlled-Y"},
         {"name": "SWAP", "qubits": 2, "type": "Clifford",
          "description": "Swaps two qubit states"},
+        {"name": "CRX(θ)", "qubits": 2, "type": "Parametric",
+         "description": "Controlled-RX — X-axis rotation controlled by q[0]"},
+        {"name": "CRY(θ)", "qubits": 2, "type": "Parametric",
+         "description": "Controlled-RY — Y-axis rotation controlled by q[0]"},
+        {"name": "CRZ(θ)", "qubits": 2, "type": "Parametric",
+         "description": "Controlled-RZ — Z-axis rotation controlled by q[0]"},
         {"name": "RXX(θ)", "qubits": 2, "type": "Parametric",
          "description": "XX rotation — 2-qubit"},
         {"name": "RZZ(θ)", "qubits": 2, "type": "Parametric",
@@ -1224,7 +1246,7 @@ def run_on_ibm(
             "ibm_sherbrooke", "ibm_nazca", "ibm_cusco",
         }
 
-        # Full 31-gate QASM map
+        # Full 34-gate QASM map
         gate_map = {
             "H": "h", "X": "x", "Y": "y", "Z": "z",
             "S": "s", "T": "t", "I": "id",
@@ -1234,13 +1256,16 @@ def run_on_ibm(
             "SWAP": "swap", "CCX": "ccx",
             "ECR": "ecr", "iSWAP": "iswap", "CSWAP": "cswap", "CH": "ch",
             "RX": "rx", "RY": "ry", "RZ": "rz",
+            "CRX": "crx", "CRY": "cry", "CRZ": "crz",
             "P": "p", "U": "u", "CP": "cp", "MS": "rxx",
             "RXX": "rxx", "RZZ": "rzz",
             "RCCX": "rccx", "RC3X": "rc3x",
         }
 
         # Parametric gates that require angle parameters
-        param_gates = {"RX", "RY", "RZ", "P", "U", "RXX", "RZZ", "CP", "MS"}
+        param_gates = {
+            "RX", "RY", "RZ", "CRX", "CRY", "CRZ", "P", "U", "RXX", "RZZ", "CP", "MS",
+        }
 
         # Build QASM 3.0
         lines = [
@@ -1446,7 +1471,7 @@ def optimize_circuit(
         # Security: validate code before execution
         _validate_code(circuit_code)
 
-        # Execute circuit code in restricted sandbox with all 31 gates
+        # Execute circuit code in restricted sandbox with all 34 gates
         sandbox = _build_sandbox_namespace()
         exec(  # noqa: S102
             circuit_code,
@@ -2355,7 +2380,7 @@ def sdk_info() -> str:
         "name": "Quanta Quantum SDK",
         "version": "1.2.0",
         "description": "AI-native quantum computing SDK",
-        "total_gates": 31,
+        "total_gates": 34,
         "total_tools": 25,
         "tool_categories": {
             "education": ["create_bell_state", "draw_circuit",
@@ -2372,7 +2397,7 @@ def sdk_info() -> str:
             "hardware": ["run_on_ibm", "ibm_backends", "ibm_job_result"],
         },
         "capabilities": [
-            "31 quantum gates (full IBM Quantum parity + Google/IonQ native)",
+            "34 quantum gates (full IBM Quantum parity + Google/IonQ native)",
             "Apple Silicon Metal/MLX GPU acceleration (up to 400x speedup, 30+ qubits)",
             "Statevector simulation (up to 30 qubits)",
             "Density matrix simulation (mixed states + noise)",
@@ -2515,9 +2540,9 @@ def noise_profiles() -> str:
 
 @mcp.resource("quanta://gate-catalog")
 def gate_catalog() -> str:
-    """Complete catalog of all 31 quantum gates with categories."""
+    """Complete catalog of all 34 quantum gates with categories."""
     return json.dumps({
-        "total": 31,
+        "total": 34,
         "heron_native": ["RZ", "SX", "X", "CZ"],
         "categories": {
             "pauli": {
@@ -2551,8 +2576,8 @@ def gate_catalog() -> str:
                 "description": "Any single-qubit unitary",
             },
             "two_qubit": {
-                "gates": ["CX", "CY", "CZ", "SWAP", "RXX(θ)", "RZZ(θ)",
-                          "ECR", "iSWAP", "CH", "CP(θ)", "MS(θ)"],
+                "gates": ["CX", "CY", "CZ", "SWAP", "CRX(θ)", "CRY(θ)", "CRZ(θ)",
+                          "RXX(θ)", "RZZ(θ)", "ECR", "iSWAP", "CH", "CP(θ)", "MS(θ)"],
                 "qubits": 2,
                 "description": "Entangling operations",
             },
@@ -2747,7 +2772,8 @@ def qec_intro() -> str:
 #  Entry Point
 # ═══════════════════════════════════════════
 
-if __name__ == "__main__":
+def main(argv: list[str] | None = None) -> None:
+    """CLI entry point for starting the Quanta MCP server (stdio or SSE)."""
     import argparse
     import os
 
@@ -2764,14 +2790,16 @@ if __name__ == "__main__":
         "--port", type=int, default=None,
         help="Port to bind (SSE mode only, default: $PORT or 8080)",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.transport == "sse":
         port = args.port or int(os.environ.get("PORT", "8080"))
-        print(f"🚀 Quanta MCP Server starting on {args.host}:{port}")
-        print(f"📋 SSE endpoint: http://{args.host}:{port}/sse")
-        print("🔧 Tools: run_circuit, create_bell_state, grover_search,")
-        print("          shor_factor, simulate_noise, list_gates, explain_result")
+        print(f"Quanta MCP Server starting on {args.host}:{port}")
+        print(f"SSE endpoint: http://{args.host}:{port}/sse")
         mcp.run(transport="sse", host=args.host, port=port)
     else:
         mcp.run(transport="stdio")
+
+
+if __name__ == "__main__":
+    main()

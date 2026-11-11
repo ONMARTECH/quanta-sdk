@@ -22,10 +22,16 @@ Click any badge below to open in Google Colab (no install needed):
 - **10C Qec Threshold** [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ONMARTECH/quanta-sdk/blob/main/notebooks/10c-qec-threshold.ipynb)
 - **11 Multi-Cloud Hardware Benchmark** [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ONMARTECH/quanta-sdk/blob/main/notebooks/11-multicloud-quantum-benchmark.ipynb)
 
+### Advanced Markdown Tutorials
+
+See also the companion fault-tolerant QEC and AI circuit-auditing tutorials in `docs/tutorials/`:
+- **11 — Google Willow Dynamic QEC**: [`docs/tutorials/11-willow-dynamic-qec.md`](../docs/tutorials/11-willow-dynamic-qec.md)
+- **12 — AI Agentic Circuit Auditing**: [`docs/tutorials/12-agentic-circuit-auditing.md`](../docs/tutorials/12-agentic-circuit-auditing.md)
+
 ## Local Usage
 
 ```bash
-pip install quanta-sdk jupyter
+pip install "quanta-sdk[qml,torch]" jupyter
 cd notebooks/
 jupyter notebook
 ```

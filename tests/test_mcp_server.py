@@ -49,7 +49,7 @@ def test_sdk_info_resource():
     assert data["name"] == "Quanta Quantum SDK"
     assert data["version"] == "1.2.0"
     assert data["total_tools"] == 25
-    assert data["total_gates"] == 31
+    assert data["total_gates"] == 34
 
 
 def test_create_bell_state():
@@ -61,10 +61,13 @@ def test_create_bell_state():
 def test_list_gates():
     gates_json = list_gates()
     data = json.loads(gates_json)
-    assert data["total_gates"] == 31
+    assert data["total_gates"] == 34
     gate_names = [g["name"] for g in data["gates"]]
     assert any("H" in name for name in gate_names)
     assert any("CX" in name for name in gate_names)
+    assert any("CRX" in name for name in gate_names)
+    assert any("CRY" in name for name in gate_names)
+    assert any("CRZ" in name for name in gate_names)
 
 
 def test_explain_result():
@@ -246,7 +249,7 @@ def test_mcp_resources():
     assert len(profiles_data["channels"]) == 7
 
     catalog_data = json.loads(gate_catalog())
-    assert catalog_data["total"] == 31
+    assert catalog_data["total"] == 34
 
     specs_data = json.loads(backend_specs())
     assert "ibm_quantum" in specs_data

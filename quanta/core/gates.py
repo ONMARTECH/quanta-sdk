@@ -1,8 +1,10 @@
 """
+quanta.core.gates -- Built-in quantum gate library (34 gates).
 
-  - A name (name)
-  - Unitary matrix representation (matrix)
-
+Each gate defines:
+  - A symbolic name (``name``)
+  - Exact unitary matrix representation (``matrix``)
+  - Target qubit count (``num_qubits``)
 
 Example:
     >>> from quanta.core.gates import H, CX

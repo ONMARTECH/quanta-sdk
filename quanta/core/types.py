@@ -11,7 +11,7 @@ These types are the foundation of the core layer with zero external dependencies
 Example:
     >>> reg = QubitRegister(3)
     >>> reg[0]
-    QubitRef(index=0)
+    q[0]
     >>> len(reg)
     3
 """
