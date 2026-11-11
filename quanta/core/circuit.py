@@ -1,8 +1,10 @@
 """
+quanta.core.circuit -- Declarative quantum circuit decorator and builder.
 
 The @circuit decorator marks a function as a quantum circuit.
 
 Example:
+    >>> from quanta import H, CX, circuit, measure
     >>> @circuit(qubits=2)
     ... def bell(q):
     ...     H(q[0])

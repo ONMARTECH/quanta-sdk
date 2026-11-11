@@ -4,6 +4,37 @@ All notable changes to Quanta SDK.
 
 Format: [Semantic Versioning](https://semver.org/)
 
+## [v1.3.0] - 2026-11-11 — Cartan/KAK SU(4) Synthesis, Exact GF(2) QEC, Gate-Level Layer-3, QFIM Autodiff & Scientific Integrity Suite
+
+### Added — Exact Compiler Synthesis & Topology Routing (`quanta.compiler`)
+- `quanta/compiler/synthesis.py`: Exact **Cartan / KAK $\text{SU}(4)$ 2-qubit unitary synthesis** (`kak_decompose`, `synthesize_su4`, `zyz_decompose`) decomposing arbitrary 2-qubit unitaries into at most 3 `CX` gates and 15 elementary single-qubit rotations up to global phase, plus `UnitarySynthesisPass`.
+- `quanta/compiler/passes/routing.py` & `translate.py`: Hardware-native topology presets (including IBM Heavy-Hex, Google Willow grid, and IonQ all-to-all connectivity) and complete 34-gate ISA translation rules.
+
+### Added — Exact $\text{GF}(2)$ QEC Homology, Delfosse–Nickerson Union-Find & 6.6.6 Color Code (`quanta.qec`)
+- `quanta/qec/surface_code.py`: Exact $\text{GF}(2)$ check-matrix homology (`H_X @ H_Z^T == 0 mod 2`) with zero stabilizer false positives and mandatory final noiseless destructive data-readout boundary difference round in `simulate_dynamic`.
+- `quanta/qec/decoder.py`: Full Delfosse–Nickerson cluster-growth and spanning-forest peeling **`UnionFindDecoder`** achieving monotonic distance scaling alongside Edmonds Blossom `MWPMDecoder`.
+- `quanta/qec/color_code.py`: Commuting **Kubica–Delfosse 6.6.6 triangular `ColorCode`** ($[[7,1,3]]$, $[[19,1,5]]$, $[[37,1,7]]$) with syndrome-only Chromobius-style `restriction_decode` (never peeking at ground-truth error masks).
+- `quanta/qec/codes.py`, `qldpc.py`, `distillation.py`: Exact 27-Pauli recovery for `ShorCode`, 6-bit CSS syndrome recovery for `SteaneCode`, higher-order `BP-OSD` combination-sweep decoding on Bivariate Bicycle codes, and exact 7-$T$ `CCZFactory` + Reed–Muller 15-to-1 distillation acceptance polynomials.
+
+### Added — Gate-Level Layer-3 Algorithms & Semiclassical QPE Scaling (`quanta.layer3`)
+- `quanta/layer3/shor.py`: Genuine Griffiths–Niu / Beauregard Semiclassical Iterative QPE on $n + 1$ qubits scaled to $N < 65536$ ($O(N)$ bijective unitary permutation on $9 \le n_{\text{work}} \le 16$, 6-shot continued-fraction + LCM order recovery, `allow_classical_fallback=False` default), factoring composites such as `9999` and `30030` in `< 50 ms`.
+- `quanta/layer3/search.py`, `optimize.py`, `finance.py`: Zero-ancilla gate-decomposed Grover diffusion/oracles with blind-oracle BBHT schedule, Walsh–Hadamard phase-separator QAOA, and gate-based Ising Markowitz `portfolio_optimize`.
+- `quanta/layer3/monte_carlo.py`, `qsvm.py`, `vqe.py`, `hamiltonian.py`: Pure shot-sampled Iterative Quantum Amplitude Estimation (IQAE), Common Random Numbers (CRN) Black–Scholes Greeks (`< 2%` analytical error), Cortes–Vapnik dual QP `qsvm_classify`, and bitwise $O(m \cdot 2^n)$ Pauli expectation & matrix-free Trotter evolution.
+
+### Added — Quantum Fisher Information, 4-Term Shift & Adjoint Gradients (`quanta.gradients`)
+- `quanta/gradients.py`: Exact **Mari–Bromley–Killoran gauge-invariant Quantum Fisher Information Matrix (`quantum_fisher_information`)** and Quantum Natural Gradient step, 4-term parameter-shift rule for controlled/two-qubit gates (`CRX`, `CRY`, `CRZ`, `CP`), and $O(P)$ reverse-mode statevector `adjoint_gradient`.
+
+### Added & Synchronized — 34 Quantum Gates, 25 MCP Tools & CLI Entrypoints
+- Top-level `quanta` and `quanta.mcp_server` now export and sandbox all **34 built-in quantum gates** (adding `CRX`, `CRY`, `CRZ` alongside IBM Heron, Google Willow, and IonQ Aria native gates) across **25 MCP tools**.
+- Added `[project.scripts]` entrypoints (`quanta = "quanta.cli:main"`, `quanta-mcp = "quanta.mcp_server:main"`), core runtime dependencies (`numpy`, `scipy`, `networkx`, `certifi`), CPU-optimized PyTorch CI workflows, `twine check` release verification, and strict `mkdocs build --strict` API reference coverage.
+
+### Hardened — Scientific Integrity, 3-Arm CVP & Symmetric Zeno Ablations
+- `quanta/solvers/cognitive_qaoa_cvp.py` & `benchmarks/cvp_benchmark.py`: 3-arm adversarial CVP ablation (`easy_bdd` vs `hard_voronoi`), active-coordinate engram slicing, honest `CLASSICAL_SV_RAM_LIMIT` reporting, and `allow_babai_fallback=False` raw QAOA evaluation.
+- `quanta/cognitive/ablation.py`, `noetherian.py`, `torch/brain.py`: Symmetric numeric observability (zero ground-truth peeking or title-keyword leakage), internal entropy `consensus_score`, post-projection Noetherian compliance, and continuous differentiable Lindblad/Debye biophysical scaling.
+- Automated verification suite expanded to **2,826+ passing tests**.
+
+---
+
 ## [v1.2.0] - 2026-09-25 — 2026 Dual-Track FTQC, Daleckii-Krein Autograd, & Academic Whitepaper
 
 ### Added — 2026 Dual-Track Fault-Tolerant Quantum Computing (FTQC)
@@ -19,7 +50,7 @@ Format: [Semantic Versioning](https://semver.org/)
 ### Added — MCP Server Tools Expansion & Academic Whitepaper
 - 23 Model Context Protocol tools (`estimate_fault_tolerant_cost`, `quanta_reasoning_eval`, `transpile_for_target`).
 - Academic Software Architecture Paper (`docs/papers/quanta_framework_paper.md` and `docs/arxiv/quanta_framework/main.tex`).
-- Permanent CERN/Zenodo Release DOI: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0).
+- GitHub Release Tag: [GitHub Release v1.2.0](https://github.com/ONMARTECH/quanta-sdk/releases/tag/v1.2.0).
 - Total automated tests reached **2,076 tests** with 100% pass rate.
 
 ---

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "quanta-sdk"
 version = "1.2.0"
-description = "AI-native quantum computing SDK — PyTorch QuantumLayer & Continuous Resonance, Apple Silicon Metal/MLX GPU engine, 23 MCP tools, Willow dynamic QEC, 200+ qubit MPS"
+description = "AI-native quantum computing SDK — PyTorch QuantumLayer & Continuous Resonance, Apple Silicon Metal/MLX GPU engine, 25 MCP tools, 34 quantum gates, Cartan/KAK SU(4) synthesis, Willow dynamic QEC, 200+ qubit MPS"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"
@@ -48,7 +48,16 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Operating System :: OS Independent",
 ]
-dependencies = ["numpy>=1.24"]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "networkx>=3.0",
+    "certifi>=2024.0",
+]
+
+[project.scripts]
+quanta = "quanta.cli:main"
+quanta-mcp = "quanta.mcp_server:main"
 
 [project.optional-dependencies]
 dev = [
@@ -57,16 +66,25 @@ dev = [
     "hypothesis",
     "ruff",
     "mypy",
+    "scipy>=1.10",
+    "networkx>=3.0",
+    "certifi>=2024.0",
+    "pyyaml>=6.0",
+    "pillow>=10.0",
+    "python-dotenv>=1.0",
     "scikit-learn>=1.0",
     "mlx>=0.20; sys_platform == 'darwin' and platform_machine == 'arm64'",
     "torch>=2.0",
-    "pillow",
     "fastmcp>=3.0",
     "matplotlib>=3.7",
 ]
-docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+]
 gpu = ["jax[cuda12]", "cupy-cuda12x", "cuquantum-python-cu12"]
-mcp = ["fastmcp>=3.0"]
+mcp = ["fastmcp>=3.0", "scikit-learn>=1.0", "python-dotenv>=1.0"]
 metal = ["mlx>=0.20", "mlx-metal>=0.20"]
 qml = ["scikit-learn>=1.0"]
 torch = ["torch>=2.0"]
@@ -122,8 +140,3 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["quanta.examples.*", "quanta.benchmark.*"]
 disallow_untyped_defs = false
-
-[dependency-groups]
-dev = [
-    "scikit-learn>=1.7.2",
-]

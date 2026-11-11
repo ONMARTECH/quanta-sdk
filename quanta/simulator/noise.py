@@ -302,7 +302,7 @@ class NoiseModel:
 
         Example:
             >>> NoiseModel.ibm_heron().describe()
-            '=== Noise Model (3 channels) ===\\n...'
+            '=== Noise Model (4 channels) ===\\n...'
         """
         lines = [f"=== Noise Model ({len(self._channels)} channels) ==="]
         lines.append(f"  {'#':<4} {'Channel':<35} {'Type':<15}")

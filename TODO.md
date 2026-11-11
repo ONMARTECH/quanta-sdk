@@ -1,64 +1,42 @@
-# Quanta SDK — Yapılacaklar & Durum
+# Quanta SDK — Engineering Status & Future Milestones
 
-> Son güncelleme: 2026-09-15 | Mevcut versiyon: v0.9.3 hazırlığı | Donanım: Apple Silicon M5 Pro (48 GB RAM)
-
----
-
-## ✅ Tamamlanan (2026 Eylül Güncellemesi)
-
-### 🔴 Version Drift & Metadata Çözüldü
-- [x] `quanta/backends/ibm_rest.py` — USER_AGENT `0.9.2` yapıldı.
-- [x] `quanta/mcp_server.py` — 23 MCP aracı, `quanta://info` kaynağı ve promptlar güncellendi.
-- [x] `.well-known/mcp/server-card.json` — 23 tool eksiksiz tanımlandı.
-- [x] `README.md` — 16 → 23 MCP tools tablosu, rozeti ve mimari açıklamaları güncellendi.
-- [x] `docs/` — 14 tutorial ve migrasyon rehberindeki tüm `v0.8.1` referansları `v0.9.2`'ye çekildi.
-- [x] `cookbook/index.md` oluşturuldu ve mkdocs kırık linki giderildi.
-
-### 🔴 Donanım & Bellek Optimizasyonu (Apple Silicon M5 Pro 48 GB)
-- [x] `quanta/config.py` — dinamik RAM algılama (`get_system_memory_gb()`, `get_max_dense_qubits()`) eklendi.
-- [x] `quanta/simulator/statevector.py` — 48 GB RAM için `MAX_QUBITS` 27'den 30 kübite çıkarıldı.
-- [x] `tests/test_tier1_coverage.py` — `MAX_QUBITS` testi donanım RAM limitine dinamik duyarlı hale getirildi.
-
-### 🔴 Tip Güvenliği & Kod Kalitesi (Mypy & Ruff)
-- [x] 32 Mypy hatası giderildi (Core & Simulator paketinde sıfır hata).
-- [x] `quanta/core/gates.py` — `GATE_REGISTRY` tipi `Gate | ParametricGate | MultiParametricGate` olarak düzeltildi, eksik dönüş tipleri tamamlandı.
-- [x] `quanta/core/custom_gate.py` — Base `Gate` sınıfı mimarisiyle tam uyumlu hale getirildi (`_build_matrix()`) ve %100 coverage sağlandı.
-- [x] `quanta/simulator/custatevec.py` — ruff uyarıları ve workspace pointer güvenliği çözüldü.
-- [x] `quanta/backends/__init__.py` — `Backend`, `LocalSimulator`, `LocalBackend`, `IBMBackend`, `IBMRestBackend`, `GoogleBackend`, `IonQBackend` export edildi.
-- [x] `quanta/backends/base.py` — Hatalı `IBMQuantumBackend` ve `GoogleQuantumBackend` sınıf isimleri düzeltildi.
-- [x] `quanta/export/qasm.py` — Hem `CircuitDefinition` hem de `DAGCircuit` nesnelerini OpenQASM 3.0'a derleyecek şekilde genişletildi.
-- [x] Tüm projede `ruff check quanta tests` 0 hata ile geçiyor.
-
-### 🔴 Yeni Nesil Agentic MCP Araçları (Gemini 3.8 / Claude 3.7 / GPT-5)
-- [x] `estimate_fault_tolerant_cost`: Devrenin T-gate sayısı, mantıksal kübit ve fiziksel kübit ihtiyacını (Willow / Surface code) hesaplama.
-- [x] `quanta_reasoning_eval`: Akıl yürütme modellerinin tasarladığı devrelerin kuantum üstünlük potansiyeli, dolanıklık oranı ve derinlik analizini yapma.
-- [x] `transpile_for_target`: Devreleri IBM Heron, Google Willow veya IonQ donanım native kapı setlerine derleme.
-- [x] `tests/test_mcp_server.py`: 18 test ile tüm araçlar doğrulandı.
-
-### 🔴 Test Kapsamı Artırımı (Coverage: %80.37 → %90.08)
-- [x] `tests/test_mcp_server.py` — 22 test ile tüm araçlar, promptlar ve kaynaklar doğrulandı (MCP coverage %0'dan %68'e çıktı).
-- [x] `tests/test_result.py` — 6 test eklendi, `quanta/result.py` coverage %65'ten **%100'e** çıktı.
-- [x] `tests/test_simulator_factory.py` — 8 test eklendi, `quanta/simulator/factory.py` coverage %54'ten **%78'e** çıktı.
-- [x] `tests/test_accelerated.py` — 4 test eklendi, `quanta/simulator/accelerated.py` coverage %61'den **%78'e** çıktı.
-- [x] `tests/test_qec_codes.py` — 6 test eklendi, `quanta/qec/codes.py` coverage %78'den **%81'e** çıktı.
-- [x] `tests/test_custom_gate.py` — 6 test eklendi, `custom_gate.py` coverage %37'den **%100'e** çıktı.
-- [x] `tests/test_density_matrix.py` — 7 test eklendi, DensityMatrix coverage %0'dan **%96'ya** çıktı.
-- [x] `tests/test_simulator_router.py` — 5 test eklendi, Router coverage %18'den **%94'e** çıktı.
-- [x] `tests/test_visualize.py` — 4 test eklendi, Visualize coverage %0'dan **%90'a** çıktı.
-- [x] Toplam test sayısı: **888 passed, 1 skipped (0 failed)**.
-- [x] Dokümantasyon (`mkdocs build`) hatasız derleniyor.
+> Last updated: 2026-11-11 | Current version: **v1.3.0 (Production)** | Test Suite: **2,826+ passing tests** | Gates: **34** | MCP Tools: **25**
 
 ---
 
-## 🚀 Sırada Ne Var? (v1.0 GA Yol Haritası)
+## ✅ Completed Milestones (v1.0.0 – v1.3.0)
 
-### 📌 Faz 3: QEC & Willow Dinamik Yüzey Kodları
-- [ ] Google Willow mimarisine uygun dinamik yüzey kodları (Dynamic Surface Code) sendrom çözücüsü.
-- [ ] CUDA-Q Logical & QUOPS benzeri mantıksal kübit benchmark entegrasyonu.
+### Core, Compiler & Unitary Synthesis
+- [x] **34 Built-in Quantum Gates** synchronized across `quanta`, `quanta.core.gates`, `quanta.mcp_server`, and QASM 2.0/3.0 export/import (`CRX`, `CRY`, `CRZ`, `ECR`, `iSWAP`, `CSWAP`, `CH`, `CP`, `MS`, IBM Heron & Google Willow native gates).
+- [x] **Exact Cartan / KAK $\text{SU}(4)$ Synthesis** (`quanta/compiler/synthesis.py`) decomposing arbitrary 2-qubit unitaries into $\le 3$ `CX` gates + single-qubit Euler rotations (`UnitarySynthesisPass`).
+- [x] **Topology-Aware Routing** (`RouteToTopology`) supporting linear, ring, grid, custom graphs, and IBM Heavy-Hex connectivity.
 
-### 📌 Faz 4: QML Modül Geliştirmeleri
-- [ ] `quanta/qml/` paketine yeni ansatz presetleri ve hibrit kuantum-klasik optimizasyon eklentileri.
+### Simulators, Gradients & PyTorch Hybrid QML
+- [x] **Multi-Backend Simulator Suite**: `StateVectorSimulator` ($O(2^n)$, up to 30 qubits on 48 GB RAM), `MLXSimulator` (`~20x–34x` verified Apple Silicon Metal GPU speedup), `MPSSimulator` (200+ qubits 1D tensor networks), `PauliFrameSimulator` (1,000+ Clifford qubits), `SparseSimulator`, `DensityMatrixSimulator`, and `LindbladSimulator`.
+- [x] **Analytical Autodiff (`quanta.gradients` & `quanta.torch`)**: 2-term & 4-term parameter-shift rules, $O(P)$ reverse-mode `adjoint_gradient`, Mari–Bromley–Killoran gauge-invariant Quantum Fisher Information Matrix (`quantum_fisher_information`), `QuantumLayer`, and `ContinuousResonantLayer` (Daleckii–Krein Fréchet autograd).
 
-### 📌 Faz 5: v1.0 GA Lansmanı (Ekim/Kasım 2026)
-- [ ] PyPI v1.0.0 paketi ve duyuru.
+### Fault-Tolerant Quantum Error Correction (QEC)
+- [x] **Surface Code & Dynamic Spacetime Decoding**: Exact $\text{GF}(2)$ check-matrix homology (`H_X @ H_Z^T == 0 mod 2`), final noiseless data-readout boundary round in `simulate_dynamic`, Edmonds Blossom `MWPMDecoder`, and Delfosse–Nickerson peeling `UnionFindDecoder`.
+- [x] **6.6.6 Triangular Color Code**: Commuting plaquette stabilizers ($d \in \{3, 5, 7\}$) with syndrome-only Chromobius-style `restriction_decode`.
+- [x] **qLDPC & Magic-State Factories**: Gross `[[144, 12, 12]]` Bivariate Bicycle code with higher-order `BP-OSD` combination sweep, `ShorCode` (all 27 single-Pauli recoveries), `SteaneCode`, 15-to-1 Reed–Muller distillation, and exact 7-$T$ `CCZFactory`.
 
+### Gate-Level Layer-3 Solvers, MCP Server & Scientific Integrity
+- [x] **Genuine Gate-Level Algorithms**: Griffiths–Niu / Beauregard Semiclassical Iterative QPE Shor's factoring (`N < 65536` on $n+1$ qubits, `allow_classical_fallback=False`), zero-ancilla gate-decomposed Grover + BBHT blind search, Walsh–Hadamard QAOA, Ising Markowitz `portfolio_optimize`, shot-sampled IQAE, Black–Scholes CRN Greeks (`< 2%` error), and Cortes–Vapnik dual QP `qsvm_classify`.
+- [x] **25 AI-Native MCP Tools** (`quanta-mcp` & `quanta` CLI entrypoints) with restricted AST-validated execution sandboxes.
+- [x] **Scientific Integrity & Packaging Gates**: 3-arm adversarial CVP ablations, symmetric zero-leakage Zeno ablations, automated confidentiality & citation guard (`tests/test_confidentiality_guard.py`), `mkdocs build --strict`, CPU-optimized CI, and `twine check`.
+
+---
+
+## 🚀 Open Engineering Milestones (v1.4.0+)
+
+### 1. Native C++/Rust QEC Kernel Acceleration
+- [ ] Optional C++/Rust extension for `BP-OSD` Gaussian elimination and syndrome peeling at block lengths $n > 500$.
+- [ ] Stim detector-error-model (`.dem`) import/export bridge for cross-benchmarking hardware syndrome traces.
+
+### 2. Distributed & 2D Tensor-Network Simulation
+- [ ] Projected Entangled Pair States (PEPS) contraction heuristics for shallow 2D non-Clifford lattices.
+- [ ] Multi-node MPI / GPU-sharded statevector slicing beyond single-host unified RAM (`> 32` dense qubits).
+
+### 3. Industrial QUBO Decomposition & Hardware FinOps
+- [ ] Subgraph decomposition (qbsolv / Kernighan–Lin hybrid) for 1,000+ variable combinatorial QUBO instances.
+- [ ] Live queue-time, shot-cost, and 2-qubit fidelity telemetry router across IBM Heron, IonQ Forte/Aria, and local simulators.

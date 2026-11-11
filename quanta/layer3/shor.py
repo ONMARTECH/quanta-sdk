@@ -171,7 +171,7 @@ def _apply_controlled_mod_mult(
       elementary reversible `H, X, CX, CCX, P` gates via ``DAGCircuit``.
     - For ``6 <= n_work <= 8`` (``32 < N <= 256``): constructs the exact unitary
       permutation matrix ``Gate`` and executes via ``sim.apply`` (restoring ``GATE_REGISTRY``).
-    - For ``n_work >= 9`` (``256 < N < 2048``): applies the exact norm-preserving
+    - For ``n_work >= 9`` (``256 < N < 65536``): applies the exact norm-preserving
       bijective unitary permutation operator on the ``q[0] == 1`` subspace in O(2^n) memory.
     """
     mult_mod = mult % N
@@ -218,7 +218,7 @@ def _apply_controlled_mod_mult(
             GATE_REGISTRY.pop(gate_name, None)
         return
 
-    # Sparse unitary permutation representation for 9 <= n_work <= 11 (N < 2048)
+    # Sparse unitary permutation representation for 9 <= n_work <= 16 (N < 65536)
     state = sim.state
     new_state = state.copy()
     ys = np.arange(N, dtype=np.int64)
@@ -293,21 +293,21 @@ def _quantum_order_finding(
     """Quantum period-finding via Semiclassical Iterative QPE on n + 1 qubits."""
     a_int = int(a)
     N_int = int(N)
-    if N_int >= 4096:
+    if N_int >= 65536:
         raise ValueError(
-            f"Statevector Semiclassical Shor supports N < 4096, got {N_int}."
+            f"Statevector Semiclassical Shor supports N < 65536, got {N_int}."
         )
 
     rng = np.random.default_rng(seed)
     denominators: list[int] = []
 
-    for _shot in range(3):
+    for _shot in range(6):
         phase = _single_iqpe_phase(a_int, N_int, rng)
         r_cand = _continued_fraction_period(phase, N_int)
         if r_cand > 1 and pow(a_int, r_cand, N_int) == 1:
             return r_cand
 
-        for mult in (2, 3, 4, 6):
+        for mult in (2, 3, 4, 6, 8, 12):
             cand = r_cand * mult
             if 1 < cand < N_int and pow(a_int, cand, N_int) == 1:
                 return cand
@@ -358,7 +358,7 @@ def factor(
     """Factors a composite integer using Shor's quantum order-finding algorithm.
 
     Args:
-        N: Composite integer to factor (``1 < N < 2048`` recommended for fast simulation).
+        N: Composite integer to factor (``1 < N < 65536`` supported for statevector simulation).
         max_attempts: Maximum quantum order-finding attempts.
         seed: Random seed for reproducibility.
         allow_classical_fallback: Default ``False``. When ``False``, never falls back to

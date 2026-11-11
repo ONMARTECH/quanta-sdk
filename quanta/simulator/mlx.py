@@ -17,11 +17,12 @@ Requirements:
 
 Example:
     >>> from quanta.simulator.mlx import MLXSimulator
-    >>> sim = MLXSimulator(num_qubits=20)
+    >>> sim = MLXSimulator(num_qubits=3)
     >>> sim.apply("H", (0,))
     >>> sim.apply("CX", (0, 1))
-    >>> print(sim.probabilities()[:4])
-    [0.5, 0. , 0. , 0.5]
+    >>> sim.apply("CX", (1, 2))
+    >>> sim.probabilities()[[0, 7]]
+    array([0.5, 0.5])
 """
 
 from __future__ import annotations
