@@ -40,23 +40,32 @@ __all__ = [
 ]
 
 
-# Universal physical constants (SI) for CSF Biophysical Shielding (Theorem 8)
+# Universal physical constants (SI) & biophysical reference constants for CSF Shielding
 EPSILON_0 = 8.8541878128e-12  # F/m (Vacuum permittivity)
 K_B = 1.380649e-23  # J/K (Boltzmann constant)
 E_CHARGE = 1.602176634e-19  # C (Elementary charge)
 N_AVOGADRO = 6.02214076e23  # mol^-1 (Avogadro constant)
 R_H_POSNER = 0.48e-9  # m (Posner molecule hydrated radius)
 
+# Reference aqueous / homeostatic CSF constants
+T_REF_CSF = 310.15  # K (Physiological core reference temperature T_0)
+ETA_REF_WATER = 0.70  # mPa*s (Pure aqueous reference viscosity eta_0 at 310.15 K)
+EPS_REF_WATER = 80.0  # Dimensionless aqueous reference permittivity eps_0
+IONIC_REF_CSF = 0.150  # mol/L (Isotonic reference ionic strength I_0)
+C_MAG_REF_CSF = 0.40  # uM (0.0004 mM BCSFB-filtered paramagnetic baseline c_mag_0)
+
 
 class CSFShieldedEnvironment(nn.Module):
     """Cerebrospinal Fluid (CSF) & Interstitial Fluid (ISF) Quantum Shielding Environment.
 
-    Models the 5 biophysical shielding mechanisms of the brain's fluid enclosure (Theorem 8):
-    1. Paramagnetic Ion Exclusion via Blood-CSF Barrier (BCSFB) and BBB filtering.
-    2. Debye-Hückel Electrostatic Screening of axonal action potentials and membrane dipoles.
-    3. Hydrodynamic BPP Motional Narrowing suppressing nuclear dipole-dipole dephasing.
-    4. Archimedean Buoyant Mass Reduction isolating circuits from gait shocks and phonons.
-    5. Glymphatic Convective Flushing via astrocytic AQP4 channels resetting entropic bath.
+    Models biophysical shielding mechanisms of the brain's fluid enclosure via a single
+    continuous, differentiable scaling law (zero regime-branch overrides):
+    1. Paramagnetic Ion Exclusion via Blood-CSF Barrier (BCSFB) and BBB filtering
+       (Solomon-Bloembergen dipolar relaxation Gamma_mag ~ c_ion * eta / T).
+    2. Debye-Hückel Electrostatic & Dielectric Screening (lambda_D ~ sqrt(eps_r * T / I)).
+    3. Hydrodynamic BPP Motional Narrowing (Stokes rotational correlation tau_c ~ eta / T).
+    4. Archimedean Buoyant Mass Reduction isolating circuits from mechanical shocks.
+    5. Glymphatic Convective Flushing via astrocytic AQP4 channels resetting metabolic load.
 
     Args:
         ionic_strength: CSF electrolyte ionic strength I in mol/L (default: 0.155 M).
@@ -68,6 +77,10 @@ class CSFShieldedEnvironment(nn.Module):
         learnable_params: Whether CSF parameters are trainable nn.Parameters.
         device: Target execution device ('cpu', 'mps', or torch.device).
         dtype: Real floating-point precision (torch.float32 or torch.float64).
+        temperature_k: Optional explicit-unit alias for `temperature` (Kelvin).
+        viscosity_mpa_s: Optional explicit-unit alias for `viscosity` (mPa*s).
+        paramagnetic_ion_mM: Optional millimolar alias for `paramagnetic_concentration` (1 mM = 1000 uM).
+        relative_permittivity: Optional alias for `dielectric_constant`.
     """
 
     ionic_strength: torch.Tensor
@@ -89,8 +102,22 @@ class CSFShieldedEnvironment(nn.Module):
         learnable_params: bool = False,
         device: torch.device | str | None = None,
         dtype: torch.dtype | None = None,
+        *,
+        temperature_k: float | None = None,
+        viscosity_mpa_s: float | None = None,
+        paramagnetic_ion_mM: float | None = None,
+        relative_permittivity: float | None = None,
     ) -> None:
         super().__init__()
+
+        if temperature_k is not None:
+            temperature = float(temperature_k)
+        if viscosity_mpa_s is not None:
+            viscosity = float(viscosity_mpa_s)
+        if relative_permittivity is not None:
+            dielectric_constant = float(relative_permittivity)
+        if paramagnetic_ion_mM is not None:
+            paramagnetic_concentration = float(paramagnetic_ion_mM) * 1000.0
 
         if ionic_strength <= 0.0:
             raise ValueError(f"Ionic strength must be strictly positive, got {ionic_strength}")
@@ -152,6 +179,54 @@ class CSFShieldedEnvironment(nn.Module):
         else:
             tensor.fill_(value)
 
+    @property
+    def temperature_k(self) -> torch.Tensor:
+        """Physiological temperature T in Kelvin."""
+        return self.temperature
+
+    @temperature_k.setter
+    def temperature_k(self, value: float | torch.Tensor) -> None:
+        if torch.is_tensor(value):
+            self.temperature = value  # type: ignore[assignment]
+        else:
+            self._set_param("temperature", float(value))
+
+    @property
+    def viscosity_mpa_s(self) -> torch.Tensor:
+        """Dynamic viscosity eta in mPa*s."""
+        return self.viscosity
+
+    @viscosity_mpa_s.setter
+    def viscosity_mpa_s(self, value: float | torch.Tensor) -> None:
+        if torch.is_tensor(value):
+            self.viscosity = value  # type: ignore[assignment]
+        else:
+            self._set_param("viscosity", float(value))
+
+    @property
+    def relative_permittivity(self) -> torch.Tensor:
+        """Static relative dielectric permittivity eps_r."""
+        return self.dielectric_constant
+
+    @relative_permittivity.setter
+    def relative_permittivity(self, value: float | torch.Tensor) -> None:
+        if torch.is_tensor(value):
+            self.dielectric_constant = value  # type: ignore[assignment]
+        else:
+            self._set_param("dielectric_constant", float(value))
+
+    @property
+    def paramagnetic_ion_mM(self) -> torch.Tensor:
+        """Free paramagnetic ion concentration in mM (1 mM = 1000 uM)."""
+        return self.paramagnetic_concentration * 1e-3
+
+    @paramagnetic_ion_mM.setter
+    def paramagnetic_ion_mM(self, value: float | torch.Tensor) -> None:
+        if torch.is_tensor(value):
+            self.paramagnetic_concentration = value * 1000.0  # type: ignore[assignment]
+        else:
+            self._set_param("paramagnetic_concentration", float(value) * 1000.0)
+
     def compute_debye_length(self) -> torch.Tensor:
         """Computes analytical Debye electrostatic screening length lambda_D in nanometers.
 
@@ -179,43 +254,45 @@ class CSFShieldedEnvironment(nn.Module):
         return (num / den) * 1e12
 
     def compute_attenuation_factor(self) -> torch.Tensor:
-        """Computes composite Lindblad dephasing attenuation factor kappa_CSF in (0, 1].
+        """Computes composite Lindblad dephasing attenuation factor kappa_CSF in (0, 1).
+
+        Evaluates a single continuous, smooth biophysical scaling law coupling:
+          1. Debye-Huckel & dielectric screening via `compute_debye_length()`
+             (lambda_D ~ sqrt(eps_r * T / I), referenced to eps_0=80.0, T_0=310.15 K, I_0=0.150 M)
+          2. BPP Stokes rotational correlation via `compute_rotational_correlation_time()`
+             (tau_c ~ eta / T, referenced to eta_0=0.70 mPa*s, T_0=310.15 K)
+          3. Solomon-Bloembergen paramagnetic dipolar relaxation
+             (Gamma_mag ~ c_ion * eta / T, referenced to c_mag_0=0.40 uM)
+          4. Convective AQP4 glymphatic clearance homeostasis G
+        mapped onto (0, 1) via rational saturation kappa_CSF = Xi / (1 + Xi) with strictly
+        non-zero, monotonic partial derivatives across all physical inputs.
 
         Returns:
-            Differentiable scalar tensor kappa_CSF.
+            Differentiable scalar tensor kappa_CSF in (0, 1).
         """
-        cond = self._clinical_condition
-        dev = self.viscosity.device
-        dtype = self.viscosity.dtype
+        lambda_d = self.compute_debye_length()
+        tau_r = self.compute_rotational_correlation_time()
 
-        if cond == "meningitis":
-            base = torch.tensor(0.85, device=dev, dtype=dtype)
-            scale = (self.viscosity / 3.50) * (self.paramagnetic_concentration / 50.0)
-            return torch.clamp(base * scale, min=0.50, max=1.0)
-        elif cond == "hydrocephalus":
-            base = torch.tensor(0.28, device=dev, dtype=dtype)
-            scale = (self.viscosity / 0.95) * (self.paramagnetic_concentration / 1.20)
-            return torch.clamp(base * scale, min=0.10, max=0.45)
-        elif cond == "lumbar_puncture_recovery":
-            base = torch.tensor(0.0025, device=dev, dtype=dtype)
-            scale = (self.viscosity / 0.81) * (self.paramagnetic_concentration / 0.42)
-            return torch.clamp(base * scale, min=1e-5, max=0.01)
-        elif cond == "sleep_deprived":
-            base = torch.tensor(0.10, device=dev, dtype=dtype)
-            scale = (self.viscosity / 0.92) * (self.paramagnetic_concentration / 1.50)
-            return torch.clamp(base * scale, min=0.05, max=0.25)
-        elif cond == "rem_sleep":
-            base = torch.tensor(1.0e-6, device=dev, dtype=dtype)
-            scale = (self.viscosity / 0.78) * (self.paramagnetic_concentration / 0.30)
-            return torch.clamp(base * scale, min=1e-8, max=1e-5)
-        else:
-            lambda_d = self.compute_debye_length()
-            kappa_elec = torch.exp(-4.0 / lambda_d)
-            kappa_motional = self.viscosity / 50.0
-            kappa_para = self.paramagnetic_concentration / 25.0
-            kappa_glym = 2.0 / (1.0 + torch.clamp(self.glymphatic_clearance_rate, min=0.01))
-            kappa_csf = kappa_elec * kappa_motional * kappa_para * kappa_glym
-            return torch.clamp(kappa_csf, min=1e-8, max=1.0)
+        lambda_d_0 = (
+            math.sqrt(
+                (EPSILON_0 * EPS_REF_WATER * K_B * T_REF_CSF)
+                / (2.0 * N_AVOGADRO * (E_CHARGE**2) * (1000.0 * IONIC_REF_CSF))
+            )
+            * 1e9
+        )
+        tau_r_0 = (
+            4.0 * math.pi * (ETA_REF_WATER * 1e-3) * (R_H_POSNER**3) / (3.0 * K_B * T_REF_CSF)
+        ) * 1e12
+        k_debye_0 = math.exp(-4.0 / lambda_d_0)
+
+        f_elec = k_debye_0 * (lambda_d_0 / lambda_d) * (EPS_REF_WATER / self.dielectric_constant)
+        f_mot = tau_r / tau_r_0
+        f_mag = 1.0 + 0.18 * (self.paramagnetic_concentration / C_MAG_REF_CSF) * f_mot
+        g_floor = 0.002
+        f_glym = ((1.0 + g_floor) / (self.glymphatic_clearance_rate + g_floor)) ** 2.65
+
+        xi = 1.58e-4 * f_elec * f_mot * f_mag * f_glym
+        return xi / (1.0 + xi)
 
     def apply_shielding(self, lindblad_gamma: float | torch.Tensor) -> torch.Tensor:
         """Applies CSF biophysical shielding to a bare Lindblad dephasing rate:
@@ -319,7 +396,7 @@ class CSFShieldedEnvironment(nn.Module):
                 "dielectric_constant": 78.5,
                 "viscosity": 0.78,
                 "paramagnetic_concentration": 0.30,
-                "glymphatic_clearance_rate": 0.85,
+                "glymphatic_clearance_rate": 1.60,
                 "condition": "rem_sleep",
             },
             "slow_wave_sleep": {
@@ -327,7 +404,7 @@ class CSFShieldedEnvironment(nn.Module):
                 "dielectric_constant": 78.5,
                 "viscosity": 0.78,
                 "paramagnetic_concentration": 0.30,
-                "glymphatic_clearance_rate": 0.85,
+                "glymphatic_clearance_rate": 1.60,
                 "condition": "rem_sleep",
             },
         }
@@ -356,25 +433,27 @@ class CSFShieldedEnvironment(nn.Module):
     def get_metrics(self) -> dict[str, float]:
         """Returns readable dictionary of all biophysical variables and shielding metrics."""
         return {
-            "ionic_strength": float(self.ionic_strength),
-            "dielectric_constant": float(self.dielectric_constant),
-            "viscosity": float(self.viscosity),
-            "paramagnetic_concentration": float(self.paramagnetic_concentration),
-            "glymphatic_clearance_rate": float(self.glymphatic_clearance_rate),
-            "temperature": float(self.temperature),
-            "debye_length_nm": float(self.compute_debye_length()),
-            "rotational_correlation_time_ps": float(self.compute_rotational_correlation_time()),
-            "attenuation_factor_kappa": float(self.compute_attenuation_factor()),
+            "ionic_strength": float(self.ionic_strength.detach().item()),
+            "dielectric_constant": float(self.dielectric_constant.detach().item()),
+            "viscosity": float(self.viscosity.detach().item()),
+            "paramagnetic_concentration": float(self.paramagnetic_concentration.detach().item()),
+            "glymphatic_clearance_rate": float(self.glymphatic_clearance_rate.detach().item()),
+            "temperature": float(self.temperature.detach().item()),
+            "debye_length_nm": float(self.compute_debye_length().detach().item()),
+            "rotational_correlation_time_ps": float(
+                self.compute_rotational_correlation_time().detach().item()
+            ),
+            "attenuation_factor_kappa": float(self.compute_attenuation_factor().detach().item()),
         }
 
     def __repr__(self) -> str:
         return (
-            f"CSFShieldedEnvironment(ionic_strength={float(self.ionic_strength):.3f}M, "
-            f"dielectric_constant={float(self.dielectric_constant):.1f}, "
-            f"viscosity={float(self.viscosity):.2f}mPa*s, "
-            f"paramagnetic_conc={float(self.paramagnetic_concentration):.2f}uM, "
-            f"glymphatic_rate={float(self.glymphatic_clearance_rate):.2f}, "
-            f"temp={float(self.temperature):.1f}K, "
+            f"CSFShieldedEnvironment(ionic_strength={self.ionic_strength.detach().item():.3f}M, "
+            f"dielectric_constant={self.dielectric_constant.detach().item():.1f}, "
+            f"viscosity={self.viscosity.detach().item():.2f}mPa*s, "
+            f"paramagnetic_conc={self.paramagnetic_concentration.detach().item():.2f}uM, "
+            f"glymphatic_rate={self.glymphatic_clearance_rate.detach().item():.2f}, "
+            f"temp={self.temperature.detach().item():.1f}K, "
             f"condition='{self._clinical_condition}')"
         )
 
@@ -795,6 +874,8 @@ class CSFShieldedResonantLayer(nn.Module):
             zero_right = torch.zeros((0, 1), device=dev, dtype=real_dtype)
             zero_readout = torch.zeros((0, n_qubits), device=dev, dtype=real_dtype)
             zero_state = torch.zeros((0, dim), device=dev, dtype=cdtype)
+            zero_rho = torch.zeros((0, dim, dim), device=dev, dtype=cdtype)
+            zero_purity = torch.ones((0, 1), device=dev, dtype=real_dtype)
             kappa_csf = self.csf_environment.compute_attenuation_factor()
             gamma_eff = self.csf_environment.apply_shielding(self.bare_dephasing_rate)
             coherence_factor = torch.ones((0, 1), device=dev, dtype=real_dtype)
@@ -805,6 +886,8 @@ class CSFShieldedResonantLayer(nn.Module):
                     "right_consensus": zero_right,
                     "readout_vector": zero_readout,
                     "state": zero_state,
+                    "density_matrix": zero_rho,
+                    "purity": zero_purity,
                     "kappa_csf": kappa_csf,
                     "effective_dephasing": gamma_eff,
                     "coherence_factor": coherence_factor,
@@ -829,26 +912,80 @@ class CSFShieldedResonantLayer(nn.Module):
             dtype=cdtype,
         )
 
-        # 3. Unitary continuous-time state evolution
+        # 3. Spectral decomposition & coherent reference trajectory
         eigvals, eigvecs = torch.linalg.eigh(h_total)
-        phases = torch.exp(-1j * (eigvals * eff_time))
-        diag_phases = torch.diag_embed(phases)
-        u_total = eigvecs @ diag_phases @ eigvecs.mH
+        phases_full = torch.exp(-1j * (eigvals * eff_time))
+        u_total = eigvecs @ torch.diag_embed(phases_full) @ eigvecs.mH
         psi_t = (u_total @ psi_batch.unsqueeze(-1)).squeeze(-1)
 
-        # Renormalize to maintain exact ||psi|| = 1
+        # Renormalize coherent representative vector ||psi|| = 1
         norm = torch.linalg.norm(psi_t, dim=-1, keepdim=True)
         norm = torch.clamp(norm, min=1e-12)
         psi_t = psi_t / norm
 
-        # 4. CSF Dephasing Attenuation
+        # 4. Open-System Lindblad Off-Diagonal Dephasing Evolution (Strang-Trotter on rho)
+        #    d(rho)/dt = -i[H, rho] + sum_q (gamma_eff / 2) * (Z_q rho Z_q - rho)
+        #    In the computational basis, (Z_q rho Z_q - rho)_{ab} = -2 * (a_q xor b_q) * rho_{ab},
+        #    so each CPTP dephasing step damps off-diagonal coherences by exp(-gamma_eff * d_H(a,b) * dt)
+        #    while preserving diagonal probabilities (d_H(a,a) == 0 => Tr(rho) == 1 identically).
         kappa_csf = self.csf_environment.compute_attenuation_factor()
         gamma_eff = self.csf_environment.apply_shielding(self.bare_dephasing_rate)
-        coherence_factor = torch.exp(-0.5 * gamma_eff * eff_time)
 
-        # 5. Readout expectations
-        all_z = ops.fast_z_readout(psi_t, n_qubits)  # [B, N]
-        readout_shielded = all_z * coherence_factor
+        idx_cpu = torch.arange(dim, dtype=torch.int64)
+        xor_cpu = idx_cpu.unsqueeze(1) ^ idx_cpu.unsqueeze(0)
+        hamming_cpu = torch.zeros((dim, dim), dtype=torch.float32)
+        for bit_idx in range(n_qubits):
+            hamming_cpu = hamming_cpu + ((xor_cpu >> bit_idx) & 1).to(dtype=torch.float32)
+        hamming_mat = hamming_cpu.to(device=dev, dtype=real_dtype)  # [dim, dim]
+        off_diag_mask = (hamming_mat > 0.0).to(dtype=real_dtype)
+
+        num_trotter_steps = 4
+        dt_step = eff_time / float(num_trotter_steps)  # [B, 1]
+        phases_half = torch.exp(-0.5j * (eigvals * dt_step))
+        u_half = eigvecs @ torch.diag_embed(phases_half) @ eigvecs.mH
+
+        # [B, dim, dim] off-diagonal coherence damping mask (diagonal entries are exactly 1.0)
+        dephase_mask = torch.exp(
+            -gamma_eff * hamming_mat.unsqueeze(0) * dt_step.unsqueeze(-1)
+        ).to(dtype=cdtype)
+
+        rho = psi_batch.unsqueeze(-1) @ psi_batch.unsqueeze(-2).conj()  # [B, dim, dim]
+        for _ in range(num_trotter_steps):
+            rho = u_half @ rho @ u_half.mH
+            rho = rho * dephase_mask
+            rho = u_half @ rho @ u_half.mH
+
+        # Exact Hermitian symmetrization & unit trace enforcement against float32 drift
+        rho = 0.5 * (rho + rho.mH)
+        tr_rho = torch.diagonal(rho, dim1=-2, dim2=-1).real.sum(dim=-1, keepdim=True)
+        rho = rho / torch.clamp(tr_rho, min=1e-12).unsqueeze(-1).to(dtype=cdtype)
+
+        # Mixed-state purity Tr(rho^2) in [1/dim, 1] and off-diagonal coherence retention factor
+        purity_vec = torch.diagonal(rho @ rho, dim1=-2, dim2=-1).real.sum(dim=-1, keepdim=True)
+        purity_vec = torch.clamp(purity_vec, min=1.0 / float(dim), max=1.0)
+
+        rho_unitary = psi_t.unsqueeze(-1) @ psi_t.unsqueeze(-2).conj()
+        off_norm_open = torch.linalg.norm(rho * off_diag_mask.to(dtype=cdtype), dim=(-2, -1), keepdim=False).unsqueeze(-1)
+        off_norm_unit = torch.linalg.norm(
+            rho_unitary * off_diag_mask.to(dtype=cdtype), dim=(-2, -1), keepdim=False
+        ).unsqueeze(-1)
+        analytic_coh = torch.exp(-gamma_eff * eff_time)
+        coherence_factor = torch.where(
+            off_norm_unit > 1e-6,
+            torch.clamp(off_norm_open / torch.clamp(off_norm_unit, min=1e-6), min=0.0, max=1.0),
+            analytic_coh,
+        )
+
+        # 5. Physical Born/Lindblad observable expectations: <Z_q> = Tr(rho(t) Z_q)
+        diag_pops = torch.diagonal(rho, dim1=-2, dim2=-1).real  # [B, dim], sums to 1.0
+        z_signs_cpu = torch.empty((dim, n_qubits), dtype=torch.float32)
+        for q_idx in range(n_qubits):
+            shift = n_qubits - 1 - q_idx
+            bit_q = (idx_cpu >> shift) & 1
+            z_signs_cpu[:, q_idx] = 1.0 - 2.0 * bit_q.to(dtype=torch.float32)
+        z_signs = z_signs_cpu.to(device=dev, dtype=real_dtype)  # [dim, N]
+
+        readout_shielded = torch.matmul(diag_pops, z_signs)  # [B, N]
         readout_shielded = torch.clamp(readout_shielded, min=-1.0, max=1.0)
 
         n_left = self.brain.num_left_qubits
@@ -862,6 +999,8 @@ class CSFShieldedResonantLayer(nn.Module):
             res_right = right_consensus.squeeze(0)
             res_readout = readout_shielded.squeeze(0)
             res_state = psi_t.squeeze(0)
+            res_rho = rho.squeeze(0)
+            res_purity = purity_vec.squeeze(0)
             res_coherence = coherence_factor.squeeze(0)
         elif orig_dim == 3:
             res_consensus = parliament_consensus.reshape(b_orig, l_orig, 1)
@@ -869,6 +1008,8 @@ class CSFShieldedResonantLayer(nn.Module):
             res_right = right_consensus.reshape(b_orig, l_orig, 1)
             res_readout = readout_shielded.reshape(b_orig, l_orig, n_qubits)
             res_state = psi_t.reshape(b_orig, l_orig, dim)
+            res_rho = rho.reshape(b_orig, l_orig, dim, dim)
+            res_purity = purity_vec.reshape(b_orig, l_orig, 1)
             res_coherence = coherence_factor.reshape(b_orig, l_orig, 1)
         else:
             res_consensus = parliament_consensus
@@ -876,6 +1017,8 @@ class CSFShieldedResonantLayer(nn.Module):
             res_right = right_consensus
             res_readout = readout_shielded
             res_state = psi_t
+            res_rho = rho
+            res_purity = purity_vec
             res_coherence = coherence_factor
 
         if not self.return_dict:
@@ -887,6 +1030,8 @@ class CSFShieldedResonantLayer(nn.Module):
             "right_consensus": res_right,
             "readout_vector": res_readout,
             "state": res_state,
+            "density_matrix": res_rho,
+            "purity": res_purity,
             "kappa_csf": kappa_csf,
             "effective_dephasing": gamma_eff,
             "coherence_factor": res_coherence,
@@ -903,11 +1048,17 @@ class CSFShieldedResonantLayer(nn.Module):
 
 
 class QuantumREMSleep(nn.Module):
-    """Offline closed-system quantum REM sleep annealing module.
+    """Offline differential multi-timescale phase dispersion & REM consolidation module.
 
-    Orthogonalizes stored memory statevectors from prior tasks through uncoupled
-    closed-system Hamiltonian evolution (x = 0), preventing catastrophic forgetting
-    in continual learning without requiring external data replay.
+    Note on Unitary Inner-Product Invariance:
+        A single shared unitary U(t) = exp(-i H_free t) is an isometry and preserves all
+        pairwise inner products identically (<U psi_j | U psi_k> = <psi_j | psi_k>).
+        Representational separation in `QuantumREMSleep` therefore operates via
+        **differential multi-timescale Hamiltonian phase dispersion** U(t_j) = exp(-i H_free t_j)
+        with distinct memory-indexed durations t_j = t_eff * (j + 1) / M coupled with
+        eigenbasis participation-ratio decorrelation at zero external sensory drive (x = 0),
+        optimizing internal brain couplings (`J_right`, `J_callosum`, `h_left`) to reduce
+        cross-memory interference.
 
     Args:
         brain_module: Reference to the underlying BiomorphicResonantBrain module.
@@ -981,12 +1132,13 @@ class QuantumREMSleep(nn.Module):
         memory_states: Sequence[torch.Tensor] | None = None,
         cycles: int | None = None,
     ) -> dict[str, Any]:
-        """Executes closed-system unitary annealing at x = 0 to orthogonalize representations.
+        """Executes differential multi-timescale phase dispersion U(t_j) at x = 0.
 
-        Evaluates pairwise Hilbert-Schmidt overlap:
-            L_ortho = sum_{j < k} |<psi_j | psi_k>|^2
-        and optimizes brain parameters (J_right, J_callosum, h_left) via gradient
-        descent to drive memory representations into mutually orthogonal subspaces.
+        Because a single common unitary U preserves <psi_j | psi_k> identically, each
+        registered memory j is evolved under distinct timescale t_j = t_eff * (j + 1) / M
+        while jointly minimizing eigenbasis participation overlap and dispersed state overlap:
+            L_ortho = sum_{j < k} 0.5 * (sum_n p_{n,j} p_{n,k} + |<psi_j(t_j) | psi_k(t_k)>|^2)
+        updating brain parameters (J_right, J_callosum, h_left) via gradient descent.
 
         Args:
             memory_states: Optional explicit sequence of statevectors. If None, uses
@@ -1296,6 +1448,8 @@ class NoisyHippocampalBuffer(nn.Module):
         for e in self.buffer:
             e["pristine_state"] = e["pristine_state"].to(device=dev, dtype=cdtype)
             e["degraded_state"] = e["degraded_state"].to(device=dev, dtype=cdtype)
+            if "density_matrix" in e:
+                e["density_matrix"] = e["density_matrix"].to(device=dev, dtype=cdtype)
         return res
 
     def attach_csf_environment(self, csf_env: CSFShieldedEnvironment) -> None:
@@ -1365,9 +1519,12 @@ class NoisyHippocampalBuffer(nn.Module):
         if len(self.buffer) >= self.capacity:
             self.buffer.pop(0)
 
+        rho_0 = st.unsqueeze(-1) @ st.unsqueeze(-2).conj()
         engram = {
             "pristine_state": st.clone(),
             "degraded_state": st.clone(),
+            "density_matrix": rho_0,
+            "purity": 1.0,
             "dopamine_tag": max(0.0, d_val),
             "age": 0.0,
             "metadata": meta,
@@ -1376,7 +1533,10 @@ class NoisyHippocampalBuffer(nn.Module):
         return len(self.buffer) - 1
 
     def step(self, dt: float = 1.0) -> None:
-        """Simulates biological time progression with Lindblad phase diffusion & thermal noise.
+        """Simulates biological time progression with Lindblad dephasing, depolarizing bath & purity decay.
+
+        Evolves both the representative unit statevector (`degraded_state`) and the mixed-state
+        density operator `rho(t)` (`Tr(rho) == 1`, `purity = Tr(rho^2) in [1/d, 1]`).
 
         Args:
             dt: Biological time step duration (default: 1.0).
@@ -1407,6 +1567,33 @@ class NoisyHippocampalBuffer(nn.Module):
             current_state = engram["degraded_state"]
             dim = current_state.shape[0]
 
+            # A. Mixed-state CPTP density-matrix evolution for genuine purity decay Tr(rho^2) in [1/d, 1]
+            rho = engram.get("density_matrix")
+            if rho is None:
+                rho = current_state.unsqueeze(-1) @ current_state.unsqueeze(-2).conj()
+
+            # 1) Off-diagonal Lindblad dephasing damping: rho_{ab} -> exp(-sigma_phi_eff^2) * rho_{ab} (a != b)
+            if sigma_phi_eff > 1e-12:
+                dephase_damp = math.exp(-(sigma_phi_eff**2))
+                eye_d = torch.eye(dim, device=dev, dtype=cdtype)
+                rho = rho * eye_d + dephase_damp * (rho * (1.0 - eye_d))
+
+            # 2) Depolarizing relaxation toward maximally mixed state I_d / d
+            depol_rate = 2.0 * gamma_decay_eff + (sigma_noise_eff**2)
+            if depol_rate > 1e-12:
+                p_mix = 1.0 - math.exp(-depol_rate)
+                max_mixed = torch.eye(dim, device=dev, dtype=cdtype) / float(dim)
+                rho = (1.0 - p_mix) * rho + p_mix * max_mixed
+
+            rho = 0.5 * (rho + rho.mH)
+            tr_val = float(torch.diagonal(rho).real.sum().item())
+            if tr_val > 1e-12:
+                rho = rho / tr_val
+            raw_purity = float(torch.diagonal(rho @ rho).real.sum().item())
+            engram["density_matrix"] = rho
+            engram["purity"] = max(1.0 / float(dim), min(1.0, raw_purity))
+
+            # B. Representative unit statevector trajectory (`degraded_state`)
             # 1. Phase diffusion: psi_k -> psi_k * exp(i * delta_theta_k)
             if sigma_phi_eff > 1e-9:
                 delta_theta = torch.randn(dim, device=dev, dtype=rdtype) * sigma_phi_eff
@@ -1421,7 +1608,7 @@ class NoisyHippocampalBuffer(nn.Module):
                 xi = torch.complex(noise_r, noise_i)
                 current_state = current_state + xi
 
-            # 3. Temporal Lindblad dephasing damping (Ebbinghaus drift toward maximally mixed noise)
+            # 3. Temporal Lindblad dephasing damping (stochastic unraveling step)
             if gamma_decay_eff > 1e-9:
                 decay_factor = math.exp(-gamma_decay_eff)
                 rand_r = torch.randn(dim, device=dev, dtype=rdtype)
@@ -1434,7 +1621,7 @@ class NoisyHippocampalBuffer(nn.Module):
                     decay_factor * current_state + (1.0 - decay_factor) * thermal_bath_state
                 )
 
-            # 4. Renormalize to maintain unitary physical validity
+            # 4. Renormalize representative vector to maintain ||psi|| = 1
             norm = torch.linalg.norm(current_state)
             if norm > 1e-12:
                 current_state = current_state / norm
@@ -1510,9 +1697,13 @@ class NoisyHippocampalBuffer(nn.Module):
 
         fidelities = self.get_fidelities()
         mean_fidelity = float(sum(fidelities) / len(fidelities)) if fidelities else 0.0
+        purities = self.get_purities()
+        mean_purity = float(sum(purities) / len(purities)) if purities else 1.0
 
         sleep_result["hippocampal_mean_fidelity"] = mean_fidelity
         sleep_result["hippocampal_fidelities"] = fidelities
+        sleep_result["hippocampal_mean_purity"] = mean_purity
+        sleep_result["hippocampal_purities"] = purities
         sleep_result["hippocampal_engram_count"] = len(self.buffer)
         return sleep_result
 
@@ -1529,6 +1720,21 @@ class NoisyHippocampalBuffer(nn.Module):
         """Returns the mean engram fidelity across all active engrams."""
         fids = self.get_fidelities()
         return float(sum(fids) / len(fids)) if fids else 1.0
+
+    def get_purities(self) -> list[float]:
+        """Returns mixed-state purity Tr(rho(t)^2) in [1/d, 1] for all active engrams."""
+        return [float(e.get("purity", 1.0)) for e in self.buffer]
+
+    def get_mean_purity(self) -> float:
+        """Returns mean mixed-state purity Tr(rho(t)^2) across all active engrams."""
+        purities = self.get_purities()
+        return float(sum(purities) / len(purities)) if purities else 1.0
+
+    def get_density_matrices(self) -> torch.Tensor:
+        """Returns stacked mixed-state density matrices [N, dim, dim] for active engrams."""
+        if not self.buffer:
+            raise ValueError("Hippocampal buffer is empty. Cannot retrieve density matrices.")
+        return torch.stack([e["density_matrix"] for e in self.buffer], dim=0)
 
     def clear(self) -> None:
         """Clears all stored engrams from buffer."""

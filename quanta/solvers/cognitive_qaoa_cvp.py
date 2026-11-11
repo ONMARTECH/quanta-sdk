@@ -45,7 +45,11 @@ class CognitiveCVPResult:
         zeno_diagnostics: Diagnostic metrics from ZenoSubspaceArbiter.
         warm_start_diagnostics: Diagnostic metrics from LatticeEngramMemory.
         babai_distance: Baseline Euclidean distance achieved by classical Babai solver.
-        solver_mode: Execution mode ('cognitive_qaoa', 'vanilla_qaoa', or 'classical_babai').
+        qaoa_raw_distance: Standalone Euclidean distance from decoded QAOA bitstrings prior to Babai fallback.
+        strictly_improved_over_babai: True iff final_distance is strictly smaller than babai_distance.
+        relative_improvement_pct: Percentage distance reduction relative to babai_distance.
+        allow_babai_fallback: Whether classical Babai fallback clamping was permitted in this run.
+        solver_mode: Execution mode ('cognitive_qaoa', 'vanilla_qaoa', 'standalone_qaoa', or 'classical_babai').
     """
 
     z: np.ndarray
@@ -64,6 +68,10 @@ class CognitiveCVPResult:
     zeno_diagnostics: ZenoProjectionResult | None = None
     warm_start_diagnostics: WarmStartConfig | None = None
     babai_distance: float = 0.0
+    qaoa_raw_distance: float = 0.0
+    strictly_improved_over_babai: bool = False
+    relative_improvement_pct: float = 0.0
+    allow_babai_fallback: bool = True
     solver_mode: str = "cognitive_qaoa"
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -109,12 +117,18 @@ class CognitiveCVPResult:
             f"║ Pinned Coordinates: {self.zeno_pinned}",
             f"║ SWR Recalled:       {self.swr_recalled}",
             f"║ Solution Vector z:  {z_str}",
-            f"║ Distance ||Bz - t||:{self.distance:.6f} (Babai: {self.babai_distance:.6f})",
+            f"║ Distance ||Bz - t||:{self.distance:.6f} "
+            f"(Babai: {self.babai_distance:.6f}, Raw QAOA: {self.qaoa_raw_distance:.6f})",
+            f"║ Lift vs Babai:      {self.relative_improvement_pct:+.2f}% "
+            f"(strictly_improved={self.strictly_improved_over_babai})",
             f"║ Approx Factor (γ):  {self.approximation_factor:.4f}",
             f"║ Wall-Clock Time:    {self.wall_clock_time:.4f}s ({self.execution_time_ms:.1f}ms)",
             "╚═════════════════════════════════════════════════════════════════",
         ]
         return "\n".join(lines)
+
+
+CVPSolveResult = CognitiveCVPResult
 
 
 class CognitiveQAOACVPSolver:
@@ -142,6 +156,7 @@ class CognitiveQAOACVPSolver:
         seed: int | None = 42,
         memory: LatticeEngramMemory | None = None,
         min_active_coords: int = 1,
+        allow_babai_fallback: bool = True,
     ) -> None:
         """Initializes the Cognitive QAOA CVP Solver.
 
@@ -157,6 +172,9 @@ class CognitiveQAOACVPSolver:
             seed: Random seed for deterministic simulation.
             memory: Optional shared LatticeEngramMemory instance.
             min_active_coords: Minimum number of active coordinates preserved for QAOA.
+            allow_babai_fallback: When True (hybrid mode), retains z_babai if QAOA fails to improve
+                upon Babai. When False (standalone QAOA ablation mode), returns the raw decoded
+                QAOA subspace solution without clamping to z_babai.
         """
         self.p = p
         self.shots = shots
@@ -168,6 +186,7 @@ class CognitiveQAOACVPSolver:
         self.max_iter = max_iter
         self.seed = seed
         self.min_active_coords = min_active_coords
+        self.allow_babai_fallback = bool(allow_babai_fallback)
 
         self.zeno_arbiter = (
             ZenoSubspaceArbiter(
@@ -193,6 +212,7 @@ class CognitiveQAOACVPSolver:
         target: np.ndarray,
         bits_per_coord: int = 3,
         ground_truth_z: np.ndarray | list[int] | None = None,
+        allow_babai_fallback: bool | None = None,
     ) -> CognitiveCVPResult:
         """Executes the 6-phase Cognitive QAOA pipeline to solve the Closest Vector Problem.
 
@@ -201,12 +221,19 @@ class CognitiveQAOACVPSolver:
             target: Target vector t of shape (m,).
             bits_per_coord: Number of binary qubits allocated per coordinate.
             ground_truth_z: Optional exact ground truth integer coordinates for benchmark verification.
+            allow_babai_fallback: Optional per-call override of self.allow_babai_fallback. When False,
+                returns the raw QAOA subspace vector z_qaoa without clamping to z_babai.
 
         Returns:
             CognitiveCVPResult dataclass containing optimal coordinates, approximation factor,
             and complete execution telemetry.
         """
         t_start = time.perf_counter()
+        use_babai_fallback = (
+            self.allow_babai_fallback
+            if allow_babai_fallback is None
+            else bool(allow_babai_fallback)
+        )
 
         basis_arr = np.asarray(basis, dtype=np.float64)
         target_arr = np.asarray(target, dtype=np.float64).reshape(-1)
@@ -278,6 +305,7 @@ class CognitiveQAOACVPSolver:
                 num_qubits=reduced_cvp.num_qubits,
                 bits_per_coord=bits_per_coord,
                 center=reduced_cvp.center,
+                active_indices=active_indices,
             )
             swr_recalled = warm_config.recalled_engram_count > 0
             if swr_recalled:
@@ -313,11 +341,11 @@ class CognitiveQAOACVPSolver:
         # -------------------------------------------------------------
         # Phase 5: Solution Synthesis & Decoding
         # -------------------------------------------------------------
-        best_z = z_babai.copy()
-        best_dist = d_babai
+        z_qaoa: np.ndarray | None = None
+        qaoa_raw_distance: float = float("inf")
 
         if qaoa_res is not None and reduced_cvp is not None:
-            # Evaluate all candidate measurement bitstrings
+            # Evaluate candidate measurement bitstrings strictly from QAOA output
             candidates_to_check = qaoa_res.all_solutions[:20]
             if not candidates_to_check:
                 candidates_to_check = [(qaoa_res.best_bitstring, qaoa_res.best_cost, 1.0)]
@@ -335,13 +363,28 @@ class CognitiveQAOACVPSolver:
                 v_candidate = basis_arr @ z_full.astype(np.float64)
                 dist_cand = float(np.linalg.norm(v_candidate - target_arr))
 
-                if dist_cand < best_dist:
-                    best_dist = dist_cand
-                    best_z = z_full.copy()
+                if dist_cand < qaoa_raw_distance:
+                    qaoa_raw_distance = dist_cand
+                    z_qaoa = z_full.copy()
+
+        if z_qaoa is None:
+            z_qaoa = z_babai.copy()
+            qaoa_raw_distance = d_babai
+
+        if use_babai_fallback:
+            best_z = z_qaoa.copy() if qaoa_raw_distance < d_babai - 1e-12 else z_babai.copy()
+        else:
+            best_z = z_qaoa.copy()
 
         # Final closest lattice point
         closest_point = basis_arr @ best_z.astype(np.float64)
         final_distance = float(np.linalg.norm(closest_point - target_arr))
+        strictly_improved = bool(final_distance < d_babai - 1e-12)
+        rel_improvement_pct = (
+            ((d_babai - final_distance) / d_babai) * 100.0
+            if d_babai > 1e-12
+            else 0.0
+        )
 
         # Approximation factor gamma = ||Bz - t|| / ||Bz* - t||
         if gt_z is not None:
@@ -357,7 +400,7 @@ class CognitiveQAOACVPSolver:
         # -------------------------------------------------------------
         # Phase 6: SWR Engram Consolidation
         # -------------------------------------------------------------
-        if self.use_swr and self.memory is not None and final_distance <= d_babai:
+        if self.use_swr and self.memory is not None and final_distance <= d_babai + 1e-12:
             opt_angles = None
             if qaoa_res is not None:
                 opt_angles = np.concatenate([qaoa_res.optimal_gamma, qaoa_res.optimal_beta])
@@ -375,11 +418,16 @@ class CognitiveQAOACVPSolver:
 
         t_elapsed = time.perf_counter() - t_start
 
-        mode = "cognitive_qaoa" if (self.use_zeno and self.use_swr) else (
-            "zeno_qaoa" if self.use_zeno else (
-                "swr_qaoa" if self.use_swr else "vanilla_qaoa"
+        base_mode = (
+            "cognitive_qaoa"
+            if (self.use_zeno and self.use_swr)
+            else (
+                "zeno_qaoa"
+                if self.use_zeno
+                else ("swr_qaoa" if self.use_swr else "vanilla_qaoa")
             )
         )
+        mode = base_mode if use_babai_fallback else f"standalone_{base_mode}"
 
         return CognitiveCVPResult(
             z=best_z,
@@ -398,6 +446,10 @@ class CognitiveQAOACVPSolver:
             zeno_diagnostics=zeno_diagnostics,
             warm_start_diagnostics=warm_config,
             babai_distance=d_babai,
+            qaoa_raw_distance=qaoa_raw_distance,
+            strictly_improved_over_babai=strictly_improved,
+            relative_improvement_pct=rel_improvement_pct,
+            allow_babai_fallback=use_babai_fallback,
             solver_mode=mode,
             metadata={
                 "lattice_dimension": n,
@@ -405,5 +457,13 @@ class CognitiveQAOACVPSolver:
                 "p_layers": self.p,
                 "shots": self.shots,
                 "optimizer": self.optimizer,
+                "allow_babai_fallback": use_babai_fallback,
             },
         )
+
+
+__all__ = [
+    "CVPSolveResult",
+    "CognitiveCVPResult",
+    "CognitiveQAOACVPSolver",
+]

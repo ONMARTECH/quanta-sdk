@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """benchmarks/noetherian_ablation_benchmark.py — 3-Way Ablation Benchmark for Mizan Hakemi.
 
-Formal empirical benchmark comparing three decision arbitration paradigms under
-Quanta SDK's Scientific Integrity Protocol (PROJECT_RULES.md):
-  1. Baseline (Unconstrained): Standard quantum Zeno / utility optimization without invariant bounds.
-  2. Naive Heuristic: Static penalty clipping and simple step-wise Euclidean thresholding.
-  3. Noetherian Arbiter: Full variational mechanics (Action Integral, Epistemic Entropy,
-     Noether Charge Conservation, Invariant Manifold Projection, and Microglial Invariant Pruning).
+Formal empirical benchmark comparing three trajectory-arbitration paradigms under
+Quanta SDK's Scientific Integrity Protocol with symmetric feature and horizon observability:
+  1. Baseline (Unconstrained): Multi-head Zeno utility minus operational 4D cost across
+     full DAG trajectories without conserved-charge regularization.
+  2. Naive Heuristic: Symmetric full-horizon trajectory evaluation with step-wise Euclidean
+     state-jump thresholding and local operational cost guardrails (zero keyword cues).
+  3. Noetherian Arbiter: Full physics-inspired classical vector heuristics on R^d
+     (discrete action integral, epistemic entropy, conserved-charge flux, manifold
+     projection, and microglial invariant pruning) over the identical inputs.
 
 Adversarial Stress Scenarios:
   1. Creeping Context Drift: 15-step trajectory where subtle cumulative drift violates semantic
@@ -618,24 +621,26 @@ def evaluate_variant_naive(
         raw_net = traj_dict["net_score"]
         states = [scenario.dag.nodes[nid].statevector for nid in path_ids if nid in scenario.dag.nodes]
 
-        # Naive heuristic checks:
-        # Check A: Single-step Euclidean jump > step_jump_threshold
+        # Symmetric step-wise observable heuristic checks (zero keyword/title regex cues):
+        # Check A: Single-step Euclidean state jump > step_jump_threshold
         max_step_jump = 0.0
         for k in range(1, len(states)):
             diff_norm = torch.norm(states[k] - states[k - 1], p=2).item()
             if diff_norm > max_step_jump:
                 max_step_jump = diff_norm
 
-        # Check B: Obvious static forbidden keyword search
-        keyword_breach = any(
-            any(w in lbl.upper() for w in ("DROP TABLE", "DELETE ALL", "DISPATCH UNSIGNED"))
-            for lbl in labels
-        )
+        # Check B: Single-step operational 4D consequence cost spike > 0.50
+        max_step_cost = 0.0
+        for nid in path_ids[1:]:
+            if nid in scenario.dag.nodes:
+                c_step = scenario.dag.nodes[nid].consequence.weighted_cost()
+                if c_step > max_step_cost:
+                    max_step_cost = c_step
 
         penalty = 0.0
         if max_step_jump > step_jump_threshold:
             penalty += static_penalty
-        if keyword_breach:
+        if max_step_cost > 0.50:
             penalty += static_penalty
 
         penalized_net = raw_net - penalty
@@ -810,6 +815,21 @@ class NoetherianAblationBenchmark:
             agg_n = _agg(naive_runs)
             agg_m = _agg(noetherian_runs)
 
+            # Honest win/tie/loss rates across runs (measured by Mizan compliance score)
+            def _wtl(ref_runs: list[VariantResult], cmp_runs: list[VariantResult], tol: float = 1e-6) -> dict[str, Any]:
+                wins = sum(1 for a, b in zip(ref_runs, cmp_runs, strict=True) if a.mizan_score - b.mizan_score > tol)
+                losses = sum(1 for a, b in zip(ref_runs, cmp_runs, strict=True) if a.mizan_score - b.mizan_score < -tol)
+                ties = len(ref_runs) - wins - losses
+                n_r = max(1, len(ref_runs))
+                return {
+                    "wins": wins,
+                    "ties": ties,
+                    "losses": losses,
+                    "win_rate": round(wins / n_r, 4),
+                    "tie_rate": round(ties / n_r, 4),
+                    "loss_rate": round(losses / n_r, 4),
+                }
+
             # Statistical delta: advantage of Noetherian over Baseline and Naive
             ablation_delta = {
                 "survival_gain_vs_baseline": round(agg_m["survival_rate"] - agg_b["survival_rate"], 4),
@@ -819,6 +839,8 @@ class NoetherianAblationBenchmark:
                 "violations_prevented_vs_baseline": agg_b["total_violations"] - agg_m["total_violations"],
                 "violations_prevented_vs_naive": agg_n["total_violations"] - agg_m["total_violations"],
                 "latency_overhead_ms": round(agg_m["mean_execution_time_ms"] - agg_b["mean_execution_time_ms"], 2),
+                "vs_baseline_win_tie_loss": _wtl(noetherian_runs, baseline_runs),
+                "vs_naive_win_tie_loss": _wtl(noetherian_runs, naive_runs),
             }
 
             s_res = ScenarioBenchmarkResult(
@@ -847,6 +869,13 @@ class NoetherianAblationBenchmark:
         total_violations_prevented = sum(
             sr.ablation_delta["violations_prevented_vs_baseline"] for sr in scenario_results
         )
+        tot_runs = max(1, tot_scenarios * self.runs)
+        b_wins = sum(sr.ablation_delta["vs_baseline_win_tie_loss"]["wins"] for sr in scenario_results)
+        b_ties = sum(sr.ablation_delta["vs_baseline_win_tie_loss"]["ties"] for sr in scenario_results)
+        b_losses = sum(sr.ablation_delta["vs_baseline_win_tie_loss"]["losses"] for sr in scenario_results)
+        n_wins = sum(sr.ablation_delta["vs_naive_win_tie_loss"]["wins"] for sr in scenario_results)
+        n_ties = sum(sr.ablation_delta["vs_naive_win_tie_loss"]["ties"] for sr in scenario_results)
+        n_losses = sum(sr.ablation_delta["vs_naive_win_tie_loss"]["losses"] for sr in scenario_results)
 
         suite_summary = {
             "metadata": self.get_system_metadata(),
@@ -865,6 +894,22 @@ class NoetherianAblationBenchmark:
                 },
                 "total_violations_prevented_vs_baseline": total_violations_prevented,
                 "noetherian_perfect_conservation": bool(global_m_surv == 1.0),
+                "vs_baseline_win_tie_loss": {
+                    "wins": b_wins,
+                    "ties": b_ties,
+                    "losses": b_losses,
+                    "win_rate": round(b_wins / tot_runs, 4),
+                    "tie_rate": round(b_ties / tot_runs, 4),
+                    "loss_rate": round(b_losses / tot_runs, 4),
+                },
+                "vs_naive_win_tie_loss": {
+                    "wins": n_wins,
+                    "ties": n_ties,
+                    "losses": n_losses,
+                    "win_rate": round(n_wins / tot_runs, 4),
+                    "tie_rate": round(n_ties / tot_runs, 4),
+                    "loss_rate": round(n_losses / tot_runs, 4),
+                },
             },
             "scenarios": [sr.to_dict() for sr in scenario_results],
         }

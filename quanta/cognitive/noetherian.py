@@ -1,31 +1,35 @@
 """Noetherian Invariant Cognitive Arbiter (Mizan Hakemi) Core Engine.
 
-This module formalizes continuous variational mechanics and information-theoretic
-conservation laws for AI cognitive decision trajectories in Quanta SDK.
+This module implements physics-inspired classical vector heuristics and information-theoretic
+regularizers for AI decision trajectories in R^d (default d=64).
 
-Theoretical Pillars:
-1. Hamilton's Principle of Least Action (Discrete Action Integral):
-   S_d = sum_{k=1}^T (T_k - V_k), balancing semantic kinetic momentum
-   T_k = 0.5 * ||Delta q_k||^2 against cognitive potential V_k (goal deviation,
-   consequence cost, constraint penalty). Action efficiency:
-   A_eff = exp(-mean_cost / sigma_A^2) in [0.0, 1.0].
+Epistemic & Mathematical Framing:
+All conserved-charge vectors, generator projections, discrete/Euclidean action functionals,
+and composite Mizan scores in this module are **physics-inspired classical vector heuristics**
+operating on normalized real feature embeddings in R^d — not physical quantum-mechanical
+observables or exact continuous Lie-group symmetries of a physical dynamical system.
+
+Heuristic Pillars:
+1. Discrete Lagrangian & Legendre-Dual Hamiltonian Cost:
+   Discrete Lagrangian action S_d = sum_{k=1}^T (T_k - V_k) relates via Legendre transformation
+   to the non-negative Euclidean/Hamiltonian cost S_E = S_d + 2 * sum_{k=1}^T V_k = sum_{k=1}^T (T_k + V_k),
+   balancing step transition smoothness T_k = 0.5 * ||Delta q_k||^2 against potential penalty V_k.
+   Action efficiency: A_eff = exp(-(S_E / T) / sigma_A^2) in [0.0, 1.0].
 
 2. Epistemic Entropy Bound & Dispersion Control:
-   Shannon / Von Neumann entropy production Delta S_k = H(p_k) - H(p_{k-1})
-   monitoring cognitive divergence, hallucination spurts, and decoherence.
-   Stability score E_eff = exp(-kappa * max(0, Delta S - theta)) in [0.0, 1.0].
+   Normalized Shannon entropy increments Delta S_k = H(p_k) - H(p_{k-1}) monitor distribution
+   dispersion across steps. Stability score E_eff = exp(-kappa * max(0, Delta S - theta)) in [0.0, 1.0].
 
-3. Noether's First Theorem & Semantic Charge Conservation:
-   Continuous Lie generator symmetries phi_j in R^d define conserved semantic charges
-   Q_j(q) = <phi_j, q>. Trajectory transitions generate discrete Noether flux
-   Phi_Noether = sum_j w_j |Delta Q_j|, measuring rule erosion and context leakage.
+3. Linear Invariant Subspace & Conserved-Charge Heuristic:
+   Unit constraint directions phi_j in R^d define linear feature projections Q_j(q) = <phi_j, q>.
+   Stepwise projection drift Phi_Noether = sum_j w_j |Delta Q_j| penalizes constraint erosion.
    Conservation score C_eff = exp(-gamma * Phi_Noether) in [0.0, 1.0].
 
 4. Tikhonov-Regularized Invariant Manifold Projection:
-   States drifting from invariant constraints are projected back onto the intersection
-   of the affine subspace C q = b and the unit Hilbert sphere S^{d-1}:
-   Pi_M(q) = q - C^T (C C^T + lambda I)^{-1} (C q - b) with spherical retraction
-   q* = q / ||q||_2. Compliance score P_eff in [0.0, 1.0].
+   States drifting from linear constraints are projected toward the intersection of the affine
+   subspace C q = b and the unit sphere S^{d-1}:
+   Pi_M(q) = q - C^T (C C^T + lambda I)^{-1} (C q - b) with spherical retraction q* = q / ||q||_2.
+   Post-projection compliance score P_eff = exp(-||C q* - b||_2 / sigma_C) in [0.0, 1.0].
 
 5. Composite Kozmik Mizan Score:
    M_mizan = w_A * A_eff + w_E * E_eff + w_C * C_eff + w_P * P_eff in [0.0, 1.0],
@@ -323,6 +327,11 @@ class ActionIntegralMetric:
     def action(self) -> float:
         """Alias for discrete_action."""
         return self.discrete_action
+
+    @property
+    def euclidean_action(self) -> float:
+        """Positive-definite Legendre-dual Euclidean/Hamiltonian action S_E = S_d + 2*V = T + V."""
+        return self.discrete_action + 2.0 * self.potential_energy_sum
 
     def to_dict(self) -> dict[str, float]:
         """Serializes action metric to dictionary."""
@@ -773,13 +782,16 @@ def evaluate_trajectory_action(
 
         potential_sum += v_k_total
 
-    # Discrete action: S_d = sum(T_k - V_k)
+    # Discrete Lagrangian action S_d = sum(T_k - V_k) and its positive-definite
+    # Legendre-dual Hamiltonian/Euclidean action S_E = S_d + 2 * sum(V_k) = sum(T_k + V_k).
+    # Using S_E derived directly from S_d avoids unbounded-below divergence of exp(-S_d) as V -> +inf.
     s_d = kinetic_sum - potential_sum
+    hamiltonian_action = s_d + 2.0 * potential_sum
 
-    # Action efficiency: exp(-mean_cost / sigma_A^2)
-    mean_cost = (kinetic_sum + potential_sum) / max(1, D)
+    # Action efficiency: exp(-(S_E / D) / sigma_A^2)
+    mean_hamiltonian_cost = max(0.0, hamiltonian_action) / max(1, D)
     scale_sq = max(1e-6, config.action_scale**2)
-    eff = math.exp(-mean_cost / scale_sq)
+    eff = math.exp(-mean_hamiltonian_cost / scale_sq)
     eff = max(0.0, min(1.0, eff))
 
     return ActionIntegralMetric(
@@ -1124,7 +1136,7 @@ def project_to_manifold(
             break
 
     final_drift = torch.norm(torch.matmul(C, q_curr) - b, p=2).item()
-    comp_score = math.exp(-initial_drift / max(1e-6, config.charge_sigma))
+    comp_score = math.exp(-final_drift / max(1e-6, config.charge_sigma))
     comp_score = max(0.0, min(1.0, comp_score))
 
     return q_curr, ManifoldProjectionResult(
@@ -1217,11 +1229,18 @@ def evaluate_trajectory_noetherian(
     )
 
     # 4. Invariant Manifold Projection Pillar (evaluated at trajectory terminus)
+    # Note: `proj_result.compliance_score` measures post-projection compliance (`final_drift`),
+    # whereas an unprojected trajectory's terminus lies at `proj_result.drift_distance_before`
+    # from the manifold (0 when `terminus_state` is already projected onto the manifold).
     terminus_state = states[-1]
     _, proj_result = project_to_manifold(
         state=terminus_state,
         charges=charges,
         config=config,
+    )
+    terminus_manifold_compliance = max(
+        0.0,
+        min(1.0, math.exp(-proj_result.drift_distance_before / max(1e-6, config.charge_sigma))),
     )
 
     # 5. Composite Kozmik Mizan Score
@@ -1229,7 +1248,7 @@ def evaluate_trajectory_noetherian(
         config.w_A * action_metric.action_efficiency
         + config.w_E * entropy_metric.entropy_stability_score
         + config.w_C * charge_eff
-        + config.w_P * proj_result.compliance_score
+        + config.w_P * terminus_manifold_compliance
     )
     mizan_score = max(0.0, min(1.0, float(mizan_score)))
 
@@ -1285,7 +1304,7 @@ def evaluate_trajectory_noetherian(
         noether_flux=noether_flux,
         charge_conservation=charge_eff,
         charge_drift=max_charge_drift,
-        projection_compliance=proj_result.compliance_score,
+        projection_compliance=terminus_manifold_compliance,
         action_metric=action_metric,
         entropy_metric=entropy_metric,
         projection_result=proj_result,
@@ -1301,11 +1320,13 @@ def evaluate_trajectory_noetherian(
 
 
 class NoetherianInvariantEngine:
-    """Core Noetherian Invariant Engine (Mizan Hakemi) for Quanta Cognitive Architecture.
+    """Physics-inspired classical invariant regularizer (Mizan Hakemi) for cognitive trajectories.
 
-    Manages immutable semantic charges, computes variational trajectory action,
-    monitors epistemic entropy flux, executes Tikhonov-regularized manifold projections,
-    and produces composite Kozmik Mizan scores.
+    Note: Conserved-charge vectors, discrete Noether flux, and composite Mizan scores are
+    classical linear-algebraic heuristics on R^d embeddings, not physical quantum observables.
+    Manages constraint projection directions, evaluates Legendre-dual trajectory action and
+    Shannon entropy dispersion, executes Tikhonov-regularized manifold projections, and
+    computes composite Mizan compliance scores.
     """
 
     def __init__(

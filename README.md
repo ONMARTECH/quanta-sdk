@@ -14,9 +14,9 @@
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-2076%20passed-success.svg" alt="Tests"></a>
     <a href="#pytorch-engine"><img src="https://img.shields.io/badge/PyTorch-QuantumLayer-EE4C2C.svg" alt="PyTorch"></a>
-    <a href="#apple-silicon"><img src="https://img.shields.io/badge/Apple%20Silicon-Metal%2052x-000000.svg" alt="Metal"></a>
+    <a href="#apple-silicon"><img src="https://img.shields.io/badge/Apple%20Silicon-Metal%2020x--34x-000000.svg" alt="Metal"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
-    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-23%20tools-teal.svg" alt="MCP"></a>
+    <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-25%20tools-teal.svg" alt="MCP"></a>
     <a href="https://quanta.onmartech.com/"><img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs"></a>
     <a href="#features"><img src="https://img.shields.io/badge/gates-31-blueviolet.svg" alt="Gates"></a>
     <a href="https://quanta.onmartech.com/tutorials/01-getting-started/"><img src="https://img.shields.io/badge/tutorials-16-informational.svg" alt="Tutorials"></a>
@@ -25,23 +25,22 @@
 
 ---
 
-Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides deep learning quantum layers (`quanta.torch`), continuous quantum neural resonance, native Apple Silicon Metal acceleration, 2026 Dual-Track FTQC (surface codes + Gross qLDPC), multi-cloud hardware execution (IBM Quantum, IonQ, Google Cirq), and **23 MCP tools** that let AI assistants directly run quantum workloads.
+Quanta is an **AI-native quantum computing SDK** — designed to be called by AI agents (via [MCP](https://modelcontextprotocol.io)), used by researchers, and deployed in production. It provides deep learning quantum layers (`quanta.torch`), continuous quantum neural resonance, native Apple Silicon Metal acceleration, 2026 Dual-Track FTQC (surface codes + Gross qLDPC), multi-cloud hardware execution (IBM Quantum, IonQ, Google Cirq), and **25 MCP tools** that let AI assistants directly run quantum workloads.
 
-### 🚀 What's New in v1.2.0 (September 2026)
+### 🚀 What's New in v1.2.0
 
 - **2026 Dual-Track Fault-Tolerance Engine (FTQC)**:
-  - **Track A (2D Topological)**: Full Edmonds Blossom MWPM decoding with Google Willow-compliant 3D spacetime syndrome extraction.
-  - **Track B (High-Rate qLDPC)**: Canonical Gross $[[144, 12, 12]]$ Bivariate Bicycle code paired with native Normalized Min-Sum BP-OSD-0 decoder, slashing physical qubit overhead by **$12\times$**.
-  - **Non-Clifford Universality**: 15-to-1 Bravyi-Kitaev magic state distillation factory ($\epsilon_{\text{out}} \le 35 p^3$) and planar lattice surgery.
+  - **Track A (2D Topological)**: Full Edmonds Blossom MWPM and Delfosse–Nickerson Union-Find decoding with 3D spacetime syndrome extraction, alongside Kubica–Delfosse 6.6.6 Color Code simulation.
+  - **Track B (High-Rate qLDPC)**: Canonical IBM Gross $[[144, 12, 12]]$ Bivariate Bicycle code paired with native Normalized Min-Sum BP-OSD decoder, slashing physical qubit overhead by **$12\times$**.
+  - **Non-Clifford Universality**: 15-to-1 Bravyi–Kitaev magic state distillation factory ($\epsilon_{\text{out}} \le 35 p^3$) and planar lattice surgery.
 - **Continuous Hilbert Gradients & Daleckii-Krein Autograd (`quanta.torch`)**: Analytical Fréchet matrix exponential derivatives achieving exact machine precision ($9.99\times 10^{-16}$) alongside dynamic Lie algebra ($\dim(\mathfrak{g})$) barren plateau diagnosis.
-- **2,076 Passing Automated Tests**: 100% pass rate with zero mock calls and certified mathematical unitarity ($\|U^\dagger U - I\| < 10^{-14}$).
-- **Apple Silicon Metal / MLX Zero-Copy GPU**: 52.09× peak speedup on Unified Memory and SIMD Clifford engine executing >3.13M gates/s.
-
+- **2,076+ Passing Automated Tests**: Full unit, property, and scientific-integrity test suite with certified mathematical unitarity ($\|U^\dagger U - I\| < 10^{-14}$).
+- **Apple Silicon Metal / MLX Zero-Copy GPU**: **~20x–34x verified speedup** over NumPy CPU statevector simulation on Apple Silicon GPU (`33.7x` peak in `benchmarks/results/paper_benchmarks.json`), alongside vectorized Aaronson–Gottesman Clifford tableau simulation executing >1.1M gates/s.
 - **PyTorch Native Quantum Engine (`quanta.torch`)** — `QuantumLayer` with analytical parameter-shift autograd, seamless `nn.Module` integration, and Apple Silicon MPS/Metal support.
-- **Biomorphic Resonant Brain** — Continuous-time quantum neural dynamics (`ContinuousResonator`), dual-hemisphere architecture, 4 neuromodulators ($DA, ACh, 5\text{-}HT, NE$), cerebral oxygenation ($sO_2$), REM continual learning, `NoisyHippocampalBuffer` with SWR replay, `DialecticalSynthesizer`, and `CSFBiophysicalShield`.
-- **World's First Native Apple Silicon Metal/MLX Quantum Engine (v1.0.0)** — Up to **404x speedup** on Apple M5 Pro / M-series chips via Unified Memory tensor contractions (`mlx-metal`).
+- **Biomorphic Resonant Brain** — Continuous-time quantum neural dynamics (`ContinuousResonator`), dual-hemisphere architecture, 4 neuromodulators ($DA, ACh, 5\text{-}HT, NE$), cerebral oxygenation ($sO_2$), multi-timescale REM phase-dispersion consolidation (`QuantumREMSleep`), `NoisyHippocampalBuffer` with Lindblad mixed-state purity tracking, `DialecticalSynthesizer`, and continuous biophysical `CSFShieldedEnvironment`.
+- **Native Apple Silicon Metal/MLX Quantum Engine** — **~20x–34x verified speedup** over NumPy on Apple Silicon GPU via Unified Memory tensor contractions (`mlx-metal`).
 - **Multi-Cloud Hardware Validation** — Live verified execution on IonQ Cloud REST API v0.3, IBM Quantum Heron r3 (156 qubits), and Google Cirq Sycamore.
-- **Agentic MCP Tools (23 Tools)** — Native Model Context Protocol server enabling Claude, Gemini, and GPT to author, simulate, transpile, and optimize quantum circuits.
+- **Agentic MCP Tools (25 Tools)** — Native Model Context Protocol server enabling Claude, Gemini, and GPT to author, simulate, transpile, and optimize quantum circuits.
 
 ## Table of Contents
 
@@ -89,7 +88,7 @@ print(result)
 <a id="pytorch-engine"></a>
 ## PyTorch Native Quantum Engine (`quanta.torch`)
 
-Quanta v1.1.0 introduces end-to-end differentiable quantum-classical hybrid deep learning directly integrated with PyTorch's autograd engine, featuring analytical parameter-shift gradients and biomorphic continuous-time resonance.
+Quanta provides end-to-end differentiable quantum-classical hybrid deep learning directly integrated with PyTorch's autograd engine, featuring analytical parameter-shift gradients, Daleckii–Krein spectral derivatives, and biomorphic continuous-time resonance.
 
 ### 1. Differentiable `QuantumLayer`
 
@@ -115,40 +114,44 @@ loss.backward()  # Exact parameter-shift gradients computed automatically
 
 ### 2. Biomorphic Resonant Brain (`BiomorphicResonantBrain`)
 
-Bio-inspired quantum cognitive architecture featuring continuous resonance, dual-hemisphere dynamics, 4 neurotransmitters ($DA, ACh, 5\text{-}HT, NE$), and REM sleep continual learning:
+Bio-inspired quantum cognitive architecture featuring continuous resonance, dual-hemisphere dynamics, 4 neuromodulators ($DA, ACh, 5\text{-}HT, NE$), and differential multi-timescale REM phase-dispersion consolidation:
 
 ```python
-from quanta.torch import BiomorphicResonantBrain
+import torch
+from quanta.torch import BiomorphicResonantBrain, QuantumREMSleep
 
-# Initialize 4-qubit dual-hemisphere biomorphic quantum brain
-brain = BiomorphicResonantBrain(n_qubits=4)
+# Initialize 4-qubit (2L + 2R) dual-hemisphere biomorphic quantum brain
+brain = BiomorphicResonantBrain(in_features=4, num_left_qubits=2, num_right_qubits=2)
 
 # Forward pass through cognitive resonance dynamics
-x = torch.randn(1, 4)
+x = torch.randn(2, 4)
 output = brain(x)
 
-# Consolidate memories during REM sleep (prevents catastrophic forgetting)
-stats = brain.consolidate_rem_sleep(replay_cycles=3)
-print(f"Post-REM Retained Fidelity: {stats['retained_fidelity']:.4f}")
+# Consolidate task prototypes via differential multi-timescale REM phase dispersion
+rem = QuantumREMSleep(brain, sleep_cycles=3)
+rem.register_memory_state(output["state"])
+stats = rem.sleep(cycles=3)
+print(f"Post-REM Retention Estimate: {stats['retention_estimate']:.4f}")
 ```
 
 <a id="apple-silicon"></a>
-## Apple Silicon Metal Acceleration (404x Speedup)
+## Apple Silicon Metal Acceleration (~20x–34x Verified GPU Speedup)
 
-Quanta v1.0.0 features the world's first native Apple Silicon Metal/MLX quantum simulator, harnessing Unified Memory for lightning-fast multi-axis tensor contractions on M-series chips:
+Quanta includes a native Apple Silicon Metal/MLX quantum statevector simulator, harnessing Unified Memory for zero-copy multi-axis tensor contractions on M-series chips (`~20x–34x` verified speedup over NumPy CPU in `benchmarks/results/paper_benchmarks.json`, reaching `33.7x` on 20-qubit multi-layer entangling circuits):
 
 ```python
-from quanta import circuit, H, CX, run
+from quanta import circuit, H, CX, measure, run
 
-@circuit(qubits=26)
+@circuit(qubits=20)
 def large_circuit(q):
-    for i in range(26):
+    for i in range(20):
         H(q[i])
-    for i in range(25):
-        CX(q[i], q[i+1])
+    for i in range(19):
+        CX(q[i], q[i + 1])
+    return measure(q)
 
-# Automatically routes to MLXSimulator on Apple Silicon (0.076s vs 30.7s on CPU)
-result = run(large_circuit, backend="mlx")
+# Routes execution to MLXSimulator on Apple Silicon GPU (~71.6ms vs 2.41s on NumPy CPU for multi-layer 20Q)
+result = run(large_circuit, shots=1024, method="mlx")
 ```
 
 ## IBM Quantum Integration
@@ -200,7 +203,7 @@ All circuits automatically transpile to Heron's native gate set:
 
 ## MCP AI Integration
 
-Quanta exposes **23 MCP tools** for AI assistants (Claude, GPT, Gemini, etc.):
+Quanta exposes **25 MCP tools** for AI assistants (Claude, GPT, Gemini, etc.):
 
 ```bash
 # Install as MCP server
@@ -212,7 +215,8 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | Tool | Description |
 |------|-------------|
 | `run_circuit` | Execute quantum circuit code |
-| `create_bell_state` | Quick Bell state |Φ+⟩ |
+| `mps_circuit_simulate` | Matrix Product State (MPS) simulation for 200+ qubit circuits |
+| `create_bell_state` | Quick Bell state \|Φ+⟩ |
 | `grover_search` | Grover's search algorithm |
 | `shor_factor` | Shor's factoring algorithm |
 | `simulate_noise` | Run with noise model |
@@ -229,8 +233,9 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `ibm_backends` | List IBM quantum computers |
 | `ibm_job_result` | Poll job status & fetch results |
 | `surface_code_simulate` | Surface code QEC simulation |
-| `compare_decoders` | Compare MWPM vs Union-Find decoders |
+| `compare_decoders` | Compare Edmonds Blossom MWPM vs Delfosse–Nickerson Union-Find decoders |
 | `qec_diagnose` | Diagnose errors in quantum error-correcting codes |
+| `qldpc_simulate` | IBM Gross `[[144,12,12]]` Bivariate Bicycle qLDPC & BP-OSD simulation |
 | `estimate_fault_tolerant_cost` | Estimate physical qubits, code distance & T-factory budget (FTQC) |
 | `quanta_reasoning_eval` | Deep reasoning audit & gate density evaluation for AI-generated circuits |
 | `transpile_for_target` | Compile circuit to target native gate set (IBM Heron, Google Willow, IonQ Aria) |
@@ -289,11 +294,15 @@ result = run(circ, noise=NoiseModel().add(Depolarizing(0.01)))
 ```
 Depolarizing · BitFlip · PhaseFlip · AmplitudeDamping · T2Relaxation · Crosstalk · ReadoutError
 
-### Error Correction
-- Bit-flip [[3,1,3]], Phase-flip [[3,1,3]], **Steane [[7,1,3]]** codes
-- **Surface code [[d²,1,d]]** — stabilizer-based, threshold ~1%
-- **Color code** — triangular lattice, transversal Clifford gates
-- **Decoders** — MWPM (greedy) + Union-Find (near-linear O(n·α(n)))
+### Error Correction (`quanta.qec`)
+
+| Code / Architecture | Parameters | Decoder / Protocol | Highlights |
+|---------------------|------------|--------------------|------------|
+| **Repetition, Steane & Shor** | `[[3, 1, 3]]`, `[[7, 1, 3]]`, `[[9, 1, 3]]` | Syndrome lookup & CSS circuits | Bit-flip, Phase-flip, Steane, and Shor codes |
+| **Surface Code** | `[[d², 1, d]]` | **Edmonds Blossom MWPM** & **Delfosse–Nickerson Union-Find** | Exact minimum-weight matching & near-linear $O(n \cdot \alpha(n))$ clustering; 3D spacetime syndromes |
+| **Kubica–Delfosse 6.6.6 Color Code** | `[[n, 1, d]]` | **Restriction / Chromobius-style Decoder** | 3-colorable triangular lattice with transversal full Clifford group ($H, S, \text{CNOT}$) |
+| **IBM Gross Bivariate Bicycle qLDPC** | `[[144, 12, 12]]` | **Normalized Min-Sum BP-OSD** | $12\times$ physical-to-logical encoding efficiency over $d=12$ surface code |
+| **Magic State Distillation & Surgery** | 15-to-1 $\|T\rangle$ & $\|CCZ\rangle$ | **Bravyi–Kitaev Distillation** & Planar Lattice Surgery | Cubic non-Clifford error suppression ($\epsilon_{\text{out}} \le 35 p^3$) |
 
 ## Algorithms
 
@@ -463,21 +472,7 @@ pip install quanta-sdk[gpu] # Installs cupy and cuquantum-python for NVIDIA GPUs
 | [Architecture (TR)](docs/ARCHITECTURE_TR.md) | Türkçe mimari dokümanı |
 | [Features (EN)](docs/FEATURES_EN.md) | Complete feature list |
 | [Comparison (EN)](docs/COMPARISON_EN.md) | vs Qiskit, Cirq, Braket |
-| [CHANGELOG](CHANGELOG.md) | Version history |
-
-## Project Stats
-
-```
-Version:     0.9.3        Gates:       31 (full IBM parity + Google/IonQ)
-Files:       88           Tests:       888 (90% coverage)
-Algorithms:  10           Examples:    11
-Simulators:  6            QEC Codes:   7
-MCP Tools:   23           Max Qubits:  200+ (MPS) / 156 (IBM Heron r3)
-Noise:       7 channels   Backends:    IBM + IonQ + Google + local
-QASM:        3.0          Decoders:    2 (MWPM + UF)
-Tutorials:   14           Notebooks:   14 (Colab)
-Benchmark:   Bell 0.18ms  Docs Pages:  44
-```
+| [CHANGELOG](CHANGELOG.md) | Version history (v1.2.0) |
 
 ## Author
 
