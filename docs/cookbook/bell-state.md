@@ -32,7 +32,7 @@ def bell(q):
     CX(q[0], q[1])
     return measure(q)
 
-result = run(bell, shots=1024)
+result = run(bell, shots=1024, seed=42)
 print(result.summary())
 ```
 
@@ -40,8 +40,8 @@ print(result.summary())
 
 ```
 Measurement Results (1024 shots):
-  |00⟩ : ████████████████████ 512 (50.0%)
-  |11⟩ : ████████████████████ 512 (50.0%)
+  |00⟩ : ████████████████████ 515 (50.3%)
+  |11⟩ : ███████████████████  509 (49.7%)
 ```
 
 > **Key insight:** You'll never see `|01⟩` or `|10⟩` — that's entanglement!
@@ -49,9 +49,9 @@ Measurement Results (1024 shots):
 
 ## Try Next
 
-- Add noise: `run(bell, shots=1024, noise=NoiseModel().add(Depolarizing(p=0.01)))`
+- Add noise: `run(bell, shots=1024, noise=NoiseModel().add(Depolarizing(probability=0.01)))`
 - Try the GHZ state: extend to 3+ qubits with more CX gates
-- Visualize: `from quanta.visualize_svg import draw_svg; draw_svg(bell, "bell.html")`
+- Visualize as SVG/HTML: `from quanta.visualize_svg import to_html; html = to_html(bell, title="Bell State")`
 
 ## See Also
 

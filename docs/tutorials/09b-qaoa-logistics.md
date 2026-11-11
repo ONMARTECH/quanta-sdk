@@ -209,17 +209,16 @@ print(f"\n✅ Quantum portföy: {', '.join(best_stocks)}")
 
 ---
 
-## Neden QAOA Önemli?
+## Neden QAOA Önemli? (ve Sınırları Nelerdir?)
 
-| | Klasik (Brute Force) | QAOA |
-|---|---|---|
-| 10 değişken | 1,024 deneme | ~10 iterasyon |
-| 20 değişken | 1,048,576 deneme | ~20 iterasyon |
-| 50 değişken | 10¹⁵ deneme | ~50 iterasyon |
-| Ölçekleme | O(2ⁿ) | O(poly(n)) |
+| Özellik | Klasik Brute Force | Açık Ising / QUBO QAOA | Kara-Kutu Callable QAOA (`cost=fn`) |
+|---|---|---|---|
+| Problem Sınıfı | Kesin çözüm (Exact) | Varyasyonel sezgisel (Heuristic) | Varyasyonel sezgisel (Heuristic) |
+| Devre Derinliği | — | $O(p \cdot |E|)$ kapı ($p$ katman) | Walsh-Hadamard (`FWHT`) eşdeğeri |
+| Ön-İşleme Maliyeti | $O(2^n)$ | $O(|E|)$ (polinom terim sayısı) | $O(n \cdot 2^n)$ (tüm $2^n$ durumu tarar) |
+| Garanti | Global optimum | Yaklaşık çözüm (NP-hard garantisi yok) | Küçük $n$ prototipleme & doğrulama |
 
-> **Anahtar insight:** QAOA tüm kombinasyonları **aynı anda** değerlendiriyor
-> (quantum süperpozisyon) ve varasyonel parametrelerle en iyisini öne çıkarıyor.
+> **Bilimsel Dürüstlük Notu:** QAOA, NP-zor kombinatoryal problemleri polinom zamanda kesin çözen sihirli bir algoritma **değildir**; klasik çözücülerle (branch-and-bound, tavlama benzetimi) yarışan **kuantum varyasyonel bir sezgisel (heuristic)** yöntemdir. Ayrıca `optimize()` fonksiyonuna keyfi bir Python fonksiyonu (`cost=callable`) verdiğinizde, Quanta bunu kapı seviyesinde derlemek için $O(n \cdot 2^n)$ karmaşıklıklı Hızlı Walsh-Hadamard Dönüşümü (`FWHT`) uygular; gerçek donanım ölçeğinde avantaj arandığında maliyet fonksiyonu doğrudan seyrek Pauli-Z / Ising terimleri ($O(\text{poly}(n))$ terim) olarak verilmelidir.
 
 ---
 

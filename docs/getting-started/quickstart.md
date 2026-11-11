@@ -13,36 +13,49 @@ def bell(q):
     CX(q[0], q[1])
     return measure(q)
 
-result = run(bell, shots=1024)
-print(result)
+result = run(bell, shots=1024, seed=42)
+print(result.counts)
 ```
 
 **Output:**
 ```
-Result(counts={'00': 512, '11': 512}, shots=1024, qubits=2)
+{'00': 515, '11': 509}
 ```
+
+*(Tip: `print(result)` renders a formatted ASCII histogram and state summary box.)*
 
 ## 2. Run Grover's Search
 
 ```python
-from quanta.layer3.search import grover_search
+from quanta.layer3.search import search
 
-result = grover_search(
-    oracle_type="value",
-    target=5,
-    num_qubits=4,
-)
-print(f"Found: {result.found_value}")
+result = search(num_bits=4, target=5, seed=42)
+print(f"Found: {result.most_frequent} (queries={result.oracle_queries})")
+```
+
+**Output:**
+```
+Found: 0101 (queries=3)
 ```
 
 ## 3. Visualize a Circuit
 
 ```python
+from pathlib import Path
+import tempfile
+from quanta import circuit, H, CX, measure
 from quanta.visualize_svg import to_html
 
+@circuit(qubits=2)
+def bell(q):
+    H(q[0])
+    CX(q[0], q[1])
+    return measure(q)
+
 html = to_html(bell, title="Bell State", dark_mode=True)
-with open("bell.html", "w") as f:
-    f.write(html)
+out_path = Path(tempfile.gettempdir()) / "bell.html"
+out_path.write_text(html, encoding="utf-8")
+print(f"Generated {len(html)} bytes of standalone SVG/HTML")
 ```
 
 ## 4. Use with AI (MCP)

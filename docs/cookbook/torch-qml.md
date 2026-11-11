@@ -22,8 +22,8 @@ class HybridQuantumClassifier(nn.Module):
         self.pre_net = nn.Linear(8, num_qubits)
         self.quantum_layer = QuantumLayer(
             num_qubits=num_qubits,
-            depth=2,
-            ansatz="real_amplitudes",
+            circuit_fn="real_amplitudes",
+            num_layers=2,
         )
         self.post_net = nn.Linear(num_qubits, 2)
 
@@ -34,10 +34,11 @@ class HybridQuantumClassifier(nn.Module):
         return logits
 
 # 2. Forward pass with autograd
+torch.manual_seed(42)
 model = HybridQuantumClassifier(num_qubits=4)
 x = torch.randn(16, 8)  # Batch of 16 samples
 logits = model(x)
-print(f"Logits Shape: {logits.shape}")  # [16, 2]
+print(f"Logits Shape: {logits.shape}")  # torch.Size([16, 2])
 
 # 3. Backward pass (computes quantum gradients automatically)
 loss = logits.sum()
@@ -49,22 +50,24 @@ print("Quantum Layer Gradient Norm:", model.quantum_layer.weights.grad.norm().it
 
 ## 2. Continuous-Time Resonant Layer (`ContinuousResonantLayer`)
 
-For continuous-variable quantum dynamics governed by Hamiltonian ODEs:
-$$\frac{d|\psi(t)\rangle}{dt} = -i \hat{H}(\theta, t)|\psi(t)\rangle$$
+For continuous-time quantum Hamiltonian dynamics governed by unitary Schrödinger evolution:
+$$\frac{d|\psi(t)\rangle}{dt} = -i \hat{H}(\theta, x)|\psi(t)\rangle$$
 
 ```python
+import torch
 from quanta.torch import ContinuousResonantLayer
 
-# Initialize continuous resonant layer with Daleckii-Krein matrix exponential autograd
+# Initialize continuous resonant layer with Daleckii-Krein spectral matrix exponential autograd
+torch.manual_seed(42)
 resonant_layer = ContinuousResonantLayer(
-    num_qubits=3,
-    evolution_time=1.0,
-    num_steps=50,
+    num_nodes=3,
+    in_features=3,
+    initial_time=1.0,
 )
 
 inputs = torch.randn(8, 3)
 output = resonant_layer(inputs)
-print(f"Continuous Resonance Output: {output.shape}")
+print(f"Continuous Resonance Output: {output.shape}")  # torch.Size([8, 6]) for ('Z', 'X') observables
 ```
 
 ---

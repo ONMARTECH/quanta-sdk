@@ -51,11 +51,14 @@ print(f"\n  Yorumlama: Ölçersen ya |00⟩ ya da |11⟩ çıkar")
 print(f"  Her ikisi de %50 olasılıklı — AMA her zaman aynı!")
 print(f"  Bu korelasyon ürkütücü: biri 0 verirse diğeri kesinlikle 0.")
 
-# Dolanıklık kanıtı: örnekleme
+# Dolanıklık kanıtı: tek Z-bazında örnekleme
 counts = sim.sample(1000)
 print(f"\n  1000 ölçüm: {counts}")
 same = sum(v for k, v in counts.items() if k[0] == k[1])
-print(f"  Aynı sonuç oranı: {same/1000:.1%} (klasikte max %75)")
+print(f"  Z-bazında aynı sonuç oranı: {same/1000:.1%}")
+print("  (Not: Tek bir sabit bazda klasik paylaşımlı rastgelelik de %100 korelasyon")
+print("   verebilir; klasik max %75 / |S| ≤ 2 sınırı Adım 2–3'teki 4 uyumsuz CHSH")
+print("   ölçüm açısı bir arada değerlendirildiğinde ortaya çıkar!)")
 ```
 
 !!! note "Simülasyon Notu"

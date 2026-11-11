@@ -1,13 +1,13 @@
 # Quantum Classification — Quick Recipe
 
-> Train a variational quantum classifier on a small dataset.
+> Train a variational quantum classifier on a non-linearly separable XOR dataset.
 
 ## What It Does
 
 A **Quantum Classifier** uses parameterized quantum circuits to classify data.
-It encodes classical features into quantum states using a **ZZFeatureMap**,
-then optimizes rotation angles to separate classes — similar to how a neural
-network learns decision boundaries, but using quantum interference.
+By configuring `feature_map="zz"`, it encodes classical features into entangled
+quantum states via pairwise ZZ interactions, then optimizes rotation angles to
+separate classes — learning non-linear decision boundaries via quantum interference.
 
 ## Code
 
@@ -15,7 +15,7 @@ network learns decision boundaries, but using quantum interference.
 from quanta.layer3.qml import QuantumClassifier
 import numpy as np
 
-# XOR-like dataset (not linearly separable — quantum advantage!)
+# XOR-like dataset (not linearly separable!)
 X_train = np.array([
     [0.1, 0.9],  # Class 1
     [0.9, 0.1],  # Class 1
@@ -24,13 +24,20 @@ X_train = np.array([
 ])
 y_train = np.array([1, 1, 0, 0])
 
-# Train
-clf = QuantumClassifier(n_qubits=2, n_layers=2, seed=42)
-result = clf.fit(X_train, y_train, epochs=20)
+# Train with entangling ZZ feature map and Adam optimizer
+clf = QuantumClassifier(
+    n_qubits=2,
+    n_layers=2,
+    feature_map="zz",
+    optimizer="adam",
+    learning_rate=0.2,
+    seed=42,
+)
+result = clf.fit(X_train, y_train, epochs=40)
 print(f"Training accuracy: {result.accuracy:.0%}")
 
-# Predict on new points
-X_test = np.array([[0.5, 0.8], [0.8, 0.5]])
+# Predict on new Class-1 points in the XOR quadrants
+X_test = np.array([[0.2, 0.8], [0.8, 0.2]])
 preds = clf.predict(X_test)
 print(f"Predictions: {preds}")
 ```
@@ -43,8 +50,8 @@ Predictions: [1 1]
 ```
 
 > **Key insight:** This XOR pattern is not linearly separable — a single
-> perceptron can't solve it. The quantum feature map projects data into a
-> higher-dimensional Hilbert space where it *becomes* separable.
+> classical perceptron cannot solve it. The `"zz"` quantum feature map projects
+> pairwise interactions into Hilbert space where the classes become separable.
 
 ## Parameters Explained
 
@@ -52,7 +59,8 @@ Predictions: [1 1]
 |-----------|-------------|----------------|
 | `n_qubits` | Number of qubits (= feature dimensions) | 2–8 |
 | `n_layers` | Circuit depth (more layers = more expressive) | 1–5 |
-| `feature_map` | Data encoding strategy | `"ZZFeatureMap"` (default) |
+| `feature_map` | Data encoding strategy | `"angle"` (default), `"zz"`, `"amplitude"` |
+| `optimizer` | Parameter update rule | `"sgd"` (default), `"adam"` |
 | `epochs` | Training iterations | 10–50 |
 | `seed` | Random seed for reproducibility | Any integer |
 

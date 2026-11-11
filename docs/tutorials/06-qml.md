@@ -93,7 +93,7 @@ Classical Data → Feature Map → PQC (trainable) → Measurement → Predictio
 ## Try It Yourself
 
 1. Try `n_layers=4` — does accuracy improve?
-2. Compare `AngleFeatureMap` vs `ZZFeatureMap` for the same data
+2. Compare `feature_map="angle"` vs `feature_map="zz"` (and `"amplitude"`) on the same dataset
 3. Use `QuantumKernel` with 3 features and 3 qubits
 
 ## What's Next

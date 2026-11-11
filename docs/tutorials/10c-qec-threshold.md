@@ -5,7 +5,7 @@
 ---
 
 > **Bu tutorialda yapacağınız şey:** Surface code'u farklı hata oranlarında
-> simüle edip, **eşik hata oranını** bulacaksınız. Bu eşiğin altında quantum
+> simüle edip, **eşik hata oranını (threshold)** bulacaksınız. Bu eşiğin altında quantum
 > hata düzeltme çalışıyor, üstünde çöküyor. Bu, quantum bilgisayarların
 > **gerçekten ölçeklenebileceğinin** deneysel kanıtı.
 
@@ -14,30 +14,32 @@
 ## Neden QEC Eşiği Bu Kadar Önemli?
 
 Quantum bilgisayarların en büyük sorunu: **qubit'ler hata yapıyor.**
-Tek bir qubit'in hata oranı ~%0.1-1. 1000 qubit'lik bir hesaplama
+Tek bir qubit'in hata oranı ~%0.1–1. 1000 qubit'lik bir hesaplama
 yaparsanız, neredeyse kesin hata alırsınız.
 
 Çözüm: **Quantum Error Correction (QEC).**
 
-Ama QEC'in çalışması bir koşula bağlı:
+Ama QEC'in çalışması fiziksel gürültünün **eşik hata oranının ($p_{\text{th}}$)** altında olmasına bağlıdır. Surface code için eşik değeri, gürültü modelinin ayrıntı düzeyine göre üç standart rejimde incelenir:
 
-> **Fiziksel hata oranı, eşik hata oranının altında olmalı.**
+| Gürültü Modeli | Açıklama | Surface Code Eşiği ($p_{\text{th}}$) | Quanta Metodu |
+|---|---|---|---|
+| **Code-Capacity** | Yalnızca veri qubitlerinde bağımsız hata, kusursuz sendrom ölçümü | **~%10.3** | `simulate_error_correction()` |
+| **3D Phenomenological** | Veri hatası + gürültülü çok döngülü sendrom ölçümü ($\Delta s_t$) | **~%2.9** | `simulate_dynamic()` |
+| **Circuit-Level Depolarizing** | Sendrom çıkarma CNOT kapılarının kendisi de gürültülü | **~%0.7 – %1.1** | Donanım / tam devre seviyesi |
 
-Surface code için bu eşik teorik olarak **~%1.1**. Bu eşiğin altında:
-- Code distance artırınca logical hata oranı **üstel olarak düşer**
+Bu tutorialda `simulate_error_correction()` ile **code-capacity (~%10.3)** eşiğini doğrudan gözlemleyeceğiz (3D uzay-zaman modeli için bkz. [Tutorial 11 — Willow Dynamic QEC](11-willow-dynamic-qec.md)). Eşiğin altında:
+- Code distance ($d$) artırınca logical hata oranı **üstel olarak düşer**
 - Yani daha fazla qubit = daha az hata
 
 Bu eşiğin üstünde:
-- QEC hata düzeltmekten daha fazla hata **ekler**
+- QEC hata düzeltmekten daha fazla mantıksal hata üretir
 - Daha fazla qubit = daha fazla hata
 
 ---
 
 ## Adım 1: Surface Code Temelleri
 
-Surface code, qubit'leri 2 boyutlu bir ızgaraya yerleştirir.
-d×d = d² fiziksel qubit → 1 logical qubit. d arttıkça güvenilirlik artar
-(eşiğin altındaysa):
+Surface code, veri qubit'lerini $d \times d = d^2$ boyutlu 2D bir ızgaraya yerleştirir ve 1 logical qubit kodlar. $d$ arttıkça düzeltilebilir hata ağırlığı $t = \lfloor(d-1)/2\rfloor$ artar:
 
 ```python
 from quanta.qec.surface_code import SurfaceCode
@@ -54,61 +56,59 @@ for d in [3, 5, 7]:
     print(f"  Z stabilizer:    {code.n_syndrome_z}")
     print()
 
-print("💡 d=3: 9 qubit ile 1 hatayı düzelt")
-print("   d=5: 25 qubit ile 2 hatayı düzelt")
-print("   d=7: 49 qubit ile 3 hatayı düzelt")
+print("💡 d=3: 9 veri qubiti ile 1 hatayı düzelt")
+print("   d=5: 25 veri qubiti ile 2 hatayı düzelt")
+print("   d=7: 49 veri qubiti ile 3 hatayı düzelt")
 ```
 
 ---
 
 ## Adım 2: Hata Düzeltme Simülasyonu
 
-Farklı fiziksel hata oranlarında surface code'un ne kadar
-başarılı çalıştığını test edelim:
+Farklı fiziksel hata oranlarında surface code'un ne kadar başarılı çalıştığını test edelim:
 
 ```python
 from quanta.qec.surface_code import SurfaceCode
 
 code = SurfaceCode(distance=3)
 
-print("Surface Code d=3 — Hata Oranı Taraması\n")
+print("Surface Code d=3 — Code-Capacity Hata Oranı Taraması\n")
 print(f"{'Fiziksel':>10} │ {'Logical':>10} │ {'Bastırma':>10} │ Durum")
-print("─" * 52)
+print("─" * 56)
 
-error_rates = [0.0001, 0.001, 0.005, 0.01, 0.02, 0.05, 0.10, 0.15]
+error_rates = [0.001, 0.005, 0.01, 0.03, 0.05, 0.08, 0.12, 0.15]
 
 for p in error_rates:
     result = code.simulate_error_correction(error_rate=p, rounds=2000, seed=42)
-    
+
     if result.logical_error_rate > 0:
         suppression = p / result.logical_error_rate
         sup_str = f"{suppression:.1f}x"
     else:
         sup_str = "∞"
-    
-    status = "✅ QEC çalışıyor" if result.logical_error_rate < p else "❌ QEC kötüleştiriyor"
+
+    status = "✅ QEC bastırıyor" if result.logical_error_rate < p else "❌ Eşik yakını/üstü"
     if result.logical_error_rate == 0:
         status = "✅ Sıfır hata!"
-    
+
     print(f"  {p:>8.4f} │ {result.logical_error_rate:>10.4f} │ {sup_str:>10} │ {status}")
 
-print(f"\nEşik tahmini: {result.threshold_estimate:.1%}")
+print(f"\nCode-capacity eşik tahmini: {result.threshold_estimate:.1%}")
 ```
 
 ---
 
 ## Adım 3: Code Distance Karşılaştırma — Eşik Kanıtı
 
-Asıl kanıt burada: **eşiğin altında d artınca logical hata düşer,
-üstünde d artınca hata artar.** Bu davranış eşiği kanıtlar:
+Asıl kanıt burada: **code-capacity eşiğinin (~%10.3) altında $d$ artınca logical hata düşer (`📉 iyileşiyor`), üstünde ise $d$ artınca logical hata artar (`📈 kötüleşiyor`).** Bu kesişim (crossover) eşiği deneysel olarak kanıtlar:
 
 ```python
 from quanta.qec.surface_code import SurfaceCode
 
 distances = [3, 5, 7]
-error_rates = [0.001, 0.005, 0.01, 0.015, 0.02, 0.05]
+error_rates = [0.01, 0.03, 0.05, 0.08, 0.12, 0.15]
 
-print("Code Distance vs Hata Oranı Matrisi\n")
+print("Code Distance vs Hata Oranı Matrisi (Code-Capacity)\n")
 header = f"{'p_phys':>8}"
 for d in distances:
     header += f" │ {'d='+str(d):>10}"
@@ -119,13 +119,13 @@ print("─" * 65)
 for p in error_rates:
     row = f"  {p:>6.3f}"
     logicals = []
-    
+
     for d in distances:
         code = SurfaceCode(distance=d)
         r = code.simulate_error_correction(error_rate=p, rounds=2000, seed=42)
         logicals.append(r.logical_error_rate)
         row += f" │ {r.logical_error_rate:>10.4f}"
-    
+
     # Trend: d artınca logical düşüyor mu?
     if logicals[-1] < logicals[0]:
         trend = "📉 iyileşiyor"
@@ -133,13 +133,13 @@ for p in error_rates:
         trend = "📈 kötüleşiyor"
     else:
         trend = "➡️  sabit"
-    
+
     row += f" │ {trend}"
     print(row)
 
-print(f"\n🔑 Eşiğin altı (p < ~%1): d artınca logical error DÜŞER")
-print(f"   Eşiğin üstü (p > ~%1): d artınca logical error ARTAR")
-print(f"   Bu, quantum ölçeklenebilirliğin kanıtıdır.")
+print("\n🔑 Eşiğin altı (p < ~%10.3 code-capacity): d artınca logical error DÜŞER")
+print("   Eşiğin üstü (p > ~%10.3 code-capacity): d artınca logical error ARTAR")
+print("   (Devre seviyesi CNOT gürültüsünde aynı geçiş ~%1.1 civarında gerçekleşir.)")
 ```
 
 ---
@@ -152,8 +152,8 @@ Eşiğin altında her distance artışı üstel iyileşme sağlar:
 from quanta.qec.surface_code import SurfaceCode
 import math
 
-# Eşiğin altı: p = 0.005
-p = 0.005
+# Eşiğin belirgin altında bir hata oranı: p = 0.02
+p = 0.02
 print(f"Hata Bastırma Analizi (p = {p:.3f})\n")
 print(f"{'Distance':>10} │ {'Qubit':>6} │ {'Logical':>10} │ {'Bastırma':>10} │ Verimlilik")
 print("─" * 65)
@@ -161,49 +161,40 @@ print("─" * 65)
 for d in [3, 5, 7]:
     code = SurfaceCode(distance=d)
     r = code.simulate_error_correction(error_rate=p, rounds=5000, seed=42)
-    
+
     n_qubits = code.n_physical
     if r.logical_error_rate > 0:
         suppression = p / r.logical_error_rate
-        # Overhead: kaç fiziksel qubit → 1 logical qubit
+        sup_str = f"{suppression:>9.1f}x"
         efficiency = f"1:{n_qubits}"
     else:
-        suppression = float('inf')
-        efficiency = f"1:{n_qubits} (mükemmel)"
-    
-    sup_bar = "█" * min(int(suppression) if suppression != float('inf') else 30, 30)
-    print(f"  d={d:>5} │ {n_qubits:>6} │ {r.logical_error_rate:>10.5f} │ {suppression:>10.1f}x │ {efficiency}")
+        suppression = float("inf")
+        sup_str = f"{'∞':>10}"
+        efficiency = f"1:{n_qubits} (0 hata)"
 
-print(f"\n💡 d=3→5→7: her adımda üstel iyileşme")
-print(f"   Bu, pratik quantum bilgisayarların mümkün olduğunun kanıtı")
-print(f"   Google Willow (2024): d=3→5→7'de bu eğriyi deneysel gösterdi")
+    print(f"  d={d:>5} │ {n_qubits:>6} │ {r.logical_error_rate:>10.5f} │ {sup_str} │ {efficiency}")
+
+print("\n💡 d=3→5→7: her adımda üstel iyileşme")
+print("   Google Willow (2024): tam devre seviyesinde d=3→5→7 üstel bastırmayı deneysel gösterdi")
 ```
 
 ---
 
 ## Bu Neden Devrimsel?
 
-2024'te Google, **Willow çipinde** tam olarak bu deneyi yaptı:
+2024 sonunda Google Quantum AI, **Willow çipinde** devre seviyesi (~%0.1–%0.3 kapı hatası, < ~%1.1 devre eşiği) altında tam olarak bu $d=3 \to 5 \to 7$ üstel bastırma eğrisini gösterdi:
 
-| Google Sonucu | Simülasyonumuz |
-|---------------|----------------|
-| d=3: logical error yüksek | d=3: logical error > p |
-| d=5: düşüş başladı | d=5: belirgin düşüş |
-| d=7: üstel bastırma | d=7: güçlü bastırma |
-
-> Surface code eşiğinin altında çalışmak, quantum bilgisayarı
-> **sonsuza kadar ölçeklenebilir** kılar. 1 milyon qubit'lik
-> quantum bilgisayar inşa etmenin fiziksel kanıtı bu.
+| Rejim | Eşik ($p_{\text{th}}$) | $p < p_{\text{th}}$ Davranışı |
+|---|---|---|
+| Code-Capacity (`simulate_error_correction`) | ~%10.3 | $d=3 \to 5 \to 7$ üstel bastırma (`📉 iyileşiyor`) |
+| 3D Phenomenological (`simulate_dynamic`) | ~%2.9 | Ölçüm gürültüsü altında uzay-zaman bastırma |
+| Tam Devre Seviyesi (Google Willow donanımı) | ~%0.7 – %1.1 | $\Lambda \approx 2.14\times$ her distance artışında hata yarılanması |
 
 ---
 
 ## Sonuç
 
-1. Surface code'un distance-qubit ilişkisini öğrendiniz
-2. Farklı hata oranlarında hata düzeltme simülasyonu yaptınız
-3. **Eşik hata oranını** (~%1.1) deneysel olarak buldunuz
-4. Distance artışının eşik altında **üstel iyileşme** sağladığını kanıtladınız
-5. Google Willow deneyiyle aynı sonuçları elde ettiniz
-
-> **Doğrulama:** Eşik altında (p < %1) d artınca logical error düşer ✅
-> Eşik üstünde (p > %1) d artınca logical error artar ✅
+1. Surface code'un distance–qubit ilişkisini ($d^2$ veri qubiti) öğrendiniz
+2. Code-capacity (~%10.3), 3D fenomenolojik (~%2.9) ve devre seviyesi (~%1.1) eşik farklarını incelediniz
+3. Adım 3'te eşik altı (`📉 iyileşiyor`) ve eşik üstü (`📈 kötüleşiyor`) geçişini bizzat doğruladınız
+4. Distance artışının eşik altında **üstel hata bastırma** sağladığını kanıtladınız
