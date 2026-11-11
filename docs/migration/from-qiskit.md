@@ -8,7 +8,7 @@
 |---------|--------|--------|
 | Install size | ~500 MB | ~5 MB (Python + NumPy core) |
 | IBM Hardware | ✅ (via Runtime) | ✅ (direct REST API, no Qiskit needed) |
-| Core dependencies | 20+ packages | 1 (`numpy>=1.24`) |
+| Core dependencies | 20+ packages | 4 (`numpy`, `scipy`, `networkx`, `certifi`; pure-NumPy circuit/statevector kernel) |
 | Learning curve | Steep (Primitives, Transpiler, Provider) | Gentle (3 imports to start) |
 | Gate count | 50+ | 34 (IBM Heron + Google + IonQ native) |
 | AI Integration | ❌ | ✅ (25 MCP tools for Claude/GPT/Gemini) |

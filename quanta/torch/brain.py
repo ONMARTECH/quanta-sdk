@@ -674,15 +674,15 @@ class BiomorphicResonantBrain(nn.Module):
         """Forward pass simulating whole-brain quantum dynamics and collective consensus.
 
         Args:
-            x: Input tensor [batch_size, in_features] or [in_features].
+            x: Input tensor `[batch_size, in_features]` or `[in_features]`.
 
         Returns:
             Dictionary containing:
-                - 'consensus': Macroscopic parliament decision scalar in [-1, 1] [batch, 1].
-                - 'left_consensus': Left hemisphere analytic polarity [batch, 1].
-                - 'right_consensus': Right hemisphere holistic polarity [batch, 1].
-                - 'readout_vector': Full multi-observable readout [batch, num_qubits].
-                - 'state': Evolved quantum statevector [batch, 2^num_qubits].
+                - `'consensus'`: Macroscopic parliament decision scalar in `[-1, 1]` of shape `[batch, 1]`.
+                - `'left_consensus'`: Left hemisphere analytic polarity of shape `[batch, 1]`.
+                - `'right_consensus'`: Right hemisphere holistic polarity of shape `[batch, 1]`.
+                - `'readout_vector'`: Full multi-observable readout of shape `[batch, num_qubits]`.
+                - `'state'`: Evolved quantum statevector of shape `[batch, 2^num_qubits]`.
         """
         is_1d = x.dim() == 1
         if is_1d:

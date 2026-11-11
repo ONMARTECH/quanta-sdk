@@ -8,17 +8,16 @@
     <a href="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml"><img src="https://github.com/ONMARTECH/quanta-sdk/actions/workflows/tests.yml/badge.svg" alt="CI"></a>
     <a href="#quality-benchmark"><img src="https://img.shields.io/badge/coverage-92%25-brightgreen.svg" alt="Coverage"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/badge/version-1.2.0-blue.svg" alt="Version"></a>
-    <a href="https://doi.org/Pending Registration"><img src="https://img.shields.io/badge/DOI-pending%20publication-orange.svg" alt="DOI"></a>
     <a href="https://pypi.org/project/quanta-sdk/"><img src="https://img.shields.io/pypi/v/quanta-sdk.svg" alt="PyPI"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-brightgreen.svg" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-orange.svg" alt="License"></a>
-    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-2076%20passed-success.svg" alt="Tests"></a>
+    <a href="#quality-benchmark"><img src="https://img.shields.io/badge/tests-2826%2B%20passed-success.svg" alt="Tests"></a>
     <a href="#pytorch-engine"><img src="https://img.shields.io/badge/PyTorch-QuantumLayer-EE4C2C.svg" alt="PyTorch"></a>
     <a href="#apple-silicon"><img src="https://img.shields.io/badge/Apple%20Silicon-Metal%2020x--34x-000000.svg" alt="Metal"></a>
     <a href="#ibm-quantum-integration"><img src="https://img.shields.io/badge/IBM%20Quantum-Heron%20r3-purple.svg" alt="IBM"></a>
     <a href="#mcp-ai-integration"><img src="https://img.shields.io/badge/MCP-25%20tools-teal.svg" alt="MCP"></a>
     <a href="https://quanta.onmartech.com/"><img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs"></a>
-    <a href="#features"><img src="https://img.shields.io/badge/gates-31-blueviolet.svg" alt="Gates"></a>
+    <a href="#features"><img src="https://img.shields.io/badge/gates-34-blueviolet.svg" alt="Gates"></a>
     <a href="https://quanta.onmartech.com/tutorials/01-getting-started/"><img src="https://img.shields.io/badge/tutorials-16-informational.svg" alt="Tutorials"></a>
   </p>
 </p>
@@ -34,10 +33,10 @@ Quanta is an **AI-native quantum computing SDK** — designed to be called by AI
   - **Track B (High-Rate qLDPC)**: Canonical IBM Gross $[[144, 12, 12]]$ Bivariate Bicycle code paired with native Normalized Min-Sum BP-OSD decoder, slashing physical qubit overhead by **$12\times$**.
   - **Non-Clifford Universality**: 15-to-1 Bravyi–Kitaev magic state distillation factory ($\epsilon_{\text{out}} \le 35 p^3$) and planar lattice surgery.
 - **Continuous Hilbert Gradients & Daleckii-Krein Autograd (`quanta.torch`)**: Analytical Fréchet matrix exponential derivatives achieving exact machine precision ($9.99\times 10^{-16}$) alongside dynamic Lie algebra ($\dim(\mathfrak{g})$) barren plateau diagnosis.
-- **2,076+ Passing Automated Tests**: Full unit, property, and scientific-integrity test suite with certified mathematical unitarity ($\|U^\dagger U - I\| < 10^{-14}$).
+- **2,826+ Passing Automated Tests**: Full unit, property, and scientific-integrity test suite with certified mathematical unitarity ($\|U^\dagger U - I\| < 10^{-14}$).
 - **Apple Silicon Metal / MLX Zero-Copy GPU**: **~20x–34x verified speedup** over NumPy CPU statevector simulation on Apple Silicon GPU (`33.7x` peak in `benchmarks/results/paper_benchmarks.json`), alongside vectorized Aaronson–Gottesman Clifford tableau simulation executing >1.1M gates/s.
 - **PyTorch Native Quantum Engine (`quanta.torch`)** — `QuantumLayer` with analytical parameter-shift autograd, seamless `nn.Module` integration, and Apple Silicon MPS/Metal support.
-- **Biomorphic Resonant Brain** — Continuous-time quantum neural dynamics (`ContinuousResonator`), dual-hemisphere architecture, 4 neuromodulators ($DA, ACh, 5\text{-}HT, NE$), cerebral oxygenation ($sO_2$), multi-timescale REM phase-dispersion consolidation (`QuantumREMSleep`), `NoisyHippocampalBuffer` with Lindblad mixed-state purity tracking, `DialecticalSynthesizer`, and continuous biophysical `CSFShieldedEnvironment`.
+- **Biomorphic Resonant Brain (Quantum-Inspired PyTorch Heuristics)** — Continuous-time neural resonance (`ContinuousResonator`), dual-hemisphere architecture, 4 neuromodulator channels ($DA, ACh, 5\text{-}HT, NE$), cerebral oxygenation ($sO_2$), multi-timescale REM phase-dispersion consolidation (`QuantumREMSleep`), `NoisyHippocampalBuffer` with Lindblad mixed-state purity tracking, `QuantumDecisionArbiter`, and continuous biophysical `CSFShieldedEnvironment`.
 - **Native Apple Silicon Metal/MLX Quantum Engine** — **~20x–34x verified speedup** over NumPy on Apple Silicon GPU via Unified Memory tensor contractions (`mlx-metal`).
 - **Multi-Cloud Hardware Validation** — Live verified execution on IonQ Cloud REST API v0.3, IBM Quantum Heron r3 (156 qubits), and Google Cirq Sycamore.
 - **Agentic MCP Tools (25 Tools)** — Native Model Context Protocol server enabling Claude, Gemini, and GPT to author, simulate, transpile, and optimize quantum circuits.
@@ -102,7 +101,7 @@ from quanta.torch import QuantumLayer
 # Parameterized quantum layer with analytical parameter-shift autograd
 model = nn.Sequential(
     nn.Linear(4, 4),
-    QuantumLayer(n_qubits=4, ansatz="hardware_efficient", n_layers=2),
+    QuantumLayer(num_qubits=4, circuit_fn="hardware_efficient", num_layers=2),
     nn.Linear(4, 2)
 )
 
@@ -221,10 +220,11 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `shor_factor` | Shor's factoring algorithm |
 | `simulate_noise` | Run with noise model |
 | `draw_circuit` | **SVG circuit diagram** |
-| `list_gates` | All 31 quantum gates |
+| `list_gates` | All 34 quantum gates |
 | `explain_result` | Interpret measurements |
-| `monte_carlo_price` | Quantum option pricing |
+| `monte_carlo_price` | Quantum option pricing (IQAE) |
 | `option_greeks` | Calculate option Greeks (delta, gamma, vega) |
+| `portfolio_optimize` | Markowitz Ising QAOA portfolio optimization |
 | `qaoa_optimize` | QAOA optimization |
 | `optimize_circuit` | Compiler optimization with metrics |
 | `cluster_data` | Quantum clustering |
@@ -234,8 +234,7 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | `ibm_job_result` | Poll job status & fetch results |
 | `surface_code_simulate` | Surface code QEC simulation |
 | `compare_decoders` | Compare Edmonds Blossom MWPM vs Delfosse–Nickerson Union-Find decoders |
-| `qec_diagnose` | Diagnose errors in quantum error-correcting codes |
-| `qldpc_simulate` | IBM Gross `[[144,12,12]]` Bivariate Bicycle qLDPC & BP-OSD simulation |
+| `qec_diagnose` | Diagnose QEC codes (Steane, Shor, Color, Surface & Gross `[[144,12,12]]` qLDPC) |
 | `estimate_fault_tolerant_cost` | Estimate physical qubits, code distance & T-factory budget (FTQC) |
 | `quanta_reasoning_eval` | Deep reasoning audit & gate density evaluation for AI-generated circuits |
 | `transpile_for_target` | Compile circuit to target native gate set (IBM Heron, Google Willow, IonQ Aria) |
@@ -249,18 +248,18 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 │  monte_carlo() · cluster() · resolve()                   │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 2 — Circuit API                                   │
-│  @circuit · 31 gates · measure · run · sweep             │
+│  @circuit · 34 gates · measure · run · sweep             │
 │  SVG visualization · QASM 3.0 export                     │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 1 — Physical Layer                                │
-│  DAG IR · 6-pass compiler · qubit routing · ISA transpile│
+│  DAG IR · Cartan/KAK SU(4) · Heavy-Hex SWAP · ISA        │
 │  statevector · density matrix · Pauli frame · IBM REST   │
 └──────────────────────────────────────────────────────────┘
 ```
 
 ## Features
 
-### 31 Quantum Gates (Full IBM Parity + Google/IonQ Native)
+### 34 Quantum Gates (Full IBM Parity + Google/IonQ Native)
 
 | Category | Gates |
 |----------|-------|
@@ -270,8 +269,8 @@ fastmcp install quanta/mcp_server.py --name "Quanta Quantum SDK"
 | **Root** | SX (√X), SXdg (√X†) — Heron native |
 | **Rotation** | RX(θ), RY(θ), RZ(θ) |
 | **Universal** | U(θ, φ, λ) |
-| **2-Qubit** | CX, CY, CZ, SWAP, RXX(θ), RZZ(θ) |
-| **Multi** | CCX (Toffoli), RCCX, RC3X |
+| **2-Qubit** | CX, CY, CZ, SWAP, iSWAP, ECR, RXX(θ), RZZ(θ), CP(θ), CRX(θ), CRY(θ), CRZ(θ), FSim(θ, φ), MS(θ) |
+| **Multi** | CCX (Toffoli), CSWAP (Fredkin), RCCX, RC3X |
 | **Other** | I (Identity), Measure |
 
 ### Compiler & IR
@@ -466,7 +465,7 @@ pip install quanta-sdk[gpu] # Installs cupy and cuquantum-python for NVIDIA GPUs
 
 | Document | Description |
 |----------|-------------|
-| [📖 Tutorials (14)](https://onmartech.github.io/quanta-sdk/tutorials/01-getting-started/) | Step-by-step guides from basics to advanced |
+| [📖 Tutorials (16)](https://onmartech.github.io/quanta-sdk/tutorials/01-getting-started/) | Step-by-step guides from basics to advanced |
 | [📘 API Reference](https://onmartech.github.io/quanta-sdk/api/core/circuit/) | Full API docs with live examples |
 | [Architecture (EN)](docs/ARCHITECTURE_EN.md) | System design, DAG IR, compiler pipeline |
 | [Architecture (TR)](docs/ARCHITECTURE_TR.md) | Türkçe mimari dokümanı |

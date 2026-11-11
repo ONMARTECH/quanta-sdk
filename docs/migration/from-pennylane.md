@@ -7,7 +7,7 @@
 | Feature | PennyLane | Quanta |
 |---------|-----------|--------|
 | Install size | ~200 MB | ~5 MB |
-| Core dependencies | SciPy / Autoray / Autograd + optional JAX/Torch | 1 (`numpy>=1.24`, PyTorch/MLX optional) |
+| Core dependencies | SciPy / Autoray / Autograd + optional JAX/Torch | 4 (`numpy`, `scipy`, `networkx`, `certifi`; PyTorch/MLX optional) |
 | Gate count | 60+ | 34 (IBM Heron + Google + IonQ native) |
 | IBM Hardware | Via external plugin | Built-in direct REST API |
 | QEC | ❌ | ✅ Dual-track FTQC (Edmonds Blossom MWPM + Gross qLDPC) |
